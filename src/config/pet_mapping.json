@@ -1,0 +1,391 @@
+{
+  "version": "1.0.0",
+  "total_pets": 20,
+  "generated_at": "2026-11-20T00:54:00+07:00",
+  "pets": [
+    {
+      "source_file": "Pet 1.png",
+      "pet_type": "tinh_khong_da_thao",
+      "pet_name": "Tinh Không Dạ Thao",
+      "element": "Hư Không",
+      "rarity": "Thần Thoại",
+      "icon": "🌌",
+      "hax_skill": "Hư Không Hỗn Loạn",
+      "hax_description": "Khiến đối thủ tự đánh chính mình trong 1 hiệp",
+      "creature_type": "Celestial Fox",
+      "visual_notes": "Cáo tím huyền bí với vương miện trăng khuyết, chòm sao ngân hà phát sáng trên thân và dải lụa tiên giới",
+      "aliases": [
+        "cuu_vi_thien_ho",
+        "tinh_khong_thien_ho"
+      ],
+      "filename": "tinh_khong_da_thao.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 279.6
+    },
+    {
+      "source_file": "Pet 2.png",
+      "pet_type": "bang_tuyet_ho",
+      "pet_name": "Băng Tuyết Hồ",
+      "element": "Thủy",
+      "rarity": "Hiếm",
+      "icon": "❄️",
+      "hax_skill": "Băng Phong",
+      "hax_description": "35% tỉ lệ đóng băng đối thủ 1 hiệp",
+      "creature_type": "Ice Fox",
+      "visual_notes": "Bạch hồ lông trắng muốt kiêu sa, vương miện tinh thể băng lam và chóp đuôi lam ngọc băng giá",
+      "aliases": [
+        "tuyet_ho"
+      ],
+      "filename": "bang_tuyet_ho.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 176.9
+    },
+    {
+      "source_file": "Pet 3.png",
+      "pet_type": "linh_mieu_hoa_tien",
+      "pet_name": "Linh Miêu Hoa Tiên",
+      "element": "Mộc",
+      "rarity": "Cực Phẩm",
+      "icon": "🐱",
+      "hax_skill": "Gai Mộc Trói Chân",
+      "hax_description": "Khóa không cho đối thủ kích hoạt kỹ năng đặc biệt trong 2 lượt",
+      "creature_type": "Flower Cat",
+      "visual_notes": "Linh miêu lông dài quý phái nằm nghỉ ngơi, đội nón hoa sen anh đào hồng phấn và áo choàng tiên nữ",
+      "aliases": [
+        "hoa_tien_mieu"
+      ],
+      "filename": "linh_mieu_hoa_tien.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 208.3
+    },
+    {
+      "source_file": "Pet 4.png",
+      "pet_type": "han_bang_ky_lan",
+      "pet_name": "Hàn Băng Kỳ Lân",
+      "element": "Thủy",
+      "rarity": "Thần Thoại",
+      "icon": "🦄",
+      "hax_skill": "Hàn Khí Giáp",
+      "hax_description": "Giảm 40% sát thương từ đòn đánh bạo kích",
+      "creature_type": "Ice Qilin",
+      "visual_notes": "Kỳ Lân băng tuyết dũng mãnh phi nước đại, sừng pha lê băng, vảy ngọc lam và áo choàng cực quang ngũ sắc",
+      "aliases": [
+        "bang_ky_lan"
+      ],
+      "filename": "han_bang_ky_lan.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 297.2
+    },
+    {
+      "source_file": "Pet 5.png",
+      "pet_type": "quang_minh_thanh_thu",
+      "pet_name": "Quang Minh Thánh Thú",
+      "element": "Quang",
+      "rarity": "Thần Thoại",
+      "icon": "✨",
+      "hax_skill": "Thánh Quang Hóa Giải",
+      "hax_description": "Miễn nhiễm 100% mọi hiệu ứng xấu và HAX",
+      "creature_type": "Winged Unicorn / Pegasus",
+      "visual_notes": "Thánh thú ngựa có cánh lông vũ thuần khiết, bờm cầu vồng pastel, móng vàng kim và trang sức ngọc bội thánh quang",
+      "aliases": [
+        "thanh_quang_ma"
+      ],
+      "filename": "quang_minh_thanh_thu.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 339.5
+    },
+    {
+      "source_file": "Pet 6.png",
+      "pet_type": "hoa_diem_ho",
+      "pet_name": "Hỏa Diễm Hồ",
+      "element": "Hỏa",
+      "rarity": "Cực Phẩm",
+      "icon": "🔥",
+      "hax_skill": "Thiêu Hồn",
+      "hax_description": "Bỏ qua 50% giáp của đối thủ",
+      "creature_type": "Flame Fox",
+      "visual_notes": "Hồ ly lửa đỏ thẫm rực rỡ, chùm đuôi lông vũ bốc lửa rực cháy và trâm cài ngọc đỏ trước trán",
+      "aliases": [
+        "lua_ho"
+      ],
+      "filename": "hoa_diem_ho.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 324.3
+    },
+    {
+      "source_file": "Pet 7.png",
+      "pet_type": "viem_nguc_khuyen",
+      "pet_name": "Viêm Ngục Khuyển",
+      "element": "Hỏa",
+      "rarity": "Hiếm",
+      "icon": "🐕",
+      "hax_skill": "Cuồng Nộ",
+      "hax_description": "Máu càng thấp sát thương tăng gấp 3",
+      "creature_type": "Three-Headed Hellhound",
+      "visual_notes": "Chó săn địa ngục 3 đầu hắc ám chibi, vết nứt dung nham đỏ rực phát sáng trên chân ngực và vòng cổ gai hoàng kim",
+      "aliases": [
+        "dia_nguc_khuyen"
+      ],
+      "filename": "viem_nguc_khuyen.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 281.0
+    },
+    {
+      "source_file": "Pet 8.png",
+      "pet_type": "chu_tuoc_au_dieu",
+      "pet_name": "Chu Tước Ấu Điểu",
+      "element": "Hỏa",
+      "rarity": "Thần Thoại",
+      "icon": "🪶",
+      "hax_skill": "Niết Bàn Tái Sinh",
+      "hax_description": "Hồi sinh 50% máu 1 lần mỗi trận",
+      "creature_type": "Vermilion Bird Chick",
+      "visual_notes": "Ấu điểu Chu Tước phượng hoàng non lông đỏ rực viền vàng kim, sải cánh tung bay với lông đuôi đính bảo thạch hồng ngọc",
+      "aliases": [
+        "phuong_hoang_non"
+      ],
+      "filename": "chu_tuoc_au_dieu.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 284.8
+    },
+    {
+      "source_file": "Pet 9.png",
+      "pet_type": "bach_kim_ho_tu",
+      "pet_name": "Bạch Kim Hổ Tử",
+      "element": "Kim",
+      "rarity": "Hiếm",
+      "icon": "🐅",
+      "hax_skill": "Phá Giáp Trảm",
+      "hax_description": "Đòn đánh kế tiếp xuyên 100% mọi lớp phòng ngự",
+      "creature_type": "White Tiger Cub",
+      "visual_notes": "Cọp trắng con dũng mãnh đáng yêu, mắt vàng kim hổ phách, trang bị giáp vai hộ tâm bằng bạch kim nạm ngọc lam",
+      "aliases": [
+        "bach_ho"
+      ],
+      "filename": "bach_kim_ho_tu.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 398.2
+    },
+    {
+      "source_file": "Pet 10.png",
+      "pet_type": "u_minh_lang_vuong",
+      "pet_name": "U Minh Lang Vương",
+      "element": "Ám",
+      "rarity": "Thần Thoại",
+      "icon": "🐺",
+      "hax_skill": "Tuyệt Mệnh Trảm",
+      "hax_description": "Nếu máu đối phương dưới 25%, 50% kết liễu ngay lập tức",
+      "creature_type": "Nether Shadow Wolf",
+      "visual_notes": "Sói chúa U Minh bóng tối lông đen tím ma mị, mắt đỏ huyết đồng, phù văn ma thuật đỏ rực phát sáng trên trán và thân",
+      "aliases": [
+        "hac_lang"
+      ],
+      "filename": "u_minh_lang_vuong.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 274.7
+    },
+    {
+      "source_file": "Pet 11.png",
+      "pet_type": "xich_xa_hoa_long",
+      "pet_name": "Xích Xà Hỏa Long",
+      "element": "Hỏa",
+      "rarity": "Hiếm",
+      "icon": "🐉",
+      "hax_skill": "Hỏa Độc Huyết",
+      "hax_description": "Đối phương mất 15% máu tối đa mỗi hiệp",
+      "creature_type": "Fire Dragon Hatchling",
+      "visual_notes": "Rồng lửa đỏ tí hon đứng dang cánh phun lửa, vảy đỏ rực rỡ, sừng dung nham nứt nẻ và bảo thạch hồng ngọc trước trán",
+      "aliases": [
+        "hoa_long_con"
+      ],
+      "filename": "xich_xa_hoa_long.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 323.7
+    },
+    {
+      "source_file": "Pet 12.png",
+      "pet_type": "thiet_giap_xich_giac",
+      "pet_name": "Thiết Giáp Xích Giác Thú",
+      "element": "Kim",
+      "rarity": "Hiếm",
+      "icon": "🦏",
+      "hax_skill": "Phản Chấn Thần Lực",
+      "hax_description": "Phản 80% sát thương vật lý",
+      "creature_type": "Armored Battle Rhino",
+      "visual_notes": "Tê giác thần thú bọc trọng giáp bạch kim nạm hoa vàng thêu hoa văn cung đình, sừng pha lê ngũ sắc phát quang",
+      "aliases": [
+        "thiet_giap_te_giac"
+      ],
+      "filename": "thiet_giap_xich_giac.png",
+      "width": 512,
+      "height": 341,
+      "file_size_kb": 243.8
+    },
+    {
+      "source_file": "Pet 13.png",
+      "pet_type": "hai_duong_tien_ngu",
+      "pet_name": "Hải Dương Tiên Ngư",
+      "element": "Thủy",
+      "rarity": "Cực Phẩm",
+      "icon": "🐟",
+      "hax_skill": "Thanh Tẩy Linh Triều",
+      "hax_description": "Xóa bỏ toàn bộ hiệu ứng có lợi của đối thủ",
+      "creature_type": "Ocean Fairy Mermaid Fish",
+      "visual_notes": "Tiên ngư người cá đại dương tóc mây gợn sóng lam nhạt, sừng san hô xanh biếc, vây đuôi cá lấp lánh bong bóng nước",
+      "aliases": [
+        "tien_ngu"
+      ],
+      "filename": "hai_duong_tien_ngu.png",
+      "width": 384,
+      "height": 512,
+      "file_size_kb": 248.9
+    },
+    {
+      "source_file": "Pet 14.png",
+      "pet_type": "thanh_truc_tien_loc",
+      "pet_name": "Thanh Trúc Tiên Lộc",
+      "element": "Mộc",
+      "rarity": "Hiếm",
+      "icon": "🦌",
+      "hax_skill": "Linh Mộc Hồi Xuân",
+      "hax_description": "Hồi 25% máu mỗi hiệp cho bản thân",
+      "creature_type": "Bamboo Forest Leaf Fairy",
+      "visual_notes": "Tiên linh rừng trúc mộc tinh mang cánh lá trúc xanh mướt, râu linh mộc thanh tú và áo choàng phiến lá mộng mơ",
+      "aliases": [
+        "truc_lam_tien_linh",
+        "thanh_xa_truc_lam"
+      ],
+      "filename": "thanh_truc_tien_loc.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 244.2
+    },
+    {
+      "source_file": "Pet 15.png",
+      "pet_type": "thao_moc_linh_vien",
+      "pet_name": "Thảo Mộc Linh Viên",
+      "element": "Mộc",
+      "rarity": "Hiếm",
+      "icon": "🐒",
+      "hax_skill": "Đất Mẹ Che Chở",
+      "hax_description": "Tạo khiên chắn bằng 50% máu tối đa",
+      "creature_type": "Herbal Golden Monkey",
+      "visual_notes": "Linh hầu lông vàng óng như tơ tằm nằm ngủ ngon lành, ôm chặt đóa hoa vàng thảo mộc tiên cảnh",
+      "aliases": [
+        "kim_ti_hau"
+      ],
+      "filename": "thao_moc_linh_vien.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 219.3
+    },
+    {
+      "source_file": "Pet 16.png",
+      "pet_type": "thuy_tinh_huyen_ngao",
+      "pet_name": "Thủy Tinh Huyền Ngao",
+      "element": "Thủy",
+      "rarity": "Hiếm",
+      "icon": "🐢",
+      "hax_skill": "Nghịch Lưu Phản Xạ",
+      "hax_description": "Phản lại 60% sát thương phép",
+      "creature_type": "Lotus Pond Crystal Turtle",
+      "visual_notes": "Rùa tiên nước ngọt mai thủy tinh trong suốt như hồ ngọc, mọc đóa hoa sen hồng và lá sen nổi bồng bềnh",
+      "aliases": [
+        "huyen_vu_tieu_quy"
+      ],
+      "filename": "thuy_tinh_huyen_ngao.png",
+      "width": 512,
+      "height": 506,
+      "file_size_kb": 243.1
+    },
+    {
+      "source_file": "Pet 17.png",
+      "pet_type": "hoa_thach_nham_nham",
+      "pet_name": "Hóa Thạch Nham Nham Thú",
+      "element": "Thổ",
+      "rarity": "Hiếm",
+      "icon": "🗿",
+      "hax_skill": "Hóa Đá",
+      "hax_description": "Hóa đá đối thủ 1 hiệp khi bị tấn công",
+      "creature_type": "Crystal Moss Rock Beast",
+      "visual_notes": "Thạch thú béo tròn nằm bẹp dễ thương, tai mọc tinh thể ngọc bích, lưng phủ thảm rêu xanh và mầm hoa anh đào",
+      "aliases": [
+        "nham_nham_thu"
+      ],
+      "filename": "hoa_thach_nham_nham.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 242.6
+    },
+    {
+      "source_file": "Pet 18.png",
+      "pet_type": "loi_dinh_kim_ho",
+      "pet_name": "Lôi Đình Kim Hồ",
+      "element": "Lôi",
+      "rarity": "Thần Thoại",
+      "icon": "⚡",
+      "hax_skill": "Lôi Quang Tốc",
+      "hax_description": "Luôn luôn được đánh trước bất kể lực chiến",
+      "creature_type": "Thunder Golden Fox",
+      "visual_notes": "Kim hồ hoàng kim lanh lợi nhảy nhót nháy mắt tinh nghịch, đuôi bồng bềnh viền lửa vàng lôi điện và chuông lửa đỏ",
+      "aliases": [
+        "kim_ho",
+        "loi_ho"
+      ],
+      "filename": "loi_dinh_kim_ho.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 180.6
+    },
+    {
+      "source_file": "Pet 19.png",
+      "pet_type": "man_da_la_linh_thu",
+      "pet_name": "Mạn Đà La Linh Thú",
+      "element": "Mộc",
+      "rarity": "Cực Phẩm",
+      "icon": "🌺",
+      "hax_skill": "Ký Sinh Hút Máu",
+      "hax_description": "Gây sát thương bằng 30% máu đối thủ và hút về cho mình",
+      "creature_type": "Mandala Flower Fox",
+      "visual_notes": "Linh thú hồ ly tím hoa cà ngả lưng chơi đùa với đệm thịt hồng hào, tai cài hoa Mạn Đà La tử sắc buông rủ ngọc hoa",
+      "aliases": [
+        "man_da_la_ho"
+      ],
+      "filename": "man_da_la_linh_thu.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 237.0
+    },
+    {
+      "source_file": "Pet 20.png",
+      "pet_type": "kim_si_dieu_hoang",
+      "pet_name": "Kim Sí Điêu Hoàng",
+      "element": "Kim",
+      "rarity": "Cực Phẩm",
+      "icon": "🦅",
+      "hax_skill": "Mù Lòa Thái Dương",
+      "hax_description": "Khiến đối thủ đánh trượt 70% trong 2 hiệp",
+      "creature_type": "Starry Night Celestial Moon Beast",
+      "visual_notes": "Thánh thú thỏ tiên trăng khuyết cuộn tròn ngủ say trên vầng trăng khuyết hoàng kim, trùm khăn choàng đêm đầy sao rực rỡ",
+      "aliases": [
+        "da_tho_cung_trang",
+        "ngoc_tho_tinh_khong"
+      ],
+      "filename": "kim_si_dieu_hoang.png",
+      "width": 512,
+      "height": 512,
+      "file_size_kb": 210.0
+    }
+  ]
+}

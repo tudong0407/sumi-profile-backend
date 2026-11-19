@@ -1,0 +1,55 @@
+import http from 'http';
+import WebSocket from 'ws';
+
+function getJson(url) {
+  return new Promise((resolve, reject) => {
+    http.get(url, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(JSON.parse(data)));
+    }).on('error', reject);
+  });
+}
+
+async function main() {
+  const tabs = await getJson('http://127.0.0.1:9222/json');
+  const bg = tabs.find(t => t.url?.includes('dashboard.botghost.com'));
+  const ws = new WebSocket(bg.webSocketDebuggerUrl);
+  await new Promise(r => ws.on('open', r));
+
+  const send = (method, params = {}) => new Promise((resolve, reject) => {
+    const id = 12345;
+    ws.on('message', (data) => {
+      const msg = JSON.parse(data.toString());
+      if (msg.id === id) resolve(msg.result);
+    });
+    ws.send(JSON.stringify({ id, method, params }));
+  });
+
+  const res = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const root = document.querySelector('#root');
+      const key = Object.keys(root).find(k => k.startsWith('__reactContainer$'));
+      let cb = null;
+      function search(fiber) {
+        if (!fiber) return;
+        if (fiber.stateNode?.validateSave && fiber.stateNode?.buildCommand) cb = fiber.stateNode;
+        search(fiber.child);
+        search(fiber.sibling);
+      }
+      search(root[key]);
+
+      return {
+        validateSaveSrc: cb?.validateSave?.toString(),
+        getValidationIssuesSrc: cb?.getValidationIssues?.toString() || cb?.showValidationErrors?.toString()
+      };
+    })()`,
+    returnByValue: true
+  });
+
+  console.log('validateSave source:\n', res.result?.value?.validateSaveSrc);
+  console.log('validationIssues source:\n', res.result?.value?.getValidationIssuesSrc);
+  ws.close();
+}
+
+main().catch(console.error);

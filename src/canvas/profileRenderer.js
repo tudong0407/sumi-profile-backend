@@ -1,5 +1,5 @@
 import { createCanvas } from '@napi-rs/canvas';
-import { loadImageSafe, drawRoundRect, truncateText, drawPetal, drawProceduralAvatar, sanitizeText } from './drawUtils.js';
+import { loadImageSafe, drawRoundRect, truncateText, drawPetal, drawProceduralAvatar, sanitizeText, resolveAssetPath } from './drawUtils.js';
 
 const FONT_FAMILY = '"Segoe UI", "Segoe UI Emoji", Arial, sans-serif';
 
@@ -39,10 +39,19 @@ export async function renderProfileCard(data) {
   const isOwner = profile.userId === '757091869183311872';
 
   // Tải hình nền, avatar & ảnh Linh Thú an toàn (với fallback mock asset tương ứng)
-  // Ưu tiên bản transparent đã tách nền chuẩn anime chibi OwO mascot
-  const petAsset = (profile.pet && profile.pet.type) 
-    ? (profile.pet.type === 'cuu_vi_hong_ho' ? 'pets/cuu_vi_hong_ho_transparent.png' : `pets/${profile.pet.type}.png`) 
-    : (isOwner ? 'pets/cuu_vi_hong_ho_transparent.png' : null);
+  // Ưu tiên file assets/pets/<pet_type>.png và fallback sang cuu_vi_hong_ho_transparent.png
+  const petType = profile.pet?.pet_type || profile.pet?.type;
+  let petAsset = null;
+  if (petType) {
+    if (petType === 'cuu_vi_hong_ho') {
+      petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
+    } else {
+      const candidate = `pets/${petType}.png`;
+      petAsset = resolveAssetPath(candidate) ? candidate : 'pets/cuu_vi_hong_ho_transparent.png';
+    }
+  } else if (isOwner) {
+    petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
+  }
   const [bgImage, avatarImg, petImg] = await Promise.all([
     loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
     loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
@@ -498,10 +507,28 @@ export async function renderProfileCard(data) {
 
     // Vẽ Bé Pet Chibi tách nền ngay CHÍNH GIỮA khung
     if (hasPetImg) {
-      const petDrawSize = 64;
-      const petDrawX = petFrameX + (petFrameW - petDrawSize) / 2;
-      const petDrawY = petFrameY + (petFrameH - petDrawSize) / 2 + 1;
-      ctx.drawImage(petImg, petDrawX, petDrawY, petDrawSize, petDrawSize);
+      // Giữ tỉ lệ khung hình (Aspect Ratio) chuẩn xác để pet không bị méo mó, co giãn
+      const maxW = 74;
+      const maxH = 64;
+      const imgAspect = petImg.width / petImg.height;
+      let drawW, drawH;
+      if (imgAspect > (maxW / maxH)) {
+        drawW = maxW;
+        drawH = maxW / imgAspect;
+      } else {
+        drawH = maxH;
+        drawW = maxH * imgAspect;
+      }
+      const petDrawX = petFrameX + (petFrameW - drawW) / 2;
+      // Căn giữa theo trục Y trong khoảng không gian khả dụng dưới huy hiệu độ hiếm
+      const petDrawY = (petFrameY + 8) + (petFrameH - 8 - drawH) / 2;
+
+      ctx.save();
+      // Đổ bóng hào quang nhẹ dưới chân Pet
+      ctx.shadowColor = 'rgba(255, 182, 193, 0.45)';
+      ctx.shadowBlur = 8;
+      ctx.drawImage(petImg, petDrawX, petDrawY, drawW, drawH);
+      ctx.restore();
     }
 
     // Vẽ Huy hiệu Độ hiếm trên đỉnh Khung Pet

@@ -110,6 +110,7 @@ export function getFuyumiProfileMock() {
     pet: {
       name: 'Cửu Vĩ Hồng Hồ',
       type: 'cuu_vi_hong_ho',
+      pet_type: 'cuu_vi_hong_ho',
       rarity: 'Tối Thượng Thần Thoại',
       element: 'Hỗn Độn',
       hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)',
@@ -219,6 +220,7 @@ export function getDefaultUserMock(userId) {
     pet: {
       name: 'Băng Tuyết Hồ',
       type: 'bang_tuyet_ho',
+      pet_type: 'bang_tuyet_ho',
       rarity: 'Hiếm',
       element: 'Thủy / Băng',
       hax_skill: 'Băng Phong (Đóng Băng)',
@@ -389,6 +391,7 @@ export async function getProfileData(userId, overrides = {}) {
           petData = {
             name: pet.pet_name,
             type: pet.pet_type,
+            pet_type: pet.pet_type,
             rarity: pet.pet_rarity || 'Thường',
             element: pet.element || 'Kim',
             hax_skill: pet.hax_skill || null,
