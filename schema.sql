@@ -310,7 +310,7 @@ VALUES
     ('757091869183311872', '1264915703438381099', '« Phong Thanh Hộ Pháp »', '🎙️ Di Chuyển Voice', TRUE, TRUE, 3),
     ('757091869183311872', 'than_hanh_cot_cach', '« Thần Hành Cốt Cách »', '⚡ Miễn Chờ Chat Chậm', TRUE, TRUE, 4),
     ('757091869183311872', '1027173664069795921', '« Trấn Thư Pháp Vương »', '📌 Ghim Tin Nhắn', TRUE, TRUE, 5)
-ON CONFLICT (user_id, equipped_slot) DO UPDATE SET
+ON CONFLICT (user_id, equipped_slot) WHERE equipped_slot IS NOT NULL DO UPDATE SET
     role_name = EXCLUDED.role_name,
     role_id = EXCLUDED.role_id,
     role_perk = EXCLUDED.role_perk;
