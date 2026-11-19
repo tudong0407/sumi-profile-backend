@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import { getProfileData } from './services/profileService.js';
+import { getProfileData, sanitizeUserId } from './services/profileService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { supabase } from './config/supabase.js';
@@ -62,8 +62,14 @@ app.get('/health', (req, res) => {
  *   - ?username=... &avatar=... &title=...
  */
 app.get('/api/profile/:userId', async (req, res) => {
-  const rawUserId = req.params.userId || '';
-  const cleanUserId = rawUserId.replace(/\.(png|jpe?g|webp|json)$/i, '');
+  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || '';
+  let cleanUserId = sanitizeUserId(rawUserId);
+  if (!cleanUserId || cleanUserId.startsWith('{')) {
+    const fallback = req.query.user_id || req.query.userId || req.query.user || req.query.target;
+    if (fallback) {
+      cleanUserId = sanitizeUserId(fallback);
+    }
+  }
   const { format } = req.query;
 
   try {
@@ -111,8 +117,14 @@ app.get('/api/profile/:userId', async (req, res) => {
  * Kích thước: 1000 x 205 px
  */
 app.get('/api/rank/:userId', async (req, res) => {
-  const rawUserId = req.params.userId || '';
-  const cleanUserId = rawUserId.replace(/\.(png|jpe?g|webp|json)$/i, '');
+  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || '';
+  let cleanUserId = sanitizeUserId(rawUserId);
+  if (!cleanUserId || cleanUserId.startsWith('{')) {
+    const fallback = req.query.user_id || req.query.userId || req.query.user || req.query.target;
+    if (fallback) {
+      cleanUserId = sanitizeUserId(fallback);
+    }
+  }
   const { format } = req.query;
 
   try {

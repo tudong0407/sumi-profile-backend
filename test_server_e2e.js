@@ -199,6 +199,42 @@ async function runE2ETests() {
       throw new Error(`POST /api/rank/render thất bại: HTTP ${resCustomRank.status}`);
     }
 
+    // TEST 11: GET Profile with Discord Mention format <@757091869183311872>
+    total++;
+    console.log('\n[Test 11] Kiểm tra GET /api/profile/%3C@757091869183311872%3E?format=json (Sanitization Mention)...');
+    const resMention = await fetch(`http://localhost:${PORT}/api/profile/%3C@757091869183311872%3E?format=json`);
+    const mentionJson = await resMention.json();
+    if (resMention.status === 200 && mentionJson.success && mentionJson.data?.user_id === '757091869183311872') {
+      console.log('✅ [Test 11 ĐẠT] Bóc tách thành công ID Fuyumi từ format Discord mention <@757091869183311872>');
+      passed++;
+    } else {
+      throw new Error(`Sanitize mention thất bại: ${JSON.stringify(mentionJson)}`);
+    }
+
+    // TEST 12: GET Rank with Discord Nickname Mention format <@!757091869183311872>.png
+    total++;
+    console.log('\n[Test 12] Kiểm tra GET /api/rank/%3C@!757091869183311872%3E.png (Sanitization Nickname Mention PNG)...');
+    const resNickPng = await fetch(`http://localhost:${PORT}/api/rank/%3C@!757091869183311872%3E.png`);
+    const nickBuffer = Buffer.from(await resNickPng.arrayBuffer());
+    if (resNickPng.status === 200 && isValidPng(nickBuffer)) {
+      console.log(`✅ [Test 12 ĐẠT] Render thành công Thẻ Rank từ format nickname mention <@!...>, kích thước: ${(nickBuffer.length / 1024).toFixed(2)} KB`);
+      passed++;
+    } else {
+      throw new Error(`Sanitize nickname mention PNG thất bại: HTTP ${resNickPng.status}`);
+    }
+
+    // TEST 13: GET Profile with Query Fallback when param is empty or placeholder
+    total++;
+    console.log('\n[Test 13] Kiểm tra GET /api/profile/{option_user}?user_id=757091869183311872&format=json (Query Fallback)...');
+    const resFallback = await fetch(`http://localhost:${PORT}/api/profile/{option_user}?user_id=757091869183311872&format=json`);
+    const fallbackJson = await resFallback.json();
+    if (resFallback.status === 200 && fallbackJson.success && fallbackJson.data?.user_id === '757091869183311872') {
+      console.log('✅ [Test 13 ĐẠT] Fallback thành công sang user_id trong query params');
+      passed++;
+    } else {
+      throw new Error(`Query fallback thất bại: ${JSON.stringify(fallbackJson)}`);
+    }
+
   } finally {
     server.close();
     console.log('\n[E2E] Đã đóng test server');

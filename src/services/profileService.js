@@ -188,13 +188,32 @@ export function getDefaultUserMock(userId) {
 }
 
 /**
+ * Làm sạch và chuẩn hóa userId từ Discord mention, query string hoặc path param
+ * Hỗ trợ các định dạng:
+ * - Pure snowflake ID: '757091869183311872'
+ * - Mention format: '<@757091869183311872>', '<@!757091869183311872>'
+ * - File extension format: '757091869183311872.png', '<@757091869183311872>.png'
+ * @param {string} input
+ * @returns {string} clean ID
+ */
+export function sanitizeUserId(input) {
+  if (!input) return '';
+  const str = String(input).trim();
+  const match = str.match(/\d{17,20}/);
+  if (match) {
+    return match[0];
+  }
+  return str.replace(/\.(png|jpe?g|webp|json)$/i, '').replace(/[<@!>]/g, '').trim();
+}
+
+/**
  * Lấy dữ liệu hồ sơ từ Supabase hoặc Mock
  * @param {string} userId 
  * @param {Object} overrides Tham số ghi đè tùy chọn từ query param hoặc API
  * @returns {Promise<Object>}
  */
 export async function getProfileData(userId, overrides = {}) {
-  const cleanId = String(userId || '0').replace(/\.(png|jpe?g|webp|json)$/i, '');
+  const cleanId = sanitizeUserId(userId);
   let baseProfile = null;
 
   // 1. Kiểm tra nếu có Supabase client hoạt động
