@@ -1,7 +1,7 @@
 import { createCanvas } from '@napi-rs/canvas';
 import { loadImageSafe, drawRoundRect, truncateText, drawPetal, drawProceduralAvatar, sanitizeText, resolveAssetPath } from './drawUtils.js';
 
-const FONT_FAMILY = '"Segoe UI", "Segoe UI Emoji", Arial, sans-serif';
+const FONT_FAMILY = '"Be Vietnam Pro", "Segoe UI", Arial, sans-serif';
 
 /**
  * Render thẻ Profile Tiên Giới SuMi Family (1000 x 500 px)

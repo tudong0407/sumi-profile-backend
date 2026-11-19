@@ -1,4 +1,4 @@
-import { loadImage } from '@napi-rs/canvas';
+import { loadImage, GlobalFonts } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,6 +7,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../');
 const ASSETS_DIR = path.join(PROJECT_ROOT, 'assets');
+const FONTS_DIR = path.join(ASSETS_DIR, 'fonts');
+
+// Đăng ký font tiếng Việt chuẩn cho Linux container & môi trường Render
+try {
+  const regularFont = path.join(FONTS_DIR, 'BeVietnamPro-Regular.ttf');
+  const semiBoldFont = path.join(FONTS_DIR, 'BeVietnamPro-SemiBold.ttf');
+  const boldFont = path.join(FONTS_DIR, 'BeVietnamPro-Bold.ttf');
+
+  if (fs.existsSync(regularFont)) {
+    GlobalFonts.registerFromPath(regularFont, 'Be Vietnam Pro');
+  }
+  if (fs.existsSync(semiBoldFont)) {
+    GlobalFonts.registerFromPath(semiBoldFont, 'Be Vietnam Pro');
+  }
+  if (fs.existsSync(boldFont)) {
+    GlobalFonts.registerFromPath(boldFont, 'Be Vietnam Pro');
+  }
+} catch (err) {
+  console.warn('[Canvas] Không thể đăng ký Be Vietnam Pro font:', err.message);
+}
 
 /**
  * Chuẩn hóa chuỗi ký tự, thay thế các ký tự hiếm như dấu chấm katakana bằng bullet chuẩn
