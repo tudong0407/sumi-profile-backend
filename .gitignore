@@ -5,3 +5,8 @@ output/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+supabase_credentials.json
+*tree*.json
+*live*.json
+*updated*.json
+sm_rules.json
