@@ -41,6 +41,16 @@ Bao gồm 5 bảng dữ liệu hoàn chỉnh:
 
 ---
 
+## 🔮 Roadmap: Hệ Thống Trang Bị Pet (Vũ Khí, Bảo Ngọc, Chiến Hồn) & `/boost`
+Đã ghi nhận toàn bộ thiết kế kiến trúc và ý tưởng của Tiểu thư Fuyumi tại tài liệu:
+👉 **[ROADMAP_PET_EQUIPMENT.md](./ROADMAP_PET_EQUIPMENT.md)**
+- Pháp khí / Vũ khí (`weapon`): Tăng ATK & Bạo kích.
+- Bảo ngọc (`gem`): Khảm 3-4 ô ngọc mạch tăng HP, DEF, Energy, Hút máu.
+- Chiến hồn / Linh hồn thức tỉnh (`soul`): Kích hoạt thiên phú ẩn & hiệu ứng hào quang thần thú.
+- Tích hợp lệnh `/boost` và Đấu Trường Linh Thú (PvP).
+
+---
+
 ## 🚀 Khởi Chạy & Kiểm Thử
 
 ### Cài đặt dependencies
