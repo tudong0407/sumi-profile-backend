@@ -7,7 +7,11 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node test_render.js && node test_server_e2e.js"
+    "test": "node --test tests/**/*.test.js",
+    "test:tier1": "node --test tests/tier1-features/*.test.js",
+    "test:tier2": "node --test tests/tier2-boundaries/*.test.js",
+    "test:tier3": "node --test tests/tier3-combinations/*.test.js",
+    "test:tier4": "node --test tests/tier4-scenarios/*.test.js"
   },
   "engines": {
     "node": ">=22.0.0"

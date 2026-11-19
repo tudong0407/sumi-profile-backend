@@ -52,10 +52,25 @@ export async function renderProfileCard(data) {
   } else if (isOwner) {
     petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
   }
-  const [bgImage, avatarImg, petImg] = await Promise.all([
+  const equipWeapon = profile.pet?.equipment?.weapon;
+  const equipGem = profile.pet?.equipment?.gem;
+  const equipSoul = profile.pet?.equipment?.soul;
+
+  const weaponFallback = equipWeapon?.item_id ? `items/${equipWeapon.item_id}.png` : null;
+  const gemFallback = equipGem?.item_id ? `items/${equipGem.item_id}.png` : null;
+  const soulFallback = equipSoul?.item_id ? `items/${equipSoul.item_id}.png` : null;
+
+  const weaponSource = equipWeapon?.image_url || weaponFallback;
+  const gemSource = equipGem?.image_url || gemFallback;
+  const soulSource = equipSoul?.image_url || soulFallback;
+
+  const [bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg] = await Promise.all([
     loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
     loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(profile.pet?.image_url, 2500, petAsset),
+    weaponSource ? loadImageSafe(weaponSource, 2000, weaponFallback) : null,
+    gemSource ? loadImageSafe(gemSource, 2000, gemFallback) : null,
+    soulSource ? loadImageSafe(soulSource, 2000, soulFallback) : null,
   ]);
 
   // ============================================================================
@@ -708,10 +723,17 @@ export async function renderProfileCard(data) {
       };
     }
 
+    const itemImgMap = {
+      weapon: weaponImg,
+      gem: gemImg,
+      soul: soulImg,
+    };
+
     slotConfigs.forEach((cfg, idx) => {
       const sx = petX + equipPadX + idx * (slotW + equipGap);
       const sy = equipY;
       const item = profile.pet.equipment ? profile.pet.equipment[cfg.key] : null;
+      const itemImg = itemImgMap[cfg.key];
 
       drawRoundRect(ctx, sx, sy, slotW, equipH, 7);
 
@@ -736,31 +758,78 @@ export async function renderProfileCard(data) {
         ctx.stroke();
         ctx.restore();
 
-        // Line 1: Header nhãn loại slot (Vũ Khí / Bảo Ngọc / Chiến Hồn)
-        ctx.font = `bold 8.5px ${FONT_FAMILY}`;
-        ctx.fillStyle = colors.text;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(cfg.label, sx + slotW / 2, sy + 11);
-
-        // Line 2: Icon & Tên trang bị
-        const icon = item.icon || cfg.defaultIcon;
-        const cleanName = (item.item_name || 'Vật Phẩm').replace(/[«»]/g, '').trim();
-        ctx.font = `bold 10px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#ffffff';
-        const displayItemName = truncateText(ctx, `${icon} ${cleanName}`, slotW - 8);
-        ctx.fillText(displayItemName, sx + slotW / 2, sy + 27);
-
-        // Line 3: Chỉ số cộng thêm / Rarity
-        ctx.font = `8.5px ${FONT_FAMILY}`;
         let statText = '';
         if (item.bonus_atk) statText += `+${item.bonus_atk}Công `;
         if (item.bonus_def) statText += `+${item.bonus_def}Thủ `;
         if (item.bonus_spd) statText += `+${item.bonus_spd}Tốc `;
         if (item.bonus_hp && !statText) statText += `+${item.bonus_hp}HP `;
         if (!statText) statText = item.rarity || 'Thần Thoại';
-        ctx.fillStyle = colors.text;
-        ctx.fillText(truncateText(ctx, statText.trim(), slotW - 6), sx + slotW / 2, sy + 43);
+
+        const cleanName = (item.item_name || 'Vật Phẩm').replace(/[«»]/g, '').trim();
+
+        if (itemImg) {
+          // Layout có hình ảnh trang bị: Thumbnail 34x34 bo góc bên trái
+          const thumbSize = 34;
+          const thumbX = sx + 4;
+          const thumbY = sy + Math.floor((equipH - thumbSize) / 2);
+
+          ctx.save();
+          drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
+          ctx.clip();
+          ctx.drawImage(itemImg, 0, 0, itemImg.width, itemImg.height, thumbX, thumbY, thumbSize, thumbSize);
+          ctx.restore();
+
+          // Viền phát sáng bọc ngoài Thumbnail
+          ctx.save();
+          drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
+          ctx.strokeStyle = colors.borderGrad[0];
+          ctx.lineWidth = 1.2;
+          ctx.shadowColor = colors.glow;
+          ctx.shadowBlur = 4;
+          ctx.stroke();
+          ctx.restore();
+
+          // Thông tin trang bị ở bên phải thumbnail (tối ưu hóa độ rộng đạt ~72-74px)
+          const textX = sx + thumbSize + 6;
+          const maxTextW = slotW - thumbSize - 8;
+
+          // Line 1: Header loại slot
+          ctx.font = `bold 8px ${FONT_FAMILY}`;
+          ctx.fillStyle = colors.text;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(cfg.label, textX, sy + 12);
+
+          // Line 2: Tên trang bị
+          ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(truncateText(ctx, cleanName, maxTextW), textX, sy + 27);
+
+          // Line 3: Chỉ số cộng thêm
+          ctx.font = `7.5px ${FONT_FAMILY}`;
+          ctx.fillStyle = colors.text;
+          ctx.fillText(truncateText(ctx, statText.trim(), maxTextW), textX, sy + 43);
+        } else {
+          // Fallback nếu chưa tải được ảnh: Hiển thị icon và text ở giữa
+          // Line 1: Header nhãn loại slot (Vũ Khí / Bảo Ngọc / Chiến Hồn)
+          ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+          ctx.fillStyle = colors.text;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(cfg.label, sx + slotW / 2, sy + 11);
+
+          // Line 2: Icon & Tên trang bị
+          const icon = item.icon || cfg.defaultIcon;
+          ctx.font = `bold 10px ${FONT_FAMILY}`;
+          ctx.fillStyle = '#ffffff';
+          const displayItemName = truncateText(ctx, `${icon} ${cleanName}`, slotW - 8);
+          ctx.fillText(displayItemName, sx + slotW / 2, sy + 27);
+
+          // Line 3: Chỉ số cộng thêm / Rarity
+          ctx.font = `8.5px ${FONT_FAMILY}`;
+          ctx.fillStyle = colors.text;
+          ctx.fillText(truncateText(ctx, statText.trim(), slotW - 6), sx + slotW / 2, sy + 43);
+        }
       } else {
         // Slot trống
         ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';

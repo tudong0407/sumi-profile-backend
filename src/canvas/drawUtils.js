@@ -28,12 +28,19 @@ try {
   console.warn('[Canvas] Không thể đăng ký Be Vietnam Pro font:', err.message);
 }
 
+// Nạp toàn bộ font hệ thống (system emojis và fallback glyphs) cho Linux container & môi trường Render
+try {
+  GlobalFonts.loadSystemFonts();
+} catch (err) {
+  console.warn('[Canvas] Không thể nạp system fonts:', err.message);
+}
+
 /**
  * Chuẩn hóa chuỗi ký tự, thay thế các ký tự hiếm như dấu chấm katakana bằng bullet chuẩn
  */
 export function sanitizeText(str) {
   if (!str) return '';
-  return String(str).replace(/・/g, ' • ');
+  return String(str).replace(/\0/g, '').replace(/・/g, ' • ');
 }
 
 /**
@@ -64,6 +71,16 @@ export function resolveAssetPath(filePathOrName) {
   const assetPath = path.join(ASSETS_DIR, basename);
   if (fs.existsSync(assetPath)) {
     return assetPath;
+  }
+
+  // 4. Đường dẫn trong thư mục con assets/items hoặc assets/pets
+  const itemPath = path.join(ASSETS_DIR, 'items', basename);
+  if (fs.existsSync(itemPath)) {
+    return itemPath;
+  }
+  const petPath = path.join(ASSETS_DIR, 'pets', basename);
+  if (fs.existsSync(petPath)) {
+    return petPath;
   }
 
   return null;

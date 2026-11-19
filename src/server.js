@@ -1,13 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { fileURLToPath } from 'url';
 import { getProfileData, sanitizeUserId } from './services/profileService.js';
+import { getWikiData, VALID_CATEGORIES } from './services/wikiService.js';
+import { simulateBattle } from './services/battleService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { supabase } from './config/supabase.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.resolve(__dirname, '../');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +23,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/assets', express.static(path.join(PROJECT_ROOT, 'assets')));
 
 function getCleanParam(val, fallback) {
   if (val && typeof val === 'string') {
@@ -40,6 +48,8 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: 'GET /health',
+      wiki: 'GET /api/wiki[?category=beginner|pets|equipment|battle|economy]',
+      battle_simulate: 'POST /api/battle/simulate',
       profile_png: 'GET /api/profile/:userId[.png]',
       profile_json: 'GET /api/profile/:userId?format=json',
       profile_render_custom: 'POST /api/profile/render',
@@ -62,6 +72,73 @@ app.get('/health', (req, res) => {
     supabase_connected: !!supabase,
     timestamp: new Date().toISOString(),
   });
+});
+
+/**
+ * Endpoint cung cấp dữ liệu Cẩm Nang Tu Tiên SuMi Family
+ * GET /api/wiki
+ * Hỗ trợ query: ?category=beginner|pets|equipment|battle|economy|all (hoặc ?cat=...)
+ */
+app.get('/api/wiki', (req, res) => {
+  try {
+    const rawCategory = req.query.category || req.query.cat || null;
+    const wikiResult = getWikiData(rawCategory);
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+
+    if (!wikiResult.success) {
+      return res.status(404).json(wikiResult);
+    }
+
+    return res.status(200).json(wikiResult);
+  } catch (err) {
+    console.error('[Server] Lỗi khi xử lý yêu cầu Wiki:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Đã xảy ra lỗi nội bộ khi truy vấn cẩm nang tu tiên.',
+      details: err.message,
+    });
+  }
+});
+
+/**
+ * Endpoint mô phỏng trận chiến Linh Thú theo lượt (Pet Battle Simulation)
+ * POST /api/battle/simulate
+ * Payload: { attackerId: string, defenderId: string, options?: object }
+ */
+app.post('/api/battle/simulate', async (req, res) => {
+  try {
+    const { attackerId, defenderId, attacker, defender, options } = req.body || {};
+
+    const actId = attackerId || req.body?.attacker_id || attacker;
+    const defId = defenderId || req.body?.defender_id || defender;
+
+    if (!actId || !defId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Thiếu thông tin người tấn công (attackerId) hoặc người phòng thủ (defenderId).',
+      });
+    }
+
+    const cleanAttackerId = typeof actId === 'string' ? sanitizeUserId(actId) : actId;
+    const cleanDefenderId = typeof defId === 'string' ? sanitizeUserId(defId) : defId;
+
+    const battleResult = await simulateBattle(cleanAttackerId, cleanDefenderId, options);
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(200).json(battleResult);
+  } catch (err) {
+    console.error('[Server] Lỗi khi xử lý mô phỏng chiến đấu:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Internal Server Error',
+      message: 'Đã xảy ra lỗi nội bộ trong quá trình mô phỏng trận chiến.',
+      details: err.message,
+    });
+  }
 });
 
 /**

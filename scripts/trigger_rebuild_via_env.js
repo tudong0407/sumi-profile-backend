@@ -19,30 +19,34 @@ async function main() {
     ws.send(JSON.stringify({ id, method: m, params: p }));
   });
 
-  console.log('1. Clicking Edit button...');
-  const editRes = await send('Runtime.evaluate', {
-    expression: `(() => {
-      const btns = Array.from(document.querySelectorAll('button'));
-      const editBtn = btns.find(b => b.textContent.trim() === 'Edit');
-      if (editBtn) {
-        editBtn.click();
-        return { clicked: true };
-      }
-      return { clicked: false };
-    })()`,
-    returnByValue: true
-  });
-  console.log('Edit Click:', editRes.result?.value);
+  console.log('Navigating to /env...');
+  await send('Page.navigate', { url: 'https://dashboard.render.com/web/srv-dbvfq3h5efls73dmsa8g/env' });
+  await sleep(4000);
+
+  // Wait for Edit button to be visible
+  for (let i = 0; i < 10; i++) {
+    const check = await send('Runtime.evaluate', {
+      expression: `(() => {
+        const btns = Array.from(document.querySelectorAll('button'));
+        const editBtn = btns.find(b => b.textContent.trim() === 'Edit');
+        if (editBtn) {
+          editBtn.click();
+          return { clicked: true };
+        }
+        return { clicked: false, btns: btns.map(b => b.textContent.trim()).filter(Boolean) };
+      })()`,
+      returnByValue: true
+    });
+    if (check.result?.value?.clicked) {
+      console.log('Edit clicked!');
+      break;
+    }
+    await sleep(1000);
+  }
+
   await sleep(1500);
 
-  // Check buttons now
-  const btnsAfterEdit = await send('Runtime.evaluate', {
-    expression: `Array.from(document.querySelectorAll('button')).map(b => b.textContent.trim()).filter(Boolean)`,
-    returnByValue: true
-  });
-  console.log('Buttons after Edit:', btnsAfterEdit.result?.value);
-
-  // Click Save Changes or Save, rebuild, and deploy
+  // Click Save, rebuild, and deploy
   const saveRes = await send('Runtime.evaluate', {
     expression: `(() => {
       const btns = Array.from(document.querySelectorAll('button'));
@@ -51,7 +55,7 @@ async function main() {
         saveBtn.click();
         return { clicked: true, text: saveBtn.textContent.trim() };
       }
-      return { clicked: false };
+      return { clicked: false, btns: btns.map(b => b.textContent.trim()).filter(Boolean) };
     })()`,
     returnByValue: true
   });
@@ -59,8 +63,7 @@ async function main() {
 
   await sleep(4000);
 
-  // Navigate to deploys to confirm new deployment started
-  console.log('Checking deploys page...');
+  // Navigate to deploys
   await send('Page.navigate', { url: 'https://dashboard.render.com/web/srv-dbvfq3h5efls73dmsa8g/deploys' });
   await sleep(3000);
 

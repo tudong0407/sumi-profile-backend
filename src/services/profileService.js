@@ -352,7 +352,9 @@ export async function getProfileData(userId, overrides = {}) {
 
         if (!equipErr && Array.isArray(equippedItems)) {
           for (const item of equippedItems) {
-            const slotKey = (item.slot || item.item_type || '').toLowerCase();
+            // Guard: Chỉ ghi nhận các vật phẩm đang thực sự được trang bị vào slot (bỏ qua unequipped item có slot == null)
+            if (!item.slot) continue;
+            const slotKey = String(item.slot).toLowerCase().trim();
             if (['weapon', 'gem', 'soul'].includes(slotKey)) {
               equipment[slotKey] = {
                 item_id: item.item_id,
