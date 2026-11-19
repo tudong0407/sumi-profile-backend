@@ -17,6 +17,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+function getCleanParam(val, fallback) {
+  if (val && typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed && !trimmed.startsWith('{')) return trimmed;
+  }
+  if (fallback && typeof fallback === 'string') {
+    const trimmed = fallback.trim();
+    if (trimmed && !trimmed.startsWith('{')) return trimmed;
+  }
+  return null;
+}
+
 /**
  * Root directory info endpoint
  */
@@ -62,10 +74,10 @@ app.get('/health', (req, res) => {
  *   - ?username=... &avatar=... &title=...
  */
 app.get('/api/profile/:userId', async (req, res) => {
-  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || '';
+  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
   if (!cleanUserId || cleanUserId.startsWith('{')) {
-    const fallback = req.query.user_id || req.query.userId || req.query.user || req.query.target;
+    const fallback = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target;
     if (fallback) {
       cleanUserId = sanitizeUserId(fallback);
     }
@@ -75,10 +87,10 @@ app.get('/api/profile/:userId', async (req, res) => {
   try {
     // Thu thập tham số ghi đè từ Query String nếu có
     const overrides = {
-      username: req.query.username || req.query.name,
-      avatar_url: req.query.avatar || req.query.avatar_url,
-      custom_title: req.query.title || req.query.custom_title,
-      background_url: req.query.bg || req.query.background_url,
+      username: getCleanParam(req.query.username || req.query.name, req.query.fallback_name),
+      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, req.query.fallback_avatar),
+      custom_title: getCleanParam(req.query.title || req.query.custom_title, null),
+      background_url: getCleanParam(req.query.bg || req.query.background_url, null),
     };
 
     const profileData = await getProfileData(cleanUserId, overrides);
@@ -117,10 +129,10 @@ app.get('/api/profile/:userId', async (req, res) => {
  * Kích thước: 1000 x 205 px
  */
 app.get('/api/rank/:userId', async (req, res) => {
-  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || '';
+  const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
   if (!cleanUserId || cleanUserId.startsWith('{')) {
-    const fallback = req.query.user_id || req.query.userId || req.query.user || req.query.target;
+    const fallback = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target;
     if (fallback) {
       cleanUserId = sanitizeUserId(fallback);
     }
@@ -129,10 +141,10 @@ app.get('/api/rank/:userId', async (req, res) => {
 
   try {
     const overrides = {
-      username: req.query.username || req.query.name,
-      avatar_url: req.query.avatar || req.query.avatar_url,
-      custom_title: req.query.title || req.query.custom_title,
-      background_url: req.query.bg || req.query.background_url,
+      username: getCleanParam(req.query.username || req.query.name, req.query.fallback_name),
+      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, req.query.fallback_avatar),
+      custom_title: getCleanParam(req.query.title || req.query.custom_title, null),
+      background_url: getCleanParam(req.query.bg || req.query.background_url, null),
     };
 
     const profileData = await getProfileData(cleanUserId, overrides);

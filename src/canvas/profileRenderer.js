@@ -452,34 +452,33 @@ export async function renderProfileCard(data) {
   ctx.font = `bold 13px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fdba74';
   ctx.textBaseline = 'middle';
-  ctx.fillText('🐾 LINH THÚ XUẤT TRẬN', petX + 22, bottomY + 22);
+  ctx.fillText('🐾 LINH THÚ XUẤT TRẬN', petX + 22, bottomY + 20);
 
   if (profile.pet) {
     const hasPetImg = !!petImg;
     // Khung Linh Thú Chuyên Biệt (Dedicated Pet Frame)
-    const petFrameW = 112;
-    const petFrameH = 94;
-    const petFrameX = petX + petW - 22 - petFrameW;
-    const petFrameY = bottomY + 34;
-    const leftTextW = petFrameX - petX - 32;
+    const petFrameW = 92;
+    const petFrameH = 78;
+    const petFrameX = petX + petW - 18 - petFrameW;
+    const petFrameY = bottomY + 25;
+    const leftTextW = petFrameX - petX - 28;
 
     // 1. Huy hiệu Độ hiếm (Rarity Badge) căn giữa ngay trên nóc Khung Pet
     const rarityText = profile.pet.rarity || 'Thần Thoại';
-    ctx.font = `bold 10px ${FONT_FAMILY}`;
+    ctx.font = `bold 9.5px ${FONT_FAMILY}`;
     const rarMetrics = ctx.measureText(rarityText);
-    const rarPillW = rarMetrics.width + 16;
-    const rarPillH = 19;
+    const rarPillW = rarMetrics.width + 14;
+    const rarPillH = 18;
     const rarPillX = petFrameX + (petFrameW - rarPillW) / 2;
-    const rarPillY = petFrameY - 9; // Đính cân đối trên viền trên của khung
+    const rarPillY = petFrameY - 8;
 
     // Vẽ Khung Viền Linh Thú (Pet Frame)
-    drawRoundRect(ctx, petFrameX, petFrameY, petFrameW, petFrameH, 12);
-    // Nền hào quang tinh vân bên trong khung
+    drawRoundRect(ctx, petFrameX, petFrameY, petFrameW, petFrameH, 10);
     const petFrameBg = ctx.createRadialGradient(
       petFrameX + petFrameW / 2, petFrameY + petFrameH / 2, 4,
       petFrameX + petFrameW / 2, petFrameY + petFrameH / 2, petFrameW / 2
     );
-    petFrameBg.addColorStop(0, 'rgba(244, 114, 182, 0.16)');
+    petFrameBg.addColorStop(0, 'rgba(244, 114, 182, 0.18)');
     petFrameBg.addColorStop(0.6, 'rgba(168, 85, 247, 0.10)');
     petFrameBg.addColorStop(1, 'rgba(15, 12, 28, 0.65)');
     ctx.fillStyle = petFrameBg;
@@ -491,26 +490,26 @@ export async function renderProfileCard(data) {
     petFrameGrad.addColorStop(0.5, '#fbbf24');
     petFrameGrad.addColorStop(1, '#c084fc');
     ctx.strokeStyle = petFrameGrad;
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 1.4;
     ctx.shadowColor = 'rgba(244, 114, 182, 0.5)';
     ctx.shadowBlur = 6;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Vẽ Bé Pet Chibi tách nền ngay CHÍNH GIỮA khung (Không dính viền)
+    // Vẽ Bé Pet Chibi tách nền ngay CHÍNH GIỮA khung
     if (hasPetImg) {
-      const petDrawSize = 78;
+      const petDrawSize = 64;
       const petDrawX = petFrameX + (petFrameW - petDrawSize) / 2;
-      const petDrawY = petFrameY + (petFrameH - petDrawSize) / 2 + 2;
+      const petDrawY = petFrameY + (petFrameH - petDrawSize) / 2 + 1;
       ctx.drawImage(petImg, petDrawX, petDrawY, petDrawSize, petDrawSize);
     }
 
-    // Vẽ Huy hiệu Độ hiếm trên đỉnh Khung Pet (Vẽ sau để đè lên viền một cách thanh lịch)
-    drawRoundRect(ctx, rarPillX, rarPillY, rarPillW, rarPillH, 6);
-    ctx.fillStyle = 'rgba(24, 14, 36, 0.92)';
+    // Vẽ Huy hiệu Độ hiếm trên đỉnh Khung Pet
+    drawRoundRect(ctx, rarPillX, rarPillY, rarPillW, rarPillH, 5);
+    ctx.fillStyle = 'rgba(24, 14, 36, 0.94)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.8)';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.1;
     ctx.stroke();
 
     ctx.fillStyle = '#f472b6';
@@ -519,27 +518,27 @@ export async function renderProfileCard(data) {
     ctx.fillText(rarityText, rarPillX + rarPillW / 2, rarPillY + rarPillH / 2);
     ctx.textAlign = 'left';
 
-    // Tên Linh Thú (Lề trái 22px, không dính viền)
-    ctx.font = `bold 16px ${FONT_FAMILY}`;
+    // Tên Linh Thú (Lề trái 20px)
+    ctx.font = `bold 15px ${FONT_FAMILY}`;
     ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
     ctx.shadowBlur = 8;
     const petIcon = profile.pet.icon || '🦊';
     const petNameOnly = `${petIcon} ${profile.pet.name}`;
     const cleanPetName = truncateText(ctx, petNameOnly, leftTextW);
-    ctx.fillText(cleanPetName, petX + 22, bottomY + 52);
+    ctx.fillText(cleanPetName, petX + 20, bottomY + 44);
     ctx.shadowBlur = 0;
 
-    // Hàng 2: Pill Hệ Ngũ Hành + Pill Cấp Độ (Cách đều, căn giữa)
+    // Hàng 2: Pill Hệ Ngũ Hành + Pill Cấp Độ
     const elementStr = profile.pet.element ? `Hệ ${profile.pet.element}` : 'Hệ Hỗn Độn';
-    ctx.font = `bold 10px ${FONT_FAMILY}`;
+    ctx.font = `bold 9.5px ${FONT_FAMILY}`;
     const elemMetrics = ctx.measureText(elementStr);
-    const elemPillW = elemMetrics.width + 16;
-    const elemPillX = petX + 22;
-    const elemPillY = bottomY + 70;
+    const elemPillW = elemMetrics.width + 14;
+    const elemPillX = petX + 20;
+    const elemPillY = bottomY + 58;
 
     // 1. Pill Hệ Ngũ Hành (Hồng tím)
-    drawRoundRect(ctx, elemPillX, elemPillY, elemPillW, 20, 5);
+    drawRoundRect(ctx, elemPillX, elemPillY, elemPillW, 18, 5);
     ctx.fillStyle = 'rgba(236, 72, 153, 0.25)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(244, 114, 182, 0.6)';
@@ -548,17 +547,17 @@ export async function renderProfileCard(data) {
 
     ctx.fillStyle = '#fbcfe8';
     ctx.textAlign = 'center';
-    ctx.fillText(elementStr, elemPillX + elemPillW / 2, elemPillY + 10);
+    ctx.fillText(elementStr, elemPillX + elemPillW / 2, elemPillY + 9);
     ctx.textAlign = 'left';
 
     // 2. Pill Cấp Độ (Tím lam ngọc)
     const levelStr = `Cấp ${profile.pet.level}`;
     const lvlMetrics = ctx.measureText(levelStr);
-    const lvlPillW = lvlMetrics.width + 16;
+    const lvlPillW = lvlMetrics.width + 14;
     const lvlPillX = elemPillX + elemPillW + 8;
     const lvlPillY = elemPillY;
 
-    drawRoundRect(ctx, lvlPillX, lvlPillY, lvlPillW, 20, 5);
+    drawRoundRect(ctx, lvlPillX, lvlPillY, lvlPillW, 18, 5);
     ctx.fillStyle = 'rgba(147, 51, 234, 0.25)';
     ctx.fill();
     ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
@@ -567,25 +566,25 @@ export async function renderProfileCard(data) {
 
     ctx.fillStyle = '#e9d5ff';
     ctx.textAlign = 'center';
-    ctx.fillText(levelStr, lvlPillX + lvlPillW / 2, lvlPillY + 10);
+    ctx.fillText(levelStr, lvlPillX + lvlPillW / 2, lvlPillY + 9);
     ctx.textAlign = 'left';
 
     // Kỹ năng HAX Lật Kèo (HAX Skill Badge)
     const haxName = profile.pet.hax_skill || 'Tuyệt Kỹ Phá Cách (HAX)';
-    ctx.font = `bold 11.5px ${FONT_FAMILY}`;
+    ctx.font = `bold 11px ${FONT_FAMILY}`;
     const haxDisplay = truncateText(ctx, `⚡ ${haxName}`, leftTextW);
     ctx.fillStyle = '#fde047';
     ctx.shadowColor = 'rgba(253, 224, 71, 0.5)';
     ctx.shadowBlur = 5;
-    ctx.fillText(haxDisplay, petX + 22, bottomY + 106);
+    ctx.fillText(haxDisplay, petX + 20, bottomY + 90);
     ctx.shadowBlur = 0;
 
-    // Bảng Chiến Lực Nổi Bật (Power Score Box - Cách đều 22px hai bên)
-    const powerBoxX = petX + 22;
-    const powerBoxW = petW - 44;
-    const powerBoxY = bottomY + 136;
-    const powerBoxH = 30;
-    drawRoundRect(ctx, powerBoxX, powerBoxY, powerBoxW, powerBoxH, 8);
+    // Bảng Chiến Lực Nổi Bật (Power Score Box)
+    const powerBoxX = petX + 18;
+    const powerBoxW = petW - 36;
+    const powerBoxY = bottomY + 106;
+    const powerBoxH = 24;
+    drawRoundRect(ctx, powerBoxX, powerBoxY, powerBoxW, powerBoxH, 6);
     const powerBg = ctx.createLinearGradient(powerBoxX, powerBoxY, powerBoxX + powerBoxW, powerBoxY + powerBoxH);
     powerBg.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
     powerBg.addColorStop(1, 'rgba(239, 68, 68, 0.35)');
@@ -595,7 +594,7 @@ export async function renderProfileCard(data) {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.font = `bold 14px ${FONT_FAMILY}`;
+    ctx.font = `bold 12.5px ${FONT_FAMILY}`;
     ctx.fillStyle = '#fef08a';
     ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
     ctx.shadowBlur = 7;
@@ -605,21 +604,158 @@ export async function renderProfileCard(data) {
     ctx.shadowBlur = 0;
     ctx.textAlign = 'left';
 
-    // Thuộc tính chi tiết (Công / Thủ / Tốc - Cách lề 24px)
-    const statsY = bottomY + 184;
-    ctx.font = `11.5px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#94a3b8';
+    // Thuộc tính chi tiết (Công / Thủ / Tốc)
+    const statsY = bottomY + 144;
+    ctx.font = `11px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#cbd5e1';
     const atkStr = `Công: ${(profile.pet.atk || 0).toLocaleString('vi-VN')}`;
     const defStr = `Thủ: ${(profile.pet.def || 0).toLocaleString('vi-VN')}`;
     const spdStr = `Tốc: ${(profile.pet.spd || 0).toLocaleString('vi-VN')}`;
-    ctx.fillText(`🗡️ ${atkStr}   🛡️ ${defStr}   ⚡ ${spdStr}`, petX + 24, statsY);
+    ctx.fillText(`🗡️ ${atkStr}    🛡️ ${defStr}    ⚡ ${spdStr}`, petX + 20, statsY);
 
-    // Mô tả hiệu ứng HAX (Cách lề 24px, cách đáy hơn 30px)
-    const descText = profile.pet.hax_desc || 'Hộ vệ chủ nhân • Xuất chinh Gia Tộc Chiến 24h';
-    ctx.font = `italic 11px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#f1f5f9';
-    const cleanDesc = truncateText(ctx, `🔥 ${descText}`, petW - 48);
-    ctx.fillText(cleanDesc, petX + 24, statsY + 22);
+    // ========================================================================
+    // 3 SLOTS TRANG BỊ LINH THÚ (Vũ Khí, Bảo Ngọc, Chiến Hồn) VỚI RARITY GLOW
+    // ========================================================================
+    const equipY = bottomY + 164;
+    const equipH = 58;
+    const equipPadX = 18;
+    const availEquipW = petW - equipPadX * 2;
+    const equipGap = 6;
+    const slotW = Math.floor((availEquipW - equipGap * 2) / 3);
+
+    const slotConfigs = [
+      { key: 'weapon', label: '⚔️ VŨ KHÍ', defaultIcon: '⚔️' },
+      { key: 'gem', label: '💎 BẢO NGỌC', defaultIcon: '💎' },
+      { key: 'soul', label: '🦊 CHIẾN HỒN', defaultIcon: '🦊' },
+    ];
+
+    function getEquipColors(rarity) {
+      if (!rarity) {
+        return {
+          borderGrad: ['rgba(100, 116, 139, 0.4)', 'rgba(148, 163, 184, 0.4)'],
+          glow: 'rgba(148, 163, 184, 0.25)',
+          blur: 4,
+          text: '#cbd5e1',
+          bg1: 'rgba(30, 41, 59, 0.4)',
+          bg2: 'rgba(15, 23, 42, 0.4)',
+        };
+      }
+      const r = rarity.toLowerCase();
+      if (r.includes('than thoai') || r.includes('mythic')) {
+        return {
+          borderGrad: ['#ff0055', '#ffd700'],
+          glow: '#ff0055',
+          blur: 8,
+          text: '#ffd700',
+          bg1: 'rgba(255, 0, 85, 0.22)',
+          bg2: 'rgba(251, 191, 36, 0.16)',
+        };
+      }
+      if (r.includes('tien pham') || r.includes('epic')) {
+        return {
+          borderGrad: ['#9333ea', '#c084fc'],
+          glow: 'rgba(168, 85, 247, 0.65)',
+          blur: 6,
+          text: '#e9d5ff',
+          bg1: 'rgba(147, 51, 234, 0.2)',
+          bg2: 'rgba(192, 132, 252, 0.12)',
+        };
+      }
+      if (r.includes('linh pham') || r.includes('rare')) {
+        return {
+          borderGrad: ['#2563eb', '#60a5fa'],
+          glow: 'rgba(59, 130, 246, 0.55)',
+          blur: 5,
+          text: '#93c5fd',
+          bg1: 'rgba(37, 99, 235, 0.18)',
+          bg2: 'rgba(96, 165, 250, 0.1)',
+        };
+      }
+      return {
+        borderGrad: ['rgba(71, 85, 105, 0.5)', 'rgba(148, 163, 184, 0.5)'],
+        glow: 'rgba(148, 163, 184, 0.2)',
+        blur: 3,
+        text: '#cbd5e1',
+        bg1: 'rgba(51, 65, 85, 0.25)',
+        bg2: 'rgba(30, 41, 59, 0.2)',
+      };
+    }
+
+    slotConfigs.forEach((cfg, idx) => {
+      const sx = petX + equipPadX + idx * (slotW + equipGap);
+      const sy = equipY;
+      const item = profile.pet.equipment ? profile.pet.equipment[cfg.key] : null;
+
+      drawRoundRect(ctx, sx, sy, slotW, equipH, 7);
+
+      if (item) {
+        const colors = getEquipColors(item.rarity);
+        // Nền slot
+        const sBg = ctx.createLinearGradient(sx, sy, sx + slotW, sy + equipH);
+        sBg.addColorStop(0, colors.bg1);
+        sBg.addColorStop(1, colors.bg2);
+        ctx.fillStyle = sBg;
+        ctx.fill();
+
+        // Glow Border phát sáng theo Rarity
+        ctx.save();
+        ctx.shadowColor = colors.glow;
+        ctx.shadowBlur = colors.blur;
+        const sBorder = ctx.createLinearGradient(sx, sy, sx + slotW, sy + equipH);
+        sBorder.addColorStop(0, colors.borderGrad[0]);
+        sBorder.addColorStop(1, colors.borderGrad[1]);
+        ctx.strokeStyle = sBorder;
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+        ctx.restore();
+
+        // Line 1: Header nhãn loại slot (Vũ Khí / Bảo Ngọc / Chiến Hồn)
+        ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+        ctx.fillStyle = colors.text;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.label, sx + slotW / 2, sy + 11);
+
+        // Line 2: Icon & Tên trang bị
+        const icon = item.icon || cfg.defaultIcon;
+        const cleanName = (item.item_name || 'Vật Phẩm').replace(/[«»]/g, '').trim();
+        ctx.font = `bold 10px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#ffffff';
+        const displayItemName = truncateText(ctx, `${icon} ${cleanName}`, slotW - 8);
+        ctx.fillText(displayItemName, sx + slotW / 2, sy + 27);
+
+        // Line 3: Chỉ số cộng thêm / Rarity
+        ctx.font = `8.5px ${FONT_FAMILY}`;
+        let statText = '';
+        if (item.bonus_atk) statText += `+${item.bonus_atk}Công `;
+        if (item.bonus_def) statText += `+${item.bonus_def}Thủ `;
+        if (item.bonus_spd) statText += `+${item.bonus_spd}Tốc `;
+        if (item.bonus_hp && !statText) statText += `+${item.bonus_hp}HP `;
+        if (!statText) statText = item.rarity || 'Thần Thoại';
+        ctx.fillStyle = colors.text;
+        ctx.fillText(truncateText(ctx, statText.trim(), slotW - 6), sx + slotW / 2, sy + 43);
+      } else {
+        // Slot trống
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Nhãn slot
+        ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.label, sx + slotW / 2, sy + 14);
+
+        // Chữ Trống
+        ctx.font = `10px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#475569';
+        ctx.fillText('➕ Trống', sx + slotW / 2, sy + 36);
+      }
+    });
+
   } else {
     // Placeholder nếu chưa có Pet
     ctx.font = `14px ${FONT_FAMILY}`;

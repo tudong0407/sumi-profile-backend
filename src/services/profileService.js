@@ -116,11 +116,61 @@ export function getFuyumiProfileMock() {
       hax_desc: 'Bất tử 3 đòn đầu, phản lại 100% sát thương gốc',
       level: 99,
       star: 10,
-      atk: 99999,
-      def: 99999,
-      spd: 99999,
-      power: 9999999,
+      atk: 101069,
+      def: 101049,
+      spd: 100949,
+      power: 10009709,
       icon: '🦊',
+      equipment: {
+        weapon: {
+          item_id: 'weapon_mythic_1',
+          item_name: '« Tru Tiên Diệt Thần Kiếm »',
+          item_type: 'weapon',
+          slot: 'weapon',
+          rarity: 'Than Thoai',
+          element: 'Kim',
+          bonus_atk: 720,
+          bonus_def: 0,
+          bonus_spd: 300,
+          bonus_hp: 0,
+          bonus_crit: 18,
+          hax_skill: 'Tuyệt Diệt Bất Tử',
+          hax_description: 'Đòn đánh xuyên qua 100% khiên chắn và vô hiệu hóa hoàn toàn cơ chế Bất Tử / Trùng Sinh của đối phương trong 3 lượt đầu!',
+          icon: '⚔️',
+        },
+        gem: {
+          item_id: 'gem_mythic_3',
+          item_name: '« Thiên Hồ Hóa Thần Ngọc »',
+          item_type: 'gem',
+          slot: 'gem',
+          rarity: 'Than Thoai',
+          element: 'Hon Don',
+          bonus_atk: 0,
+          bonus_def: 750,
+          bonus_spd: 200,
+          bonus_hp: 5000,
+          bonus_crit: 0,
+          hax_skill: 'Thần Hồ Diễm Hộ',
+          hax_description: 'Đầu trận tạo khiên hộ thể bằng 100% máu tối đa; khi khiên còn tồn tại, mọi đòn tấn công của đối phương bị giảm 50% uy lực!',
+          icon: '🦊',
+        },
+        soul: {
+          item_id: 'soul_mythic_1',
+          item_name: '« Cửu Vĩ Thiên Tiên Hồn »',
+          item_type: 'soul',
+          slot: 'soul',
+          rarity: 'Than Thoai',
+          element: 'Hon Don',
+          bonus_atk: 350,
+          bonus_def: 300,
+          bonus_spd: 450,
+          bonus_hp: 0,
+          bonus_crit: 0,
+          hax_skill: 'Mị Hoặc Chúng Sinh',
+          hax_description: 'Mỗi hiệp đấu có 40% xác suất Mị Hoặc đối thủ, ép nó tự tung đòn đánh mạnh nhất vào chính bản thân nó thay vì đánh Pet!',
+          icon: '🦊',
+        },
+      },
     },
     equipped_roles: [
       { slot: 1, role_id: '1473419957655175169', name: '« 100 • Hỗn Độn Chúa Tể »', perk: '⚔️ Trảm Quyết Tối Thượng', rarity: 'mythic' },
@@ -180,6 +230,11 @@ export function getDefaultUserMock(userId) {
       spd: 520,
       power: 3250,
       icon: '❄️',
+      equipment: {
+        weapon: null,
+        gem: null,
+        soul: null,
+      },
     },
     equipped_roles: [
       { slot: 1, role_id: 'phong_thanh', name: '« Phong Thanh Hộ Pháp »', perk: '🎙️ Di Chuyển Voice', rarity: 'rare' },
@@ -193,17 +248,39 @@ export function getDefaultUserMock(userId) {
  * - Pure snowflake ID: '757091869183311872'
  * - Mention format: '<@757091869183311872>', '<@!757091869183311872>'
  * - File extension format: '757091869183311872.png', '<@757091869183311872>.png'
+ * - URL encoded: '%3C@757091869183311872%3E'
+ * - Placeholder format: '{option_user}' -> ''
  * @param {string} input
  * @returns {string} clean ID
  */
 export function sanitizeUserId(input) {
   if (!input) return '';
-  const str = String(input).trim();
-  const match = str.match(/\d{17,20}/);
+  let str = String(input).trim();
+  try {
+    str = decodeURIComponent(str);
+  } catch (e) {}
+
+  // Strip file extensions first (e.g. <@757091869183311872>.png or 757091869183311872.png)
+  str = str.replace(/\.(png|jpe?g|webp|json)$/i, '').trim();
+
+  // Strip Discord mention: <@123456789012345678> or <@!123456789012345678>
+  const mentionMatch = str.match(/<@!?([0-9]{17,20})>/);
+  if (mentionMatch) {
+    return mentionMatch[1];
+  }
+
+  // Any 17-20 digit snowflake ID
+  const match = str.match(/[0-9]{17,20}/);
   if (match) {
     return match[0];
   }
-  return str.replace(/\.(png|jpe?g|webp|json)$/i, '').replace(/[<@!>]/g, '').trim();
+
+  // If BotGhost variable wasn't replaced (e.g. {option_user})
+  if (str.startsWith('{') && str.endsWith('}')) {
+    return '';
+  }
+
+  return str.replace(/[<@!>]/g, '').trim();
 }
 
 /**
@@ -255,7 +332,60 @@ export async function getProfileData(userId, overrides = {}) {
           .limit(1)
           .maybeSingle();
 
+        // Lấy Equipped Items từ view v_user_equipped_items (Weapon, Gem, Soul)
+        const equipment = {
+          weapon: null,
+          gem: null,
+          soul: null,
+        };
+        let bonusAtk = 0;
+        let bonusDef = 0;
+        let bonusSpd = 0;
+        let bonusHp = 0;
+
+        const { data: equippedItems, error: equipErr } = await supabase
+          .from('v_user_equipped_items')
+          .select('*')
+          .eq('user_id', cleanId);
+
+        if (!equipErr && Array.isArray(equippedItems)) {
+          for (const item of equippedItems) {
+            const slotKey = (item.slot || item.item_type || '').toLowerCase();
+            if (['weapon', 'gem', 'soul'].includes(slotKey)) {
+              equipment[slotKey] = {
+                item_id: item.item_id,
+                item_name: item.item_name,
+                item_type: item.item_type,
+                slot: slotKey,
+                rarity: item.rarity,
+                element: item.element,
+                bonus_atk: Number(item.bonus_atk) || 0,
+                bonus_def: Number(item.bonus_def) || 0,
+                bonus_spd: Number(item.bonus_spd) || 0,
+                bonus_hp: Number(item.bonus_hp) || 0,
+                bonus_crit: Number(item.bonus_crit) || 0,
+                hax_skill: item.hax_skill || null,
+                hax_description: item.hax_description || null,
+                icon: item.icon || (slotKey === 'weapon' ? '⚔️' : slotKey === 'gem' ? '💎' : '🦊'),
+              };
+              bonusAtk += Number(item.bonus_atk) || 0;
+              bonusDef += Number(item.bonus_def) || 0;
+              bonusSpd += Number(item.bonus_spd) || 0;
+              bonusHp += Number(item.bonus_hp) || 0;
+            }
+          }
+        }
+
         if (pet) {
+          const baseAtk = Number(pet.atk) || 0;
+          const baseDef = Number(pet.def) || 0;
+          const baseSpd = Number(pet.spd) || 0;
+          const finalAtk = baseAtk + bonusAtk;
+          const finalDef = baseDef + bonusDef;
+          const finalSpd = baseSpd + bonusSpd;
+          const basePower = Number(pet.power_score) || (baseAtk * 3 + baseDef * 2 + baseSpd * 2 + (pet.level || 1) * 50);
+          const bonusPower = (bonusAtk * 3) + (bonusDef * 2) + (bonusSpd * 2) + Math.floor(bonusHp * 0.5);
+
           petData = {
             name: pet.pet_name,
             type: pet.pet_type,
@@ -265,10 +395,18 @@ export async function getProfileData(userId, overrides = {}) {
             hax_desc: pet.hax_description || null,
             level: pet.level,
             star: pet.star || 1,
-            atk: pet.atk,
-            def: pet.def,
-            spd: pet.spd,
-            power: pet.power_score || (pet.atk * 3 + pet.def * 2 + pet.spd * 2 + pet.level * 50),
+            atk: finalAtk,
+            def: finalDef,
+            spd: finalSpd,
+            power: basePower + bonusPower,
+            base_atk: baseAtk,
+            base_def: baseDef,
+            base_spd: baseSpd,
+            bonus_atk: bonusAtk,
+            bonus_def: bonusDef,
+            bonus_spd: bonusSpd,
+            bonus_hp: bonusHp,
+            equipment,
             icon: pet.pet_type === 'cuu_vi_hong_ho' ? '🦊' : (pet.icon || '🐾'),
           };
         }
