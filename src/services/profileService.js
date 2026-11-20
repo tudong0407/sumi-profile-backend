@@ -299,11 +299,14 @@ export async function ensureUserInitialized(userId, meta = {}) {
   let userRow = existingUser;
   let initializedNewUser = false;
 
-  const cleanName = typeof meta.username === 'string' && meta.username.trim() && !meta.username.trim().startsWith('{')
-    ? meta.username.trim().slice(0, 100)
+  const isUnresolvedTemplate = (val) => /^\{[a-zA-Z0-9_.\[\]{}-]+\}$/.test(val);
+  const rawName = typeof meta.username === 'string' ? meta.username.trim() : '';
+  const cleanName = rawName && !isUnresolvedTemplate(rawName)
+    ? rawName.slice(0, 100)
     : null;
-  const cleanAvatar = typeof meta.avatarUrl === 'string' && meta.avatarUrl.trim() && !meta.avatarUrl.trim().startsWith('{')
-    ? meta.avatarUrl.trim()
+  const rawAvatar = typeof meta.avatarUrl === 'string' ? meta.avatarUrl.trim() : '';
+  const cleanAvatar = rawAvatar && !isUnresolvedTemplate(rawAvatar)
+    ? rawAvatar
     : null;
 
   if (!userRow) {
