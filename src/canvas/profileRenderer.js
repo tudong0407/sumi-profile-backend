@@ -299,7 +299,9 @@ export async function renderProfileCard(data) {
   ctx.textBaseline = 'middle';
 
   ctx.fillStyle = '#f472b6';
-  ctx.fillText('🦊 Gia Tộc:', metaBoxX + 14, clanY + metaBoxH / 2);
+  const clanLabel = '🦊 Gia Tộc: ';
+  ctx.fillText(clanLabel, metaBoxX + 14, clanY + metaBoxH / 2);
+  const clanValX = metaBoxX + 14 + Math.ceil(ctx.measureText(clanLabel).width) + 2;
 
   ctx.fillStyle = '#ffffff';
   let clanStr = 'Chưa gia nhập bang hội';
@@ -307,8 +309,8 @@ export async function renderProfileCard(data) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxW - 96);
-  ctx.fillText(cleanClanStr, metaBoxX + 86, clanY + metaBoxH / 2);
+  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 12 - clanValX);
+  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2);
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
@@ -325,15 +327,17 @@ export async function renderProfileCard(data) {
   ctx.textBaseline = 'middle';
 
   ctx.fillStyle = '#fb7185';
-  ctx.fillText('💍 Tiên Lữ:', metaBoxX + 14, marryY + metaBoxH / 2);
+  const marryLabel = '💍 Tiên Lữ: ';
+  ctx.fillText(marryLabel, metaBoxX + 14, marryY + metaBoxH / 2);
+  const marryValX = metaBoxX + 14 + Math.ceil(ctx.measureText(marryLabel).width) + 2;
 
   ctx.fillStyle = '#fed7aa';
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
     marryStr = `Đã kết hôn cùng ${profile.married.username}`;
   }
-  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxW - 112);
-  ctx.fillText(cleanMarryStr, metaBoxX + 88, marryY + metaBoxH / 2);
+  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 12 - marryValX);
+  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2);
   ctx.restore();
 
   // Box 3: Số Dư Linh Thạch (Linh Thach Balance)
@@ -353,14 +357,16 @@ export async function renderProfileCard(data) {
   ctx.textBaseline = 'middle';
 
   ctx.fillStyle = '#38bdf8';
-  ctx.fillText('💎 Linh Thạch:', metaBoxX + 14, stoneY + metaBoxH / 2);
+  const stoneLabel = '💎 Linh Thạch: ';
+  ctx.fillText(stoneLabel, metaBoxX + 14, stoneY + metaBoxH / 2);
+  const stoneValX = metaBoxX + 14 + Math.ceil(ctx.measureText(stoneLabel).width) + 2;
 
   ctx.font = `bold 14px ${FONT_FAMILY}`;
   ctx.fillStyle = '#7dd3fc';
   ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
   ctx.shadowBlur = 6;
   const stoneStr = `${profile.linhThach.toLocaleString('vi-VN')} Viên`;
-  ctx.fillText(stoneStr, metaBoxX + 108, stoneY + metaBoxH / 2);
+  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 12 - stoneValX), stoneValX, stoneY + metaBoxH / 2);
   ctx.restore();
 
   // ============================================================================
