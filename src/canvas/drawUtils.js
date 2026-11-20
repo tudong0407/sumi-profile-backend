@@ -351,8 +351,16 @@ export function drawProceduralAvatar(ctx, x, y, size, isOwner, initialLetter) {
  * - high: Lv.40+ (Kim Đan -> Đại Thừa) — Tử Kim / Huyền Tinh
  * - novice: Lv.1–39 (Luyện Khí – Trúc Cơ) — Bạch Ngọc / Thanh Lam sắc nét
  */
+const CUSTOM_SHOP_FRAMES = new Set([
+  'jade_lotus',
+  'amethyst_celestial',
+  'crimson_phoenix',
+  'frost_crystal',
+]);
+
 export function resolveAvatarBorderTier({ isOwner = false, level = 1, avatarFrame = 'default' } = {}) {
   if (isOwner || avatarFrame === 'celestial_fox_gold') return 'owner';
+  if (CUSTOM_SHOP_FRAMES.has(avatarFrame)) return avatarFrame;
   if (Number(level) >= 40) return 'high';
   return 'novice';
 }
@@ -376,12 +384,28 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   // 1. Hào quang đồng tâm phía sau Avatar (phân cấp rõ ràng)
   if (showAura) {
     ctx.save();
-    const auraR = tier === 'owner' ? radius + 28 : tier === 'high' ? radius + 22 : radius + 16;
+    const auraR = tier === 'owner' ? radius + 28 : (tier === 'high' || CUSTOM_SHOP_FRAMES.has(tier)) ? radius + 22 : radius + 16;
     const auraGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.82, centerX, centerY, auraR);
     if (tier === 'owner') {
       auraGrad.addColorStop(0, 'rgba(244, 63, 94, 0.58)');
       auraGrad.addColorStop(0.45, 'rgba(251, 191, 36, 0.36)');
       auraGrad.addColorStop(0.78, 'rgba(236, 72, 153, 0.16)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else if (tier === 'jade_lotus') {
+      auraGrad.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
+      auraGrad.addColorStop(0.55, 'rgba(52, 211, 153, 0.22)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else if (tier === 'amethyst_celestial') {
+      auraGrad.addColorStop(0, 'rgba(192, 132, 252, 0.48)');
+      auraGrad.addColorStop(0.55, 'rgba(139, 92, 246, 0.22)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else if (tier === 'crimson_phoenix') {
+      auraGrad.addColorStop(0, 'rgba(239, 68, 68, 0.5)');
+      auraGrad.addColorStop(0.55, 'rgba(245, 158, 11, 0.24)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else if (tier === 'frost_crystal') {
+      auraGrad.addColorStop(0, 'rgba(34, 211, 238, 0.46)');
+      auraGrad.addColorStop(0.55, 'rgba(59, 130, 246, 0.22)');
       auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else if (tier === 'high') {
       auraGrad.addColorStop(0, 'rgba(168, 85, 247, 0.44)');
@@ -519,6 +543,40 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       const sx = centerX + outerR * Math.cos(ang);
       const sy = centerY + outerR * Math.sin(ang);
       drawStarSparkle(ctx, sx, sy, 3.2, '#fef08a', '#f43f5e');
+    }
+  } else if (CUSTOM_SHOP_FRAMES.has(tier)) {
+    const shopThemeMap = {
+      jade_lotus: { c1: '#d1fae5', c2: '#10b981', c3: '#059669', orbit: 'rgba(52, 211, 153, 0.55)', glow: 'rgba(16, 185, 129, 0.72)', gemCore: '#ecfdf5', gemGlow: '#34d399' },
+      amethyst_celestial: { c1: '#f3e8ff', c2: '#a855f7', c3: '#6366f1', orbit: 'rgba(192, 132, 252, 0.55)', glow: 'rgba(168, 85, 247, 0.72)', gemCore: '#faf5ff', gemGlow: '#c084fc' },
+      crimson_phoenix: { c1: '#fef3c7', c2: '#f97316', c3: '#dc2626', orbit: 'rgba(251, 146, 60, 0.6)', glow: 'rgba(239, 68, 68, 0.75)', gemCore: '#fffbeb', gemGlow: '#f59e0b' },
+      frost_crystal: { c1: '#ecfeff', c2: '#06b6d4', c3: '#3b82f6', orbit: 'rgba(56, 189, 248, 0.55)', glow: 'rgba(34, 211, 238, 0.72)', gemCore: '#f0f9ff', gemGlow: '#38bdf8' },
+    };
+    const th = shopThemeMap[tier];
+    const outerR = radius + 5.2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
+    ctx.strokeStyle = th.orbit;
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    const mainR = radius + 1.6;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
+    const sGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
+    sGrad.addColorStop(0, th.c1);
+    sGrad.addColorStop(0.45, th.c2);
+    sGrad.addColorStop(1, th.c3);
+    ctx.strokeStyle = sGrad;
+    ctx.lineWidth = 3.6;
+    ctx.shadowColor = th.glow;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    for (const ang of [-Math.PI / 2, -Math.PI * 0.78, -Math.PI * 0.22, Math.PI, 0]) {
+      const gx = centerX + mainR * Math.cos(ang);
+      const gy = centerY + mainR * Math.sin(ang);
+      drawStarSparkle(ctx, gx, gy, ang === -Math.PI / 2 ? 4.4 : 3.0, th.gemCore, th.gemGlow);
     }
   } else if (tier === 'high') {
     // --- VIỀN CẢNH GIỚI CAO (KIM ĐAN -> ĐẠI THỪA): TỬ KIM / HUYỀN TINH ---

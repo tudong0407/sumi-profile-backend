@@ -309,8 +309,17 @@ export async function renderRankCard(data) {
   drawRoundRect(ctx, metaBoxX, marryY, metaBoxW, metaBoxH, 7);
   ctx.fillStyle = 'rgba(23, 17, 43, 0.68)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
-  ctx.lineWidth = 1;
+  const ringBorderKey = String(data.marry_ring_id || profile.married?.ring_id || '').toLowerCase();
+  ctx.strokeStyle = profile.married
+    ? (ringBorderKey.includes('mythic')
+      ? 'rgba(251, 191, 36, 0.55)'
+      : ringBorderKey.includes('epic')
+        ? 'rgba(192, 132, 252, 0.5)'
+        : ringBorderKey.includes('rare')
+          ? 'rgba(96, 165, 250, 0.45)'
+          : 'rgba(255, 255, 255, 0.25)')
+    : 'rgba(255, 255, 255, 0.14)';
+  ctx.lineWidth = profile.married && ringBorderKey.includes('mythic') ? 1.3 : 1;
   ctx.stroke();
 
   const marryLblW = drawIconText(ctx, icoRing, 'Tiên Lữ: ', metaBoxX + 12, marryY + metaBoxH / 2, {
@@ -324,7 +333,19 @@ export async function renderRankCard(data) {
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
     const cleanSpouse = stripLeadingEmojis(String(profile.married.username || '')).replace(/[💍]+/g, '').trim() || profile.married.username;
-    marryStr = `Đã kết hôn cùng ${cleanSpouse}`;
+    let dateFmt = profile.married.date_formatted || '';
+    if (!dateFmt && profile.married.date) {
+      const dt = new Date(profile.married.date);
+      if (!Number.isNaN(dt.getTime())) {
+        const vn = new Date(dt.getTime() + 7 * 3600 * 1000);
+        dateFmt = `${String(vn.getUTCDate()).padStart(2, '0')}/${String(vn.getUTCMonth() + 1).padStart(2, '0')}/${vn.getUTCFullYear()}`;
+      }
+    }
+    const daysNum = Number(profile.married.days);
+    const daysText = Number.isFinite(daysNum) && profile.married.date
+      ? ` (${daysNum} ngày)`
+      : (profile.married.date ? ` (${Math.max(0, Math.floor((Date.now() - new Date(profile.married.date).getTime()) / 86400000))} ngày)` : '');
+    marryStr = dateFmt ? `${cleanSpouse} • ${dateFmt}${daysText}` : `Đã kết hôn cùng ${cleanSpouse}`;
   }
   drawAutoFitSingleLineText(ctx, marryStr, marryValX, marryY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - marryValX, {
     maxFont: 12,

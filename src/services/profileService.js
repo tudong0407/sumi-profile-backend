@@ -6,6 +6,7 @@ import {
   createStarterPetObject,
   formatRarityLabel,
 } from '../data/catalog.js';
+import { computeMarriageBuffs } from './marryService.js';
 
 export const ROLE_PERKS_MAP = {
   '1473419957655175169': '⚔️ Trảm Quyết Tối Thượng',
@@ -140,9 +141,17 @@ export function getFuyumiProfileMock() {
       clan_level: 5,
       is_leader: true,
     },
+    marry_ring_id: 'ring_mythic',
     married: {
       user_id: '511187329889861651',
       username: 'Ngài_Ấy 💍',
+      ring_id: 'ring_mythic',
+      ring_name: 'Cửu Vĩ Vĩnh Kết Thần Giới',
+      ring_rarity: 'Thần Thoại',
+      days: 365,
+      streak_tier: 'Thiên Trường Địa Cửu',
+      exp_bonus_pct: 35,
+      power_bonus_pct: 35,
       status: 'Đã kết hôn',
     },
     pet: {
@@ -580,6 +589,26 @@ export async function getProfileData(userId, overrides = {}) {
           }
         }
 
+        // Ghép married data & Buff Tiên Lữ
+        let marriedData = null;
+        if (user.marry_user_id) {
+          const mBuffs = computeMarriageBuffs(user.marry_ring_id || 'ring_common', user.marry_date);
+          marriedData = {
+            user_id: user.marry_user_id,
+            username: user.marry_username || `ID: ${user.marry_user_id}`,
+            date: user.marry_date,
+            date_formatted: mBuffs.date_formatted,
+            ring_id: mBuffs.ring_id,
+            ring_name: mBuffs.ring_name,
+            ring_rarity: mBuffs.ring_rarity,
+            days: mBuffs.married_days,
+            streak_tier: mBuffs.streak_tier,
+            exp_bonus_pct: mBuffs.total_exp_bonus_pct,
+            power_bonus_pct: mBuffs.total_power_bonus_pct,
+            is_anniversary_day: mBuffs.is_anniversary_day,
+          };
+        }
+
         if (pet) {
           const catalogPet = PET_BY_TYPE[pet.pet_type] || null;
           const baseAtk = Number(pet.atk) || 0;
@@ -590,6 +619,9 @@ export async function getProfileData(userId, overrides = {}) {
           const finalSpd = baseSpd + bonusSpd;
           const basePower = Number(pet.power_score) || (baseAtk * 3 + baseDef * 2 + baseSpd * 2 + (pet.level || 1) * 50);
           const bonusPower = (bonusAtk * 3) + (bonusDef * 2) + (bonusSpd * 2) + Math.floor(bonusHp * 0.5);
+          const rawTotalPower = basePower + bonusPower;
+          const couplePowerPct = marriedData?.power_bonus_pct || 0;
+          const couplePowerBonus = couplePowerPct > 0 ? Math.round(rawTotalPower * (couplePowerPct / 100)) : 0;
 
           petData = {
             name: pet.pet_name,
@@ -604,7 +636,8 @@ export async function getProfileData(userId, overrides = {}) {
             atk: finalAtk,
             def: finalDef,
             spd: finalSpd,
-            power: basePower + bonusPower,
+            power: rawTotalPower + couplePowerBonus,
+            couple_power_bonus_pct: couplePowerPct,
             base_atk: baseAtk,
             base_def: baseDef,
             base_spd: baseSpd,
@@ -621,7 +654,7 @@ export async function getProfileData(userId, overrides = {}) {
           petData.equipment = equipment;
         }
 
-        // Lấy Equipped Roles
+        // Lấy Equipped Roles (bỏ qua role thuê tạm đã hết hạn)
         const { data: roles } = await supabase
           .from('user_roles')
           .select('*')
@@ -629,23 +662,15 @@ export async function getProfileData(userId, overrides = {}) {
           .eq('is_equipped', true)
           .order('equipped_slot', { ascending: true });
 
-        const equippedRoles = (roles || []).map(r => ({
+        const nowDate = new Date();
+        const validRoles = (roles || []).filter((r) => r.is_permanent || !r.expires_at || new Date(r.expires_at) > nowDate);
+        const equippedRoles = validRoles.map(r => ({
           slot: r.equipped_slot,
           role_id: r.role_id,
           name: r.role_name,
           perk: r.role_perk || getRolePerkByName(r.role_name, r.role_id),
           rarity: r.is_permanent ? 'mythic' : 'rare',
         }));
-
-        // Ghép married data
-        let marriedData = null;
-        if (user.marry_user_id) {
-          marriedData = {
-            user_id: user.marry_user_id,
-            username: user.marry_username || `ID: ${user.marry_user_id}`,
-            date: user.marry_date,
-          };
-        }
 
         baseProfile = {
           user_id: user.user_id,
@@ -663,6 +688,7 @@ export async function getProfileData(userId, overrides = {}) {
           linh_thach: Number(user.linh_thach) || 0,
           max_role_slots: Number(user.max_role_slots) || 1,
           streak: Number(user.streak) || 0,
+          marry_ring_id: marriedData?.ring_id || user.marry_ring_id || null,
           clan: clanData,
           married: marriedData,
           pet: petData,

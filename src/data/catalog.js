@@ -212,6 +212,34 @@ export const MARRY_RINGS = [
 
 export const MARRY_RING_BY_ID = Object.fromEntries(MARRY_RINGS.map((r) => [r.item_id, r]));
 
+export const MARRY_RING_RANK = {
+  ring_common: 1,
+  ring_rare: 2,
+  ring_epic: 3,
+  ring_mythic: 4,
+};
+
+/**
+ * Giá bán thẳng trong /shop cho Linh Thú & Pháp Bảo bậc Phàm Phẩm / Linh Phẩm
+ * (Loại trừ Cửu Vĩ Hồng Hồ, Tiên Phẩm & Thần Thoại độc quyền Gacha /roll)
+ */
+export const SHOP_PET_PRICES = { common: 300, rare: 900 };
+export const SHOP_EQUIPMENT_PRICES = { common: 250, rare: 750 };
+
+export const SHOP_PETS = PET_CATALOG
+  .filter((p) => !p.is_exclusive_fuyumi && (p.rarity_key === 'common' || p.rarity_key === 'rare'))
+  .map((p) => ({
+    ...p,
+    price: SHOP_PET_PRICES[p.rarity_key] || 300,
+  }));
+
+export const SHOP_EQUIPMENT = EQUIPMENT_CATALOG
+  .filter((it) => it.rarity_key === 'common' || it.rarity_key === 'rare')
+  .map((it) => ({
+    ...it,
+    price: SHOP_EQUIPMENT_PRICES[it.rarity_key] || 250,
+  }));
+
 /**
  * Vật phẩm tiêu hao / nâng cấp bán thẳng trong /shop
  */
@@ -222,6 +250,47 @@ export const SHOP_CONSUMABLES = [
   { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: em('su_title_card'), description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
   { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản', category: 'consumable', price: 800, icon: em('su_frame_token'), description: 'Mở khóa khung viền Avatar đặc biệt trên /profile & /rank.' },
 ];
+
+export const SHOP_CONSUMABLE_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
+
+/**
+ * Khung viền Avatar có thể mở khóa qua Lệnh Bài Khung Viền Độc Bản
+ */
+export const AVATAR_FRAMES = [
+  { frame_id: 'default', name: 'Khung Mặc Định (Theo Cảnh Giới)', token_required: false, description: 'Tự động nâng cấp khung theo cảnh giới tu luyện.' },
+  { frame_id: 'jade_lotus', name: 'Ngọc Bích Liên Hoa', token_required: true, description: 'Viền ngọc bích phát sáng dịu kèm đài hoa sen thanh khiết.' },
+  { frame_id: 'amethyst_celestial', name: 'Tử Tinh Huyền Nguyệt', token_required: true, description: 'Viền tử tinh tím thẫm điểm xuyết tinh tú huyền ảo.' },
+  { frame_id: 'crimson_phoenix', name: 'Phượng Hoàng Xích Diệm', token_required: true, description: 'Viền xích diệm rực cháy ánh lửa phượng hoàng vàng cam.' },
+  { frame_id: 'frost_crystal', name: 'Hàn Băng Lưu Ly', token_required: true, description: 'Viền băng tinh pha lê xanh ngọc lạnh lẽo sắc bén.' },
+];
+
+export const AVATAR_FRAME_BY_ID = Object.fromEntries(AVATAR_FRAMES.map((f) => [f.frame_id, f]));
+
+/**
+ * Cấu hình Hệ Thống Gia Tộc (/giatoc) & Clan Wars 24H
+ */
+export const CLAN_CREATE_MIN_LEVEL = 20;
+export const CLAN_CREATE_COST = 1000;
+export const CLAN_WAR_MIN_BET = 500;
+export const CLAN_WAR_DURATION_HOURS = 24;
+
+export const CLAN_LEVEL_CONFIG = [
+  { level: 1, maxMembers: 10, upgradeCost: 2000, expBonusPct: 2, ltBonusPct: 2 },
+  { level: 2, maxMembers: 15, upgradeCost: 4000, expBonusPct: 4, ltBonusPct: 4 },
+  { level: 3, maxMembers: 20, upgradeCost: 8000, expBonusPct: 6, ltBonusPct: 6 },
+  { level: 4, maxMembers: 25, upgradeCost: 14000, expBonusPct: 8, ltBonusPct: 8 },
+  { level: 5, maxMembers: 30, upgradeCost: 22000, expBonusPct: 10, ltBonusPct: 10 },
+  { level: 6, maxMembers: 34, upgradeCost: 32000, expBonusPct: 12, ltBonusPct: 12 },
+  { level: 7, maxMembers: 38, upgradeCost: 45000, expBonusPct: 14, ltBonusPct: 14 },
+  { level: 8, maxMembers: 42, upgradeCost: 60000, expBonusPct: 16, ltBonusPct: 16 },
+  { level: 9, maxMembers: 46, upgradeCost: 80000, expBonusPct: 18, ltBonusPct: 18 },
+  { level: 10, maxMembers: 50, upgradeCost: null, expBonusPct: 20, ltBonusPct: 20 },
+];
+
+export function getClanLevelConfig(level) {
+  const lvl = Math.min(10, Math.max(1, Number(level) || 1));
+  return CLAN_LEVEL_CONFIG.find((c) => c.level === lvl) || CLAN_LEVEL_CONFIG[0];
+}
 
 /**
  * Role Quyền Năng nhóm tiện ích / cấp thấp bán thẳng trong /shop (7 ngày / 30 ngày / Vĩnh viễn)
@@ -237,6 +306,8 @@ export const SHOP_ROLE_PACKAGES = [
   { role_id: '1573186087088554085', name: '« Linh Hồn Tu Luyện »', perk: `${em('su_level_up')} Buff +15% EXP Solo`, prices: { '7d': 400, '30d': 1200, permanent: 4000 } },
   { role_id: '1573186091094245416', name: '« Tài Vận Hanh Thông »', perk: `${em('su_linhthach')} Buff +20% Linh Thạch`, prices: { '7d': 450, '30d': 1400, permanent: 4500 } },
 ];
+
+export const SHOP_ROLE_BY_ID = Object.fromEntries(SHOP_ROLE_PACKAGES.map((r) => [r.role_id, r]));
 
 /**
  * Danh mục Background Profile & Namecard (/rank) — 15 Background AI 2:1 + 5 Background Pinterest

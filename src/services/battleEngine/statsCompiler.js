@@ -72,6 +72,15 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalSpd = Number(pet.base_spd) + bonusSpd;
   }
 
+  // Buff Chiến Lực đôi từ Tiên Lữ (/marry)
+  const couplePowerPct = Number(profile?.married?.power_bonus_pct) || 0;
+  if (couplePowerPct > 0) {
+    const coupleMult = 1 + (couplePowerPct / 100);
+    finalAtk = Math.round(finalAtk * coupleMult);
+    finalDef = Math.round(finalDef * coupleMult);
+    finalSpd = Math.round(finalSpd * coupleMult);
+  }
+
   // Tính HP chiến đấu chuẩn: (Level * 1000) + (FinalDef * 5) + BonusHp
   const maxHp = Math.max(500, (level * 1000) + (finalDef * 5) + bonusHp);
 

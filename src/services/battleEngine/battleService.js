@@ -3,6 +3,8 @@ import { compileCombatant } from './statsCompiler.js';
 import { getElementalAdvantage } from './elementalMatrix.js';
 import { PUBLIC_BASE_URL } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
+import { supabase } from '../../config/supabase.js';
+import { recordClanWarScore } from '../clanService.js';
 import {
   triggerBattleStart,
   triggerTurnStart,
@@ -356,5 +358,32 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   };
 
   cacheBattleReport(battleId, finalResult);
+
+  // Cộng điểm Bang Chiến 24H nếu người thắng thuộc Gia Tộc đang tham chiến
+  if (supabase && /^[0-9]{17,20}$/.test(String(winner.id || ''))) {
+    try {
+      const ids = /^[0-9]{17,20}$/.test(String(loser.id || '')) ? [winner.id, loser.id] : [winner.id];
+      const { data: clanRows } = await supabase.from('users').select('user_id, clan_id').in('user_id', ids);
+      const wClanId = clanRows?.find((r) => r.user_id === winner.id)?.clan_id || null;
+      const lClanId = clanRows?.find((r) => r.user_id === loser.id)?.clan_id || null;
+      if (wClanId) {
+        let warPoints = 500;
+        if (lClanId && lClanId !== wClanId) {
+          const { data: directWar } = await supabase
+            .from('clan_wars')
+            .select('war_id')
+            .eq('status', 'active')
+            .or(`and(challenger_clan_id.eq.${wClanId},target_clan_id.eq.${lClanId}),and(challenger_clan_id.eq.${lClanId},target_clan_id.eq.${wClanId})`)
+            .limit(1)
+            .maybeSingle();
+          if (directWar) warPoints = 1000;
+        }
+        await recordClanWarScore(wClanId, warPoints);
+      }
+    } catch {
+      // non-blocking
+    }
+  }
+
   return finalResult;
 }

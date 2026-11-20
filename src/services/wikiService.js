@@ -67,7 +67,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Lệnh Cốt Lõi',
-        content: '• /profile [user]: Thẻ hồ sơ Full HD+ (2000×1000) — Cảnh giới, Pet, 3 Slot Pháp Bảo, Role Quyền Năng.\n• /rank [user]: Thẻ tiến độ cấp độ Full HD+ (2000×410).\n• /battle [doi_thu]: Thách đấu Linh Thú 1v1, trả trực tiếp Ảnh Chiến Báo Full HD+.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
+        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới Full HD+.\n• /battle: Thách đấu Linh Thú 1v1 bằng Ảnh Chiến Báo.\n• /daily, /doiqua, /roll, /shop: Kinh tế Linh Thạch, Gacha & Cửa Hàng Tiên Giới.\n• /inv, /equip, /unequip, /linhthu: Túi trữ vật, Pháp Bảo, Role, Ảnh Nền, Khung & Pet.\n• /marry & /divorce: Hệ thống Tiên Lữ (4 cấp Nhẫn + Streak kỷ niệm).\n• /giatoc: Thành lập, nâng cấp Gia Tộc Lv.1–10 & Bang Chiến 24H.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
       },
     ],
     fields: [
@@ -77,8 +77,8 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Cốt Lõi`,
-        value: '• `/profile [user]` — Thẻ hồ sơ Full HD+ (`2000×1000`).\n• `/rank [user]` — Thẻ cấp độ Mini (`2000×410`).\n• `/battle [doi_thu]` — Đấu trường 1v1 bằng Ảnh Chiến Báo.\n• `/wiki` — Toàn thư hệ thống tu tiên SuMi Family.',
+        name: `${em('su_pin_sigil')} Hệ Thống Lệnh`,
+        value: '• `/profile` • `/rank` • `/battle` — Hồ sơ Full HD+ & Đấu Trường 1v1.\n• `/daily` • `/doiqua` • `/roll` • `/shop` — Linh Thạch, Gacha & Cửa Hàng.\n• `/inv` • `/equip` • `/unequip` • `/linhthu` — Túi Đồ, Loadout & Linh Thú.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
         inline: false,
       },
     ],
@@ -234,33 +234,42 @@ export const WIKI_CATEGORIES = {
 
   economy: {
     id: 'economy',
-    title: `${em('su_linhthach')} Kinh Tế Linh Thạch & Gia Tộc`,
+    title: `${em('su_linhthach')} Kinh Tế, Tiên Lữ & Gia Tộc`,
     icon: em('su_linhthach'),
-    description: 'Tiền tệ Linh Thạch, nguồn thu nhập và hệ thống Gia Tộc / Bang Chiến 24H.',
+    description: 'Kinh tế Linh Thạch, Cửa Hàng /shop, Tiên Lữ /marry và Hệ thống Gia Tộc /giatoc.',
     image_url: '',
     sections: [
       {
-        heading: '1. Tiền Tệ Linh Thạch',
-        content: '• Công dụng: Quay gacha Linh Thú, rèn 45 Pháp Bảo Loadout, nâng sao Pet và cống hiến ngân khố Gia Tộc.\n• Buff Role: « Tài Vận Hanh Thông » (+20% Linh Thạch), « Sáng Thế Thần Quân » (×2.5 Linh Thạch).',
+        heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop)',
+        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 Linh Thạch/lượt (450/10 lượt) săn Pet Tiên/Thần Thoại & 9 Pháp Bảo Độc Nhất.\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 9 Role (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.',
       },
       {
-        heading: '2. Gia Tộc & Clan Wars 24H',
-        content: '• Gia Tộc cấp 1–10, quy mô 10–50 thành viên.\n• Clan Wars 24H: Hai gia tộc đặt cược Linh Thạch và thi đấu tổng điểm chiến lực trong 24 giờ.',
+        heading: '2. Tiên Lữ (/marry, /divorce)',
+        content: '• 4 Cấp Nhẫn: Phàm (+5%) -> Linh (+10%) -> Tiên (+15%) -> Thần Thoại (+20% EXP & Chiến Lực đôi).\n• Streak Kết Hôn (7d/30d/100d/180d/365d+): Tăng thêm +2%..+25% EXP & Chiến Lực đôi (+10% EXP Ngày Kỷ Niệm).',
+      },
+      {
+        heading: '3. Gia Tộc (/giatoc) & Clan Wars 24H',
+        content: '• Thành lập từ Lv.20 + 1.000 Linh Thạch.\n• Nâng cấp Lv.1–10: Mở rộng 10 -> 50 thành viên, buff +2%..+20% EXP & Daily Linh Thạch.\n• Clan Wars 24H: Đặt cược từ 500 Linh Thạch từ ngân khố, tích điểm qua Chat/Voice EXP & thắng /battle.',
       },
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch`,
-        value: '• Dùng để triệu hồi Linh Thú, rèn Pháp Bảo, nâng sao và đóng góp Gia Tộc.\n• **Buff**: `Tài Vận Hanh Thông` (+20%) • `Sáng Thế Thần Quân` (×2.5).',
+        name: `${em('su_linhthach')} Linh Thạch & Cửa Hàng (/shop)`,
+        value: '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT`).\n• `/shop`: Bán thẳng Nhẫn Cưới, Pet/Pháp Bảo Phàm & Linh, Role 7d/30d/Vĩnh Viễn, Background & Vé/Đá.\n• **Buff**: `Tài Vận Hanh Thông` (`+20%`) • `Sáng Thế Thần Quân` (`×2.5`).',
         inline: false,
       },
       {
-        name: `${em('su_clan_castle')} Gia Tộc & Clan Wars 24H`,
-        value: '• Quy mô cấp 1–10 (`10–50` thành viên).\n• Gia tộc tiêu biểu: **Thiên Hồ Thần Tộc (`TH`)**.\n• **Clan Wars 24H**: Đặt cược Linh Thạch, tranh đoạt ngân khố trong 24 giờ.',
+        name: `${em('su_ring_thanthoai')} Tiên Lữ Kết Hôn (/marry • /divorce)`,
+        value: '• **4 Cấp Nhẫn**: Phàm (`+5%`) → Linh (`+10%`) → Tiên (`+15%`) → Thần Thoại (`+20%` EXP & Chiến Lực đôi).\n• **Streak Ngày Cưới**: `7d (+2%)` → `30d (+5%)` → `100d (+8%)` → `180d (+12%)` → `365d+ (+15%..+25%)` & `+10% EXP` đúng Ngày Kỷ Niệm.',
+        inline: false,
+      },
+      {
+        name: `${em('su_clan_castle')} Gia Tộc & Clan Wars 24H (/giatoc)`,
+        value: '• Điều kiện lập: `Lv.20+` & `1.000 Linh Thạch` • Quy mô `Lv.1–10` (`10–50` thành viên).\n• Buff thành viên: `+2%` đến `+20% EXP` & Daily Linh Thạch.\n• **Clan Wars 24H**: Đặt cược từ `500` Linh Thạch từ ngân khố, tranh tài 24 giờ thắng nhận trọn `×2` tiền cược + `5.000 EXP Tộc`.',
         inline: false,
       },
     ],
-    content: 'Linh Thạch là đơn vị tài nguyên cốt lõi để cường hóa Linh Thú, trang bị Pháp Bảo và phát triển Gia Tộc tại SuMi Family.',
+    content: 'Hệ thống Kinh Tế Linh Thạch, Tiên Lữ Kết Hôn và Gia Tộc Chiến 24H liên kết chặt chẽ giúp cộng đồng tu tiên SuMi Family phát triển bền vững.',
   },
 };
 

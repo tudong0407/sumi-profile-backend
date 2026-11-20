@@ -14,6 +14,7 @@ import {
   PET_BY_TYPE,
   LEVEL_ROLE_MILESTONES,
   MYTHIC_UNIQUE_ITEM_IDS,
+  getClanLevelConfig,
 } from '../data/catalog.js';
 import {
   em,
@@ -148,7 +149,12 @@ export async function claimDaily(userId, options = {}) {
     const cycleDay = ((newStreak - 1) % 7) + 1;
     const baseReward = randomInt(DAILY_BASE_MIN, DAILY_BASE_MAX, rng);
     const streakBonusPct = cycleDay === 7 ? 0.5 : (cycleDay - 1) * 0.05;
-    const reward = Math.round(baseReward * (1 + streakBonusPct));
+    let clanBonusPct = 0;
+    if (user.clan_id) {
+      const { data: clanRow } = await supabase.from('clans').select('clan_level').eq('clan_id', user.clan_id).maybeSingle();
+      if (clanRow) clanBonusPct = getClanLevelConfig(clanRow.clan_level).ltBonusPct;
+    }
+    const reward = Math.round(baseReward * (1 + streakBonusPct + clanBonusPct / 100));
     const newBalance = Number(user.linh_thach || 0) + reward;
 
     const { error } = await supabase

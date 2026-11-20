@@ -9,8 +9,11 @@ import {
   FUYUMI_USER_ID,
   LEVEL_ROLE_MILESTONES,
   STARTER_PET,
+  getClanLevelConfig,
 } from '../data/catalog.js';
 import { em, realmEmoji } from '../config/emojiHelper.js';
+import { computeMarriageBuffs } from './marryService.js';
+import { recordClanWarScore } from './clanService.js';
 import {
   sanitizeUserId,
   getRealmByLevel,
@@ -124,7 +127,7 @@ function computeLevelProgression(startLevel, startExp, gainedExp) {
   };
 }
 
-async function computeExpMultiplier(userId, roleIdSet) {
+async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new Date()) {
   let bonus = 0;
   const seen = new Set();
 
@@ -151,6 +154,28 @@ async function computeExpMultiplier(userId, roleIdSet) {
       }
     } catch {
       // ignore role buff lookup error
+    }
+  }
+
+  // Buff Tiên Lữ (/marry): Nhẫn Cưới + Streak + Ngày Kỷ Niệm
+  if (userRow?.marry_user_id) {
+    const mBuffs = computeMarriageBuffs(userRow.marry_ring_id || 'ring_common', userRow.marry_date, now);
+    bonus += (mBuffs.total_exp_bonus_pct || 0) / 100;
+  }
+
+  // Buff Gia Tộc (/giatoc) theo Clan Level 1..10
+  if (userRow?.clan_id && supabase) {
+    try {
+      const { data: clan } = await supabase
+        .from('clans')
+        .select('clan_level')
+        .eq('clan_id', userRow.clan_id)
+        .maybeSingle();
+      if (clan) {
+        bonus += getClanLevelConfig(clan.clan_level).expBonusPct / 100;
+      }
+    } catch {
+      // ignore clan buff lookup error
     }
   }
 
@@ -285,7 +310,7 @@ export async function grantChatExp(params = {}, opts = {}) {
       }
     }
 
-    const multiplier = await computeExpMultiplier(cleanId, roleIdSet);
+    const multiplier = await computeExpMultiplier(cleanId, roleIdSet, user, new Date(nowMs));
     const rawGain = randomInt(CHAT_EXP_MIN, CHAT_EXP_MAX, rng);
     const expGained = Math.max(1, Math.round(rawGain * multiplier));
 
@@ -302,6 +327,10 @@ export async function grantChatExp(params = {}, opts = {}) {
       },
       persisted
     );
+
+    if (user.clan_id && expGained > 0) {
+      await recordClanWarScore(user.clan_id, expGained);
+    }
 
     return {
       success: true,
@@ -421,7 +450,7 @@ export async function handleVoiceExp(params = {}, opts = {}) {
     const blocks = Math.floor(elapsedMinutes / VOICE_BLOCK_MINUTES);
 
     let expGained = 0;
-    const multiplier = blocks > 0 ? await computeExpMultiplier(cleanId, roleIdSet) : 1;
+    const multiplier = blocks > 0 ? await computeExpMultiplier(cleanId, roleIdSet, user, new Date(nowMs)) : 1;
     if (blocks > 0) {
       let rawTotal = 0;
       for (let i = 0; i < blocks; i++) {
@@ -459,6 +488,10 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       },
       persisted
     );
+
+    if (user.clan_id && expGained > 0) {
+      await recordClanWarScore(user.clan_id, expGained);
+    }
 
     return {
       success: true,

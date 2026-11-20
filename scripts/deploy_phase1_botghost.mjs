@@ -226,10 +226,10 @@ export function buildInvCmd() {
 
 export function buildEquipCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('equip', 'Trang bị Pháp Bảo, Role Quyền Năng hoặc Ảnh Nền vào hồ sơ', { ephemeral: false });
+  gb.rootSlash('equip', 'Trang bị Pháp Bảo, Role Quyền Năng, Ảnh Nền, Khung Viền hoặc Danh Hiệu', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('loai', 'string', 'Loại muốn trang bị', { required: true, choices: ['item', 'role', 'background'], x: 420, y: 0 });
-  gb.option('ma_id', 'string', 'Mã ID (vd: weapon_common_1, role_id, hoặc bg_pin_1_starry_cloud.jpg)', { required: true, x: 700, y: 0 });
+  gb.option('loai', 'string', 'Loại muốn trang bị', { required: true, choices: ['item', 'role', 'background', 'frame', 'title'], x: 420, y: 0 });
+  gb.option('ma_id', 'string', 'Mã ID / Tên Danh Hiệu (vd: weapon_common_1, role_id, bg_pin_1_starry_cloud.jpg, jade_lotus)', { required: true, x: 700, y: 0 });
 
   embedMsg(gb, 'eq_ack', {
     title: `${em('su_crossed_swords')} Đang trang bị...`,
@@ -278,9 +278,9 @@ export function buildEquipCmd() {
 
 export function buildUnequipCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('unequip', 'Tháo Pháp Bảo, Role Quyền Năng hoặc khôi phục Ảnh Nền mặc định', { ephemeral: false });
+  gb.rootSlash('unequip', 'Tháo Pháp Bảo, Role Quyền Năng, Ảnh Nền hoặc Khung Viền về mặc định', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('loai', 'string', 'Loại muốn tháo', { required: true, choices: ['item', 'role', 'background'], x: 420, y: 0 });
+  gb.option('loai', 'string', 'Loại muốn tháo', { required: true, choices: ['item', 'role', 'background', 'frame'], x: 420, y: 0 });
   gb.option('ma_id', 'string', 'Mã ID hoặc tên slot (vd: weapon, role_id, default)', { required: true, x: 700, y: 0 });
 
   embedMsg(gb, 'uq_ack', {

@@ -162,6 +162,43 @@ CREATE INDEX IF NOT EXISTS idx_user_pets_active ON user_pets(user_id, is_active)
 CREATE INDEX IF NOT EXISTS idx_clan_wars_status ON clan_wars(status);
 
 -- ------------------------------------------------------------------------------
+-- 7b. BẢNG PHASE 2 & PHASE 3 (SHOP_SELECTIONS, MARRY_PROPOSALS, CLAN_JOIN_REQUESTS)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS shop_selections (
+    user_id VARCHAR(32) PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    category VARCHAR(30) NOT NULL,
+    item_id VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS marry_proposals (
+    id BIGSERIAL PRIMARY KEY,
+    proposer_id VARCHAR(32) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    proposer_name VARCHAR(100) NOT NULL,
+    target_id VARCHAR(32) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    target_name VARCHAR(100) NOT NULL,
+    ring_id VARCHAR(50) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','accepted','rejected','expired','cancelled')),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_marry_proposals_target_status ON marry_proposals(target_id, status);
+CREATE INDEX IF NOT EXISTS idx_marry_proposals_proposer_status ON marry_proposals(proposer_id, status);
+
+CREATE TABLE IF NOT EXISTS clan_join_requests (
+    id BIGSERIAL PRIMARY KEY,
+    clan_id VARCHAR(50) NOT NULL REFERENCES clans(clan_id) ON DELETE CASCADE,
+    user_id VARCHAR(32) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    username VARCHAR(100) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','cancelled')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_clan_join_requests_clan_status ON clan_join_requests(clan_id, status);
+
+-- ------------------------------------------------------------------------------
 -- 8. VIEW TỔNG HỢP PROFILE TOÀN DIỆN (V_USER_FULL_PROFILE)
 -- ------------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_user_full_profile AS

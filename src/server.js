@@ -21,6 +21,33 @@ import {
   setActivePet,
   upgradePet,
 } from './services/inventoryService.js';
+import {
+  getShopCatalog,
+  previewShopItem,
+  buyShopItem,
+} from './services/shopService.js';
+import {
+  getMarriageStatus,
+  proposeMarriage,
+  respondMarriage,
+  upgradeMarriageRing,
+  divorceMarriage,
+} from './services/marryService.js';
+import {
+  getClanInfo,
+  getClanLeaderboard,
+  createClan,
+  requestJoinClan,
+  listJoinRequests,
+  respondJoinRequest,
+  leaveClan,
+  kickClanMember,
+  donateToClan,
+  upgradeClan,
+  declareClanWar,
+  respondClanWar,
+  getClanWarStatus,
+} from './services/clanService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { renderBattleCard } from './canvas/battleRenderer.js';
@@ -86,7 +113,7 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '2.0.0',
+    version: '2.2.0',
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
@@ -115,6 +142,27 @@ app.get('/', (req, res) => {
       pet_list: 'GET /api/pet/:userId',
       pet_active: 'POST /api/pet/active',
       pet_upgrade: 'POST /api/pet/upgrade',
+      shop_catalog: 'GET /api/shop/catalog[?category=...]',
+      shop_preview: 'POST /api/shop/preview',
+      shop_buy: 'POST /api/shop/buy',
+      marry_status: 'GET /api/marry/status/:userId',
+      marry_propose: 'POST /api/marry/propose',
+      marry_respond: 'POST /api/marry/respond',
+      marry_upgrade_ring: 'POST /api/marry/upgrade-ring',
+      marry_divorce: 'POST /api/marry/divorce',
+      clan_leaderboard: 'GET /api/clan/leaderboard',
+      clan_info: 'GET /api/clan/info/:userId',
+      clan_create: 'POST /api/clan/create',
+      clan_join: 'POST /api/clan/join',
+      clan_requests: 'GET /api/clan/requests/:userId',
+      clan_approve: 'POST /api/clan/approve',
+      clan_leave: 'POST /api/clan/leave',
+      clan_kick: 'POST /api/clan/kick',
+      clan_donate: 'POST /api/clan/donate',
+      clan_upgrade: 'POST /api/clan/upgrade',
+      clan_war_declare: 'POST /api/clan/war/declare',
+      clan_war_respond: 'POST /api/clan/war/respond',
+      clan_war_status: 'GET /api/clan/war/status/:userId',
       profile_png: 'GET /api/profile/:userId[.png]',
       profile_json: 'GET /api/profile/:userId?format=json',
       profile_render_custom: 'POST /api/profile/render',
@@ -644,6 +692,281 @@ app.post('/api/pet/upgrade', requireBackendApiKey, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/pet/upgrade error:', err);
     return res.status(500).json({ success: false, error: 'PET_UPGRADE_FAILED', message: err.message });
+  }
+});
+
+// ============================================================================
+// PHASE 2: SHOP (/shop) & TIÊN LỮ (/marry, /divorce)
+// ============================================================================
+app.get('/api/shop/catalog', async (req, res) => {
+  try {
+    const result = await getShopCatalog(req.query.category || 'all', {
+      userId: req.query.userId,
+      username: getCleanParam(req.query.username),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/shop/catalog error:', err);
+    return res.status(500).json({ success: false, error: 'SHOP_CATALOG_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/shop/preview', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await previewShopItem(body.userId, body.category, body.itemId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/shop/preview error:', err);
+    return res.status(500).json({ success: false, error: 'SHOP_PREVIEW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/shop/buy', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await buyShopItem(body.userId, {
+      category: body.category,
+      itemId: body.itemId,
+      duration: body.duration,
+      quantity: body.quantity,
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/shop/buy error:', err);
+    return res.status(500).json({ success: false, error: 'SHOP_BUY_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/marry/status/:userId', async (req, res) => {
+  try {
+    const result = await getMarriageStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/marry/status error:', err);
+    return res.status(500).json({ success: false, error: 'MARRY_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/marry/propose', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await proposeMarriage(
+      body.proposerId || body.userId,
+      getCleanParam(body.targetId) || body.targetId,
+      getCleanParam(body.ringId) || 'ring_common',
+      {
+        proposerName: getCleanParam(body.proposerName || body.username),
+        proposerAvatar: getCleanParam(body.proposerAvatar || body.avatarUrl),
+        targetName: getCleanParam(body.targetName),
+        targetAvatar: getCleanParam(body.targetAvatar),
+      },
+    );
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/marry/propose error:', err);
+    return res.status(500).json({ success: false, error: 'MARRY_PROPOSE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/marry/respond', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await respondMarriage(body.responderId || body.userId, body.decision, {
+      proposalId: body.proposalId,
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/marry/respond error:', err);
+    return res.status(500).json({ success: false, error: 'MARRY_RESPOND_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/marry/upgrade-ring', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await upgradeMarriageRing(body.userId, getCleanParam(body.ringId || body.newRingId) || '');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/marry/upgrade-ring error:', err);
+    return res.status(500).json({ success: false, error: 'MARRY_UPGRADE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/marry/divorce', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await divorceMarriage(body.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/marry/divorce error:', err);
+    return res.status(500).json({ success: false, error: 'MARRY_DIVORCE_FAILED', message: err.message });
+  }
+});
+
+// ============================================================================
+// PHASE 3: GIA TỘC (/giatoc) & CLAN WARS 24H
+// ============================================================================
+app.get('/api/clan/leaderboard', async (req, res) => {
+  try {
+    const result = await getClanLeaderboard(req.query.limit || 10);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/leaderboard error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_TOP_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/clan/info/:userId', async (req, res) => {
+  try {
+    const result = await getClanInfo(req.params.userId, getCleanParam(req.query.clan), {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/info error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_INFO_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/create', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await createClan(body.userId, {
+      clanName: getCleanParam(body.clanName),
+      clanTag: getCleanParam(body.clanTag),
+      description: getCleanParam(body.description),
+    }, {
+      username: getCleanParam(body.username),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/create error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_CREATE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/join', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await requestJoinClan(body.userId, getCleanParam(body.clanQuery || body.clanId || body.clanName), {
+      username: getCleanParam(body.username),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/join error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_JOIN_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/clan/requests/:userId', async (req, res) => {
+  try {
+    const result = await listJoinRequests(req.params.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/requests error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_REQUESTS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/approve', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await respondJoinRequest(body.leaderId || body.userId, body.applicantId || body.targetId, body.decision || 'approve');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/approve error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_APPROVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/leave', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await leaveClan(req.body?.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/leave error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_LEAVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/kick', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await kickClanMember(body.leaderId || body.userId, body.targetId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/kick error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_KICK_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/donate', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await donateToClan(body.userId, body.amount);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/donate error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_DONATE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/upgrade', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await upgradeClan(req.body?.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/upgrade error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_UPGRADE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/war/declare', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await declareClanWar(body.leaderId || body.userId, getCleanParam(body.targetClan || body.targetQuery), body.betAmount);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/war/declare error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_WAR_DECLARE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/war/respond', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await respondClanWar(body.leaderId || body.userId, body.decision || 'accept');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/war/respond error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_WAR_RESPOND_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/clan/war/status/:userId', async (req, res) => {
+  try {
+    const result = await getClanWarStatus(req.params.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/war/status error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_WAR_STATUS_FAILED', message: err.message });
   }
 });
 

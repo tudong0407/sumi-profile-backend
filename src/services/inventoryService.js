@@ -12,6 +12,8 @@ import {
   BACKGROUND_BY_ID,
   SHOP_CONSUMABLES,
   MARRY_RING_BY_ID,
+  AVATAR_FRAME_BY_ID,
+  FUYUMI_USER_ID,
 } from '../data/catalog.js';
 import {
   em,
@@ -62,7 +64,22 @@ export async function getInventory(userId, options = {}) {
     icon: itemEmoji(row.item_id, em('su_crossed_swords')),
   }));
 
-  const roles = (rolesRes.data || []).map((r) => ({
+  const now = new Date();
+  const rawRoles = rolesRes.data || [];
+  const expiredEquippedIds = rawRoles
+    .filter((r) => !r.is_permanent && r.expires_at && new Date(r.expires_at) <= now && r.is_equipped)
+    .map((r) => r.id);
+
+  if (expiredEquippedIds.length > 0) {
+    await supabase
+      .from('user_roles')
+      .update({ is_equipped: false, equipped_slot: null })
+      .in('id', expiredEquippedIds);
+  }
+
+  const activeRoles = rawRoles.filter((r) => r.is_permanent || !r.expires_at || new Date(r.expires_at) > now);
+
+  const roles = activeRoles.map((r) => ({
     ...r,
     icon: em('su_realm_star'),
   }));
@@ -70,8 +87,9 @@ export async function getInventory(userId, options = {}) {
   const consumables = (invRes.data || []).map((inv) => {
     const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
     const bgMeta = BACKGROUND_BY_ID[inv.item_id];
-    const icon = cMeta?.icon || (bgMeta ? em('su_frame_token') : em('su_pin_sigil'));
-    const displayName = cMeta?.name || bgMeta?.name || inv.item_id;
+    const frameMeta = inv.item_id.startsWith('frame_') ? AVATAR_FRAME_BY_ID[inv.item_id.slice(6)] : null;
+    const icon = cMeta?.icon || ((bgMeta || frameMeta) ? em('su_frame_token') : em('su_pin_sigil'));
+    const displayName = cMeta?.name || bgMeta?.name || (frameMeta ? `Khung ${frameMeta.name}` : inv.item_id);
     return {
       ...inv,
       icon,
@@ -196,11 +214,19 @@ export async function equipTarget(userId, payload = {}) {
       .select('*')
       .eq('user_id', cleanId);
 
+    const now = new Date();
+    const expiredEquippedIds = (userRoles || [])
+      .filter((r) => !r.is_permanent && r.expires_at && new Date(r.expires_at) <= now && r.is_equipped)
+      .map((r) => r.id);
+    if (expiredEquippedIds.length > 0) {
+      await supabase.from('user_roles').update({ is_equipped: false, equipped_slot: null }).in('id', expiredEquippedIds);
+    }
+
     const targetRole = (userRoles || []).find((r) => r.role_id === targetId || r.role_name === targetId);
     if (!targetRole) {
       return { success: false, status: 404, error: 'ROLE_NOT_OWNED', message: 'Bạn chưa sở hữu Role Quyền Năng này trong túi.' };
     }
-    if (targetRole.expires_at && new Date(targetRole.expires_at) < new Date()) {
+    if (!targetRole.is_permanent && targetRole.expires_at && new Date(targetRole.expires_at) <= now) {
       return { success: false, status: 400, error: 'ROLE_EXPIRED', message: `Role **${targetRole.role_name}** đã hết hạn sử dụng.` };
     }
     if (targetRole.is_equipped) {
@@ -208,7 +234,11 @@ export async function equipTarget(userId, payload = {}) {
     }
 
     const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
-    const usedSlots = new Set((userRoles || []).filter((r) => r.is_equipped && r.equipped_slot).map((r) => Number(r.equipped_slot)));
+    const usedSlots = new Set(
+      (userRoles || [])
+        .filter((r) => r.is_equipped && r.equipped_slot && (r.is_permanent || !r.expires_at || new Date(r.expires_at) > now))
+        .map((r) => Number(r.equipped_slot)),
+    );
     let freeSlot = null;
     for (let s = 1; s <= maxSlots; s += 1) {
       if (!usedSlots.has(s)) { freeSlot = s; break; }
@@ -266,7 +296,126 @@ export async function equipTarget(userId, payload = {}) {
     };
   }
 
-  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại trang bị phải là `item`, `role`, hoặc `background`.' };
+  if (category === 'frame') {
+    const frameKey = targetId.toLowerCase();
+    if (frameKey === 'celestial_fox_gold') {
+      if (cleanId !== FUYUMI_USER_ID) {
+        return { success: false, status: 403, error: 'EXCLUSIVE_FRAME', message: 'Khung viền **Cửu Vĩ Hoàng Kim** là đặc quyền độc tôn của Tiểu thư Fuyumi!' };
+      }
+      await supabase.from('users').update({ avatar_frame: 'celestial_fox_gold', updated_at: new Date().toISOString() }).eq('user_id', cleanId);
+      return { success: true, category: 'frame', avatar_frame: 'celestial_fox_gold', message: `${em('su_frame_token')} Đã trang bị khung viền **Cửu Vĩ Hoàng Kim**!` };
+    }
+
+    const frameMeta = AVATAR_FRAME_BY_ID[frameKey];
+    if (!frameMeta) {
+      const validIds = Object.keys(AVATAR_FRAME_BY_ID).join('`, `');
+      return { success: false, status: 404, error: 'FRAME_NOT_FOUND', message: `Không tìm thấy khung viền '${targetId}'. Mã hợp lệ: \`${validIds}\`.` };
+    }
+
+    if (frameKey === 'default') {
+      await supabase.from('users').update({ avatar_frame: 'default', updated_at: new Date().toISOString() }).eq('user_id', cleanId);
+      return { success: true, category: 'frame', avatar_frame: 'default', message: `${em('su_frame_token')} Đã khôi phục khung viền Avatar mặc định theo cảnh giới.` };
+    }
+
+    const unlockItemId = `frame_${frameKey}`;
+    const { data: unlocked } = await supabase
+      .from('user_inventory')
+      .select('quantity')
+      .eq('user_id', cleanId)
+      .eq('item_id', unlockItemId)
+      .maybeSingle();
+
+    if (!unlocked || Number(unlocked.quantity || 0) < 1) {
+      const { data: tokenRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', 'frame_unlock_token')
+        .maybeSingle();
+
+      if (!tokenRow || Number(tokenRow.quantity || 0) < 1) {
+        return {
+          success: false,
+          status: 403,
+          error: 'FRAME_TOKEN_REQUIRED',
+          message: `Bạn cần **1 Lệnh Bài Khung Viền Độc Bản** (\`frame_unlock_token\`) trong \`/shop\` để mở khóa khung **${frameMeta.name}**!`,
+        };
+      }
+
+      const nowIso = new Date().toISOString();
+      await Promise.all([
+        supabase
+          .from('user_inventory')
+          .update({ quantity: Number(tokenRow.quantity) - 1, updated_at: nowIso })
+          .eq('user_id', cleanId)
+          .eq('item_id', 'frame_unlock_token'),
+        supabase.from('user_inventory').upsert({
+          user_id: cleanId,
+          item_id: unlockItemId,
+          item_category: 'frame_unlock',
+          quantity: 1,
+          updated_at: nowIso,
+        }, { onConflict: 'user_id,item_id' }),
+      ]);
+    }
+
+    await supabase
+      .from('users')
+      .update({ avatar_frame: frameKey, updated_at: new Date().toISOString() })
+      .eq('user_id', cleanId);
+
+    return {
+      success: true,
+      category: 'frame',
+      avatar_frame: frameKey,
+      message: `${em('su_frame_token')} Đã mở khóa và trang bị khung Avatar **${frameMeta.name}**!`,
+    };
+  }
+
+  if (category === 'title') {
+    const cleanTitle = targetId.replace(/[<>`\r\n]/g, '').replace(/\s+/g, ' ').trim();
+    if (cleanTitle.length < 2 || cleanTitle.length > 36) {
+      return { success: false, status: 400, error: 'INVALID_TITLE', message: 'Danh hiệu phải dài từ **2 đến 36 ký tự**.' };
+    }
+
+    const { data: cardRow } = await supabase
+      .from('user_inventory')
+      .select('quantity')
+      .eq('user_id', cleanId)
+      .eq('item_id', 'title_rename_card')
+      .maybeSingle();
+
+    if (!cardRow || Number(cardRow.quantity || 0) < 1) {
+      return {
+        success: false,
+        status: 403,
+        error: 'TITLE_CARD_REQUIRED',
+        message: 'Bạn cần **1 Thẻ Đổi Danh Hiệu Tu Tiên** (`title_rename_card`) trong `/shop` để đổi danh hiệu!',
+      };
+    }
+
+    const nowIso = new Date().toISOString();
+    await Promise.all([
+      supabase
+        .from('user_inventory')
+        .update({ quantity: Number(cardRow.quantity) - 1, updated_at: nowIso })
+        .eq('user_id', cleanId)
+        .eq('item_id', 'title_rename_card'),
+      supabase
+        .from('users')
+        .update({ custom_title: cleanTitle, updated_at: nowIso })
+        .eq('user_id', cleanId),
+    ]);
+
+    return {
+      success: true,
+      category: 'title',
+      custom_title: cleanTitle,
+      message: `${em('su_title_card')} Đã đổi Danh Hiệu Tu Tiên thành **« ${cleanTitle} »**!`,
+    };
+  }
+
+  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại trang bị phải là `item`, `role`, `background`, `frame`, hoặc `title`.' };
 }
 
 export async function unequipTarget(userId, payload = {}) {
@@ -339,7 +488,21 @@ export async function unequipTarget(userId, payload = {}) {
     };
   }
 
-  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại cần tháo phải là `item`, `role`, hoặc `background`.' };
+  if (category === 'frame') {
+    await supabase
+      .from('users')
+      .update({ avatar_frame: 'default', updated_at: new Date().toISOString() })
+      .eq('user_id', cleanId);
+
+    return {
+      success: true,
+      category: 'frame',
+      avatar_frame: 'default',
+      message: `${em('su_frame_token')} Đã tháo khung viền, khôi phục về khung mặc định theo cảnh giới.`,
+    };
+  }
+
+  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại cần tháo phải là `item`, `role`, `background`, hoặc `frame`.' };
 }
 
 export async function setActivePet(userId, petIdentifier) {
