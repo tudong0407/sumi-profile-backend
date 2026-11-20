@@ -418,7 +418,12 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
     const newAtk = Math.round(target.atk + baseMeta.base_atk * 0.15);
     const newDef = Math.round(target.def + baseMeta.base_def * 0.15);
     const newSpd = Math.round(target.spd + baseMeta.base_spd * 0.15);
-    const newPower = newAtk * 3 + newDef * 2 + newSpd * 2 + target.level * 50;
+    const oldPower = Number(target.power_score || 0);
+    const deltaPower = (newAtk - Number(target.atk || 0)) * 3
+      + (newDef - Number(target.def || 0)) * 2
+      + (newSpd - Number(target.spd || 0)) * 2;
+    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + Number(target.level || 1) * 50;
+    const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
 
     await Promise.all([
       supabase.from('user_inventory').update({ quantity: ownedStones - stoneCost }).eq('user_id', cleanId).eq('item_id', 'pet_star_stone'),
@@ -458,7 +463,13 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
   const newAtk = Math.round(target.atk + Math.max(5, baseMeta.base_atk * 0.05));
   const newDef = Math.round(target.def + Math.max(5, baseMeta.base_def * 0.05));
   const newSpd = Math.round(target.spd + Math.max(4, baseMeta.base_spd * 0.05));
-  const newPower = newAtk * 3 + newDef * 2 + newSpd * 2 + nextLvl * 50;
+  const oldPower = Number(target.power_score || 0);
+  const deltaPower = (newAtk - Number(target.atk || 0)) * 3
+    + (newDef - Number(target.def || 0)) * 2
+    + (newSpd - Number(target.spd || 0)) * 2
+    + (nextLvl - currentLvl) * 50;
+  const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + nextLvl * 50;
+  const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
 
   await Promise.all([
     supabase.from('users').update({ linh_thach: currentBal - ltCost }).eq('user_id', cleanId),

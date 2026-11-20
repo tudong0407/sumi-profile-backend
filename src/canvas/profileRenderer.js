@@ -2,7 +2,6 @@ import { createCanvas } from '@napi-rs/canvas';
 import {
   loadImageSafe,
   drawRoundRect,
-  truncateText,
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
   sanitizeText,
@@ -11,6 +10,7 @@ import {
   stripLeadingEmojis,
   drawIconText,
   drawAutoFitSingleLineText,
+  drawAutoFitIconText,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -250,24 +250,31 @@ export async function renderProfileCard(data) {
   // ============================================================================
   const headerX = 195;
 
-  // Tên Người Dùng (Discord Username) - dành chỗ cho cột Meta bên phải (metaBoxX = 515)
+  // Tên Người Dùng (Discord Username) - tự co chữ vừa khít vùng header trước cột Meta (metaBoxX = 515)
   ctx.save();
-  ctx.font = `bold 25px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
   ctx.shadowBlur = 10;
-  ctx.textBaseline = 'top';
-  const nameDisplay = truncateText(ctx, profile.username, 306);
-  ctx.fillText(nameDisplay, headerX, 36);
+  drawAutoFitSingleLineText(ctx, profile.username, headerX, 49, 308, {
+    maxFont: 25,
+    minFont: 13,
+    weight: 'bold',
+    align: 'left',
+    color: '#ffffff',
+  });
   ctx.restore();
 
-  // Danh Hiệu Tiên Chủ / Custom Title Pill
+  // Danh Hiệu Tiên Chủ / Custom Title Pill (tự co cỡ chữ nếu quá dài để không tràn sang cột Meta)
   ctx.save();
   const titleY = 74;
   const titleText = `« ${profile.customTitle} »`;
-  ctx.font = `bold 13px ${FONT_FAMILY}`;
+  let titleFontSize = 13;
+  for (; titleFontSize >= 8.5; titleFontSize -= 0.25) {
+    ctx.font = `bold ${titleFontSize}px ${FONT_FAMILY}`;
+    if (ctx.measureText(titleText).width + 20 <= 308) break;
+  }
+  ctx.font = `bold ${titleFontSize}px ${FONT_FAMILY}`;
   const titleMetrics = ctx.measureText(titleText);
-  const titleW = Math.max(120, titleMetrics.width + 20);
+  const titleW = Math.min(308, Math.max(120, titleMetrics.width + 20));
 
   drawRoundRect(ctx, headerX, titleY, titleW, 25, 8);
   const titleBg = ctx.createLinearGradient(headerX, titleY, headerX + titleW, titleY + 25);
@@ -284,16 +291,21 @@ export async function renderProfileCard(data) {
   ctx.shadowBlur = 5;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(titleText, headerX + titleW / 2, titleY + 13);
+  ctx.fillText(titleText, headerX + titleW / 2, titleY + 13, titleW - 12);
   ctx.restore();
 
   // Cảnh Giới Tu Luyện (Realm)
   ctx.save();
   const realmY = 110;
   const realmText = `Cảnh Giới: ${profile.realm}`;
-  ctx.font = `13px ${FONT_FAMILY}`;
+  let realmFontSize = 13;
+  for (; realmFontSize >= 8.5; realmFontSize -= 0.25) {
+    ctx.font = `${realmFontSize}px ${FONT_FAMILY}`;
+    if (ctx.measureText(realmText).width + 20 <= 308) break;
+  }
+  ctx.font = `${realmFontSize}px ${FONT_FAMILY}`;
   const realmMetrics = ctx.measureText(realmText);
-  const realmW = Math.max(140, realmMetrics.width + 20);
+  const realmW = Math.min(308, Math.max(140, realmMetrics.width + 20));
 
   drawRoundRect(ctx, headerX, realmY, realmW, 25, 8);
   ctx.fillStyle = 'rgba(30, 27, 75, 0.65)';
@@ -305,7 +317,7 @@ export async function renderProfileCard(data) {
   ctx.fillStyle = '#c4b5fd';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(realmText, headerX + realmW / 2, realmY + 13);
+  ctx.fillText(realmText, headerX + realmW / 2, realmY + 13, realmW - 12);
   ctx.restore();
 
   // ============================================================================
@@ -336,16 +348,18 @@ export async function renderProfileCard(data) {
   });
   const clanValX = metaBoxX + 12 + Math.ceil(clanLblW) + 3;
 
-  ctx.font = `12.5px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#ffffff';
-  ctx.textBaseline = 'middle';
   let clanStr = 'Chưa gia nhập bang hội';
   if (profile.clan) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 10 - clanValX);
-  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, clanStr, clanValX, clanY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - clanValX, {
+    maxFont: 12.5,
+    minFont: 7.0,
+    weight: '',
+    align: 'left',
+    color: '#ffffff',
+  });
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
@@ -367,16 +381,18 @@ export async function renderProfileCard(data) {
   });
   const marryValX = metaBoxX + 12 + Math.ceil(marryLblW) + 3;
 
-  ctx.font = `12.5px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#fed7aa';
-  ctx.textBaseline = 'middle';
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
     const cleanSpouse = stripLeadingEmojis(String(profile.married.username || '')).replace(/[💍]+/g, '').trim() || profile.married.username;
     marryStr = `Đã kết hôn cùng ${cleanSpouse}`;
   }
-  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 10 - marryValX);
-  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, marryStr, marryValX, marryY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - marryValX, {
+    maxFont: 12.5,
+    minFont: 7.0,
+    weight: '',
+    align: 'left',
+    color: '#fed7aa',
+  });
   ctx.restore();
 
   // Box 3: Số Dư Linh Thạch (Linh Thach Balance)
@@ -401,13 +417,16 @@ export async function renderProfileCard(data) {
   });
   const stoneValX = metaBoxX + 12 + Math.ceil(stoneLblW) + 3;
 
-  ctx.font = `bold 13.5px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#7dd3fc';
-  ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
   ctx.shadowBlur = 6;
   const stoneStr = `${profile.linhThach.toLocaleString('vi-VN')} Viên`;
-  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 10 - stoneValX), stoneValX, stoneY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, stoneStr, stoneValX, stoneY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - stoneValX, {
+    maxFont: 13.5,
+    minFont: 8.0,
+    weight: 'bold',
+    align: 'left',
+    color: '#7dd3fc',
+  });
   ctx.restore();
 
   // ============================================================================
@@ -571,17 +590,17 @@ export async function renderProfileCard(data) {
     ctx.fillText(rarityText, rarPillX + rarPillW / 2, rarPillY + rarPillH / 2);
     ctx.textAlign = 'left';
 
-    // Tên Linh Thú (PNG mini icon + chữ trắng phát sáng)
+    // Tên Linh Thú (PNG mini icon + chữ trắng phát sáng tự co cỡ chữ, không cắt cụt)
     ctx.save();
-    ctx.font = `bold 15px ${FONT_FAMILY}`;
     ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
     ctx.shadowBlur = 8;
-    const cleanPetName = truncateText(ctx, profile.pet.name, leftTextW - 22);
-    drawIconText(ctx, icoPetMini, cleanPetName, petX + 20, bottomY + 44, {
+    drawAutoFitIconText(ctx, icoPetMini, profile.pet.name, petX + 20, bottomY + 44, leftTextW, {
       iconSize: 18,
       gap: 6,
-      font: `bold 15px ${FONT_FAMILY}`,
-      fillStyle: '#ffffff',
+      maxFont: 15,
+      minFont: 9.0,
+      weight: 'bold',
+      color: '#ffffff',
     });
     ctx.restore();
 
@@ -625,18 +644,18 @@ export async function renderProfileCard(data) {
     ctx.fillText(levelStr, lvlPillX + lvlPillW / 2, lvlPillY + 9);
     ctx.textAlign = 'left';
 
-    // Kỹ năng HAX Lật Kèo (HAX Skill Badge)
+    // Kỹ năng HAX Lật Kèo (HAX Skill Badge — tự co cỡ chữ, không cắt cụt)
     const haxName = profile.pet.hax_skill || 'Tuyệt Kỹ Phá Cách (HAX)';
     ctx.save();
-    ctx.font = `bold 11px ${FONT_FAMILY}`;
-    const haxDisplay = truncateText(ctx, haxName, leftTextW - 20);
     ctx.shadowColor = 'rgba(253, 224, 71, 0.5)';
     ctx.shadowBlur = 5;
-    drawIconText(ctx, icoBolt, haxDisplay, petX + 20, bottomY + 90, {
+    drawAutoFitIconText(ctx, icoBolt, haxName, petX + 20, bottomY + 90, leftTextW, {
       iconSize: 14,
       gap: 5,
-      font: `bold 11px ${FONT_FAMILY}`,
-      fillStyle: '#fde047',
+      maxFont: 11,
+      minFont: 7.0,
+      weight: 'bold',
+      color: '#fde047',
     });
     ctx.restore();
 
@@ -933,10 +952,13 @@ export async function renderProfileCard(data) {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.fillStyle = '#64748b';
-      ctx.font = `11px ${FONT_FAMILY}`;
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}] Chưa mở (/equip)`, layout.x + 10, layout.y + layout.h / 2);
+      drawAutoFitSingleLineText(ctx, `[${layout.slot}] Chưa mở (/equip)`, layout.x + 10, layout.y + layout.h / 2, layout.w - 18, {
+        maxFont: 10.5,
+        minFont: 7.5,
+        weight: '',
+        align: 'left',
+        color: '#64748b',
+      });
     } else if (roleItem) {
       const roleBg = ctx.createLinearGradient(layout.x, layout.y, layout.x + layout.w, layout.y + layout.h);
       if (roleItem.rarity === 'mythic') {
@@ -954,23 +976,27 @@ export async function renderProfileCard(data) {
       ctx.stroke();
 
       ctx.fillStyle = '#fde047';
-      ctx.font = `bold 11px ${FONT_FAMILY}`;
+      ctx.font = `bold 10px ${FONT_FAMILY}`;
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}]`, layout.x + 10, layout.y + 16);
+      ctx.fillText(`[${layout.slot}]`, layout.x + 7, layout.y + 16);
 
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold 11px ${FONT_FAMILY}`;
-      const roleName = truncateText(ctx, roleItem.name, layout.w - 40);
-      ctx.fillText(roleName, layout.x + 32, layout.y + 16);
+      drawAutoFitSingleLineText(ctx, roleItem.name, layout.x + 25, layout.y + 16, layout.w - 31, {
+        maxFont: 10.5,
+        minFont: 6.0,
+        weight: 'bold',
+        align: 'left',
+        color: '#ffffff',
+      });
 
       const cleanPerkRaw = stripLeadingEmojis(roleItem.perk || 'Quyền Năng Tiên Giới');
-      ctx.font = `10px ${FONT_FAMILY}`;
-      const cleanPerk = truncateText(ctx, cleanPerkRaw, layout.w - 50);
-      drawIconText(ctx, icoSparkle, cleanPerk, layout.x + 32, layout.y + 35, {
+      drawAutoFitIconText(ctx, icoSparkle, cleanPerkRaw, layout.x + 25, layout.y + 35, layout.w - 31, {
         iconSize: 11,
         gap: 4,
-        font: `10px ${FONT_FAMILY}`,
-        fillStyle: roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd',
+        maxFont: 9.5,
+        minFont: 6.0,
+        weight: '',
+        color: roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd',
       });
     } else {
       ctx.fillStyle = 'rgba(30, 41, 59, 0.35)';
@@ -979,10 +1005,13 @@ export async function renderProfileCard(data) {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = `11px ${FONT_FAMILY}`;
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}] Trống (/equip role)`, layout.x + 10, layout.y + layout.h / 2);
+      drawAutoFitSingleLineText(ctx, `[${layout.slot}] Trống (/equip role)`, layout.x + 10, layout.y + layout.h / 2, layout.w - 18, {
+        maxFont: 10.5,
+        minFont: 7.5,
+        weight: '',
+        align: 'left',
+        color: '#94a3b8',
+      });
     }
   });
   ctx.restore();

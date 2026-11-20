@@ -91,7 +91,9 @@ export function itemEmoji(itemId, fallback = '') {
 }
 
 export function petEmojiKey(petType) {
-  return petType ? `su_pet_${petType}` : '';
+  if (!petType) return '';
+  if (petType === 'cuu_vi_hong_ho') return 'su_fox_mascot';
+  return `su_pet_${petType}`;
 }
 
 export function petEmoji(petType, fallback = '') {

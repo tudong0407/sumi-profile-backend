@@ -2,13 +2,13 @@ import { createCanvas } from '@napi-rs/canvas';
 import {
   loadImageSafe,
   drawRoundRect,
-  truncateText,
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
   sanitizeText,
   loadBadgeImage,
   stripLeadingEmojis,
   drawIconText,
+  drawAutoFitSingleLineText,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -194,24 +194,31 @@ export async function renderRankCard(data) {
   // ============================================================================
   const headerX = 188;
 
-  // Tên Người Dùng (Discord Username) — dành chỗ cho cột Meta bên phải (metaBoxX = 515)
+  // Tên Người Dùng (Discord Username) — tự co chữ vừa khít vùng header trước cột Meta (metaBoxX = 515)
   ctx.save();
-  ctx.font = `bold 24px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
   ctx.shadowBlur = 9;
-  ctx.textBaseline = 'top';
-  const nameDisplay = truncateText(ctx, profile.username, 310);
-  ctx.fillText(nameDisplay, headerX, 26);
+  drawAutoFitSingleLineText(ctx, profile.username, headerX, 39, 312, {
+    maxFont: 24,
+    minFont: 12,
+    weight: 'bold',
+    align: 'left',
+    color: '#ffffff',
+  });
   ctx.restore();
 
-  // Danh Hiệu Tiên Chủ / Custom Title Pill
+  // Danh Hiệu Tiên Chủ / Custom Title Pill (tự co cỡ chữ nếu quá dài)
   ctx.save();
   const titleY = 64;
   const titleText = `« ${profile.customTitle} »`;
-  ctx.font = `bold 12.5px ${FONT_FAMILY}`;
+  let titleFontSize = 12.5;
+  for (; titleFontSize >= 8.5; titleFontSize -= 0.25) {
+    ctx.font = `bold ${titleFontSize}px ${FONT_FAMILY}`;
+    if (ctx.measureText(titleText).width + 20 <= 312) break;
+  }
+  ctx.font = `bold ${titleFontSize}px ${FONT_FAMILY}`;
   const titleMetrics = ctx.measureText(titleText);
-  const titleW = Math.max(120, titleMetrics.width + 20);
+  const titleW = Math.min(312, Math.max(120, titleMetrics.width + 20));
 
   drawRoundRect(ctx, headerX, titleY, titleW, 24, 7);
   const titleBg = ctx.createLinearGradient(headerX, titleY, headerX + titleW, titleY + 24);
@@ -228,16 +235,21 @@ export async function renderRankCard(data) {
   ctx.shadowBlur = 5;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(titleText, headerX + titleW / 2, titleY + 12);
+  ctx.fillText(titleText, headerX + titleW / 2, titleY + 12, titleW - 12);
   ctx.restore();
 
   // Cảnh Giới Tu Luyện (Realm)
   ctx.save();
   const realmY = 98;
   const realmText = `Cảnh Giới: ${profile.realm}`;
-  ctx.font = `12.5px ${FONT_FAMILY}`;
+  let realmFontSize = 12.5;
+  for (; realmFontSize >= 8.5; realmFontSize -= 0.25) {
+    ctx.font = `${realmFontSize}px ${FONT_FAMILY}`;
+    if (ctx.measureText(realmText).width + 20 <= 312) break;
+  }
+  ctx.font = `${realmFontSize}px ${FONT_FAMILY}`;
   const realmMetrics = ctx.measureText(realmText);
-  const realmW = Math.max(140, realmMetrics.width + 20);
+  const realmW = Math.min(312, Math.max(140, realmMetrics.width + 20));
 
   drawRoundRect(ctx, headerX, realmY, realmW, 24, 7);
   ctx.fillStyle = 'rgba(30, 27, 75, 0.65)';
@@ -249,7 +261,7 @@ export async function renderRankCard(data) {
   ctx.fillStyle = '#c4b5fd';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(realmText, headerX + realmW / 2, realmY + 12);
+  ctx.fillText(realmText, headerX + realmW / 2, realmY + 12, realmW - 12);
   ctx.restore();
 
   // ============================================================================
@@ -277,16 +289,18 @@ export async function renderRankCard(data) {
   });
   const clanValX = metaBoxX + 12 + Math.ceil(clanLblW) + 3;
 
-  ctx.font = `12px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#ffffff';
-  ctx.textBaseline = 'middle';
   let clanStr = 'Chưa gia nhập bang hội';
   if (profile.clan) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 10 - clanValX);
-  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, clanStr, clanValX, clanY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - clanValX, {
+    maxFont: 12,
+    minFont: 7.0,
+    weight: '',
+    align: 'left',
+    color: '#ffffff',
+  });
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
@@ -307,16 +321,18 @@ export async function renderRankCard(data) {
   });
   const marryValX = metaBoxX + 12 + Math.ceil(marryLblW) + 3;
 
-  ctx.font = `12px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#fed7aa';
-  ctx.textBaseline = 'middle';
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
     const cleanSpouse = stripLeadingEmojis(String(profile.married.username || '')).replace(/[💍]+/g, '').trim() || profile.married.username;
     marryStr = `Đã kết hôn cùng ${cleanSpouse}`;
   }
-  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 10 - marryValX);
-  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, marryStr, marryValX, marryY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - marryValX, {
+    maxFont: 12,
+    minFont: 7.0,
+    weight: '',
+    align: 'left',
+    color: '#fed7aa',
+  });
   ctx.restore();
 
   // Box 3: Số Dư Linh Thạch (Linh Thach Balance)
@@ -340,13 +356,16 @@ export async function renderRankCard(data) {
   });
   const stoneValX = metaBoxX + 12 + Math.ceil(stoneLblW) + 3;
 
-  ctx.font = `bold 13px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#7dd3fc';
-  ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
   ctx.shadowBlur = 6;
   const stoneStr = `${profile.linhThach.toLocaleString('vi-VN')} Viên`;
-  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 10 - stoneValX), stoneValX, stoneY + metaBoxH / 2 + 0.5);
+  drawAutoFitSingleLineText(ctx, stoneStr, stoneValX, stoneY + metaBoxH / 2 + 0.5, metaBoxX + metaBoxW - 10 - stoneValX, {
+    maxFont: 13,
+    minFont: 8.0,
+    weight: 'bold',
+    align: 'left',
+    color: '#7dd3fc',
+  });
   ctx.restore();
 
   // ============================================================================

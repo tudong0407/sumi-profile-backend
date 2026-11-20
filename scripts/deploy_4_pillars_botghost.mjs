@@ -300,9 +300,9 @@ function buildPetOptions(rarityKeys) {
 
 export function buildWikiCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('wiki', 'Cẩm nang tu tiên tương tác SuMi Family (Dropdown theo chuyên mục, trang bị & linh thú)', { ephemeral: false });
+  gb.rootSlash('wiki', 'Cẩm nang tu tiên SuMi Family — Cảnh giới, Ngũ Hành, 45 Pháp Bảo & 20 Linh Thú', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('chuyen_muc', 'string', 'Mở nhanh 1 chuyên mục (để trống xem Tổng Quan kèm Dropdown)', {
+  gb.option('chuyen_muc', 'string', 'Chuyên mục cần tra cứu (tùy chọn)', {
     required: false,
     choices: ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy'],
     x: 420,
@@ -334,12 +334,12 @@ export function buildWikiCmd() {
     description: ov.content,
     color: '#ec4899',
     fields: ov.fields,
-    footerText: 'SuMi Family • Chọn chuyên mục tại Dropdown bên dưới',
+    footerText: 'SuMi Family • Cẩm Nang Tu Tiên',
   }, { x: 800, y: 620 });
   gb.link(rHome, 'msg_wiki_home');
 
   gb.advSelectMenu('sel_wiki_cat', 'msg_wiki_home', {
-    placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên...',
+    placeholder: 'Chuyên mục Cẩm Nang Tu Tiên',
     customVariableName: 'wiki_cat',
     row: '1',
     weight: '1',
@@ -348,8 +348,8 @@ export function buildWikiCmd() {
       { label: 'Tổng Quan Tu Tiên', description: 'Khởi đầu tân thủ & danh sách lệnh cốt lõi', emoji_id: emId('su_wiki_scroll'), value: 'overview' },
       { label: 'Hệ Thống Cảnh Giới & Thăng Cấp', description: '7 Đại Cảnh Giới, công thức EXP, mốc Role & Slot', emoji_id: emId('su_realm_7_hondondao'), value: 'realms' },
       { label: 'Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', emoji_id: emId('su_arena'), value: 'battle' },
-      { label: 'Trang Bị Loadout (45 Pháp Bảo)', description: '3 Dropdown tra cứu Vũ Khí / Bảo Ngọc / Chiến Hồn', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
-      { label: 'Linh Thú Tiên Giới (20 Chiến Pet)', description: '4 Dropdown tra cứu theo Phẩm Cấp Phàm -> Thần Thoại', emoji_id: emId('su_pet_paw'), value: 'pets' },
+      { label: 'Trang Bị Loadout (45 Pháp Bảo)', description: '45 Pháp Bảo: Vũ Khí, Bảo Ngọc, Chiến Hồn & Quy tắc Độc Nhất', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
+      { label: 'Linh Thú Tiên Giới (20 Chiến Pet)', description: '20 Chiến Linh Thú theo 4 bậc Phẩm Cấp & kỹ năng HAX', emoji_id: emId('su_pet_paw'), value: 'pets' },
       { label: 'Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gia Tộc & Clan Wars 24H', emoji_id: emId('su_linhthach'), value: 'economy' },
     ],
   }, { x: 800, y: 820 });
@@ -414,13 +414,13 @@ export function buildWikiCmd() {
     description: eq.content,
     color: '#f59e0b',
     fields: eq.fields,
-    footerText: 'SuMi Family • Chọn món đồ từ 3 Dropdown bên dưới để xem thẻ chi tiết Full HD+',
+    footerText: 'SuMi Family • Kho Pháp Bảo Loadout',
   }, { x: -150, y: 1380 });
   gb.link(rEquip, 'msg_wiki_equip');
   gb.link(sEquip, 'msg_wiki_equip');
 
   gb.advSelectMenu('sel_eq_weapon', 'msg_wiki_equip', {
-    placeholder: 'Chọn Vũ Khí (15 món)...',
+    placeholder: 'Vũ Khí (15 món)',
     customVariableName: 'picked_weapon',
     row: '1',
     weight: '1',
@@ -429,7 +429,7 @@ export function buildWikiCmd() {
   }, { x: -450, y: 1620 });
 
   gb.advSelectMenu('sel_eq_gem', 'msg_wiki_equip', {
-    placeholder: 'Chọn Bảo Ngọc (15 món)...',
+    placeholder: 'Bảo Ngọc (15 món)',
     customVariableName: 'picked_gem',
     row: '2',
     weight: '1',
@@ -438,7 +438,7 @@ export function buildWikiCmd() {
   }, { x: -150, y: 1620 });
 
   gb.advSelectMenu('sel_eq_soul', 'msg_wiki_equip', {
-    placeholder: 'Chọn Chiến Hồn (15 món)...',
+    placeholder: 'Chiến Hồn (15 món)',
     customVariableName: 'picked_soul',
     row: '3',
     weight: '1',
@@ -505,13 +505,13 @@ export function buildWikiCmd() {
     description: pt.content,
     color: '#ec4899',
     fields: pt.fields,
-    footerText: 'SuMi Family • Chọn Linh Thú tại 4 Dropdown Phẩm Cấp bên dưới',
+    footerText: 'SuMi Family • Bách Khoa Linh Thú',
   }, { x: 850, y: 1380 });
   gb.link(rPets, 'msg_wiki_pets');
   gb.link(sPets, 'msg_wiki_pets');
 
   gb.advSelectMenu('sel_pet_common', 'msg_wiki_pets', {
-    placeholder: 'Phàm Phẩm (5 Linh Thú)...',
+    placeholder: 'Phàm Phẩm (5 Linh Thú)',
     customVariableName: 'picked_pet_c',
     row: '1',
     weight: '1',
@@ -520,7 +520,7 @@ export function buildWikiCmd() {
   }, { x: 450, y: 1620 });
 
   gb.advSelectMenu('sel_pet_rare', 'msg_wiki_pets', {
-    placeholder: 'Linh Phẩm (5 Linh Thú)...',
+    placeholder: 'Linh Phẩm (5 Linh Thú)',
     customVariableName: 'picked_pet_r',
     row: '2',
     weight: '1',
@@ -529,7 +529,7 @@ export function buildWikiCmd() {
   }, { x: 750, y: 1620 });
 
   gb.advSelectMenu('sel_pet_epic', 'msg_wiki_pets', {
-    placeholder: 'Tiên Phẩm (4 Linh Thú)...',
+    placeholder: 'Tiên Phẩm (4 Linh Thú)',
     customVariableName: 'picked_pet_e',
     row: '3',
     weight: '1',
@@ -538,7 +538,7 @@ export function buildWikiCmd() {
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: 'Thần Thoại (6 Linh Thú)...',
+    placeholder: 'Thần Thoại (6 Linh Thú)',
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',

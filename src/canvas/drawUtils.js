@@ -678,20 +678,56 @@ export function drawAutoFitSingleLineText(ctx, text, x, y, maxWidth, options = {
   } = options;
 
   const clean = sanitizeText(String(text || '')).trim();
+  const makeFont = (sz) => (weight ? `${weight} ${sz}px ${FONT_FAMILY}` : `${sz}px ${FONT_FAMILY}`);
   ctx.save();
   let chosen = minFont;
   for (let size = maxFont; size >= minFont; size -= 0.25) {
-    ctx.font = `${weight} ${size}px ${FONT_FAMILY}`;
+    ctx.font = makeFont(size);
     if (ctx.measureText(clean).width <= maxWidth) {
       chosen = size;
       break;
     }
   }
-  ctx.font = `${weight} ${chosen}px ${FONT_FAMILY}`;
+  ctx.font = makeFont(chosen);
   ctx.fillStyle = color;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
-  ctx.fillText(clean, x, y);
+  if (ctx.measureText(clean).width > maxWidth) {
+    ctx.fillText(clean, x, y, maxWidth);
+  } else {
+    ctx.fillText(clean, x, y);
+  }
   ctx.restore();
   return chosen;
+}
+
+/**
+ * Vẽ icon PNG sắc nét kèm chữ tự động thu nhỏ trên 1 dòng để không bao giờ bị cắt cụt "..."
+ */
+export function drawAutoFitIconText(ctx, iconImg, text, x, y, maxWidth, options = {}) {
+  const {
+    iconSize = 14,
+    gap = 5,
+    maxFont = 11,
+    minFont = 6.0,
+    weight = '',
+    color = '#ffffff',
+    textOffsetY = 0.5,
+  } = options;
+
+  const hasIcon = Boolean(iconImg && iconImg.width && iconImg.height);
+  let textX = x;
+  let availW = maxWidth;
+  if (hasIcon) {
+    ctx.drawImage(iconImg, x, y - iconSize / 2, iconSize, iconSize);
+    textX = x + iconSize + gap;
+    availW = Math.max(20, maxWidth - iconSize - gap);
+  }
+  return drawAutoFitSingleLineText(ctx, text, textX, y + textOffsetY, availW, {
+    maxFont,
+    minFont,
+    weight,
+    align: 'left',
+    color,
+  });
 }

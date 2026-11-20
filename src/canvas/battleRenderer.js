@@ -527,9 +527,9 @@ export async function renderBattleCard(battleResult) {
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `bold 11px ${FONT_FAMILY}`;
+  ctx.font = `bold 12.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fde047';
-  ctx.fillText('NGƯỜI CHIẾN THẮNG (WINNER)', midCx, winY + 20);
+  ctx.fillText('WINNER', midCx, winY + 20);
 
   ctx.font = `bold 17px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';

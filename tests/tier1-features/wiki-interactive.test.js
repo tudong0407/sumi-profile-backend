@@ -49,6 +49,7 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
 
     const fullWikiText = JSON.stringify(json.categories);
     assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive pet Cửu Vĩ Hồng Hồ');
+    assert.ok(!/Dropdown|bên dưới|chọn chuyên mục|chọn trực tiếp/i.test(fullWikiText), 'Wiki categories must NOT contain redundant UI dropdown instructions');
 
     for (const cat of json.categories) {
       assert.ok(!/chào mừng đạo hữu/i.test(cat.content), `Category ${cat.id} should not contain verbose greeting`);

@@ -67,7 +67,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Lệnh Cốt Lõi',
-        content: '• /profile [user]: Thẻ hồ sơ Full HD+ (2000×1000) — Cảnh giới, Pet, 3 Slot Pháp Bảo, Role Quyền Năng.\n• /rank [user]: Thẻ tiến độ cấp độ Full HD+ (2000×410).\n• /battle [doi_thu]: Thách đấu Linh Thú 1v1, trả trực tiếp Ảnh Chiến Báo Full HD+.\n• /wiki: Tra cứu toàn thư tương tác qua Dropdown Menu.',
+        content: '• /profile [user]: Thẻ hồ sơ Full HD+ (2000×1000) — Cảnh giới, Pet, 3 Slot Pháp Bảo, Role Quyền Năng.\n• /rank [user]: Thẻ tiến độ cấp độ Full HD+ (2000×410).\n• /battle [doi_thu]: Thách đấu Linh Thú 1v1, trả trực tiếp Ảnh Chiến Báo Full HD+.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
       },
     ],
     fields: [
@@ -78,11 +78,11 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_pin_sigil')} Lệnh Cốt Lõi`,
-        value: '• `/profile [user]` — Thẻ hồ sơ Full HD+ (`2000×1000`).\n• `/rank [user]` — Thẻ cấp độ Mini (`2000×410`).\n• `/battle [doi_thu]` — Đấu trường 1v1 bằng Ảnh Chiến Báo.\n• `/wiki` — Cẩm nang tương tác theo chuyên mục.',
+        value: '• `/profile [user]` — Thẻ hồ sơ Full HD+ (`2000×1000`).\n• `/rank [user]` — Thẻ cấp độ Mini (`2000×410`).\n• `/battle [doi_thu]` — Đấu trường 1v1 bằng Ảnh Chiến Báo.\n• `/wiki` — Toàn thư hệ thống tu tiên SuMi Family.',
         inline: false,
       },
     ],
-    content: 'Hệ thống tu tiên SuMi Family vận hành theo 4 trụ cột: Cày EXP đột phá cảnh giới, bồi dưỡng Linh Thú, săn 45 Pháp Bảo Loadout và tranh tài tại Đấu Trường 1v1. Chọn chuyên mục bên dưới để xem chi tiết.',
+    content: 'Hệ thống tu tiên SuMi Family vận hành theo 4 trụ cột: Cày EXP đột phá cảnh giới, bồi dưỡng Linh Thú, săn 45 Pháp Bảo Loadout và tranh tài tại Đấu Trường 1v1.',
   },
 
   realms: {
@@ -162,7 +162,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Dùng `/battle [doi_thu]` để khiêu chiến Linh Thú 1v1 và nhận trực tiếp Ảnh Chiến Báo Full HD+. Xem sơ đồ tương khắc nguyên tố trực quan bên dưới.',
+    content: 'Đấu Trường 1v1 (`/battle [doi_thu]`) vận hành theo quy tắc khắc chế Ngũ Hành, Tứ Đại Dị Tố và kỹ năng HAX, xuất trực tiếp Ảnh Chiến Báo Full HD+.',
   },
 
   equipment: {
@@ -194,11 +194,11 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${tierEmoji('supreme')} Quy Tắc Độc Nhất (9 Món Thần Thoại)`,
-        value: 'Mỗi pháp bảo Thần Thoại chỉ tồn tại **duy nhất 1 bản trên toàn server**. Chọn trực tiếp món đồ ở **3 Dropdown bên dưới** để xem thẻ chỉ số Full HD+ và Chủ Sở Hữu hiện tại.',
+        value: 'Mỗi pháp bảo Thần Thoại chỉ tồn tại **duy nhất 1 bản trên toàn server** tại một thời điểm (tỉ lệ rớt **1%**), gắn liền danh tính chủ sở hữu hiện tại.',
         inline: false,
       },
     ],
-    content: 'Chọn một pháp bảo từ 3 danh mục **Vũ Khí / Bảo Ngọc / Chiến Hồn** bên dưới để xem thẻ chi tiết Full HD+ (chỉ số, HAX, tỉ lệ rớt và chủ sở hữu hiện tại).',
+    content: 'Hệ thống trang bị gồm **45 Pháp Bảo** chia đều 3 Slot **Vũ Khí • Bảo Ngọc • Chiến Hồn** (15 món/nhóm), gia tăng chỉ số trực tiếp và kích hoạt kỹ năng HAX trong Đấu Trường.',
   },
 
   pets: {
@@ -229,7 +229,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Chọn một Linh Thú từ **4 Dropdown theo Phẩm Cấp** bên dưới để xem thẻ chi tiết Full HD+ (Hệ nguyên tố, chỉ số `ATK/DEF/SPD/HP` và Kỹ năng HAX).',
+    content: 'Bách khoa **20 Chiến Linh Thú** phân chia theo 4 bậc Phẩm Cấp (**Phàm Phẩm • Linh Phẩm • Tiên Phẩm • Thần Thoại**), mỗi loài sở hữu Hệ Ngũ Hành, bộ chỉ số nền và tuyệt kỹ HAX riêng biệt.',
   },
 
   economy: {
