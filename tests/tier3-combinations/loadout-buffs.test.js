@@ -72,7 +72,7 @@ describe('Tier 3 - Loadout Item Buffs & Profile Card Integration', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('4. User without equipped items displays null equipment and unbuffed base stats', async () => {

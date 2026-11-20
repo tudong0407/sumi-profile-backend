@@ -24,11 +24,16 @@ export async function compileCombatant(userOrId, role = 'attacker') {
 
   const id = String(profile?.user_id || profile?.userId || (role === 'attacker' ? 'attacker_1' : 'defender_2'));
   const name = String(profile?.username || profile?.name || (role === 'attacker' ? 'Đấu Sĩ 1' : 'Đấu Sĩ 2'));
+  const avatarUrl = profile?.avatar_url || profile?.avatarUrl || null;
+  const userLevel = Math.max(1, Number(profile?.level) || 1);
+  const avatarFrame = profile?.avatar_frame || 'default';
   const pet = profile?.pet || {};
 
-  const petName = pet.name || pet.pet_name || 'Linh Thú Tiên Giới';
-  const petType = pet.type || pet.pet_type || 'linh_thu';
-  const element = pet.element || 'Kim';
+  const petName = pet.name || pet.pet_name || 'Hóa Thạch Nham Nham Thú';
+  const petType = pet.type || pet.pet_type || 'hoa_thach_nham_nham';
+  const petRarity = pet.rarity || pet.pet_rarity || 'Phàm Phẩm';
+  const petIcon = pet.icon || '🐾';
+  const element = pet.element || 'Thổ';
   const level = Math.max(1, Number(pet.level) || 1);
   const star = Math.max(1, Number(pet.star) || 1);
 
@@ -75,8 +80,13 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   return {
     id,
     name,
+    avatarUrl,
+    userLevel,
+    avatarFrame,
     petName,
     petType,
+    petRarity,
+    petIcon,
     element,
     level,
     star,

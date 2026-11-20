@@ -32,7 +32,7 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     );
     assert.equal(resPng.status, 200);
     const buffer = Buffer.from(await resPng.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('2. Extremely long Vietnamese strings (100+ chars) render safely without canvas overflow', async () => {
@@ -53,7 +53,7 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('3. Multi-byte Unicode emojis (🌸, 🦊, ⚔️, 🛡️, 🔥, ❄️) render cleanly without tofu', async () => {
@@ -73,7 +73,7 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('4. Discord custom emoji patterns (<:fox_cute:1027173664069795921>) in text render safely', async () => {
@@ -92,7 +92,7 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('5. Empty string or whitespace-only inputs fallback cleanly without crashing', async () => {
@@ -111,7 +111,7 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('6. Strings containing interior NUL (\\0) render safely without throwing Convert String to CString failed', async () => {
@@ -131,6 +131,6 @@ describe('Tier 2 - Unicode, Vietnamese Glyphs & Emoji Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 });

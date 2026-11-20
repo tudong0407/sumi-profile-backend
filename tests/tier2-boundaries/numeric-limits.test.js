@@ -39,7 +39,7 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     });
     assert.equal(res.status, 200);
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('2. High level boundary (Level 999) caps next_level_exp at 500,000 and realm to Hỗn Độn Chúa Tể', async () => {
@@ -66,7 +66,7 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     });
     assert.equal(res.status, 200);
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('3. Zero stats (0 ATK, 0 DEF, 0 SPD, 0 Linh Thạch) do not produce NaN', async () => {
@@ -95,7 +95,7 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('4. Extreme upper bounds (999,999,999 Linh Thạch, 10M+ Power) render without formatting crash', async () => {
@@ -124,7 +124,7 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('5. Negative numeric values in payload are clamped safely to non-negative limits', async () => {
@@ -144,6 +144,6 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 });

@@ -37,7 +37,7 @@ describe('Tier 2 - Discord Mention & ID Sanitization Boundaries', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 205);
+    assertPngValid(buffer, 2000, 410);
   });
 
   it('3. URL-encoded mention (%3C@id%3E) parses accurately via HTTP routing', async () => {

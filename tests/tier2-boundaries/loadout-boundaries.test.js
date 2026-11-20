@@ -39,7 +39,7 @@ describe('Tier 2 - Loadout & Equipment Boundary Conditions', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('2. User with 1 equipped item (weapon only, gem and soul empty) renders accurately', async () => {
@@ -66,7 +66,7 @@ describe('Tier 2 - Loadout & Equipment Boundary Conditions', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('3. Loadout item with missing asset path uses procedural or fallback icon gracefully', async () => {
@@ -100,7 +100,7 @@ describe('Tier 2 - Loadout & Equipment Boundary Conditions', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('4. Malformed item data (missing stats, null fields) is handled safely', async () => {
@@ -133,7 +133,7 @@ describe('Tier 2 - Loadout & Equipment Boundary Conditions', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('5. User with 0 equipped roles (empty array) renders card cleanly without role slot errors', async () => {
@@ -153,6 +153,6 @@ describe('Tier 2 - Loadout & Equipment Boundary Conditions', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 });

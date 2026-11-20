@@ -8,8 +8,8 @@ if (typeof globalThis.WebSocket === 'undefined') {
   globalThis.WebSocket = WebSocket;
 }
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://lfvtysacdoadtvskqgkt.supabase.co';
-const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmdnR5c2FjZG9hZHR2c2txZ2t0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5NTA4Nzc1NiwiZXhwIjoyMTEwNjYzNzU2fQ.an706_l9ItnKr10NjXq6i6X3jb2UP7Y7nISXX-_dH9k';
+const supabaseUrl = process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export let supabase = null;
 

@@ -39,7 +39,7 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('2. POST /api/profile/render with custom pet metadata (element, HAX skill, power) renders correctly', async () => {
@@ -72,7 +72,7 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('3. POST /api/rank/render with custom clan, title, and level produces valid 1000x205 PNG', async () => {
@@ -102,7 +102,7 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 205);
+    assertPngValid(buffer, 2000, 410);
   });
 
   it('4. POST /api/profile/render with fully loaded profile (pet, 3 items, 5 roles, married, clan) renders cleanly', async () => {
@@ -163,6 +163,6 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 });

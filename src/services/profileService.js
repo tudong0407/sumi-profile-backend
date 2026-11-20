@@ -1,4 +1,11 @@
 import { supabase } from '../config/supabase.js';
+import {
+  FUYUMI_USER_ID,
+  PET_BY_TYPE,
+  STARTER_PET,
+  createStarterPetObject,
+  formatRarityLabel,
+} from '../data/catalog.js';
 
 export const ROLE_PERKS_MAP = {
   '1473419957655175169': '⚔️ Trảm Quyết Tối Thượng',
@@ -215,13 +222,26 @@ export function getFuyumiProfileMock() {
 }
 
 /**
- * Trả về Mock Data mặc định cho user thường
- * @param {string} userId 
+ * Tính số Slot Role Quyền Năng mở khóa theo cấp độ
+ * @param {number} level
+ * @returns {number} 1..5
  */
-export function getDefaultUserMock(userId) {
-  const shortId = (userId || '1234').slice(-4);
-  const lvl = 18;
-  const currentExp = 2800;
+export function getMaxRoleSlotsByLevel(level) {
+  const lvl = Number(level) || 1;
+  if (lvl >= 80) return 5;
+  if (lvl >= 60) return 4;
+  if (lvl >= 40) return 3;
+  if (lvl >= 20) return 2;
+  return 1;
+}
+
+/**
+ * Trả về hồ sơ Tân Thủ Chuẩn (Lv.1, 0 EXP, 0 Linh Thạch + Pet Phàm Phẩm khởi đầu Hóa Thạch Nham Nham Thú)
+ * @param {string} userId
+ */
+export function createBeginnerProfile(userId) {
+  const shortId = String(userId || '0000').slice(-4);
+  const lvl = 1;
   const nextExp = getExpForNextLevel(lvl);
 
   return {
@@ -231,48 +251,156 @@ export function getDefaultUserMock(userId) {
     avatar_url: 'assets/default_avatar.png',
     avatar_frame: 'default',
     background_url: 'assets/default_background.png',
-    bio: 'Một vị tu sĩ đang tu luyện tại SuMi Family',
-    custom_title: 'Đệ Tử Ngoại Môn',
+    bio: 'Một vị tu sĩ mới bước vào tiên giới SuMi Family',
+    custom_title: 'Tân Thủ Nhập Đạo',
     realm: getRealmByLevel(lvl),
     level: lvl,
-    exp: currentExp,
+    exp: 0,
     next_level_exp: nextExp,
-    linh_thach: 1250,
-    max_role_slots: 2,
-    streak: 7,
-    clan: {
-      clan_id: 'ho_ly_mon',
-      clan_name: 'Hồ Ly Tông Môn',
-      clan_tag: '🌸HL',
-      clan_level: 2,
-      is_leader: false,
-    },
+    linh_thach: 0,
+    max_role_slots: 1,
+    streak: 0,
+    clan: null,
     married: null,
-    pet: {
-      name: 'Băng Tuyết Hồ',
-      type: 'bang_tuyet_ho',
-      pet_type: 'bang_tuyet_ho',
-      rarity: 'Hiếm',
-      element: 'Thủy / Băng',
-      hax_skill: 'Băng Phong (Đóng Băng)',
-      hax_desc: '35% tỉ lệ đóng băng đối thủ 1 hiệp',
-      level: 15,
-      star: 3,
-      atk: 450,
-      def: 380,
-      spd: 520,
-      power: 3250,
-      icon: '❄️',
-      equipment: {
-        weapon: null,
-        gem: null,
-        soul: null,
-      },
-    },
-    equipped_roles: [
-      { slot: 1, role_id: 'phong_thanh', name: '« Phong Thanh Hộ Pháp »', perk: '🎙️ Di Chuyển Voice', rarity: 'rare' },
-    ],
+    pet: createStarterPetObject(),
+    equipped_roles: [],
   };
+}
+
+/**
+ * Alias tương thích ngược -> trả về hồ sơ Tân Thủ Chuẩn Lv.1 (đã gỡ bỏ dữ liệu giả Lv.18)
+ * @param {string} userId
+ */
+export function getDefaultUserMock(userId) {
+  return createBeginnerProfile(userId);
+}
+
+/**
+ * Tự động khởi tạo hồ sơ tân thủ Lv.1 + Pet Phàm Phẩm mặc định trong Supabase nếu chưa tồn tại.
+ * Bảo toàn 100% dữ liệu Tiểu thư Fuyumi (757091869183311872).
+ * @param {string} userId
+ * @param {{ username?: string|null, avatarUrl?: string|null }} meta
+ */
+export async function ensureUserInitialized(userId, meta = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId || !/^[0-9]{17,20}$/.test(cleanId)) {
+    return { user: null, initializedNewUser: false };
+  }
+  if (!supabase) {
+    return { user: null, initializedNewUser: false };
+  }
+
+  const { data: existingUser } = await supabase
+    .from('users')
+    .select('*')
+    .eq('user_id', cleanId)
+    .maybeSingle();
+
+  let userRow = existingUser;
+  let initializedNewUser = false;
+
+  const cleanName = typeof meta.username === 'string' && meta.username.trim() && !meta.username.trim().startsWith('{')
+    ? meta.username.trim().slice(0, 100)
+    : null;
+  const cleanAvatar = typeof meta.avatarUrl === 'string' && meta.avatarUrl.trim() && !meta.avatarUrl.trim().startsWith('{')
+    ? meta.avatarUrl.trim()
+    : null;
+
+  if (!userRow) {
+    if (cleanId === FUYUMI_USER_ID) {
+      return { user: null, initializedNewUser: false };
+    }
+    const shortId = cleanId.slice(-4);
+    const insertPayload = {
+      user_id: cleanId,
+      username: cleanName || `Tu Sĩ #${shortId}`,
+      discriminator: '0',
+      avatar_url: cleanAvatar || 'assets/default_avatar.png',
+      exp: 0,
+      level: 1,
+      linh_thach: 0,
+      avatar_frame: 'default',
+      background_url: 'assets/default_background.png',
+      bio: 'Một vị tu sĩ mới bước vào tiên giới SuMi Family',
+      custom_title: 'Tân Thủ Nhập Đạo',
+      max_role_slots: 1,
+      clan_id: null,
+      streak: 0,
+      total_voice_minutes: 0,
+    };
+
+    const { data: created, error: insertErr } = await supabase
+      .from('users')
+      .upsert(insertPayload, { onConflict: 'user_id', ignoreDuplicates: true })
+      .select('*')
+      .maybeSingle();
+
+    if (insertErr) {
+      console.warn(`[ProfileService] ensureUserInitialized insert error for ${cleanId}:`, insertErr.message);
+    }
+
+    if (created) {
+      userRow = created;
+      initializedNewUser = true;
+    } else {
+      const { data: refetched } = await supabase.from('users').select('*').eq('user_id', cleanId).maybeSingle();
+      userRow = refetched || insertPayload;
+    }
+  } else if (cleanId !== FUYUMI_USER_ID) {
+    // Cập nhật nhẹ username/avatar thật nếu đang là placeholder
+    const patch = {};
+    if (cleanName && (!userRow.username || userRow.username.startsWith('Tu Sĩ '))) {
+      patch.username = cleanName;
+    }
+    if (cleanAvatar && (!userRow.avatar_url || userRow.avatar_url === 'assets/default_avatar.png')) {
+      patch.avatar_url = cleanAvatar;
+    }
+    if (Object.keys(patch).length > 0) {
+      patch.updated_at = new Date().toISOString();
+      const { data: updated } = await supabase
+        .from('users')
+        .update(patch)
+        .eq('user_id', cleanId)
+        .select('*')
+        .maybeSingle();
+      if (updated) userRow = updated;
+    }
+  }
+
+  // Đảm bảo mọi thành viên (trừ Fuyumi đã có Cửu Vĩ Hồng Hồ) đều có ít nhất Pet Phàm Phẩm khởi đầu
+  if (cleanId !== FUYUMI_USER_ID) {
+    const { data: existingPets } = await supabase
+      .from('user_pets')
+      .select('pet_id')
+      .eq('user_id', cleanId)
+      .eq('is_active', true)
+      .limit(1);
+
+    if (!existingPets || existingPets.length === 0) {
+      const { error: petErr } = await supabase.from('user_pets').insert({
+        user_id: cleanId,
+        pet_name: STARTER_PET.pet_name,
+        pet_type: STARTER_PET.pet_type,
+        pet_rarity: STARTER_PET.rarity,
+        element: STARTER_PET.element,
+        hax_skill: STARTER_PET.hax_skill,
+        hax_description: STARTER_PET.hax_description,
+        level: 1,
+        exp: 0,
+        star: 1,
+        atk: STARTER_PET.base_atk,
+        def: STARTER_PET.base_def,
+        spd: STARTER_PET.base_spd,
+        power_score: STARTER_PET.base_power,
+        is_active: true,
+      });
+      if (petErr) {
+        console.warn(`[ProfileService] Starter pet seed error for ${cleanId}:`, petErr.message);
+      }
+    }
+  }
+
+  return { user: userRow, initializedNewUser };
 }
 
 /**
@@ -412,6 +540,7 @@ export async function getProfileData(userId, overrides = {}) {
         }
 
         if (pet) {
+          const catalogPet = PET_BY_TYPE[pet.pet_type] || null;
           const baseAtk = Number(pet.atk) || 0;
           const baseDef = Number(pet.def) || 0;
           const baseSpd = Number(pet.spd) || 0;
@@ -425,12 +554,12 @@ export async function getProfileData(userId, overrides = {}) {
             name: pet.pet_name,
             type: pet.pet_type,
             pet_type: pet.pet_type,
-            rarity: pet.pet_rarity || 'Thường',
-            element: pet.element || 'Kim',
-            hax_skill: pet.hax_skill || null,
-            hax_desc: pet.hax_description || null,
-            level: pet.level,
-            star: pet.star || 1,
+            rarity: formatRarityLabel(pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm'),
+            element: pet.element || catalogPet?.element || 'Thổ',
+            hax_skill: pet.hax_skill || catalogPet?.hax_skill || null,
+            hax_desc: pet.hax_description || catalogPet?.hax_description || null,
+            level: Number(pet.level) || 1,
+            star: Number(pet.star) || 1,
             atk: finalAtk,
             def: finalDef,
             spd: finalSpd,
@@ -443,8 +572,12 @@ export async function getProfileData(userId, overrides = {}) {
             bonus_spd: bonusSpd,
             bonus_hp: bonusHp,
             equipment,
-            icon: pet.pet_type === 'cuu_vi_hong_ho' ? '🦊' : (pet.icon || '🐾'),
+            icon: catalogPet?.icon || pet.icon || (pet.pet_type === 'cuu_vi_hong_ho' ? '🦊' : '🐾'),
           };
+        } else if (cleanId !== FUYUMI_USER_ID) {
+          // Mọi tu sĩ chưa có pet active đều mặc định xuất trận với Pet Phàm Phẩm khởi đầu
+          petData = createStarterPetObject();
+          petData.equipment = equipment;
         }
 
         // Lấy Equipped Roles
@@ -482,13 +615,13 @@ export async function getProfileData(userId, overrides = {}) {
           background_url: user.background_url,
           bio: user.bio,
           custom_title: user.custom_title,
-          realm: getRealmByLevel(user.level),
-          level: user.level,
-          exp: user.exp,
-          next_level_exp: getExpForNextLevel(user.level),
-          linh_thach: user.linh_thach,
-          max_role_slots: user.max_role_slots || 1,
-          streak: user.streak || 0,
+          realm: getRealmByLevel(Number(user.level) || 1),
+          level: Number(user.level) || 1,
+          exp: Number(user.exp) || 0,
+          next_level_exp: getExpForNextLevel(Number(user.level) || 1),
+          linh_thach: Number(user.linh_thach) || 0,
+          max_role_slots: Number(user.max_role_slots) || 1,
+          streak: Number(user.streak) || 0,
           clan: clanData,
           married: marriedData,
           pet: petData,

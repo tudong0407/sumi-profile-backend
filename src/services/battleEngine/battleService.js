@@ -1,5 +1,7 @@
+import crypto from 'crypto';
 import { compileCombatant } from './statsCompiler.js';
 import { getElementalAdvantage } from './elementalMatrix.js';
+import { PUBLIC_BASE_URL } from '../../data/catalog.js';
 import {
   triggerBattleStart,
   triggerTurnStart,
@@ -8,6 +10,29 @@ import {
   triggerLethalInterception,
   hasHax,
 } from './haxEngine.js';
+
+const BATTLE_CACHE_MAX = 200;
+const BATTLE_CACHE_TTL_MS = 30 * 60 * 1000;
+const battleReportCache = new Map();
+
+export function cacheBattleReport(battleId, result) {
+  if (!battleId || !result) return;
+  if (battleReportCache.size >= BATTLE_CACHE_MAX) {
+    const oldestKey = battleReportCache.keys().next().value;
+    if (oldestKey) battleReportCache.delete(oldestKey);
+  }
+  battleReportCache.set(battleId, { result, createdAt: Date.now() });
+}
+
+export function getCachedBattleReport(battleId) {
+  if (!battleId || !battleReportCache.has(battleId)) return null;
+  const entry = battleReportCache.get(battleId);
+  if (Date.now() - entry.createdAt > BATTLE_CACHE_TTL_MS) {
+    battleReportCache.delete(battleId);
+    return null;
+  }
+  return entry.result;
+}
 
 /**
  * Trình tạo số giả ngẫu nhiên có hỗ trợ Seed cho kiểm thử tất định (Deterministic testing)
@@ -49,7 +74,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const turns = [];
 
   // 2. Giai đoạn 1: Kích hoạt hiệu ứng đầu trận (Khiên, cướp Tốc, Tru Tiên Trận)
-  triggerBattleStart(attacker, defender, rng);
+  const battleStartEvents = triggerBattleStart(attacker, defender, rng) || [];
 
   // 3. Xác định thứ tự đánh (Initiative)
   // Ưu tiên: Lôi Quang Tốc > So sánh SPD > Attacker ưu tiên nếu bằng nhau
@@ -202,6 +227,66 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     : { id: attacker.id, name: attacker.name, pet: attacker.petName };
 
   const summary = `Trận đấu kết thúc sau ${turnNumber} hiệp. ${winner.name} cùng linh thú ${winner.pet} giành chiến thắng áp đảo!`;
+  const headline = `🏆 ${winner.name} (${winner.pet}) chiến thắng ${loser.name} (${loser.pet}) sau ${turnNumber} hiệp!`;
+
+  const elementMatchup = {
+    attackerToDefender: getElementalAdvantage(attacker.element, defender.element),
+    defenderToAttacker: getElementalAdvantage(defender.element, attacker.element),
+  };
+
+  // Trích lọc tối đa 5 diễn biến tiêu biểu ngắn gọn cho Ảnh Chiến Báo Full HD+
+  const shortPet = (s) => (s && s.length > 14 ? s.slice(0, 13) + '…' : s);
+  const highlights = [];
+  for (const ev of battleStartEvents.slice(0, 2)) {
+    const actorName = shortPet(ev.actor === attacker.id ? attacker.petName : defender.petName);
+    const skillShort = String(ev.skill || '').replace(/«[^»]+»\s*/g, '').trim();
+    highlights.push(`Khai trận • ${actorName}: ${skillShort}`);
+  }
+  for (const t of turns) {
+    if (highlights.length >= 5) break;
+    const aName = shortPet(t.actor === 'attacker' ? attacker.petName : defender.petName);
+    const dName = shortPet(t.actor === 'attacker' ? defender.petName : attacker.petName);
+    if (t.action === 'skip') {
+      highlights.push(`H${t.turn} • ${aName}: ${t.haxTriggered || 'Mất lượt'}`);
+    } else if (t.haxTriggered || t.isCrit || t.turn === 1 || t.turn === turnNumber) {
+      const critTxt = t.isCrit ? ' CRIT' : '';
+      const haxTxt = t.haxTriggered ? ` (${t.haxTriggered.split('(')[0].trim()})` : '';
+      highlights.push(`H${t.turn} • ${aName} → ${dName}: -${t.damage.toLocaleString('vi-VN')} HP${critTxt}${haxTxt}`);
+    }
+  }
+  if (highlights.length === 0 && turns.length > 0) {
+    const lastT = turns[turns.length - 1];
+    const aName = shortPet(lastT.actor === 'attacker' ? attacker.petName : defender.petName);
+    highlights.push(`H${lastT.turn} • ${aName} tung đòn kết liễu -${lastT.damage.toLocaleString('vi-VN')} HP`);
+  }
+
+  const snapshotCombatant = (c, initHp) => ({
+    id: c.id,
+    name: c.name,
+    avatarUrl: c.avatarUrl || null,
+    userLevel: c.userLevel || 1,
+    avatarFrame: c.avatarFrame || 'default',
+    petName: c.petName,
+    petType: c.petType,
+    petRarity: c.petRarity || 'Phàm Phẩm',
+    petIcon: c.petIcon || '🐾',
+    element: c.element,
+    level: c.level,
+    star: c.star,
+    atk: c.atk,
+    def: c.def,
+    spd: c.spd,
+    maxHp: initHp,
+    finalHp: c.currentHp,
+    shield: c.shield || 0,
+    critRate: c.critRate,
+    equipment: c.equipment,
+    hax: c.hax,
+  });
+
+  const battleId = crypto.randomBytes(6).toString('hex');
+  const reportImagePath = `/api/battle/report/${battleId}.png`;
+  const reportImageUrl = `${PUBLIC_BASE_URL}${reportImagePath}`;
 
   const formatEquipLine = (c) => {
     const w = c.equipment?.weapon?.item_name || 'Không có';
@@ -243,8 +328,10 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     `🏆 **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
   ].join('\n');
 
-  return {
+  const finalResult = {
     success: true,
+    battleId,
+    turnCount: turnNumber,
     winner,
     loser,
     turns,
@@ -253,7 +340,19 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       attacker: attacker.currentHp,
       defender: defender.currentHp,
     },
+    combatants: {
+      attacker: snapshotCombatant(attacker, initialHp.attacker),
+      defender: snapshotCombatant(defender, initialHp.defender),
+    },
+    elementMatchup,
+    highlights,
+    headline,
     summary,
+    reportImagePath,
+    reportImageUrl,
     discordReport,
   };
+
+  cacheBattleReport(battleId, finalResult);
+  return finalResult;
 }

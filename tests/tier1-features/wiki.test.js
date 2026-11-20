@@ -14,13 +14,13 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     if (testServer) await testServer.close();
   });
 
-  it('1. GET /api/wiki returns HTTP 200 with all 5 essential categories', async () => {
+  it('1. GET /api/wiki returns HTTP 200 with all 6 independent categories', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
     const json = await res.json();
     assert.equal(json.success, true);
     assert.ok(Array.isArray(json.categories), 'Wiki response must include categories array');
-    assert.equal(json.categories.length, 5);
+    assert.equal(json.categories.length, 6);
   });
 
   it('2. Wiki contract specifies handbook title "Cẩm Nang Tu Tiên SuMi Family"', () => {
@@ -28,9 +28,9 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     assert.match(expectedTitle, /Cẩm Nang Tu Tiên SuMi Family/);
   });
 
-  it('3. Wiki contract includes all 5 essential categories', () => {
-    const categories = ['beginner', 'pets', 'equipment', 'battle', 'economy'];
-    assert.equal(categories.length, 5);
+  it('3. Wiki contract includes all 6 essential categories (including standalone realms)', () => {
+    const categories = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy'];
+    assert.equal(categories.length, 6);
 
     for (const catId of EXPECTED_WIKI_CATEGORIES) {
       assert.ok(categories.includes(catId), `Categories must include ${catId}`);
@@ -66,15 +66,15 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     assert.equal(categoryMapping.economy, 'Kinh Tế & Gia Tộc');
   });
 
-  it('6. GET /api/wiki?category=beginner filters correctly and returns single category details', async () => {
+  it('6. GET /api/wiki?category=beginner alias resolves cleanly to overview category', async () => {
     const res = await testServer.fetch('/api/wiki?category=beginner');
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
     const json = await res.json();
     assert.equal(json.success, true);
-    assert.equal(json.category, 'beginner');
+    assert.equal(json.category, 'overview');
     assert.ok(json.data, 'Must return data object for category');
-    assert.equal(json.data.id, 'beginner');
-    assert.match(json.data.title, /Khởi Đầu Tu Tiên/);
+    assert.equal(json.data.id, 'overview');
+    assert.match(json.data.title, /Tổng Quan Tu Tiên/);
     assert.ok(json.data.content.length > 50);
   });
 
@@ -85,7 +85,7 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     assert.equal(json.success, false);
     assert.equal(json.error, 'Category not found');
     assert.ok(Array.isArray(json.valid_categories));
-    assert.equal(json.valid_categories.length, 5);
+    assert.equal(json.valid_categories.length, 6);
   });
 
   it('8. GET /api/wiki?category=constructor returns HTTP 404 with success: false (prototype protection)', async () => {

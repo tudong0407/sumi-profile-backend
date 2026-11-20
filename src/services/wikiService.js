@@ -1,254 +1,475 @@
 /**
  * src/services/wikiService.js
- * Cung cấp dữ liệu Cẩm Nang Tu Tiên SuMi Family cho lệnh /wiki và API GET /api/wiki
- * Bản quyền: 🦊𝗦𝘂𝗠𝗶 𝗙𝗮𝗺𝗶𝗹𝘆 (Guild ID: 1026096141273661450)
- * Bot: Nhiễm Nhiễm (916469360401453067) - Tiên Chủ: Fuyumi (757091869183311872)
+ * Dữ liệu Cẩm Nang Tu Tiên SuMi Family chuẩn hóa (6 chuyên mục độc lập + tra cứu chi tiết 45 Pháp Bảo & 21 Linh Thú).
+ * Văn phong chuyên nghiệp, súc tích, không lời chào hỏi rườm rà.
  */
 
-export const VALID_CATEGORIES = ['beginner', 'pets', 'equipment', 'battle', 'economy'];
+import { supabase } from '../config/supabase.js';
+import {
+  EQUIPMENT_CATALOG,
+  EQUIPMENT_BY_ID,
+  PET_CATALOG,
+  PET_BY_TYPE,
+  RARITY_TIERS,
+  PUBLIC_BASE_URL,
+  FUYUMI_USER_ID,
+} from '../data/catalog.js';
+
+export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy'];
+
+const CATEGORY_ALIASES = {
+  beginner: 'overview',
+  tong_quan: 'overview',
+  canh_gioi: 'realms',
+  dau_truong: 'battle',
+  trang_bi: 'equipment',
+  linh_thu: 'pets',
+  kinh_te: 'economy',
+};
 
 export const WIKI_METADATA = {
-  title: '🦊 Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Hướng dẫn tân thủ & Toàn thư tiên giới - Bot Nhiễm Nhiễm',
-  version: '1.0.0',
+  title: 'Cẩm Nang Tu Tiên SuMi Family',
+  subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Đấu Trường',
+  version: '2.0.0',
   guild: '🦊𝗦𝘂𝗠𝗶 𝗙𝗮𝗺𝗶𝗹𝘆 (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
   bot_id: '916469360401453067',
   owner: 'Fuyumi (757091869183311872)',
-  owner_id: '757091869183311872',
+  owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-20T02:25:00.000Z',
-  total_categories: 5,
+  updated_at: '2026-11-20T14:30:00.000Z',
+  total_categories: 6,
 };
 
 export const WIKI_CATEGORIES = {
-  beginner: {
-    id: 'beginner',
-    title: '📜 Khởi Đầu Tu Tiên',
+  overview: {
+    id: 'overview',
+    title: '📜 Tổng Quan Tu Tiên',
     icon: '📜',
-    description: '7 Cảnh giới tu tiên, cấp độ, EXP chat/voice, cách xem profile & rank',
+    description: 'Giới thiệu nhanh hệ thống tu tiên, khởi đầu tân thủ và danh sách lệnh cốt lõi.',
+    image_url: '',
     sections: [
       {
-        heading: '1. Hệ Thống 7 Cảnh Giới Tu Tiên',
-        content: '• I. Luyện Khí Sơ Kỳ (Lv.1-19): Khai mở linh mạch, ngưng tụ linh khí.\n• II. Trúc Cơ Đạo Cảnh (Lv.20-39): Đúc thành tiên cơ, ngự linh thú cấp thấp.\n• III. Kim Đan Đại Đạo (Lv.40-59): Kết tụ kim đan nội phủ, linh lực cuồn cuộn.\n• IV. Nguyên Anh Chân Quân (Lv.60-79): Xuất khiếu cửu tiêu, mở khóa slot role 3.\n• V. Hóa Thần Tiên Tôn (Lv.80-89): Thiên nhân hợp nhất, uy áp hư không.\n• VI. Đại Thừa Vô Cực (Lv.90-99): Nửa bước vào tiên tịch, thấu triệt càn khôn.\n• VII. Hỗn Độn Chúa Tể (Lv.100+): Cảnh giới tối thượng Cửu Vĩ, 5 slot role toàn năng.'
+        heading: '1. Khởi Đầu Tân Thủ',
+        content: '• Trạng thái mặc định: Cấp 1 • 0 EXP • 0 Linh Thạch • 1 Slot Role.\n• Linh Thú khởi đầu: Hóa Thạch Nham Nham Thú (Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD) cấp sẵn để tham chiến ngay.\n• Tích lũy EXP tự động khi nhắn tin và hoạt động trong kênh thoại.',
       },
       {
-        heading: '2. Cơ Chế Nhận EXP & Công Thức Cấp Độ',
-        content: '• Chat Tu Luyện: 15-25 EXP/tin nhắn (cooldown 45s).\n• Voice Thiền Định: 50-100 EXP mỗi 5 phút hoạt động.\n• Công thức EXP cần thăng cấp: 100 * (Level ^ 1.8), tối đa 500.000 EXP tại Lv.100.\n• Role Buff: « Thần Hành Cốt Cách » miễn chờ chat chậm; « Linh Hồn Tu Luyện » +15% EXP Solo.'
+        heading: '2. Lệnh Cốt Lõi',
+        content: '• /profile [user]: Thẻ hồ sơ Full HD+ (2000×1000) — Cảnh giới, Pet, 3 Slot Pháp Bảo, Role Quyền Năng.\n• /rank [user]: Thẻ tiến độ cấp độ Full HD+ (2000×410).\n• /battle [doi_thu]: Thách đấu Linh Thú 1v1, trả trực tiếp Ảnh Chiến Báo Full HD+.\n• /wiki: Tra cứu toàn thư tương tác qua Dropdown Menu.',
       },
-      {
-        heading: '3. Các Lệnh Thẻ Hồ Sơ Tu Tiên',
-        content: '• /profile [user]: Xuất Thẻ Tiên Đạo 6 tầng HD (1000x500) hiển thị Cảnh Giới, Pet, 3 Slot Trang Bị Loadout, Role Đeo và Tình Duyên.\n• /rank [user]: Xuất Thẻ Mini Rank HD (1000x205) tóm lược vị thế tu tiên, thứ hạng server, cấp độ và thanh tiến trình EXP.'
-      }
     ],
     fields: [
       {
-        name: '🌟 7 Tầng Cảnh Giới Tu Tiên',
-        value: '• **I. Luyện Khí Sơ Kỳ** (Lv.1-19): Khai mở linh mạch\n• **II. Trúc Cơ Đạo Cảnh** (Lv.20-39): Đúc thành tiên cơ\n• **III. Kim Đan Đại Đạo** (Lv.40-59): Kết tụ kim đan nội phủ\n• **IV. Nguyên Anh Chân Quân** (Lv.60-79): Xuất khiếu cửu tiêu\n• **V. Hóa Thần Tiên Tôn** (Lv.80-89): Thiên nhân hợp nhất\n• **VI. Đại Thừa Vô Cực** (Lv.90-99): Nửa bước vào tiên tịch\n• **VII. Hỗn Độn Chúa Tể** (Lv.100+): Đỉnh cao tối thượng Cửu Vĩ',
-        inline: false
+        name: '🌱 Khởi Đầu Tân Thủ',
+        value: '• Mặc định: **Lv.1 • 0 EXP • 0 Linh Thạch • 1 Slot Role**.\n• Pet khởi đầu: **Hóa Thạch Nham Nham Thú** *(Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD)*.\n• Tự động khởi tạo hồ sơ khi tương tác Chat / Voice.',
+        inline: false,
       },
       {
-        name: '⚡ Cách Nhận EXP & Cày Cấp',
-        value: '• **Chat Tu Luyện**: 15-25 EXP/tin nhắn (cooldown 45s).\n• **Voice Thiền Định**: 50-100 EXP/5 phút treo voice.\n• **Role Buff**: « Thần Hành Cốt Cách » miễn chờ chat chậm; « Linh Hồn Tu Luyện » +15% EXP Solo.',
-        inline: true
+        name: '📌 Lệnh Cốt Lõi',
+        value: '• `/profile [user]` — Thẻ hồ sơ Full HD+ (`2000×1000`).\n• `/rank [user]` — Thẻ cấp độ Mini (`2000×410`).\n• `/battle [doi_thu]` — Đấu trường 1v1 bằng Ảnh Chiến Báo.\n• `/wiki` — Cẩm nang tương tác theo chuyên mục.',
+        inline: false,
       },
-      {
-        name: '🎴 Lệnh Thẻ Tiên Đạo',
-        value: '• `/profile [user]`: Thẻ hồ sơ đa tầng 1000x500 HD sắc nét.\n• `/rank [user]`: Thẻ tiến độ Mini 1000x205 HD.',
-        inline: true
-      }
     ],
-    content: 'Tu tiên tại SuMi Family là con đường rèn luyện từ phàm nhân thành Hỗn Độn Chúa Tể. Tích cực đàm đạo tại các kênh chat, điểm danh hàng ngày và tham chiến để nhận EXP thăng cấp và đột phá cảnh giới.'
+    content: 'Hệ thống tu tiên SuMi Family vận hành theo 4 trụ cột: Cày EXP đột phá cảnh giới, bồi dưỡng Linh Thú, săn 45 Pháp Bảo Loadout và tranh tài tại Đấu Trường 1v1. Chọn chuyên mục bên dưới để xem chi tiết.',
   },
 
-  pets: {
-    id: 'pets',
-    title: '🐾 Hệ Thống Linh Thú',
-    icon: '🐾',
-    description: '27+ Chiến Pet Ngũ Hành, 4 Phẩm Cấp & Tuyệt Kỹ HAX Lật Kèo',
+  realms: {
+    id: 'realms',
+    title: '🌌 Hệ Thống Cảnh Giới & Thăng Cấp',
+    icon: '🌌',
+    description: '7 Đại Cảnh Giới (Lv.1–100), công thức EXP, mốc Role cấp độ và mở khóa Slot Role.',
+    image_url: '',
     sections: [
       {
-        heading: '1. Bốn Phẩm Cấp Linh Thú',
-        content: '• Phàm Phẩm (Trắng): Thú cưng hoang dã sơ khai, tư chất bình dị.\n• Linh Phẩm (Lam): Đã khai mở linh trí, có năng lực khống chế hoặc phá giáp.\n• Tiên Phẩm (Tím): Hấp thu nhật nguyệt tinh hoa, sở hữu tuyệt chiêu hút máu, trói chân, phong ấn chiêu thức.\n• Thần Thoại (Đỏ Vàng): Thượng cổ thần thú cái thế, nắm giữ kỹ năng HAX phá vỡ quy tắc.'
+        heading: '1. Bảy Đại Cảnh Giới & Mở Khóa Slot Role',
+        content: '• I. Luyện Khí Sơ Kỳ (Lv.1–19) — 1 Slot Role\n• II. Trúc Cơ Đạo Cảnh (Lv.20–39) — 2 Slot Role\n• III. Kim Đan Đại Đạo (Lv.40–59) — 3 Slot Role • Viền Tử Kim\n• IV. Nguyên Anh Chân Quân (Lv.60–79) — 4 Slot Role\n• V. Hóa Thần Tiên Tôn (Lv.80–89) — 5 Slot Role\n• VI. Đại Thừa Vô Cực (Lv.90–99) — 5 Slot Role\n• VII. Hỗn Độn Chúa Tể (Lv.100) — Đỉnh cao tối thượng',
       },
       {
-        heading: '2. Linh Thú Tiêu Biểu & Kỹ Năng HAX',
-        content: '• Cửu Vĩ Hồng Hồ (Hỗn Độn - Tối Thượng Thần Thoại): Bất tử 3 đòn đầu, phản 100% sát thương gốc (Độc quyền Fuyumi).\n• Cửu Vĩ Thiên Hồ (Quang/Hỗn Độn): Thiên Hồ Hàng Thế tăng 50% toàn bộ chỉ số trong 3 hiệp đầu.\n• Lôi Đình Kim Hồ (Lôi): Lôi Quang Tốc, luôn giành quyền xuất chiêu trước.\n• Chu Tước Ấu Điểu (Hỏa): Niết Bàn Tái Sinh với 50% HP khi tử trận.\n• Hàn Băng Kỳ Lân (Thủy): Hàn Khí Giáp, giảm 40% sát thương bạo kích gánh chịu.\n• U Minh Lang Vương (Ám): Tuyệt Mệnh Trảm, địch dưới 25% máu 50% bị kết liễu ngay.\n• Tinh Không Dạ Thao (Hư Không): Hỗn Loạn, ép đối thủ tự đánh chính mình.'
+        heading: '2. Cơ Chế Tích Lũy EXP & Công Thức',
+        content: '• Chat: 15–25 EXP / tin nhắn hợp lệ (cooldown 45 giây).\n• Voice: 50–100 EXP mỗi 5 phút hoạt động trong kênh thoại.\n• Công thức thăng cấp: 100 × (Level ^ 1.8), trần 500.000 EXP tại Lv.100.\n• Buff EXP: « Linh Hồn Tu Luyện » (+15% EXP), « Cửu Vĩ Yêu Hậu » (+80% EXP).',
       },
       {
-        heading: '3. Ba Chỉ Số Cốt Lõi & Lực Chiến',
-        content: '• ATK: Sức sát thương cơ bản khi ra đòn.\n• DEF: Khả năng triệt tiêu sát thương gánh chịu.\n• SPD: Quyết định quyền xuất chiêu trước và khả năng né tránh.\n• Công thức Chiến Lực: (ATK * 3) + (DEF * 2) + (SPD * 2) + (Level * 50) + Bonus Trang Bị.'
-      }
+        heading: '3. Mốc Level Roles Tự Động',
+        content: 'Lv.5 U Linh Chớm Nở → Lv.15 Linh Cáo Học Giả → Lv.20 Linh Cáo Tinh Anh → Lv.35 Yêu Hồ Nguyệt Ảnh → Lv.45 Huyễn Linh Thú → Lv.60 Thiên Hồ Viễn Cổ → Lv.80 Chi Linh Thánh Đế → Lv.100 Hỗn Độn Chúa Tể.',
+      },
     ],
     fields: [
       {
-        name: '✨ 4 Phẩm Cấp Linh Thú',
-        value: '• ⚪ **Phàm Phẩm**: Hoang dã sơ khai\n• 🔵 **Linh Phẩm**: Khai mở linh trí, khống chế đối thủ\n• 🟣 **Tiên Phẩm**: Hấp thu nhật nguyệt, hút máu & phong ấn chiêu\n• 🔴 **Thần Thoại**: HAX phá vỡ quy tắc sinh tử',
-        inline: false
+        name: '🏔️ 7 Đại Cảnh Giới & Mở Khóa Slot Role',
+        value: '• **I. Luyện Khí Sơ Kỳ** (`Lv.1–19`) • 1 Slot • Viền Bạch Ngọc\n• **II. Trúc Cơ Đạo Cảnh** (`Lv.20–39`) • 2 Slot\n• **III. Kim Đan Đại Đạo** (`Lv.40–59`) • 3 Slot • Viền Tử Kim\n• **IV. Nguyên Anh Chân Quân** (`Lv.60–79`) • 4 Slot\n• **V. Hóa Thần Tiên Tôn** (`Lv.80–89`) • 5 Slot\n• **VI. Đại Thừa Vô Cực** (`Lv.90–99`) • 5 Slot\n• **VII. Hỗn Độn Chúa Tể** (`Lv.100`) • Đỉnh cao tối thượng',
+        inline: false,
       },
       {
-        name: '🦊 Linh Thú Tiêu Biểu & Tuyệt Kỹ HAX',
-        value: '• **Cửu Vĩ Hồng Hồ** (Hỗn Độn): Bất tử 3 đòn đầu, phản 100% sát thương gốc.\n• **Lôi Đình Kim Hồ** (Lôi): Lôi Quang Tốc, luôn đánh trước mọi đối thủ.\n• **Chu Tước Ấu Điểu** (Hỏa): Niết Bàn Tái Sinh với 50% HP.\n• **Hàn Băng Kỳ Lân** (Thủy): Hàn Khí Giáp, giảm 40% sát thương bạo kích.\n• **U Minh Lang Vương** (Ám): Tuyệt Mệnh Trảm, địch dưới 25% máu 50% bị kết liễu ngay.\n• **Tinh Không Dạ Thao** (Hư Không): Hỗn Loạn, ép địch tự đánh chính mình.',
-        inline: false
+        name: '⚡ Nguồn EXP & Công Thức',
+        value: '• **Chat**: `15–25 EXP` / tin *(cooldown 45s)*.\n• **Voice**: `50–100 EXP` / `5 phút` hoạt động.\n• **Mốc EXP**: `100 × (Level ^ 1.8)` *(trần 500.000 ở Lv.100)*.\n• **Buff**: `Linh Hồn Tu Luyện` (+15%) • `Cửu Vĩ Yêu Hậu` (+80%).',
+        inline: false,
       },
       {
-        name: '⚔️ Công Thức Lực Chiến',
-        value: '`Chiến Lực = (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị`',
-        inline: false
-      }
+        name: '🏅 Mốc Level Roles',
+        value: '`Lv.5` → `Lv.15` → `Lv.20` → `Lv.35` → `Lv.45` → `Lv.60` → `Lv.80` → `Lv.100`',
+        inline: false,
+      },
     ],
-    content: 'Linh thú không chỉ gia tăng lực chiến tổng mà còn đồng hành cùng tu sĩ trong mọi trận đấu trường pet. Nâng cấp cấp độ và bồi dưỡng sao linh thú để mở khóa tiềm năng vô hạn.'
-  },
-
-  equipment: {
-    id: 'equipment',
-    title: '⚔️ 45 Món Trang Bị Loadout',
-    icon: '⚔️',
-    description: '15 Vũ khí, 15 Bảo ngọc, 15 Chiến hồn & 9 Tuyệt Kỹ Thần Thoại',
-    sections: [
-      {
-        heading: '1. Cấu Trúc 3 Slot Loadout',
-        content: '• ⚔️ Vũ Khí (Weapon): Tăng mạnh Công kích (ATK), Tốc xuất chiêu (SPD) và Bạo kích (Crit Rate / Crit DMG).\n• 💎 Bảo Ngọc (Gem): Tăng Sinh lực (HP), Phòng thủ cứng (DEF), Khiên hộ mệnh và Kháng hiệu ứng.\n• 🦊 Chiến Hồn (Soul): Kích hoạt Thiên Phú Ẩn, Tăng Tốc (SPD), Hút máu, Ru ngủ hoặc Ngưng đọng thời gian.'
-      },
-      {
-        heading: '2. Tỷ Lệ Rơi & 4 Bậc Phẩm Cấp',
-        content: '• Phàm Phẩm (Common): 60.0% tỷ lệ rơi.\n• Linh Phẩm (Rare): 25.0% tỷ lệ rơi.\n• Tiên Phẩm (Epic): 14.0% tỷ lệ rơi.\n• Thần Thoại (Mythic): 1.0% tỷ lệ rơi siêu hiếm.'
-      },
-      {
-        heading: '3. 9 Kỹ Năng HAX Trang Bị Thần Thoại',
-        content: '• Tru Tiên Diệt Thần Kiếm (Vũ Khí 1): Tuyệt Diệt Bất Tử - Xuyên 100% khiên chắn, vô hiệu hóa Bất Tử / Trùng Sinh trong 3 lượt đầu.\n• Cửu Thiên Lôi Đình Cổ Thần Thương (Vũ Khí 2): Lôi Thần Trấn Áp - Cướp 40% Tốc SPD của đối thủ chuyển thành ATK suốt trận.\n• Hồng Mông Hỗn Độn Trượng (Vũ Khí 3): Hỗn Độn Nghịch Đảo - 35% biến đòn đánh của địch thành máu và phản 100%.\n• Bất Hủ Thần Hoàng Ngọc (Bảo Ngọc 1): Kim Thân Hộ Mệnh - Giữ lại 1 HP khi chết, miễn nhiễm sát thương 2 lượt.\n• Vạn Tượng Quy Nhất Châu (Bảo Ngọc 2): Kính Hoa Thủy Nguyệt - Phản 75% sát thương dội ngược lại địch (bỏ qua giáp).\n• Thiên Hồ Hóa Thần Ngọc (Bảo Ngọc 3): Thần Hồ Diễm Hộ - Khiên hộ mệnh 100% HP, giảm 50% uy lực công kích của địch.\n• Cửu Vĩ Thiên Tiên Hồn (Chiến Hồn 1): Mị Hoặc Chúng Sinh - 40% mỗi lượt ép đối thủ tự tung sát chiêu tự sát.\n• Thái Sơ Thời Không Ma Thần Hồn (Chiến Hồn 2): Thời Không Đình Chỉ - Đóng băng thời gian, đánh liên tiếp 2 lượt.\n• Luân Hồi Bất Diệt Chiến Hồn (Chiến Hồn 3): Sinh Mệnh Nghịch Chuyển - Đổi % máu cho địch khi rơi xuống dưới 20% HP.'
-      }
-    ],
-    fields: [
-      {
-        name: '🛡️ 3 Slot Trang Bị Loadout',
-        value: '• ⚔️ **Vũ Khí**: Tăng ATK, SPD & CRIT.\n• 💎 **Bảo Ngọc**: Tăng DEF, HP & Khiên Chắn.\n• 🦊 **Chiến Hồn**: Kích hoạt Thiên Phú Ẩn, Hút Máu, SPD & HAX.',
-        inline: false
-      },
-      {
-        name: '👑 9 Tuyệt Kỹ HAX Trang Bị Thần Thoại',
-        value: '1. `« Tru Tiên Diệt Thần Kiếm »`: Xuyên khiên 100%, khóa Bất Tử/Trùng Sinh 3 lượt đầu.\n2. `« Cửu Thiên Lôi Đình Cổ Thần Thương »`: Cướp 40% SPD của địch chuyển thành ATK.\n3. `« Hồng Mông Hỗn Độn Trượng »`: 35% biến đòn đánh của địch thành máu và phản 100%.\n4. `« Bất Hủ Thần Hoàng Ngọc »`: Giữ lại 1 HP khi chết, miễn nhiễm sát thương 2 lượt.\n5. `« Vạn Tượng Quy Nhất Châu »`: Phản 75% sát thương dội ngược lại địch (bỏ qua giáp).\n6. `« Thiên Hồ Hóa Thần Ngọc »`: Khiên hộ mệnh 100% HP, giảm 50% uy lực công kích của địch.\n7. `« Cửu Vĩ Thiên Tiên Hồn »`: 40% mỗi lượt Mị Hoặc ép địch tự tung sát chiêu tự sát.\n8. `« Thái Sơ Thời Không Ma Thần Hồn »`: Đóng băng thời gian, đánh liên tiếp 2 lượt.\n9. `« Luân Hồi Bất Diệt Chiến Hồn »`: Đổi % máu cho địch khi rơi xuống dưới 20% HP.',
-        inline: false
-      }
-    ],
-    content: 'Hệ thống 45 trang bị mang đến chiều sâu chiến thuật không giới hạn, cho phép xây dựng các build Đấu Sĩ Phản Đòn, Bạo Kích Sát Thương, Tốc Độ Khống Chế hoặc Sinh Lực Hộ Mệnh.'
+    content: 'Lộ trình tu luyện gồm 7 đại cảnh giới từ Lv.1 đến Lv.100. Đạt mốc cảnh giới tự động mở khóa thêm Slot Role Quyền Năng và nâng cấp viền Avatar trên `/profile` & `/rank`.',
   },
 
   battle: {
     id: 'battle',
-    title: '🥋 Đấu Trường & Ngũ Hành',
+    title: '🥋 Đấu Trường & Ngũ Hành Tương Khắc',
     icon: '🥋',
-    description: 'Tương sinh tương khắc 9 hệ, hệ Hỗn Độn & tính toán sát thương',
+    description: 'Quy tắc 1v1, sơ đồ vòng xoay Ngũ Hành và Tứ Đại Dị Tố đặc thù.',
+    image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.png`,
     sections: [
       {
-        heading: '1. Quy Luật Tương Khắc Ngũ Hành',
-        content: '• Chu kỳ tương khắc: Kim -> Mộc -> Thổ -> Thủy -> Hỏa -> Kim.\n• Thuận Khắc Hệ: Gây thêm +30% Sát thương (x1.30).\n• Bị Khắc Hệ: Bị giảm -20% Sát thương gây ra (x0.80).'
+        heading: '1. Vòng Xoay Ngũ Hành',
+        content: '• Kim ➜ Mộc ➜ Thổ ➜ Thủy ➜ Hỏa ➜ Kim.\n• Thuận khắc: +30% sát thương (×1.30).\n• Bị khắc: -20% sát thương gây ra (×0.80).',
       },
       {
         heading: '2. Tứ Đại Dị Tố Đặc Thù',
-        content: '• Lôi: Tương sinh Kim & Thủy, khắc chế cực mạnh Thủy & Kim (+30% bonus damage).\n• Ám & Quang: Tương sát lưỡng cực, gây thêm +25% sát thương chí mạng lẫn nhau.\n• Hỗn Độn / Hư Không: Đứng ngoài ngũ hành, không bị khắc chế, gây +20% sát thương chuẩn xuyên giáp lên toàn hệ và giảm 15% sát thương nhận vào.'
+        content: '• Lôi: Khắc mạnh Thủy & Kim (+30% DMG); Thủy/Kim đánh Lôi giảm -20%.\n• Ám ⚔️ Quang: Tương sát lưỡng cực (+25% DMG hai chiều).\n• Hỗn Độn / Hư Không: Ngoài ngũ hành, không bị khắc, +20% sát thương chuẩn xuyên giáp & -15% sát thương nhận vào.',
       },
       {
-        heading: '3. Thứ Tự Xuất Chiêu & Độ Bền Trận Đấu',
-        content: '• Ưu tiên tuyệt đối: Kỹ năng HAX Lôi Quang Tốc luôn ra đòn trước tiên.\n• So sánh Tốc độ: Final SPD bên nào cao hơn sẽ chiếm thế chủ động.\n• Giới hạn 20 lượt: Nếu sau 20 lượt chưa ngã ngũ, bên có % máu cao hơn sẽ chiến thắng.'
-      }
+        heading: '3. Quy Tắc 1v1 (/battle)',
+        content: '• Ưu tiên ra đòn: HAX Lôi Quang Tốc > Final SPD cao hơn.\n• Công thức HP chiến đấu: (Lv × 1.000) + (Final DEF × 5) + Bonus HP.\n• Giới hạn 20 hiệp; hết hiệp bên còn nhiều HP hơn giành chiến thắng.',
+      },
     ],
     fields: [
       {
-        name: '🌀 Vòng Tương Khắc Ngũ Hành',
-        value: '`Kim ➜ Mộc ➜ Thổ ➜ Thủy ➜ Hỏa ➜ Kim`\n• **Thuận Khắc**: Gây thêm `+30% Sát Thương` (x1.30).\n• **Bị Khắc**: Giảm `-20% Sát Thương` gây ra (x0.80).',
-        inline: true
+        name: '🌀 Ngũ Hành Tương Khắc',
+        value: '`Kim ➜ Mộc ➜ Thổ ➜ Thủy ➜ Hỏa ➜ Kim`\n• Thuận khắc: **+30% DMG** (`×1.30`) • Bị khắc: **-20% DMG** (`×0.80`).',
+        inline: false,
       },
       {
-        name: '⚡ Tứ Đại Dị Tố',
-        value: '• **Lôi**: Khắc mạnh Thủy & Kim (+30% DMG).\n• **Ám ⚔️ Quang**: Tương sát lưỡng cực (+25% DMG lẫn nhau).\n• **Hỗn Độn / Hư Không**: Đứng ngoài ngũ hành, không bị khắc, +20% sát thương chuẩn.',
-        inline: true
+        name: '⚡ Dị Tố Đặc Thù',
+        value: '• **Lôi**: Khắc Thủy & Kim (`+30% DMG`).\n• **Ám ⚔️ Quang**: Tương sát lưỡng cực (`+25% DMG`).\n• **Hỗn Độn / Hư Không**: Ngoài ngũ hành, `+20%` xuyên giáp & `-15%` sát thương nhận vào.',
+        inline: false,
       },
       {
-        name: '⏱️ Thứ Tự Ra Đòn',
-        value: 'Ưu tiên HAX `Lôi Quang Tốc` > So sánh `Final SPD` cao hơn > Trận đấu tối đa 20 hiệp.',
-        inline: false
-      }
+        name: '⚔️ Luật Đấu Trường 1v1',
+        value: '• Thứ tự đánh: `Lôi Quang Tốc` > `Final SPD` cao hơn.\n• `HP = (Lv × 1.000) + (DEF × 5) + Bonus HP` • Tối đa **20 hiệp**.',
+        inline: false,
+      },
     ],
-    content: 'Đấu trường pet là nơi phân tài cao thấp giữa các tu sĩ SuMi Family. Chiến thắng phụ thuộc vào khả năng phối hợp khắc chế nguyên tố và kích hoạt combo HAX của 3 món trang bị.'
+    content: 'Dùng `/battle [doi_thu]` để khiêu chiến Linh Thú 1v1 và nhận trực tiếp Ảnh Chiến Báo Full HD+. Xem sơ đồ tương khắc nguyên tố trực quan bên dưới.',
+  },
+
+  equipment: {
+    id: 'equipment',
+    title: '⚔️ Trang Bị Loadout (45 Pháp Bảo)',
+    icon: '⚔️',
+    description: '3 Slot trang bị (15 Vũ Khí, 15 Bảo Ngọc, 15 Chiến Hồn), tỉ lệ rớt và quy tắc 9 Pháp Bảo Thần Thoại Độc Nhất.',
+    image_url: '',
+    sections: [
+      {
+        heading: '1. Cấu Trúc 3 Slot Loadout',
+        content: '• Vũ Khí (15 món): Tăng ATK, SPD và tỉ lệ bạo kích CRIT.\n• Bảo Ngọc (15 món): Tăng DEF, HP tối đa và khiên hộ mệnh.\n• Chiến Hồn (15 món): Tăng chỉ số tổng hợp và kích hoạt thiên phú HAX.',
+      },
+      {
+        heading: '2. Tỉ Lệ Rớt & Quy Tắc Độc Nhất Toàn Server',
+        content: '• Phàm Phẩm: 60% • Linh Phẩm: 25% • Tiên Phẩm: 14% • Thần Thoại: 1%.\n• 9 Pháp Bảo Thần Thoại (1%) là Độc Nhất Toàn Server: mỗi món chỉ có duy nhất 1 chủ sở hữu tại một thời điểm.',
+      },
+    ],
+    fields: [
+      {
+        name: '🛡️ 3 Nhóm Pháp Bảo',
+        value: '• ⚔️ **Vũ Khí** (15 món): `ATK • SPD • CRIT`\n• 💎 **Bảo Ngọc** (15 món): `DEF • HP • Khiên`\n• 🦊 **Chiến Hồn** (15 món): `ATK • DEF • SPD • HAX`',
+        inline: true,
+      },
+      {
+        name: '🎲 Tỉ Lệ Rớt',
+        value: '• ⚪ Phàm Phẩm: **60%**\n• 🔵 Linh Phẩm: **25%**\n• 🟣 Tiên Phẩm: **14%**\n• 🔴 Thần Thoại: **1%** *(Độc Nhất)*',
+        inline: true,
+      },
+      {
+        name: '👑 Quy Tắc Độc Nhất (9 Món Thần Thoại)',
+        value: 'Mỗi pháp bảo Thần Thoại chỉ tồn tại **duy nhất 1 bản trên toàn server**. Chọn trực tiếp món đồ ở **3 Dropdown bên dưới** để xem thẻ chỉ số Full HD+ và Chủ Sở Hữu hiện tại.',
+        inline: false,
+      },
+    ],
+    content: 'Chọn một pháp bảo từ 3 danh mục **Vũ Khí / Bảo Ngọc / Chiến Hồn** bên dưới để xem thẻ chi tiết Full HD+ (chỉ số, HAX, tỉ lệ rớt và chủ sở hữu hiện tại).',
+  },
+
+  pets: {
+    id: 'pets',
+    title: '🐾 Linh Thú Tiên Giới (20+ Chiến Pet)',
+    icon: '🐾',
+    description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (Phàm / Linh / Tiên / Thần Thoại).',
+    image_url: '',
+    sections: [
+      {
+        heading: '1. Linh Thú Là Gì?',
+        content: '• Linh Thú là chiến hữu đồng hành xuất trận trực tiếp trong /battle và hiển thị trên thẻ /profile.\n• Mọi tân thủ được cấp sẵn 1 Pet Phàm Phẩm mặc định: Hóa Thạch Nham Nham Thú (Hệ Thổ • 120 ATK / 180 DEF / 100 SPD).\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị.',
+      },
+      {
+        heading: '2. Phân Chia 4 Bậc Phẩm Cấp',
+        content: '• Phàm Phẩm (5 loài): Linh thú sơ khai, nền tảng tân thủ.\n• Linh Phẩm (5 loài): Khai mở linh trí, có hiệu ứng khống chế/xuyên giáp.\n• Tiên Phẩm (4 loài): Sở hữu kỹ năng HAX hút máu, khóa HAX, làm mù.\n• Thần Thoại (6 loài + Cửu Vĩ Hồng Hồ độc quyền Fuyumi): Nắm giữ tuyệt kỹ HAX định đoạt trận đấu.',
+      },
+    ],
+    fields: [
+      {
+        name: '📘 Khái Niệm & Công Thức',
+        value: 'Linh Thú là chiến hữu xuất trận trong `/battle`, mang Hệ Ngũ Hành & Kỹ Năng HAX riêng.\n• **Pet khởi đầu**: `Hóa Thạch Nham Nham Thú` *(Phàm Phẩm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Chiến Lực**: `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị`.',
+        inline: false,
+      },
+      {
+        name: '✨ 4 Bậc Phẩm Cấp',
+        value: '• ⚪ **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• 🔵 **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• 🟣 **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• 🔴 **Thần Thoại** *(6 loài + 1 Độc quyền)* — Tuyệt kỹ HAX tối thượng',
+        inline: false,
+      },
+    ],
+    content: 'Chọn một Linh Thú từ **4 Dropdown theo Phẩm Cấp** bên dưới để xem thẻ chi tiết Full HD+ (Hệ nguyên tố, chỉ số `ATK/DEF/SPD/HP` và Kỹ năng HAX).',
   },
 
   economy: {
     id: 'economy',
-    title: '💎 Kinh Tế & Gia Tộc',
+    title: '💎 Kinh Tế Linh Thạch & Gia Tộc',
     icon: '💎',
-    description: 'Linh Thạch, điểm danh tu luyện, Bang phái & Gia Tộc Chiến 24H',
+    description: 'Tiền tệ Linh Thạch, nguồn thu nhập và hệ thống Gia Tộc / Bang Chiến 24H.',
+    image_url: '',
     sections: [
       {
         heading: '1. Tiền Tệ Linh Thạch',
-        content: 'Linh Thạch là huyết mạch giao thương của tiên giới. Dùng để mở gacha triệu hồi pet, đúc 45 món trang bị loadout, cường hóa pháp bảo, nâng cấp gia tộc và cống hiến bang.'
+        content: '• Công dụng: Quay gacha Linh Thú, rèn 45 Pháp Bảo Loadout, nâng sao Pet và cống hiến ngân khố Gia Tộc.\n• Buff Role: « Tài Vận Hanh Thông » (+20% Linh Thạch), « Sáng Thế Thần Quân » (×2.5 Linh Thạch).',
       },
       {
-        heading: '2. Cách Tích Lũy Linh Thạch Hàng Ngày',
-        content: '• Điểm danh hằng ngày: Nhận 100 - 500 Linh Thạch mỗi ngày. Duy trì streak 7 ngày nhận rương quà bạo kích chứa bảo vật quý hiếm.\n• Giao lưu server: Trò chuyện và thiền định voice để tích lũy Linh Thạch tự động.\n• Role Buff: « Tài Vận Hanh Thông » tăng vĩnh viễn +20% Linh Thạch từ mọi nguồn.'
+        heading: '2. Gia Tộc & Clan Wars 24H',
+        content: '• Gia Tộc cấp 1–10, quy mô 10–50 thành viên.\n• Clan Wars 24H: Hai gia tộc đặt cược Linh Thạch và thi đấu tổng điểm chiến lực trong 24 giờ.',
       },
-      {
-        heading: '3. Gia Tộc & Đại Chiến Bang Phái 24H',
-        content: '• Lập bang: Đạt cảnh giới Kim Đan trở lên có thể thành lập Gia Tộc (cấp 1-10, quy mô 10-50 người).\n• Gia tộc tối thượng: Thiên Hồ Thần Tộc (🦊TH) do Tiên Chủ Fuyumi thống lĩnh (Cấp 5, Ngân khố 99.999.999 Linh Thạch).\n• Clan Wars 24H: Khiêu chiến đặt cược Linh Thạch, thi đấu điểm số chiến lực trong 24 giờ để đoạt toàn bộ ngân khố cược của đối phương.'
-      }
     ],
     fields: [
       {
-        name: '💎 Linh Thạch & Điểm Danh',
-        value: '• **Linh Thạch**: Dùng quay gacha pet, đúc trang bị, nâng sao, cống hiến bang.\n• **Điểm Danh Hằng Ngày**: Nhận 100-500 Linh Thạch/ngày. Duy trì streak nhận rương quà bạo kích.\n• **Role Buff**: « Tài Vận Hanh Thông » tăng vĩnh viễn +20% Linh Thạch.',
-        inline: false
+        name: '💎 Linh Thạch',
+        value: '• Dùng để triệu hồi Linh Thú, rèn Pháp Bảo, nâng sao và đóng góp Gia Tộc.\n• **Buff**: `Tài Vận Hanh Thông` (+20%) • `Sáng Thế Thần Quân` (×2.5).',
+        inline: false,
       },
       {
-        name: '🦊 Gia Tộc & Bang Chiến 24H',
-        value: '• **Gia Tộc Tiêu Biểu**: `Thiên Hồ Thần Tộc (🦊TH)` do Tiên Chủ Fuyumi thống lĩnh (Cấp 5, Ngân khố 99.999.999 Linh Thạch).\n• **Clan Wars 24H**: Tuyên chiến đặt cược Linh Thạch, thi đấu chiến lực 24 giờ đoạt toàn bộ ngân khố cược.',
-        inline: false
-      }
+        name: '🏰 Gia Tộc & Clan Wars 24H',
+        value: '• Quy mô cấp 1–10 (`10–50` thành viên).\n• Gia tộc tiêu biểu: **Thiên Hồ Thần Tộc (`🦊TH`)**.\n• **Clan Wars 24H**: Đặt cược Linh Thạch, tranh đoạt ngân khố trong 24 giờ.',
+        inline: false,
+      },
     ],
-    content: 'Một nền kinh tế phồn vinh tạo nền tảng vững chắc cho mọi tu sĩ trên con đường phi thăng tiên giới.'
-  }
+    content: 'Linh Thạch là đơn vị tài nguyên cốt lõi để cường hóa Linh Thú, trang bị Pháp Bảo và phát triển Gia Tộc tại SuMi Family.',
+  },
 };
 
 /**
- * Trích xuất dữ liệu Cẩm Nang Tu Tiên
- * @param {string|null} categoryId - Mã chuyên mục (beginner, pets, equipment, battle, economy, all)
- * @returns {object} Payload kết quả
+ * Tra cứu danh mục Wiki (tất cả 6 chuyên mục hoặc lọc 1 chuyên mục duy nhất)
  */
 export function getWikiData(categoryId = null) {
   if (!categoryId || typeof categoryId !== 'string') {
     return {
       success: true,
       ...WIKI_METADATA,
-      categories: Object.values(WIKI_CATEGORIES)
+      categories: VALID_CATEGORIES.map((k) => WIKI_CATEGORIES[k]),
     };
   }
 
-  const cleanId = categoryId.trim().toLowerCase();
-
-  if (!cleanId || cleanId === 'all') {
+  const raw = categoryId.trim().toLowerCase();
+  if (!raw || raw === 'all') {
     return {
       success: true,
       ...WIKI_METADATA,
-      categories: Object.values(WIKI_CATEGORIES)
+      categories: VALID_CATEGORIES.map((k) => WIKI_CATEGORIES[k]),
     };
   }
 
-  if (!VALID_CATEGORIES.includes(cleanId)) {
+  const resolvedId = Object.prototype.hasOwnProperty.call(CATEGORY_ALIASES, raw)
+    ? CATEGORY_ALIASES[raw]
+    : raw;
+
+  if (!VALID_CATEGORIES.includes(resolvedId) || !Object.prototype.hasOwnProperty.call(WIKI_CATEGORIES, resolvedId)) {
     return {
       success: false,
       error: 'Category not found',
       message: `Chuyên mục wiki '${categoryId}' không tồn tại.`,
-      valid_categories: VALID_CATEGORIES
+      valid_categories: VALID_CATEGORIES,
     };
   }
-
-  const category = WIKI_CATEGORIES[cleanId];
 
   return {
     success: true,
     ...WIKI_METADATA,
-    category: cleanId,
-    data: category
+    category: resolvedId,
+    data: WIKI_CATEGORIES[resolvedId],
+  };
+}
+
+/**
+ * Trả về danh mục phân nhóm phục vụ Dropdown Trang Bị (3 nhóm) & Linh Thú (4 phẩm cấp)
+ */
+export function getWikiCatalogSummary() {
+  return {
+    success: true,
+    equipment: {
+      weapon: EQUIPMENT_CATALOG.filter((i) => i.item_type === 'weapon'),
+      gem: EQUIPMENT_CATALOG.filter((i) => i.item_type === 'gem'),
+      soul: EQUIPMENT_CATALOG.filter((i) => i.item_type === 'soul'),
+    },
+    pets: {
+      common: PET_CATALOG.filter((p) => p.rarity_key === 'common'),
+      rare: PET_CATALOG.filter((p) => p.rarity_key === 'rare'),
+      epic: PET_CATALOG.filter((p) => p.rarity_key === 'epic'),
+      mythic: PET_CATALOG.filter((p) => p.rarity_key === 'mythic' || p.rarity_key === 'supreme'),
+    },
+  };
+}
+
+/**
+ * Truy vấn chủ sở hữu thực tế từ Supabase cho 9 Pháp Bảo Thần Thoại Độc Nhất
+ */
+async function resolveMythicItemOwner(itemId) {
+  if (supabase) {
+    try {
+      const { data: ownership } = await supabase
+        .from('user_pet_items')
+        .select('user_id')
+        .eq('item_id', itemId)
+        .limit(1)
+        .maybeSingle();
+
+      if (!ownership?.user_id) return null;
+
+      const { data: user } = await supabase
+        .from('users')
+        .select('user_id, username')
+        .eq('user_id', ownership.user_id)
+        .maybeSingle();
+
+      return {
+        user_id: ownership.user_id,
+        username: user?.username || `Tu Sĩ #${String(ownership.user_id).slice(-4)}`,
+      };
+    } catch (err) {
+      console.warn(`[WikiService] Failed to query mythic owner for ${itemId}:`, err.message);
+      return null;
+    }
+  }
+
+  // Fallback chỉ khi chạy offline không kết nối Supabase
+  if (['weapon_mythic_1', 'gem_mythic_3', 'soul_mythic_1'].includes(itemId)) {
+    return { user_id: FUYUMI_USER_ID, username: 'Fuyumi 🌸' };
+  }
+  return null;
+}
+
+/**
+ * Tra cứu chi tiết 1 Pháp Bảo Loadout (kèm Chủ Sở Hữu thời gian thực cho 9 món Thần Thoại Độc Nhất)
+ */
+export async function getWikiItemDetail(itemId) {
+  if (!itemId || typeof itemId !== 'string') {
+    return { success: false, error: 'Item not found', message: 'Thiếu mã trang bị.' };
+  }
+
+  const cleanId = itemId.trim().toLowerCase().replace(/\.png$/i, '');
+  if (!Object.prototype.hasOwnProperty.call(EQUIPMENT_BY_ID, cleanId)) {
+    return {
+      success: false,
+      error: 'Item not found',
+      message: `Trang bị '${itemId}' không tồn tại.`,
+    };
+  }
+
+  const item = EQUIPMENT_BY_ID[cleanId];
+  const tier = RARITY_TIERS[item.rarity_key] || RARITY_TIERS.common;
+  const slotLabel = item.item_type === 'weapon' ? 'Vũ Khí' : item.item_type === 'gem' ? 'Bảo Ngọc' : 'Chiến Hồn';
+  const currentOwner = item.is_unique ? await resolveMythicItemOwner(item.item_id) : null;
+
+  const statParts = [];
+  if (item.bonus_atk) statParts.push(`ATK ${item.bonus_atk > 0 ? '+' : ''}${item.bonus_atk}`);
+  if (item.bonus_def) statParts.push(`DEF ${item.bonus_def > 0 ? '+' : ''}${item.bonus_def}`);
+  if (item.bonus_spd) statParts.push(`SPD ${item.bonus_spd > 0 ? '+' : ''}${item.bonus_spd}`);
+  if (item.bonus_hp) statParts.push(`HP +${item.bonus_hp.toLocaleString('vi-VN')}`);
+  if (item.bonus_crit) statParts.push(`CRIT +${item.bonus_crit}%`);
+
+  const ownerLine = item.is_unique
+    ? (currentOwner
+      ? `👑 **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)`
+      : '👑 **Độc Nhất Toàn Server** — Chưa có chủ sở hữu')
+    : null;
+
+  const effectLine = item.hax_skill
+    ? `⚡ **${item.hax_skill}**: ${item.hax_description}`
+    : (item.hax_description ? `✨ ${item.hax_description}` : 'Tăng trực tiếp chỉ số chiến đấu cho Linh Thú.');
+
+  const descriptionLines = [
+    `${tier.emoji} **${item.rarity}** • ${slotLabel} • Hệ **${item.element}** • Tỉ lệ rớt **${item.drop_rate}%**`,
+    `📊 **Chỉ số**: \`${statParts.join(' | ') || 'Không có'}\``,
+    effectLine,
+  ];
+  if (ownerLine) descriptionLines.push(ownerLine);
+
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.png`;
+
+  return {
+    success: true,
+    data: {
+      ...item,
+      slot_label: slotLabel,
+      current_owner: currentOwner,
+      owner_label: item.is_unique
+        ? (currentOwner ? currentOwner.username : 'Chưa có chủ sở hữu')
+        : null,
+      image_url: imageUrl,
+      asset_path: `items/${item.item_id}.png`,
+    },
+    embed: {
+      title: `${item.icon} ${item.item_name}`,
+      description: descriptionLines.join('\n'),
+      color: tier.color,
+      color_dec: tier.colorDec,
+      image_url: imageUrl,
+      footer: `SuMi Family • Kho Pháp Bảo (${slotLabel} • ${item.rarity})`,
+    },
+  };
+}
+
+/**
+ * Tra cứu chi tiết 1 Linh Thú theo mã pet_type
+ */
+export async function getWikiPetDetail(petType) {
+  if (!petType || typeof petType !== 'string') {
+    return { success: false, error: 'Pet not found', message: 'Thiếu mã Linh Thú.' };
+  }
+
+  const cleanType = petType.trim().toLowerCase().replace(/\.png$/i, '');
+  if (!Object.prototype.hasOwnProperty.call(PET_BY_TYPE, cleanType)) {
+    return {
+      success: false,
+      error: 'Pet not found',
+      message: `Linh Thú '${petType}' không tồn tại.`,
+    };
+  }
+
+  const pet = PET_BY_TYPE[cleanType];
+  const tier = RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+
+  const tagNotes = [];
+  if (pet.is_starter) tagNotes.push('🌱 Linh Thú Khởi Đầu Mặc Định');
+  if (pet.is_exclusive_fuyumi) tagNotes.push('👑 Độc Quyền Tiểu Thư Fuyumi');
+
+  const descriptionLines = [
+    `${tier.emoji} **${pet.rarity}** • Hệ **${pet.element}**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
+    `📊 **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
+    `⚡ **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
+  ];
+
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.png`;
+
+  return {
+    success: true,
+    data: {
+      ...pet,
+      image_url: imageUrl,
+    },
+    embed: {
+      title: `${pet.icon} ${pet.pet_name}`,
+      description: descriptionLines.join('\n'),
+      color: tier.color,
+      color_dec: tier.colorDec,
+      image_url: imageUrl,
+      footer: `SuMi Family • Bách Khoa Linh Thú (${pet.rarity} • Hệ ${pet.element})`,
+    },
   };
 }

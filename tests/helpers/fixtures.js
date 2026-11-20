@@ -41,29 +41,29 @@ export const FIXTURE_USERS = {
     isStaff: false,
     staffRolePos: 124, // < 137 cutoff (« Chấp Pháp Linh Hồ »)
     roleName: '« Chấp Pháp Linh Hồ »',
-    level: 18,
+    level: 1,
     realm: 'I. Luyện Khí Sơ Kỳ',
-    linhThach: 1250,
+    linhThach: 0,
     pet: {
-      name: 'Băng Tuyết Hồ',
-      type: 'bang_tuyet_ho',
-      rarity: 'Hiếm',
-      element: 'Thủy / Băng',
-      level: 15,
-      star: 3,
-      atk: 450,
-      def: 380,
-      spd: 520,
-      power: 3250,
+      name: 'Hóa Thạch Nham Nham Thú',
+      type: 'hoa_thach_nham_nham',
+      rarity: 'Phàm Phẩm',
+      element: 'Thổ',
+      level: 1,
+      star: 1,
+      atk: 120,
+      def: 180,
+      spd: 100,
+      power: 970,
     },
   },
 
   defaultUser: {
     userId: '123456789012345678',
     username: 'Tu Sĩ #5678',
-    level: 18,
+    level: 1,
     realm: 'I. Luyện Khí Sơ Kỳ',
-    linhThach: 1250,
+    linhThach: 0,
   },
 };
 
@@ -148,9 +148,10 @@ export const BATTLE_FIXTURES = {
 };
 
 export const EXPECTED_WIKI_CATEGORIES = [
-  'beginner',
-  'pets',
-  'equipment',
+  'overview',
+  'realms',
   'battle',
+  'equipment',
+  'pets',
   'economy',
 ];

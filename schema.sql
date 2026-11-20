@@ -54,11 +54,11 @@ CREATE TABLE IF NOT EXISTS users (
     avatar_url TEXT DEFAULT NULL,
     exp BIGINT DEFAULT 0 CHECK (exp >= 0),
     level INT DEFAULT 1 CHECK (level >= 1),
-    linh_thach BIGINT DEFAULT 100 CHECK (linh_thach >= 0),
+    linh_thach BIGINT DEFAULT 0 CHECK (linh_thach >= 0),
     avatar_frame VARCHAR(100) DEFAULT 'default',
     background_url TEXT DEFAULT 'default_background.png',
     bio VARCHAR(200) DEFAULT 'Một vị tu sĩ của SuMi Family',
-    custom_title VARCHAR(100) DEFAULT NULL,
+    custom_title VARCHAR(100) DEFAULT 'Tân Thủ Nhập Đạo',
     max_role_slots INT DEFAULT 1 CHECK (max_role_slots BETWEEN 1 AND 5),
     marry_user_id VARCHAR(32) DEFAULT NULL,
     marry_username VARCHAR(100) DEFAULT NULL,
@@ -66,6 +66,9 @@ CREATE TABLE IF NOT EXISTS users (
     clan_id VARCHAR(50) DEFAULT NULL REFERENCES clans(clan_id) ON DELETE SET NULL,
     streak INT DEFAULT 0 CHECK (streak >= 0),
     last_daily TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_chat_exp_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    voice_joined_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    total_voice_minutes INT DEFAULT 0 CHECK (total_voice_minutes >= 0),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -203,37 +206,42 @@ LEFT JOIN user_pets p ON u.user_id = p.user_id AND p.is_active = TRUE;
 -- ------------------------------------------------------------------------------
 INSERT INTO pets (pet_type, pet_name, element, rarity, base_atk, base_def, base_spd, hax_skill, hax_description, icon)
 VALUES
-    -- Đặc quyền Fuyumi
+    -- Đặc quyền Tiểu thư Fuyumi
     ('cuu_vi_hong_ho', 'Cửu Vĩ Hồng Hồ', 'Hỗn Độn', 'Tối Thượng Thần Thoại', 99999, 99999, 99999, 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', 'Bất tử trước 3 đòn đầu, phản lại 100% sát thương gốc', '🦊'),
-    -- Hệ Hỏa
-    ('hoa_diem_ho', 'Hỏa Diễm Hồ', 'Hỏa', 'Cực Phẩm', 450, 280, 410, 'Thiêu Hồn', 'Bỏ qua 50% giáp của đối thủ', '🔥'),
-    ('viem_nguc_khuyen', 'Viêm Ngục Khuyển', 'Hỏa', 'Hiếm', 380, 320, 350, 'Cuồng Nộ', 'Máu càng thấp sát thương tăng gấp 3', '🐕'),
+    -- 5 Phàm Phẩm (Starter yếu nhất: Hóa Thạch Nham Nham Thú 120/180/100)
+    ('hoa_thach_nham_nham', 'Hóa Thạch Nham Nham Thú', 'Thổ', 'Phàm Phẩm', 120, 180, 100, 'Hóa Đá', 'Hóa đá đối thủ 1 hiệp khi bị tấn công', '🗿'),
+    ('thuy_tinh_huyen_ngao', 'Thủy Tinh Huyền Ngao', 'Thủy', 'Phàm Phẩm', 160, 260, 140, 'Nghịch Lưu Phản Xạ', 'Phản lại 60% sát thương phép', '🐢'),
+    ('thao_moc_linh_vien', 'Thảo Mộc Linh Viên', 'Mộc', 'Phàm Phẩm', 180, 240, 170, 'Đất Mẹ Che Chở', 'Tạo khiên chắn bằng 50% máu tối đa', '🐒'),
+    ('thanh_truc_tien_loc', 'Thanh Trúc Tiên Lộc', 'Mộc', 'Phàm Phẩm', 190, 220, 210, 'Linh Mộc Hồi Xuân', 'Hồi 25% máu mỗi hiệp cho bản thân', '🦌'),
+    ('thiet_giap_xich_giac', 'Thiết Giáp Xích Giác Thú', 'Kim', 'Phàm Phẩm', 200, 280, 150, 'Phản Chấn Thần Lực', 'Phản 80% sát thương vật lý', '🦏'),
+    -- 5 Linh Phẩm
+    ('bang_tuyet_ho', 'Băng Tuyết Hồ', 'Thủy', 'Linh Phẩm', 350, 390, 420, 'Băng Phong', '35% tỉ lệ đóng băng đối thủ 1 hiệp', '❄️'),
+    ('viem_nguc_khuyen', 'Viêm Ngục Khuyển', 'Hỏa', 'Linh Phẩm', 380, 320, 350, 'Cuồng Nộ', 'Máu càng thấp sát thương tăng gấp 3', '🐕'),
+    ('xich_xa_hoa_long', 'Xích Xà Hỏa Long', 'Hỏa', 'Linh Phẩm', 420, 310, 390, 'Hỏa Độc Huyết', 'Đối phương mất 15% máu tối đa mỗi hiệp', '🐉'),
+    ('bach_kim_ho_tu', 'Bạch Kim Hổ Tử', 'Kim', 'Linh Phẩm', 490, 360, 430, 'Phá Giáp Trảm', 'Đòn đánh kế tiếp xuyên 100% mọi lớp phòng ngự', '🐅'),
+    ('hai_duong_tien_ngu', 'Hải Dương Tiên Ngư', 'Thủy', 'Linh Phẩm', 320, 440, 460, 'Thanh Tẩy Linh Triều', 'Xóa bỏ toàn bộ hiệu ứng có lợi của đối thủ', '🐟'),
+    -- 4 Tiên Phẩm
+    ('linh_mieu_hoa_tien', 'Linh Miêu Hoa Tiên', 'Mộc', 'Tiên Phẩm', 390, 350, 490, 'Gai Mộc Trói Chân', 'Khóa không cho đối thủ kích hoạt kỹ năng đặc biệt trong 2 lượt', '🐱'),
+    ('hoa_diem_ho', 'Hỏa Diễm Hồ', 'Hỏa', 'Tiên Phẩm', 450, 280, 410, 'Thiêu Hồn', 'Bỏ qua 50% giáp của đối thủ', '🔥'),
+    ('man_da_la_linh_thu', 'Mạn Đà La Linh Thú', 'Mộc', 'Tiên Phẩm', 430, 360, 410, 'Ký Sinh Hút Máu', 'Gây sát thương bằng 30% máu đối thủ và hút về cho mình', '🌺'),
+    ('kim_si_dieu_hoang', 'Kim Sí Điêu Hoàng', 'Kim', 'Tiên Phẩm', 470, 380, 520, 'Mù Lòa Thái Dương', 'Khiến đối thủ đánh trượt 70% trong 2 hiệp', '🦅'),
+    -- 6 Thần Thoại
     ('chu_tuoc_au_dieu', 'Chu Tước Ấu Điểu', 'Hỏa', 'Thần Thoại', 520, 360, 480, 'Niết Bàn Tái Sinh', 'Hồi sinh 50% máu 1 lần mỗi trận', '🪶'),
-    ('xich_xa_hoa_long', 'Xích Xà Hỏa Long', 'Hỏa', 'Hiếm', 420, 310, 390, 'Hỏa Độc Huyết', 'Đối phương mất 15% máu tối đa mỗi hiệp', '🐉'),
-    -- Hệ Thủy
-    ('bang_tuyet_ho', 'Băng Tuyết Hồ', 'Thủy', 'Hiếm', 350, 390, 420, 'Băng Phong', '35% tỉ lệ đóng băng đối thủ 1 hiệp', '❄️'),
-    ('hai_duong_tien_ngu', 'Hải Dương Tiên Ngư', 'Thủy', 'Cực Phẩm', 320, 440, 460, 'Thanh Tẩy Linh Triều', 'Xóa bỏ toàn bộ hiệu ứng có lợi của đối thủ', '🐟'),
     ('han_bang_ky_lan', 'Hàn Băng Kỳ Lân', 'Thủy', 'Thần Thoại', 510, 480, 450, 'Hàn Khí Giáp', 'Giảm 40% sát thương từ đòn đánh bạo kích', '🦄'),
-    ('thuy_tinh_huyen_ngao', 'Thủy Tinh Huyền Ngao', 'Thủy', 'Hiếm', 280, 580, 260, 'Nghịch Lưu Phản Xạ', 'Phản lại 60% sát thương phép', '🐢'),
-    -- Hệ Mộc
-    ('thanh_truc_tien_loc', 'Thanh Trúc Tiên Lộc', 'Mộc', 'Hiếm', 310, 420, 440, 'Linh Mộc Hồi Xuân', 'Hồi 25% máu mỗi hiệp cho bản thân', '🦌'),
-    ('linh_mieu_hoa_tien', 'Linh Miêu Hoa Tiên', 'Mộc', 'Cực Phẩm', 390, 350, 490, 'Gai Mộc Trói Chân', 'Khóa không cho đối thủ kích hoạt kỹ năng đặc biệt trong 2 lượt', '🐱'),
-    ('man_da_la_linh_thu', 'Mạn Đà La Linh Thú', 'Mộc', 'Cực Phẩm', 430, 360, 410, 'Ký Sinh Hút Máu', 'Gây sát thương bằng 30% máu đối thủ và hút về cho mình', '🌺'),
-    ('thao_moc_linh_vien', 'Thảo Mộc Linh Viên', 'Mộc', 'Hiếm', 340, 460, 330, 'Đất Mẹ Che Chở', 'Tạo khiên chắn bằng 50% máu tối đa', '🐒'),
-    -- Hệ Lôi / Kim
     ('loi_dinh_kim_ho', 'Lôi Đình Kim Hồ', 'Lôi', 'Thần Thoại', 560, 310, 580, 'Lôi Quang Tốc', 'Luôn luôn được đánh trước bất kể lực chiến', '⚡'),
-    ('bach_kim_ho_tu', 'Bạch Kim Hổ Tử', 'Kim', 'Hiếm', 490, 360, 430, 'Phá Giáp Trảm', 'Đòn đánh kế tiếp xuyên 100% mọi lớp phòng ngự', '🐅'),
-    ('kim_si_dieu_hoang', 'Kim Sí Điêu Hoàng', 'Kim', 'Cực Phẩm', 470, 380, 520, 'Mù Lòa Thái Dương', 'Khiến đối thủ đánh trượt 70% trong 2 hiệp', '🦅'),
-    ('thiet_giap_xich_giac', 'Thiết Giáp Xích Giác Thú', 'Kim', 'Hiếm', 320, 590, 270, 'Phản Chấn Thần Lực', 'Phản 80% sát thương vật lý', '🦏'),
-    -- Hệ Thổ / Ám / Quang
     ('u_minh_lang_vuong', 'U Minh Lang Vương', 'Ám', 'Thần Thoại', 540, 370, 490, 'Tuyệt Mệnh Trảm', 'Nếu máu đối phương dưới 25%, 50% kết liễu ngay lập tức', '🐺'),
     ('tinh_khong_da_thao', 'Tinh Không Dạ Thao', 'Hư Không', 'Thần Thoại', 500, 420, 510, 'Hư Không Hỗn Loạn', 'Khiến đối thủ tự đánh chính mình trong 1 hiệp', '🌌'),
-    ('quang_minh_thanh_thu', 'Quang Minh Thánh Thú', 'Quang', 'Thần Thoại', 480, 490, 480, 'Thánh Quang Hóa Giải', 'Miễn nhiễm 100% mọi hiệu ứng xấu và HAX', '✨'),
-    ('hoa_thach_nham_nham', 'Hóa Thạch Nham Nham Thú', 'Thổ', 'Hiếm', 300, 570, 290, 'Hóa Đá', 'Hóa đá đối thủ 1 hiệp khi bị tấn công', '🗿')
+    ('quang_minh_thanh_thu', 'Quang Minh Thánh Thú', 'Quang', 'Thần Thoại', 480, 490, 480, 'Thánh Quang Hóa Giải', 'Miễn nhiễm 100% mọi hiệu ứng xấu và HAX', '✨')
 ON CONFLICT (pet_type) DO UPDATE SET
+    pet_name = EXCLUDED.pet_name,
     element = EXCLUDED.element,
+    rarity = EXCLUDED.rarity,
+    base_atk = EXCLUDED.base_atk,
+    base_def = EXCLUDED.base_def,
+    base_spd = EXCLUDED.base_spd,
     hax_skill = EXCLUDED.hax_skill,
-    hax_description = EXCLUDED.hax_description;
+    hax_description = EXCLUDED.hax_description,
+    icon = EXCLUDED.icon;
 
 -- ------------------------------------------------------------------------------
 -- 10. DỮ LIỆU KHỞI TẠO ĐẶC QUYỀN: TIỂU THƯ FUYUMI & THIÊN HỒ THẦN TỘC

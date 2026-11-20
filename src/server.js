@@ -1,13 +1,26 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getProfileData, sanitizeUserId } from './services/profileService.js';
-import { getWikiData, VALID_CATEGORIES } from './services/wikiService.js';
-import { simulateBattle } from './services/battleService.js';
+import {
+  getWikiData,
+  getWikiCatalogSummary,
+  getWikiItemDetail,
+  getWikiPetDetail,
+} from './services/wikiService.js';
+import { simulateBattle, getCachedBattleReport } from './services/battleService.js';
+import { grantChatExp, handleVoiceExp } from './services/expService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
+import { renderBattleCard } from './canvas/battleRenderer.js';
+import {
+  renderElementalChart,
+  renderWikiItemCard,
+  renderWikiPetCard,
+} from './canvas/wikiRenderer.js';
 import { supabase } from './config/supabase.js';
 
 dotenv.config();
@@ -38,6 +51,26 @@ function getCleanParam(val, fallback) {
 }
 
 /**
+ * Middleware xác thực x-api-key cho các endpoint ghi dữ liệu (/api/exp/*) khi BACKEND_API_KEY được cấu hình
+ */
+function requireBackendApiKey(req, res, next) {
+  const configuredKey = process.env.BACKEND_API_KEY;
+  if (!configuredKey) return next();
+
+  const provided = String(req.headers['x-api-key'] || req.query.api_key || '');
+  const a = Buffer.from(configuredKey, 'utf8');
+  const b = Buffer.from(provided, 'utf8');
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized',
+      message: 'Thiếu hoặc sai khóa xác thực x-api-key.',
+    });
+  }
+  return next();
+}
+
+/**
  * Root directory info endpoint
  */
 app.get('/', (req, res) => {
@@ -45,11 +78,26 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '1.0.0',
+    version: '2.0.0',
+    resolution: {
+      profile: '2000x1000',
+      rank: '2000x410',
+      battle: '2000x1000',
+      wiki: '2000x1000',
+    },
     endpoints: {
       health: 'GET /health',
-      wiki: 'GET /api/wiki[?category=beginner|pets|equipment|battle|economy]',
+      wiki: 'GET /api/wiki[?category=overview|realms|battle|equipment|pets|economy]',
+      wiki_catalog: 'GET /api/wiki/catalog',
+      wiki_chart_elements: 'GET /api/wiki/chart/elements.png',
+      wiki_item: 'GET /api/wiki/item/:itemId[.png]',
+      wiki_pet: 'GET /api/wiki/pet/:petType[.png]',
       battle_simulate: 'POST /api/battle/simulate',
+      battle_report_png: 'GET /api/battle/report/:battleId.png',
+      battle_report_stateless_png: 'GET /api/battle/report.png?attacker=...&defender=...',
+      battle_render_custom: 'POST /api/battle/render',
+      exp_chat: 'POST /api/exp/chat',
+      exp_voice: 'POST /api/exp/voice',
       profile_png: 'GET /api/profile/:userId[.png]',
       profile_json: 'GET /api/profile/:userId?format=json',
       profile_render_custom: 'POST /api/profile/render',
@@ -74,11 +122,10 @@ app.get('/health', (req, res) => {
   });
 });
 
-/**
- * Endpoint cung cấp dữ liệu Cẩm Nang Tu Tiên SuMi Family
- * GET /api/wiki
- * Hỗ trợ query: ?category=beginner|pets|equipment|battle|economy|all (hoặc ?cat=...)
- */
+// ============================================================================
+// TRỤ CỘT 1: HỆ THỐNG /WIKI (6 CHUYÊN MỤC + CHI TIẾT TRANG BỊ / LINH THÚ + ẢNH FULL HD+)
+// ============================================================================
+
 app.get('/api/wiki', (req, res) => {
   try {
     const rawCategory = req.query.category || req.query.cat || null;
@@ -103,11 +150,109 @@ app.get('/api/wiki', (req, res) => {
   }
 });
 
-/**
- * Endpoint mô phỏng trận chiến Linh Thú theo lượt (Pet Battle Simulation)
- * POST /api/battle/simulate
- * Payload: { attackerId: string, defenderId: string, options?: object }
- */
+app.get('/api/wiki/catalog', (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  return res.status(200).json(getWikiCatalogSummary());
+});
+
+app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements'], async (req, res) => {
+  try {
+    const pngBuffer = await renderElementalChart();
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(pngBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi kết xuất sơ đồ Ngũ Hành:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi kết xuất sơ đồ Ngũ Hành', message: err.message });
+  }
+});
+
+app.get('/api/wiki/item/:itemId', async (req, res) => {
+  try {
+    const rawParam = String(req.params.itemId || '');
+    const wantPng = rawParam.toLowerCase().endsWith('.png') || req.query.format === 'png';
+    const detail = await getWikiItemDetail(rawParam);
+
+    if (!detail.success) {
+      return res.status(404).json(detail);
+    }
+
+    if (wantPng) {
+      const pngBuffer = await renderWikiItemCard(detail.data);
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Length', pngBuffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=30');
+      return res.end(pngBuffer);
+    }
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=30');
+    return res.status(200).json(detail);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu Wiki Trang Bị:', err);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', message: err.message });
+  }
+});
+
+app.get('/api/wiki/pet/:petType', async (req, res) => {
+  try {
+    const rawParam = String(req.params.petType || '');
+    const wantPng = rawParam.toLowerCase().endsWith('.png') || req.query.format === 'png';
+    const detail = await getWikiPetDetail(rawParam);
+
+    if (!detail.success) {
+      return res.status(404).json(detail);
+    }
+
+    if (wantPng) {
+      const pngBuffer = await renderWikiPetCard(detail.data);
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Length', pngBuffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      return res.end(pngBuffer);
+    }
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.status(200).json(detail);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu Wiki Linh Thú:', err);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', message: err.message });
+  }
+});
+
+// ============================================================================
+// TRỤ CỘT 2: CỘNG EXP CHAT & VOICE THỰC TẾ VÀO SUPABASE
+// ============================================================================
+
+app.post('/api/exp/chat', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await grantChatExp(req.body || {});
+    const status = result.status || (result.success ? 200 : 400);
+    return res.status(status).json(result);
+  } catch (err) {
+    console.error('[Server] Lỗi xử lý /api/exp/chat:', err);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', message: err.message });
+  }
+});
+
+app.post('/api/exp/voice', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await handleVoiceExp(req.body || {});
+    const status = result.status || (result.success ? 200 : 400);
+    return res.status(status).json(result);
+  } catch (err) {
+    console.error('[Server] Lỗi xử lý /api/exp/voice:', err);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', message: err.message });
+  }
+});
+
+// ============================================================================
+// TRỤ CỘT 3: ĐẤU TRƯỜNG /BATTLE 1V1 & ẢNH CHIẾN BÁO FULL HD+ (2000x1000)
+// ============================================================================
+
 app.post('/api/battle/simulate', async (req, res) => {
   try {
     const { attackerId, defenderId, attacker, defender, options } = req.body || {};
@@ -141,15 +286,70 @@ app.post('/api/battle/simulate', async (req, res) => {
   }
 });
 
-/**
- * Endpoint tạo và hiển thị ảnh hồ sơ người dùng
- * GET /api/profile/:userId
- * Hỗ trợ các định dạng:
- *   - /api/profile/:userId.png : Trả về ảnh PNG
- *   - /api/profile/:userId?format=json : Trả về dữ liệu JSON
- * Hỗ trợ tham số query ghi đè (cho BotGhost Custom Events):
- *   - ?username=... &avatar=... &title=...
- */
+app.get('/api/battle/report.png', async (req, res) => {
+  try {
+    const actId = sanitizeUserId(req.query.attacker || req.query.attackerId || '');
+    const defId = sanitizeUserId(req.query.defender || req.query.defenderId || '');
+    if (!actId || !defId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Bad Request',
+        message: 'Cần truyền query attacker và defender để xuất ảnh chiến báo.',
+      });
+    }
+    const maxTurns = Number(req.query.maxTurns) || 20;
+    const seed = req.query.seed !== undefined ? Number(req.query.seed) : undefined;
+    const battleResult = await simulateBattle(actId, defId, { maxTurns, ...(Number.isFinite(seed) ? { seed } : {}) });
+    const pngBuffer = await renderBattleCard(battleResult);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
+    res.setHeader('Cache-Control', 'no-cache');
+    return res.end(pngBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi kết xuất ảnh chiến báo stateless:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi kết xuất ảnh chiến báo', message: err.message });
+  }
+});
+
+app.get('/api/battle/report/:battleId', async (req, res) => {
+  try {
+    const cleanId = String(req.params.battleId || '').replace(/\.png$/i, '').trim();
+    const cached = getCachedBattleReport(cleanId);
+    if (!cached) {
+      return res.status(404).json({
+        success: false,
+        error: 'Battle report not found',
+        message: `Không tìm thấy chiến báo '${cleanId}' hoặc chiến báo đã hết hạn.`,
+      });
+    }
+
+    const pngBuffer = await renderBattleCard(cached);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.end(pngBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi kết xuất ảnh chiến báo theo battleId:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi kết xuất ảnh chiến báo', message: err.message });
+  }
+});
+
+app.post('/api/battle/render', async (req, res) => {
+  try {
+    const pngBuffer = await renderBattleCard(req.body || {});
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', pngBuffer.length);
+    return res.end(pngBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi kết xuất ảnh chiến báo tùy biến:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi kết xuất ảnh chiến báo', message: err.message });
+  }
+});
+
+// ============================================================================
+// TRỤ CỘT 4: THẺ /PROFILE (2000x1000) & /RANK (2000x410) FULL HD+
+// ============================================================================
+
 app.get('/api/profile/:userId', async (req, res) => {
   const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
@@ -164,7 +364,6 @@ app.get('/api/profile/:userId', async (req, res) => {
   const { format } = req.query;
 
   try {
-    // Thu thập tham số ghi đè từ Query String nếu có
     const overrides = {
       username: getCleanParam(req.query.username || req.query.name, null),
       avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, null),
@@ -188,7 +387,6 @@ app.get('/api/profile/:userId', async (req, res) => {
       });
     }
 
-    // Render Canvas thành PNG
     const pngBuffer = await renderProfileCard(profileData);
 
     res.setHeader('Content-Type', 'image/png');
@@ -205,11 +403,6 @@ app.get('/api/profile/:userId', async (req, res) => {
   }
 });
 
-/**
- * Endpoint tạo và hiển thị ảnh Rank Mini (cho lệnh /rank)
- * GET /api/rank/:userId
- * Kích thước: 1000 x 205 px
- */
 app.get('/api/rank/:userId', async (req, res) => {
   const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
@@ -258,7 +451,6 @@ app.get('/api/rank/:userId', async (req, res) => {
       });
     }
 
-    // Render Canvas thành PNG thẻ Rank Mini
     const pngBuffer = await renderRankCard(profileData);
 
     res.setHeader('Content-Type', 'image/png');
@@ -275,10 +467,6 @@ app.get('/api/rank/:userId', async (req, res) => {
   }
 });
 
-/**
- * Endpoint cho phép render ảnh Rank Mini từ payload JSON tùy biến
- * POST /api/rank/render
- */
 app.post('/api/rank/render', async (req, res) => {
   try {
     const customData = req.body || {};
@@ -297,10 +485,6 @@ app.post('/api/rank/render', async (req, res) => {
   }
 });
 
-/**
- * Endpoint cho phép render ảnh trực tiếp từ payload JSON tùy biến
- * POST /api/profile/render
- */
 app.post('/api/profile/render', async (req, res) => {
   try {
     const customData = req.body || {};
@@ -319,14 +503,13 @@ app.post('/api/profile/render', async (req, res) => {
   }
 });
 
-// Khởi chạy server nếu file được chạy trực tiếp từ dòng lệnh
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
 if (isMain) {
   app.listen(PORT, () => {
     console.log(`====================================================`);
-    console.log(`🌸 SuMi Family Profile Backend is running on port ${PORT}`);
+    console.log(`🌸 SuMi Family Profile Backend v2.0 (Full HD+) running on port ${PORT}`);
     console.log(`👉 Health check: http://localhost:${PORT}/health`);
-    console.log(`👉 Fuyumi Profile Card: http://localhost:${PORT}/api/profile/757091869183311872`);
+    console.log(`👉 Fuyumi Profile Card (2000x1000): http://localhost:${PORT}/api/profile/757091869183311872`);
     console.log(`====================================================`);
   });
 }

@@ -44,7 +44,7 @@ describe('Tier 3 - Query Parameter Precedence & Overrides', () => {
     assert.equal(res.status, 200);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 
   it('4. Combined overrides (username + title + bg) take precedence simultaneously', async () => {
@@ -66,6 +66,6 @@ describe('Tier 3 - Query Parameter Precedence & Overrides', () => {
     const resPng = await testServer.fetch(pngUrl);
     assert.equal(resPng.status, 200);
     const buffer = Buffer.from(await resPng.arrayBuffer());
-    assertPngValid(buffer, 1000, 500);
+    assertPngValid(buffer, 2000, 1000);
   });
 });

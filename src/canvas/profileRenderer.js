@@ -1,18 +1,30 @@
 import { createCanvas } from '@napi-rs/canvas';
-import { loadImageSafe, drawRoundRect, truncateText, drawPetal, drawProceduralAvatar, sanitizeText, resolveAssetPath } from './drawUtils.js';
+import {
+  loadImageSafe,
+  drawRoundRect,
+  truncateText,
+  drawPetal,
+  drawAntiAliasedAvatarWithBorder,
+  sanitizeText,
+  resolveAssetPath,
+  FONT_FAMILY,
+} from './drawUtils.js';
 
-const FONT_FAMILY = '"Be Vietnam Pro", "Segoe UI", Arial, sans-serif';
+const RENDER_SCALE = 2;
 
 /**
- * Render thẻ Profile Tiên Giới SuMi Family (1000 x 500 px)
+ * Render thẻ Profile Tiên Giới SuMi Family Full HD+ (2000 x 1000 px, 2x High-DPI)
  * @param {Object} data Dữ liệu hồ sơ người dùng
  * @returns {Promise<Buffer>} Buffer PNG của ảnh hồ sơ
  */
 export async function renderProfileCard(data) {
   const width = 1000;
   const height = 500;
-  const canvas = createCanvas(width, height);
+  const canvas = createCanvas(width * RENDER_SCALE, height * RENDER_SCALE);
   const ctx = canvas.getContext('2d');
+  ctx.scale(RENDER_SCALE, RENDER_SCALE);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
   // Chuẩn hóa dữ liệu hồ sơ
   const profile = {
@@ -156,7 +168,7 @@ export async function renderProfileCard(data) {
   ctx.restore();
 
   // ============================================================================
-  // LỚP 2: AVATAR & KHUNG VIỀN HOÀNG KIM (AVATAR & FRAME)
+  // LỚP 2: AVATAR KHỬ RĂNG CƯA (4X SUPERSAMPLED) & KHUNG VIỀN PHÂN CẤP ĐỒNG TÂM
   // ============================================================================
   const avX = 50;
   const avY = 32;
@@ -165,65 +177,14 @@ export async function renderProfileCard(data) {
   const avCenterX = avX + avRadius;
   const avCenterY = avY + avRadius;
 
-  // Hào quang tỏa sáng phía sau Avatar (Outer Glow Aura)
-  const auraGrad = ctx.createRadialGradient(avCenterX, avCenterY, avRadius - 5, avCenterX, avCenterY, avRadius + 26);
-  auraGrad.addColorStop(0, 'rgba(255, 105, 180, 0.5)');
-  auraGrad.addColorStop(0.5, 'rgba(245, 158, 11, 0.35)');
-  auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-  ctx.fillStyle = auraGrad;
-  ctx.beginPath();
-  ctx.arc(avCenterX, avCenterY, avRadius + 26, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Cắt hình tròn vẽ Avatar
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(avCenterX, avCenterY, avRadius, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.clip();
-
-  if (avatarImg) {
-    ctx.drawImage(avatarImg, avX, avY, avSize, avSize);
-  } else {
-    const initial = (profile.username || 'F').replace(/[^\p{L}\p{N}]/gu, '').slice(0, 1) || '🦊';
-    drawProceduralAvatar(ctx, avX, avY, avSize, isOwner, initial);
-  }
-  ctx.restore();
-
-  // Khung Viền Hoàng Kim / Cửu Vĩ Tráng Lệ (Avatar Frame)
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(avCenterX, avCenterY, avRadius + 2, 0, Math.PI * 2);
-  const frameRing = ctx.createLinearGradient(avX, avY, avX + avSize, avY + avSize);
-  frameRing.addColorStop(0, '#fef08a');
-  frameRing.addColorStop(0.5, '#f59e0b');
-  frameRing.addColorStop(1, '#ec4899');
-  ctx.strokeStyle = frameRing;
-  ctx.lineWidth = 3.5;
-  ctx.shadowColor = 'rgba(251, 191, 36, 0.8)';
-  ctx.shadowBlur = 10;
-  ctx.stroke();
-
-  // Ngọc Tiên Giới đính trên khung viền: Bố trí đối xứng vòm trên & hai bên (Tránh đè lên Huy hiệu Cấp độ ở 6 giờ)
-  const jewels = [
-    { angle: -Math.PI / 2, r: 5.5, color: '#ffffff', glow: '#ffd700' }, // 12 giờ - Viên ngọc Tiên Chủ lớn nhất
-    { angle: -Math.PI * 0.75, r: 4.2, color: '#fef08a', glow: '#f59e0b' }, // 10:30
-    { angle: -Math.PI * 0.25, r: 4.2, color: '#fef08a', glow: '#f59e0b' }, // 1:30
-    { angle: Math.PI, r: 4.0, color: '#ffd700', glow: '#ec4899' }, // 9 giờ
-    { angle: 0, r: 4.0, color: '#ffd700', glow: '#ec4899' }, // 3 giờ
-  ];
-
-  jewels.forEach(j => {
-    const jx = avCenterX + (avRadius + 2) * Math.cos(j.angle);
-    const jy = avCenterY + (avRadius + 2) * Math.sin(j.angle);
-    ctx.beginPath();
-    ctx.arc(jx, jy, j.r, 0, Math.PI * 2);
-    ctx.fillStyle = j.color;
-    ctx.shadowColor = j.glow;
-    ctx.shadowBlur = 7;
-    ctx.fill();
+  drawAntiAliasedAvatarWithBorder(ctx, avatarImg, avCenterX, avCenterY, avRadius, {
+    isOwner,
+    level: profile.level,
+    username: profile.username,
+    avatarFrame: profile.avatarFrame,
+    supersampleFactor: 4,
+    showAura: true,
   });
-  ctx.restore();
 
   // Huy hiệu Cấp Độ (Level Badge) đặt cân đối phía đáy Avatar
   ctx.save();
@@ -346,8 +307,8 @@ export async function renderProfileCard(data) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxW - 112);
-  ctx.fillText(cleanClanStr, metaBoxX + 88, clanY + metaBoxH / 2);
+  const cleanClanStr = truncateText(ctx, clanStr, metaBoxW - 96);
+  ctx.fillText(cleanClanStr, metaBoxX + 86, clanY + metaBoxH / 2);
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
@@ -682,7 +643,7 @@ export async function renderProfileCard(data) {
           bg2: 'rgba(15, 23, 42, 0.4)',
         };
       }
-      const r = rarity.toLowerCase();
+      const r = String(rarity).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       if (r.includes('than thoai') || r.includes('mythic')) {
         return {
           borderGrad: ['#ff0055', '#ffd700'],

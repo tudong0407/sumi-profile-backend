@@ -15,7 +15,7 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     if (testServer) await testServer.close();
   });
 
-  it('1. GET /api/rank/:userId renders 1000x205 Mini Rank PNG card for Fuyumi', async () => {
+  it('1. GET /api/rank/:userId renders 2000x410 Full HD+ Mini Rank PNG card for Fuyumi', async () => {
     const res = await testServer.fetch(`/api/rank/${FIXTURE_USERS.fuyumi.userId}`);
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
 
@@ -23,10 +23,10 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     assert.ok(contentType?.includes('image/png'), `Expected image/png, received ${contentType}`);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 205);
+    assertPngValid(buffer, 2000, 410);
   });
 
-  it('2. GET /api/rank/:userId.png extension resolves cleanly to 1000x205 PNG', async () => {
+  it('2. GET /api/rank/:userId.png extension resolves cleanly to 2000x410 PNG', async () => {
     const res = await testServer.fetch(`/api/rank/${FIXTURE_USERS.fuyumi.userId}.png`);
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
 
@@ -34,7 +34,7 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     assert.ok(contentType?.includes('image/png'), `Expected image/png, received ${contentType}`);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 205);
+    assertPngValid(buffer, 2000, 410);
   });
 
   it('3. GET /api/rank/:userId?format=json returns compact rank data structure', async () => {
@@ -76,10 +76,10 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     assert.ok(contentType?.includes('image/png'), `Expected image/png, received ${contentType}`);
 
     const buffer = Buffer.from(await res.arrayBuffer());
-    assertPngValid(buffer, 1000, 205);
+    assertPngValid(buffer, 2000, 410);
   });
 
-  it('5. GET /api/rank/:userId?format=json returns default rank data for default user', async () => {
+  it('5. GET /api/rank/:userId?format=json returns clean Lv.1 beginner rank data for new user', async () => {
     const res = await testServer.fetch(`/api/rank/${FIXTURE_USERS.defaultUser.userId}?format=json`);
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
 
@@ -87,8 +87,9 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     assert.equal(json.success, true);
     assert.equal(json.data.user_id, FIXTURE_USERS.defaultUser.userId);
     assert.ok(json.data.username.startsWith('Tu Sĩ #'));
-    assert.equal(json.data.level, 18);
+    assert.equal(json.data.level, 1);
+    assert.equal(json.data.exp, 0);
     assert.equal(json.data.realm, 'I. Luyện Khí Sơ Kỳ');
-    assert.equal(json.data.linh_thach, 1250);
+    assert.equal(json.data.linh_thach, 0);
   });
 });
