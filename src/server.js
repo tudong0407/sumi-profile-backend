@@ -153,19 +153,24 @@ app.post('/api/battle/simulate', async (req, res) => {
 app.get('/api/profile/:userId', async (req, res) => {
   const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
+  const fallbackRaw = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target || '';
+  const fallbackUserId = sanitizeUserId(fallbackRaw);
   if (!cleanUserId || cleanUserId.startsWith('{')) {
-    const fallback = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target;
-    if (fallback) {
-      cleanUserId = sanitizeUserId(fallback);
+    if (fallbackUserId) {
+      cleanUserId = fallbackUserId;
     }
   }
+  const isFallbackUser = !fallbackUserId || !cleanUserId || cleanUserId === fallbackUserId;
   const { format } = req.query;
 
   try {
     // Thu thập tham số ghi đè từ Query String nếu có
     const overrides = {
-      username: getCleanParam(req.query.username || req.query.name, req.query.fallback_name),
-      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, req.query.fallback_avatar),
+      username: getCleanParam(req.query.username || req.query.name, null),
+      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, null),
+      fallback_name: getCleanParam(req.query.fallback_name, null),
+      fallback_avatar: getCleanParam(req.query.fallback_avatar, null),
+      is_fallback_user: isFallbackUser,
       custom_title: getCleanParam(req.query.title || req.query.custom_title, null),
       background_url: getCleanParam(req.query.bg || req.query.background_url, null),
     };
@@ -208,18 +213,23 @@ app.get('/api/profile/:userId', async (req, res) => {
 app.get('/api/rank/:userId', async (req, res) => {
   const rawUserId = req.params.userId || req.query.user_id || req.query.userId || req.query.user || req.query.fallback_id || '';
   let cleanUserId = sanitizeUserId(rawUserId);
+  const fallbackRaw = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target || '';
+  const fallbackUserId = sanitizeUserId(fallbackRaw);
   if (!cleanUserId || cleanUserId.startsWith('{')) {
-    const fallback = req.query.fallback_id || req.query.user_id || req.query.userId || req.query.user || req.query.target;
-    if (fallback) {
-      cleanUserId = sanitizeUserId(fallback);
+    if (fallbackUserId) {
+      cleanUserId = fallbackUserId;
     }
   }
+  const isFallbackUser = !fallbackUserId || !cleanUserId || cleanUserId === fallbackUserId;
   const { format } = req.query;
 
   try {
     const overrides = {
-      username: getCleanParam(req.query.username || req.query.name, req.query.fallback_name),
-      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, req.query.fallback_avatar),
+      username: getCleanParam(req.query.username || req.query.name, null),
+      avatar_url: getCleanParam(req.query.avatar || req.query.avatar_url, null),
+      fallback_name: getCleanParam(req.query.fallback_name, null),
+      fallback_avatar: getCleanParam(req.query.fallback_avatar, null),
+      is_fallback_user: isFallbackUser,
       custom_title: getCleanParam(req.query.title || req.query.custom_title, null),
       background_url: getCleanParam(req.query.bg || req.query.background_url, null),
     };

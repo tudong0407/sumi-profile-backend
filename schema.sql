@@ -306,10 +306,10 @@ INSERT INTO user_pets (
 INSERT INTO user_roles (user_id, role_id, role_name, role_perk, is_permanent, is_equipped, equipped_slot)
 VALUES 
     ('757091869183311872', '1473419957655175169', '« 100 • Hỗn Độn Chúa Tể »', '⚔️ Trảm Quyết Tối Thượng', TRUE, TRUE, 1),
-    ('757091869183311872', '1468649836856344689', '« Cửu Vĩ Tối Thượng Thần Hồ »', '🛡️ Kháng Timeout & Hộ Thể', TRUE, TRUE, 2),
-    ('757091869183311872', '1264915703438381099', '« Phong Thanh Hộ Pháp »', '🎙️ Di Chuyển Voice', TRUE, TRUE, 3),
-    ('757091869183311872', 'than_hanh_cot_cach', '« Thần Hành Cốt Cách »', '⚡ Miễn Chờ Chat Chậm', TRUE, TRUE, 4),
-    ('757091869183311872', '1027173664069795921', '« Trấn Thư Pháp Vương »', '📌 Ghim Tin Nhắn', TRUE, TRUE, 5)
+    ('757091869183311872', '1573185998857183253', '« Cửu Vĩ Tối Thượng Thần Hồ »', '🛡️ Kháng Timeout & Hộ Thể', TRUE, TRUE, 2),
+    ('757091869183311872', '1573186024048173076', '« Phong Thanh Hộ Pháp »', '🎙️ Di Chuyển Voice', TRUE, TRUE, 3),
+    ('757091869183311872', '1573186049289756712', '« Thần Hành Cốt Cách »', '⚡ Miễn Chờ Chat Chậm', TRUE, TRUE, 4),
+    ('757091869183311872', '1573186074153324608', '« Trấn Thư Pháp Vương »', '📌 Ghim Tin Nhắn', TRUE, TRUE, 5)
 ON CONFLICT (user_id, equipped_slot) WHERE equipped_slot IS NOT NULL DO UPDATE SET
     role_name = EXCLUDED.role_name,
     role_id = EXCLUDED.role_id,

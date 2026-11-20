@@ -3,30 +3,61 @@ import { supabase } from '../config/supabase.js';
 export const ROLE_PERKS_MAP = {
   '1473419957655175169': '⚔️ Trảm Quyết Tối Thượng',
   '100_hon_don_chua_te': '⚔️ Trảm Quyết Tối Thượng',
+  '1573185998857183253': '🛡️ Kháng Timeout & Hộ Thể',
   '1468649836856344689': '🛡️ Kháng Timeout & Hộ Thể',
   'cuu_vi_toi_thuong': '🛡️ Kháng Timeout & Hộ Thể',
+  '1573186003101941830': '👑 Quản Trị Voice & Chat Danh Dự',
+  'sumi_de_nhat_khach_ton': '👑 Quản Trị Voice & Chat Danh Dự',
+  '1573186007262695644': '🌌 Bá Chủ Voice & Thread',
+  'van_co_chi_ton': '🌌 Bá Chủ Voice & Thread',
+  '1573186011478102096': '✨ Sáng Thế & Buff x2.5 Linh Thạch',
+  'sang_the_than_quan': '✨ Sáng Thế & Buff x2.5 Linh Thạch',
+  '1573186015785521265': '🌸 Huy Hiệu Độc Tôn & Buff +80% EXP',
+  'cuu_vi_yeu_hau': '🌸 Huy Hiệu Độc Tôn & Buff +80% EXP',
+  '1573186019858317422': '🎵 Triệu Hồi Hát Live & Tâm Sự',
   'linh_am_ho_ca': '🎵 Triệu Hồi Hát Live & Tâm Sự',
+  '1573186024048173076': '🎙️ Quyền Di Chuyển Voice',
   'phong_thanh_ho_phap': '🎙️ Quyền Di Chuyển Voice',
   '1264915703438381099': '🎙️ Quyền Di Chuyển Voice',
+  '1573186028196462613': '📢 Quyền Ưu Tiên Nói Voice',
   'loi_am_ton_gia': '📢 Quyền Ưu Tiên Nói Voice',
+  '1573186032289980416': '🔇 Quyền Tắt Tiếng Voice',
   'tich_tinh_tan_nhan': '🔇 Quyền Tắt Tiếng Voice',
+  '1573186036585201726': '🎧 Quyền Tắt Tai Nghe Voice',
   'be_tuc_chan_nhan': '🎧 Quyền Tắt Tai Nghe Voice',
+  '1573186040716468316': '🎭 Tự Do Đổi Biệt Danh',
   'huyen_dien_dao_quan': '🎭 Tự Do Đổi Biệt Danh',
+  '1573186045468614687': '🏷️ Quản Lý Biệt Danh',
   'dinh_danh_su_gia': '🏷️ Quản Lý Biệt Danh',
+  '1573186049289756712': '⚡ Miễn Chờ Chat Chậm',
   'than_hanh_cot_cach': '⚡ Miễn Chờ Chat Chậm',
+  '1573186053500833802': '🖼️ Đăng Ảnh Kênh Giới Hạn',
   'hoa_do_linh_su': '🖼️ Đăng Ảnh Kênh Giới Hạn',
+  '1573186057778888745': '✨ Dùng Emoji Ngoại Server',
   'van_tuong_linh_ho': '✨ Dùng Emoji Ngoại Server',
+  '1573186061860077568': '🌟 Dùng Sticker Ngoại',
   'than_phu_thuong_quan': '🌟 Dùng Sticker Ngoại',
+  '1573186066134073394': '💬 Tạo Chủ Đề Công Khai',
   'khai_son_tien_phong': '💬 Tạo Chủ Đề Công Khai',
+  '1573186070206742578': '🔒 Tạo Chủ Đề Kín',
   'mat_tang_ho_ve': '🔒 Tạo Chủ Đề Kín',
+  '1573186074153324608': '📌 Quyền Ghim Tin Nhắn',
   'tran_thu_phap_vuong': '📌 Quyền Ghim Tin Nhắn',
   '1027173664069795921': '📌 Quyền Ghim Tin Nhắn',
+  '1573186078402158776': '🔊 Dùng Bảng Âm Thanh',
   'huyen_am_tien_co': '🔊 Dùng Bảng Âm Thanh',
+  '1573186082768560198': '🎶 Dùng Âm Ngoại Server',
   'cuu_chau_dien_am': '🎶 Dùng Âm Ngoại Server',
+  '1573186087088554085': '📈 Buff +15% EXP Solo',
   'linh_hon_tu_luyen': '📈 Buff +15% EXP Solo',
+  '1573186091094245416': '💎 Buff +20% Linh Thạch',
   'tai_van_hanh_thong': '💎 Buff +20% Linh Thạch',
+  '1573186095120908329': '📺 Phát Trực Tiếp HD 1080p',
   'tieu_dao_khach': '📺 Phát Trực Tiếp HD 1080p',
+  '1573186099663343747': '🗣️ Gửi Tin Nhắn Giọng Nói TTS',
   'tram_phong_kiem_khach': '🗣️ Gửi Tin Nhắn Giọng Nói TTS',
+  '1573186103664574524': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
+  'than_thong_thau_thi': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
 };
 
 /**
@@ -175,10 +206,10 @@ export function getFuyumiProfileMock() {
     },
     equipped_roles: [
       { slot: 1, role_id: '1473419957655175169', name: '« 100 • Hỗn Độn Chúa Tể »', perk: '⚔️ Trảm Quyết Tối Thượng', rarity: 'mythic' },
-      { slot: 2, role_id: '1468649836856344689', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: '🛡️ Kháng Timeout & Hộ Thể', rarity: 'mythic' },
-      { slot: 3, role_id: '1264915703438381099', name: '« Phong Thanh Hộ Pháp »', perk: '🎙️ Di Chuyển Voice', rarity: 'rare' },
-      { slot: 4, role_id: 'than_hanh_cot_cach', name: '« Thần Hành Cốt Cách »', perk: '⚡ Miễn Chờ Chat Chậm', rarity: 'epic' },
-      { slot: 5, role_id: '1027173664069795921', name: '« Trấn Thư Pháp Vương »', perk: '📌 Ghim Tin Nhắn', rarity: 'legendary' },
+      { slot: 2, role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: '🛡️ Kháng Timeout & Hộ Thể', rarity: 'mythic' },
+      { slot: 3, role_id: '1573186024048173076', name: '« Phong Thanh Hộ Pháp »', perk: '🎙️ Di Chuyển Voice', rarity: 'rare' },
+      { slot: 4, role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: '⚡ Miễn Chờ Chat Chậm', rarity: 'epic' },
+      { slot: 5, role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', perk: '📌 Ghim Tin Nhắn', rarity: 'legendary' },
     ],
   };
 }
@@ -451,7 +482,7 @@ export async function getProfileData(userId, overrides = {}) {
           background_url: user.background_url,
           bio: user.bio,
           custom_title: user.custom_title,
-          realm: user.custom_title || getRealmByLevel(user.level),
+          realm: getRealmByLevel(user.level),
           level: user.level,
           exp: user.exp,
           next_level_exp: getExpForNextLevel(user.level),
@@ -470,6 +501,7 @@ export async function getProfileData(userId, overrides = {}) {
   }
 
   // 2. Fallback nếu không có Supabase hoặc chưa tạo user trong DB
+  const isMockUser = !baseProfile;
   if (!baseProfile) {
     if (cleanId === '757091869183311872') {
       baseProfile = getFuyumiProfileMock();
@@ -479,8 +511,22 @@ export async function getProfileData(userId, overrides = {}) {
   }
 
   // 3. Áp dụng các giá trị ghi đè (từ query params như username, avatar, v.v.)
-  if (overrides.username) baseProfile.username = overrides.username;
-  if (overrides.avatar || overrides.avatar_url) baseProfile.avatar_url = overrides.avatar || overrides.avatar_url;
+  if (overrides.username) {
+    baseProfile.username = overrides.username;
+  } else if (overrides.fallback_name && overrides.is_fallback_user) {
+    if (isMockUser || !baseProfile.username || baseProfile.username.startsWith('Tu Sĩ ')) {
+      baseProfile.username = overrides.fallback_name;
+    }
+  }
+
+  if (overrides.avatar || overrides.avatar_url) {
+    baseProfile.avatar_url = overrides.avatar || overrides.avatar_url;
+  } else if (overrides.fallback_avatar && overrides.is_fallback_user) {
+    if (isMockUser || !baseProfile.avatar_url || baseProfile.avatar_url === 'assets/default_avatar.png') {
+      baseProfile.avatar_url = overrides.fallback_avatar;
+    }
+  }
+
   if (overrides.custom_title || overrides.title) baseProfile.custom_title = overrides.custom_title || overrides.title;
   if (overrides.background_url || overrides.bg) baseProfile.background_url = overrides.background_url || overrides.bg;
 

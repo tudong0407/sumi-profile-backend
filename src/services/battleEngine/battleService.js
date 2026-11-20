@@ -203,6 +203,46 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   const summary = `Trận đấu kết thúc sau ${turnNumber} hiệp. ${winner.name} cùng linh thú ${winner.pet} giành chiến thắng áp đảo!`;
 
+  const formatEquipLine = (c) => {
+    const w = c.equipment?.weapon?.item_name || 'Không có';
+    const g = c.equipment?.gem?.item_name || 'Không có';
+    const s = c.equipment?.soul?.item_name || 'Không có';
+    return `🗡️ ${w} • 💎 ${g} • 🦊 ${s}`;
+  };
+  const formatHaxLine = (c) => {
+    const list = [c.hax?.pet, c.hax?.weapon, c.hax?.gem, c.hax?.soul].filter(Boolean);
+    return list.length > 0 ? list.join(' • ') : 'Không có';
+  };
+  const turnLines = turns.slice(0, 8).map((t) => {
+    const actorObj = t.actor === 'attacker' ? attacker : defender;
+    const targetObj = t.actor === 'attacker' ? defender : attacker;
+    if (t.action === 'skip') {
+      return `• **Hiệp ${t.turn}** [${actorObj.petName}]: ❄️ ${t.haxTriggered || 'Mất lượt'}`;
+    }
+    const critTag = t.isCrit ? ' 💥**BẠO KÍCH!**' : '';
+    const elemTag = t.elementAdvantage ? ` *(${t.elementAdvantage})*` : '';
+    const haxTag = t.haxTriggered ? `\n  ↳ ⚡ *HAX: ${t.haxTriggered}*` : '';
+    return `• **Hiệp ${t.turn}** — **${actorObj.petName}** (${actorObj.name}) công kích **${targetObj.petName}** gây **${t.damage.toLocaleString('vi-VN')}** sát thương!${critTag}${elemTag}${haxTag}\n  ↳ ❤️ HP còn lại: ${attacker.petName} **${t.attackerHp.toLocaleString('vi-VN')}** | ${defender.petName} **${t.defenderHp.toLocaleString('vi-VN')}**`;
+  });
+
+  const discordReport = [
+    `### ⚔️ ĐẤU TRƯỜNG LINH THÚ NGŨ HÀNH & HAX`,
+    `**1. Phe Công Kích:** **${attacker.name}** — **${attacker.petName}** *(Hệ ${attacker.element} • Cấp ${attacker.level})*`,
+    `• Chỉ số: \`Công ${attacker.atk.toLocaleString('vi-VN')} | Thủ ${attacker.def.toLocaleString('vi-VN')} | Tốc ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
+    `• Trang bị Loadout: ${formatEquipLine(attacker)}`,
+    `• Tuyệt kỹ HAX: \`${formatHaxLine(attacker)}\``,
+    ``,
+    `**2. Phe Phòng Thủ:** **${defender.name}** — **${defender.petName}** *(Hệ ${defender.element} • Cấp ${defender.level})*`,
+    `• Chỉ số: \`Công ${defender.atk.toLocaleString('vi-VN')} | Thủ ${defender.def.toLocaleString('vi-VN')} | Tốc ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
+    `• Trang bị Loadout: ${formatEquipLine(defender)}`,
+    `• Tuyệt kỹ HAX: \`${formatHaxLine(defender)}\``,
+    ``,
+    `### 📜 DIỄN BIẾN TRẬN CHIẾN (${turnNumber} HIỆP)`,
+    ...turnLines,
+    ``,
+    `🏆 **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
+  ].join('\n');
+
   return {
     success: true,
     winner,
@@ -214,5 +254,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       defender: defender.currentHp,
     },
     summary,
+    discordReport,
   };
 }
