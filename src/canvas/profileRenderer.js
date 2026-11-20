@@ -646,13 +646,13 @@ export async function renderProfileCard(data) {
     ctx.shadowBlur = 0;
     ctx.textAlign = 'left';
 
-    // Thuộc tính chi tiết (Công / Thủ / Tốc)
+    // Thuộc tính chi tiết (ATK / DEF / SPD)
     const statsY = bottomY + 144;
     ctx.font = `11px ${FONT_FAMILY}`;
     ctx.fillStyle = '#cbd5e1';
-    const atkStr = `Công: ${(profile.pet.atk || 0).toLocaleString('vi-VN')}`;
-    const defStr = `Thủ: ${(profile.pet.def || 0).toLocaleString('vi-VN')}`;
-    const spdStr = `Tốc: ${(profile.pet.spd || 0).toLocaleString('vi-VN')}`;
+    const atkStr = `ATK: ${(profile.pet.atk || 0).toLocaleString('vi-VN')}`;
+    const defStr = `DEF: ${(profile.pet.def || 0).toLocaleString('vi-VN')}`;
+    const spdStr = `SPD: ${(profile.pet.spd || 0).toLocaleString('vi-VN')}`;
     ctx.fillText(`🗡️ ${atkStr}    🛡️ ${defStr}    ⚡ ${spdStr}`, petX + 20, statsY);
 
     // ========================================================================
@@ -758,12 +758,26 @@ export async function renderProfileCard(data) {
         ctx.stroke();
         ctx.restore();
 
-        let statText = '';
-        if (item.bonus_atk) statText += `+${item.bonus_atk}Công `;
-        if (item.bonus_def) statText += `+${item.bonus_def}Thủ `;
-        if (item.bonus_spd) statText += `+${item.bonus_spd}Tốc `;
-        if (item.bonus_hp && !statText) statText += `+${item.bonus_hp}HP `;
-        if (!statText) statText = item.rarity || 'Thần Thoại';
+        const statTokens = [];
+        if (item.bonus_atk) statTokens.push(`+${item.bonus_atk}ATK`);
+        if (item.bonus_def) statTokens.push(`+${item.bonus_def}DEF`);
+        if (item.bonus_spd) statTokens.push(`+${item.bonus_spd}SPD`);
+        if (item.bonus_hp) statTokens.push(`+${item.bonus_hp}HP`);
+        if (item.bonus_crit) statTokens.push(`+${item.bonus_crit}%CRIT`);
+
+        const formatFittedStats = (availW) => {
+          if (statTokens.length === 0) return item.rarity || 'Thần Thoại';
+          let fitted = statTokens[0];
+          for (let i = 1; i < statTokens.length; i++) {
+            const candidate = `${fitted} ${statTokens[i]}`;
+            if (ctx.measureText(candidate).width <= availW) {
+              fitted = candidate;
+            } else {
+              break;
+            }
+          }
+          return fitted;
+        };
 
         const cleanName = (item.item_name || 'Vật Phẩm').replace(/[«»]/g, '').trim();
 
@@ -808,7 +822,8 @@ export async function renderProfileCard(data) {
           // Line 3: Chỉ số cộng thêm
           ctx.font = `7.5px ${FONT_FAMILY}`;
           ctx.fillStyle = colors.text;
-          ctx.fillText(truncateText(ctx, statText.trim(), maxTextW), textX, sy + 43);
+          const statText = formatFittedStats(maxTextW);
+          ctx.fillText(truncateText(ctx, statText, maxTextW), textX, sy + 43);
         } else {
           // Fallback nếu chưa tải được ảnh: Hiển thị icon và text ở giữa
           // Line 1: Header nhãn loại slot (Vũ Khí / Bảo Ngọc / Chiến Hồn)
@@ -828,7 +843,8 @@ export async function renderProfileCard(data) {
           // Line 3: Chỉ số cộng thêm / Rarity
           ctx.font = `8.5px ${FONT_FAMILY}`;
           ctx.fillStyle = colors.text;
-          ctx.fillText(truncateText(ctx, statText.trim(), slotW - 6), sx + slotW / 2, sy + 43);
+          const statText = formatFittedStats(slotW - 6);
+          ctx.fillText(truncateText(ctx, statText, slotW - 6), sx + slotW / 2, sy + 43);
         }
       } else {
         // Slot trống

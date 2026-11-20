@@ -83,7 +83,7 @@ export function triggerBattleStart(attacker, defender, rng) {
         actor: actor.id,
         action: 'hax_start',
         skill: '« Cửu Thiên Lôi Đình Cổ Thần Thương » Lôi Thần Trấn Áp',
-        desc: `${actor.name} tước đoạt ${stolenSpd} Tốc của ${target.name} chuyển hóa thành Sức Mạnh Tấn Công!`,
+        desc: `${actor.name} tước đoạt ${stolenSpd} SPD của ${target.name} chuyển hóa thành ATK!`,
       });
     }
   }

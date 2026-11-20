@@ -79,7 +79,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '3. Ba Chỉ Số Cốt Lõi & Lực Chiến',
-        content: '• Công (ATK): Sức sát thương cơ bản khi ra đòn.\n• Thủ (DEF): Khả năng triệt tiêu sát thương gánh chịu.\n• Tốc (SPD): Quyết định quyền xuất chiêu trước và khả năng né tránh.\n• Công thức Chiến Lực: (ATK * 3) + (DEF * 2) + (SPD * 2) + (Level * 50) + Bonus Trang Bị.'
+        content: '• ATK: Sức sát thương cơ bản khi ra đòn.\n• DEF: Khả năng triệt tiêu sát thương gánh chịu.\n• SPD: Quyết định quyền xuất chiêu trước và khả năng né tránh.\n• Công thức Chiến Lực: (ATK * 3) + (DEF * 2) + (SPD * 2) + (Level * 50) + Bonus Trang Bị.'
       }
     ],
     fields: [
@@ -124,12 +124,12 @@ export const WIKI_CATEGORIES = {
     fields: [
       {
         name: '🛡️ 3 Slot Trang Bị Loadout',
-        value: '• ⚔️ **Vũ Khí**: Tăng Công (ATK), Tốc (SPD) & Bạo Kích (Crit).\n• 💎 **Bảo Ngọc**: Tăng Thủ (DEF), Sinh Lực (HP) & Khiên Chắn.\n• 🦊 **Chiến Hồn**: Kích hoạt Thiên Phú Ẩn, Hút Máu, Tốc Độ & HAX.',
+        value: '• ⚔️ **Vũ Khí**: Tăng ATK, SPD & CRIT.\n• 💎 **Bảo Ngọc**: Tăng DEF, HP & Khiên Chắn.\n• 🦊 **Chiến Hồn**: Kích hoạt Thiên Phú Ẩn, Hút Máu, SPD & HAX.',
         inline: false
       },
       {
         name: '👑 9 Tuyệt Kỹ HAX Trang Bị Thần Thoại',
-        value: '1. `« Tru Tiên Diệt Thần Kiếm »`: Xuyên khiên 100%, khóa Bất Tử/Trùng Sinh 3 lượt đầu.\n2. `« Cửu Thiên Lôi Đình Cổ Thần Thương »`: Cướp 40% Tốc của địch chuyển thành Công.\n3. `« Hồng Mông Hỗn Độn Trượng »`: 35% biến đòn đánh của địch thành máu và phản 100%.\n4. `« Bất Hủ Thần Hoàng Ngọc »`: Giữ lại 1 HP khi chết, miễn nhiễm sát thương 2 lượt.\n5. `« Vạn Tượng Quy Nhất Châu »`: Phản 75% sát thương dội ngược lại địch (bỏ qua giáp).\n6. `« Thiên Hồ Hóa Thần Ngọc »`: Khiên hộ mệnh 100% HP, giảm 50% uy lực công kích của địch.\n7. `« Cửu Vĩ Thiên Tiên Hồn »`: 40% mỗi lượt Mị Hoặc ép địch tự tung sát chiêu tự sát.\n8. `« Thái Sơ Thời Không Ma Thần Hồn »`: Đóng băng thời gian, đánh liên tiếp 2 lượt.\n9. `« Luân Hồi Bất Diệt Chiến Hồn »`: Đổi % máu cho địch khi rơi xuống dưới 20% HP.',
+        value: '1. `« Tru Tiên Diệt Thần Kiếm »`: Xuyên khiên 100%, khóa Bất Tử/Trùng Sinh 3 lượt đầu.\n2. `« Cửu Thiên Lôi Đình Cổ Thần Thương »`: Cướp 40% SPD của địch chuyển thành ATK.\n3. `« Hồng Mông Hỗn Độn Trượng »`: 35% biến đòn đánh của địch thành máu và phản 100%.\n4. `« Bất Hủ Thần Hoàng Ngọc »`: Giữ lại 1 HP khi chết, miễn nhiễm sát thương 2 lượt.\n5. `« Vạn Tượng Quy Nhất Châu »`: Phản 75% sát thương dội ngược lại địch (bỏ qua giáp).\n6. `« Thiên Hồ Hóa Thần Ngọc »`: Khiên hộ mệnh 100% HP, giảm 50% uy lực công kích của địch.\n7. `« Cửu Vĩ Thiên Tiên Hồn »`: 40% mỗi lượt Mị Hoặc ép địch tự tung sát chiêu tự sát.\n8. `« Thái Sơ Thời Không Ma Thần Hồn »`: Đóng băng thời gian, đánh liên tiếp 2 lượt.\n9. `« Luân Hồi Bất Diệt Chiến Hồn »`: Đổi % máu cho địch khi rơi xuống dưới 20% HP.',
         inline: false
       }
     ],
