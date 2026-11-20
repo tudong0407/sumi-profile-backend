@@ -6,6 +6,9 @@ import {
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
   sanitizeText,
+  loadBadgeImage,
+  stripLeadingEmojis,
+  drawIconText,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -37,18 +40,28 @@ export async function renderRankCard(data) {
     realm: sanitizeText(data.realm || 'I. Luyện Khí Sơ Kỳ'),
     level: Math.max(1, Number(data.level) || 1),
     exp: Math.max(0, Number(data.exp) || 0),
-    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(100 * Math.pow(data.level || 1, 1.8)))),
+    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(60 * Math.pow(data.level || 1, 1.45)))),
     linhThach: Math.max(0, Number(data.linh_thach) || 0),
     clan: data.clan || null,
     married: data.married || null,
   };
 
   const isOwner = profile.userId === '757091869183311872';
+  const ringFile = (() => {
+    const rId = String(data.marry_ring_id || data.married?.ring_id || '').toLowerCase();
+    if (rId.includes('mythic')) return 'rings/ring_mythic.png';
+    if (rId.includes('epic')) return 'rings/ring_epic.png';
+    if (rId.includes('rare')) return 'rings/ring_rare.png';
+    return 'rings/ring_common.png';
+  })();
 
-  // Tải hình nền & avatar an toàn
-  const [bgImage, avatarImg] = await Promise.all([
+  // Tải hình nền, avatar & badge PNG tách nền an toàn
+  const [bgImage, avatarImg, icoClan, icoRing, icoLinhThach] = await Promise.all([
     loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
     loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+    loadBadgeImage('badges/su_clan_castle.png'),
+    loadBadgeImage(ringFile),
+    loadBadgeImage('badges/su_linhthach.png'),
   ]);
 
   // ============================================================================
@@ -181,14 +194,14 @@ export async function renderRankCard(data) {
   // ============================================================================
   const headerX = 188;
 
-  // Tên Người Dùng (Discord Username)
+  // Tên Người Dùng (Discord Username) — dành chỗ cho cột Meta bên phải (metaBoxX = 515)
   ctx.save();
-  ctx.font = `bold 25px ${FONT_FAMILY}`;
+  ctx.font = `bold 24px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
   ctx.shadowBlur = 9;
   ctx.textBaseline = 'top';
-  const nameDisplay = truncateText(ctx, profile.username, 370);
+  const nameDisplay = truncateText(ctx, profile.username, 310);
   ctx.fillText(nameDisplay, headerX, 26);
   ctx.restore();
 
@@ -242,61 +255,68 @@ export async function renderRankCard(data) {
   // ============================================================================
   // LỚP 4: CỘT THÔNG TIN PHỤ BÊN PHẢI (GIA TỘC, TIÊN LỮ, LINH THẠCH)
   // ============================================================================
-  const metaBoxX = 580;
-  const metaBoxW = 372;
+  const metaBoxX = 515;
+  const metaBoxW = 437;
   const metaBoxH = 30;
 
   // Box 1: Gia Tộc (Clan)
   ctx.save();
   const clanY = 26;
   drawRoundRect(ctx, metaBoxX, clanY, metaBoxW, metaBoxH, 7);
-  ctx.fillStyle = 'rgba(23, 17, 43, 0.65)';
+  ctx.fillStyle = 'rgba(23, 17, 43, 0.68)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `12.5px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#f472b6';
-  const clanLabel = '🦊 Gia Tộc: ';
-  ctx.fillText(clanLabel, metaBoxX + 14, clanY + metaBoxH / 2);
-  const clanValX = metaBoxX + 14 + Math.ceil(ctx.measureText(clanLabel).width) + 2;
+  const clanLblW = drawIconText(ctx, icoClan, 'Gia Tộc: ', metaBoxX + 12, clanY + metaBoxH / 2, {
+    iconSize: 15,
+    gap: 6,
+    font: `bold 12px ${FONT_FAMILY}`,
+    fillStyle: '#f472b6',
+  });
+  const clanValX = metaBoxX + 12 + Math.ceil(clanLblW) + 3;
 
+  ctx.font = `12px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'middle';
   let clanStr = 'Chưa gia nhập bang hội';
   if (profile.clan) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 12 - clanValX);
-  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2);
+  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 10 - clanValX);
+  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
   ctx.save();
   const marryY = 62;
   drawRoundRect(ctx, metaBoxX, marryY, metaBoxW, metaBoxH, 7);
-  ctx.fillStyle = 'rgba(23, 17, 43, 0.65)';
+  ctx.fillStyle = 'rgba(23, 17, 43, 0.68)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `12.5px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#fb7185';
-  const marryLabel = '💍 Tiên Lữ: ';
-  ctx.fillText(marryLabel, metaBoxX + 14, marryY + metaBoxH / 2);
-  const marryValX = metaBoxX + 14 + Math.ceil(ctx.measureText(marryLabel).width) + 2;
+  const marryLblW = drawIconText(ctx, icoRing, 'Tiên Lữ: ', metaBoxX + 12, marryY + metaBoxH / 2, {
+    iconSize: 15,
+    gap: 6,
+    font: `bold 12px ${FONT_FAMILY}`,
+    fillStyle: '#fb7185',
+  });
+  const marryValX = metaBoxX + 12 + Math.ceil(marryLblW) + 3;
 
+  ctx.font = `12px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fed7aa';
+  ctx.textBaseline = 'middle';
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
-    marryStr = `Đã kết hôn cùng ${profile.married.username}`;
+    const cleanSpouse = stripLeadingEmojis(String(profile.married.username || '')).replace(/[💍]+/g, '').trim() || profile.married.username;
+    marryStr = `Đã kết hôn cùng ${cleanSpouse}`;
   }
-  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 12 - marryValX);
-  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2);
+  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 10 - marryValX);
+  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // Box 3: Số Dư Linh Thạch (Linh Thach Balance)
@@ -304,27 +324,29 @@ export async function renderRankCard(data) {
   const stoneY = 98;
   drawRoundRect(ctx, metaBoxX, stoneY, metaBoxW, metaBoxH, 7);
   const stoneBg = ctx.createLinearGradient(metaBoxX, stoneY, metaBoxX + metaBoxW, stoneY + metaBoxH);
-  stoneBg.addColorStop(0, 'rgba(15, 23, 42, 0.7)');
-  stoneBg.addColorStop(1, 'rgba(30, 41, 59, 0.6)');
+  stoneBg.addColorStop(0, 'rgba(15, 23, 42, 0.72)');
+  stoneBg.addColorStop(1, 'rgba(30, 41, 59, 0.62)');
   ctx.fillStyle = stoneBg;
   ctx.fill();
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `12.5px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#38bdf8';
-  const stoneLabel = '💎 Linh Thạch: ';
-  ctx.fillText(stoneLabel, metaBoxX + 14, stoneY + metaBoxH / 2);
-  const stoneValX = metaBoxX + 14 + Math.ceil(ctx.measureText(stoneLabel).width) + 2;
+  const stoneLblW = drawIconText(ctx, icoLinhThach, 'Linh Thạch: ', metaBoxX + 12, stoneY + metaBoxH / 2, {
+    iconSize: 15,
+    gap: 6,
+    font: `bold 12px ${FONT_FAMILY}`,
+    fillStyle: '#38bdf8',
+  });
+  const stoneValX = metaBoxX + 12 + Math.ceil(stoneLblW) + 3;
 
-  ctx.font = `bold 13.5px ${FONT_FAMILY}`;
+  ctx.font = `bold 13px ${FONT_FAMILY}`;
   ctx.fillStyle = '#7dd3fc';
+  ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
   ctx.shadowBlur = 6;
   const stoneStr = `${profile.linhThach.toLocaleString('vi-VN')} Viên`;
-  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 12 - stoneValX), stoneValX, stoneY + metaBoxH / 2);
+  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 10 - stoneValX), stoneValX, stoneY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // ============================================================================

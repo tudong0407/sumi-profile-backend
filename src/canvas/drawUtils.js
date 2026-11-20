@@ -599,3 +599,99 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
 
   ctx.restore();
 }
+
+const badgeImageCache = new Map();
+
+/**
+ * Tải ảnh badge/icon local trong assets/ có bộ nhớ đệm để tái sử dụng nhanh trên Canvas
+ */
+export async function loadBadgeImage(assetRelPath) {
+  if (!assetRelPath) return null;
+  if (badgeImageCache.has(assetRelPath)) {
+    return badgeImageCache.get(assetRelPath);
+  }
+  const img = await loadImageSafe(null, 1500, assetRelPath);
+  badgeImageCache.set(assetRelPath, img || null);
+  return img || null;
+}
+
+/**
+ * Loại bỏ các emoji Unicode Windows ở đầu chuỗi để thay bằng icon PNG sắc nét trên Canvas
+ */
+export function stripLeadingEmojis(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/^[\s\uFE0F\u200D\u2600-\u27BF\u{1F300}-\u{1FAFF}]+/gu, '')
+    .trim();
+}
+
+/**
+ * Vẽ icon PNG sắc nét kèm chuỗi text trên cùng 1 hàng (căn giữa theo trục dọc)
+ */
+export function drawIconText(ctx, iconImg, text, x, y, options = {}) {
+  const {
+    iconSize = 14,
+    gap = 5,
+    align = 'left',
+    font = null,
+    fillStyle = null,
+    textOffsetY = 0.5,
+  } = options;
+
+  ctx.save();
+  if (font) ctx.font = font;
+  if (fillStyle) ctx.fillStyle = fillStyle;
+  ctx.textBaseline = 'middle';
+
+  const cleanTxt = sanitizeText(text);
+  const textW = cleanTxt ? ctx.measureText(cleanTxt).width : 0;
+  const hasIcon = Boolean(iconImg && iconImg.width && iconImg.height);
+  const totalW = (hasIcon ? iconSize + (cleanTxt ? gap : 0) : 0) + textW;
+
+  let curX = x;
+  if (align === 'center') curX = x - totalW / 2;
+  else if (align === 'right') curX = x - totalW;
+
+  if (hasIcon) {
+    ctx.drawImage(iconImg, curX, y - iconSize / 2, iconSize, iconSize);
+    curX += iconSize + gap;
+  }
+  if (cleanTxt) {
+    ctx.textAlign = 'left';
+    ctx.fillText(cleanTxt, curX, y + textOffsetY);
+  }
+  ctx.restore();
+  return totalW;
+}
+
+/**
+ * Tự động thu nhỏ cỡ chữ trên 1 dòng duy nhất để hiển thị ĐẦY ĐỦ tên trang bị,
+ * tuyệt đối không cắt cụt "..." và không xuống dòng.
+ */
+export function drawAutoFitSingleLineText(ctx, text, x, y, maxWidth, options = {}) {
+  const {
+    maxFont = 10.5,
+    minFont = 6.0,
+    weight = 'bold',
+    align = 'center',
+    color = '#ffffff',
+  } = options;
+
+  const clean = sanitizeText(String(text || '')).trim();
+  ctx.save();
+  let chosen = minFont;
+  for (let size = maxFont; size >= minFont; size -= 0.25) {
+    ctx.font = `${weight} ${size}px ${FONT_FAMILY}`;
+    if (ctx.measureText(clean).width <= maxWidth) {
+      chosen = size;
+      break;
+    }
+  }
+  ctx.font = `${weight} ${chosen}px ${FONT_FAMILY}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(clean, x, y);
+  ctx.restore();
+  return chosen;
+}

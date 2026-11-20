@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
 import { FIXTURE_USERS } from '../helpers/fixtures.js';
+import { renderProfileCard } from '../../src/canvas/profileRenderer.js';
+import { getFuyumiProfileMock } from '../../src/services/profileService.js';
+import { EQUIPMENT_BY_ID } from '../../src/data/catalog.js';
 
 describe('Tier 1 - Profile Card Rendering (PNG & JSON)', () => {
   let testServer;
@@ -83,5 +86,17 @@ describe('Tier 1 - Profile Card Rendering (PNG & JSON)', () => {
     assert.equal(json.data.pet.spd, 100);
     assert.ok(Array.isArray(json.data.equipped_roles), 'equipped_roles should be an array');
     assert.equal(json.data.equipped_roles.length, 0);
+  });
+
+  it('6. renderProfileCard renders longest weapon (weapon_mythic_2) + AI background bg_15_fuyumi_paradise.png at 2000x1000', async () => {
+    const mock = getFuyumiProfileMock();
+    mock.background_url = 'backgrounds/bg_15_fuyumi_paradise.png';
+    mock.pet.equipment = {
+      weapon: EQUIPMENT_BY_ID.weapon_mythic_2,
+      gem: EQUIPMENT_BY_ID.gem_epic_3,
+      soul: EQUIPMENT_BY_ID.soul_mythic_2,
+    };
+    const buf = await renderProfileCard(mock);
+    assertPngValid(buf, 2000, 1000);
   });
 });

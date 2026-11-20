@@ -20,34 +20,37 @@ async function main() {
     ws.send(JSON.stringify({ id, method: m, params: p }));
   });
 
-  console.log('Monitoring Render build for commit e17773e...');
+  console.log('Monitoring Render build for commit 6ccef97...');
   const startTime = Date.now();
 
   for (let i = 0; i < 30; i++) {
-    await sleep(8000);
+    await sleep(5000);
     const elapsed = Math.round((Date.now() - startTime) / 1000);
 
     const info = await send('Runtime.evaluate', {
       expression: `(() => {
         const text = document.body.innerText;
         const lines = text.split('\\n').filter(Boolean);
-        const idx = lines.findIndex(l => l.includes('Most recent deploy'));
+        const idx = lines.findIndex(l => l.includes('STATUS'));
         if (idx !== -1) {
-          return lines.slice(idx, idx + 12).join(' | ');
+          return lines.slice(Math.max(0, idx - 3), idx + 12).join(' | ');
         }
-        return 'No "Most recent deploy" found. First 10: ' + lines.slice(0, 10).join(' | ');
+        return 'First 15: ' + lines.slice(35, 55).join(' | ');
       })()`,
       returnByValue: true
     });
     console.log(`[${elapsed}s] ${info.result?.value}`);
 
-    // Check live endpoint /health and /api/wiki
+    // Check live endpoint /api/wiki?category=pets for new English stat format
     try {
-      const wikiRes = await fetch('https://sumi-profile-backend.onrender.com/api/wiki');
+      const wikiRes = await fetch('https://sumi-profile-backend.onrender.com/api/wiki?category=pets&cb=' + Date.now());
       if (wikiRes.status === 200) {
         const wikiData = await wikiRes.json();
-        console.log(`🎉 [${elapsed}s] DEPLOY COMPLETE! /api/wiki returned 200 OK with ${wikiData.categories?.length} categories!`);
-        break;
+        const sec3 = wikiData.data?.sections?.[2]?.content || '';
+        if (sec3.includes('• ATK:')) {
+          console.log(`🎉 [${elapsed}s] DEPLOY 6ccef97 IS LIVE! /api/wiki?category=pets confirmed English stat labels!`);
+          break;
+        }
       }
     } catch (e) {
       // ignore

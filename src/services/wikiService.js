@@ -15,6 +15,15 @@ import {
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
+import {
+  em,
+  tierEmoji,
+  realmEmoji,
+  elementEmoji,
+  itemEmoji,
+  petEmoji,
+  levelMilestoneEmoji,
+} from '../config/emojiHelper.js';
 
 export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy'];
 
@@ -32,7 +41,7 @@ export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
   subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Đấu Trường',
   version: '2.0.0',
-  guild: '🦊𝗦𝘂𝗠𝗶 𝗙𝗮𝗺𝗶𝗹𝘆 (1026096141273661450)',
+  guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
   bot_id: '916469360401453067',
@@ -40,15 +49,15 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-20T14:30:00.000Z',
+  updated_at: '2026-11-21T02:00:00.000Z',
   total_categories: 6,
 };
 
 export const WIKI_CATEGORIES = {
   overview: {
     id: 'overview',
-    title: '📜 Tổng Quan Tu Tiên',
-    icon: '📜',
+    title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
+    icon: em('su_wiki_scroll'),
     description: 'Giới thiệu nhanh hệ thống tu tiên, khởi đầu tân thủ và danh sách lệnh cốt lõi.',
     image_url: '',
     sections: [
@@ -63,12 +72,12 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '🌱 Khởi Đầu Tân Thủ',
+        name: `${em('su_sprout')} Khởi Đầu Tân Thủ`,
         value: '• Mặc định: **Lv.1 • 0 EXP • 0 Linh Thạch • 1 Slot Role**.\n• Pet khởi đầu: **Hóa Thạch Nham Nham Thú** *(Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD)*.\n• Tự động khởi tạo hồ sơ khi tương tác Chat / Voice.',
         inline: false,
       },
       {
-        name: '📌 Lệnh Cốt Lõi',
+        name: `${em('su_pin_sigil')} Lệnh Cốt Lõi`,
         value: '• `/profile [user]` — Thẻ hồ sơ Full HD+ (`2000×1000`).\n• `/rank [user]` — Thẻ cấp độ Mini (`2000×410`).\n• `/battle [doi_thu]` — Đấu trường 1v1 bằng Ảnh Chiến Báo.\n• `/wiki` — Cẩm nang tương tác theo chuyên mục.',
         inline: false,
       },
@@ -78,8 +87,8 @@ export const WIKI_CATEGORIES = {
 
   realms: {
     id: 'realms',
-    title: '🌌 Hệ Thống Cảnh Giới & Thăng Cấp',
-    icon: '🌌',
+    title: `${em('su_realm_7_hondondao')} Hệ Thống Cảnh Giới & Thăng Cấp`,
+    icon: em('su_realm_7_hondondao'),
     description: '7 Đại Cảnh Giới (Lv.1–100), công thức EXP, mốc Role cấp độ và mở khóa Slot Role.',
     image_url: '',
     sections: [
@@ -89,7 +98,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Cơ Chế Tích Lũy EXP & Công Thức',
-        content: '• Chat: 15–25 EXP / tin nhắn hợp lệ (cooldown 45 giây).\n• Voice: 50–100 EXP mỗi 5 phút hoạt động trong kênh thoại.\n• Công thức thăng cấp: 100 × (Level ^ 1.8), trần 500.000 EXP tại Lv.100.\n• Buff EXP: « Linh Hồn Tu Luyện » (+15% EXP), « Cửu Vĩ Yêu Hậu » (+80% EXP).',
+        content: '• Chat: 20–30 EXP / tin nhắn hợp lệ (cooldown 45 giây).\n• Voice: 70–110 EXP mỗi 5 phút hoạt động trong kênh thoại.\n• Công thức thăng cấp: 60 × (Level ^ 1.45), trần 500.000 EXP tại Lv.100.\n• Buff EXP: « Linh Hồn Tu Luyện » (+15% EXP), « Cửu Vĩ Yêu Hậu » (+80% EXP).',
       },
       {
         heading: '3. Mốc Level Roles Tự Động',
@@ -98,18 +107,18 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '🏔️ 7 Đại Cảnh Giới & Mở Khóa Slot Role',
-        value: '• **I. Luyện Khí Sơ Kỳ** (`Lv.1–19`) • 1 Slot • Viền Bạch Ngọc\n• **II. Trúc Cơ Đạo Cảnh** (`Lv.20–39`) • 2 Slot\n• **III. Kim Đan Đại Đạo** (`Lv.40–59`) • 3 Slot • Viền Tử Kim\n• **IV. Nguyên Anh Chân Quân** (`Lv.60–79`) • 4 Slot\n• **V. Hóa Thần Tiên Tôn** (`Lv.80–89`) • 5 Slot\n• **VI. Đại Thừa Vô Cực** (`Lv.90–99`) • 5 Slot\n• **VII. Hỗn Độn Chúa Tể** (`Lv.100`) • Đỉnh cao tối thượng',
+        name: `${em('su_mountain')} 7 Đại Cảnh Giới & Mở Khóa Slot Role`,
+        value: `• ${realmEmoji(1)} **I. Luyện Khí Sơ Kỳ** (\`Lv.1–19\`) • 1 Slot • Viền Bạch Ngọc\n• ${realmEmoji(20)} **II. Trúc Cơ Đạo Cảnh** (\`Lv.20–39\`) • 2 Slot\n• ${realmEmoji(40)} **III. Kim Đan Đại Đạo** (\`Lv.40–59\`) • 3 Slot • Viền Tử Kim\n• ${realmEmoji(60)} **IV. Nguyên Anh Chân Quân** (\`Lv.60–79\`) • 4 Slot\n• ${realmEmoji(80)} **V. Hóa Thần Tiên Tôn** (\`Lv.80–89\`) • 5 Slot\n• ${realmEmoji(90)} **VI. Đại Thừa Vô Cực** (\`Lv.90–99\`) • 5 Slot\n• ${realmEmoji(100)} **VII. Hỗn Độn Chúa Tể** (\`Lv.100\`) • Đỉnh cao tối thượng`,
         inline: false,
       },
       {
-        name: '⚡ Nguồn EXP & Công Thức',
-        value: '• **Chat**: `15–25 EXP` / tin *(cooldown 45s)*.\n• **Voice**: `50–100 EXP` / `5 phút` hoạt động.\n• **Mốc EXP**: `100 × (Level ^ 1.8)` *(trần 500.000 ở Lv.100)*.\n• **Buff**: `Linh Hồn Tu Luyện` (+15%) • `Cửu Vĩ Yêu Hậu` (+80%).',
+        name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
+        value: '• **Chat**: `20–30 EXP` / tin nhắn *(cooldown 45 giây)*.\n• **Voice**: `70–110 EXP` / `5 phút` hoạt động.\n• **Công thức lên cấp**: `60 × (Level ^ 1.45)` *(tối đa `500.000 EXP` tại Lv.100)*.\n• **Buff**: `Linh Hồn Tu Luyện` (+15%) • `Cửu Vĩ Yêu Hậu` (+80%).',
         inline: false,
       },
       {
-        name: '🏅 Mốc Level Roles',
-        value: '`Lv.5` → `Lv.15` → `Lv.20` → `Lv.35` → `Lv.45` → `Lv.60` → `Lv.80` → `Lv.100`',
+        name: `${em('su_medal_role')} Mốc Level Roles`,
+        value: `${levelMilestoneEmoji(5)} \`Lv.5\` → ${levelMilestoneEmoji(15)} \`Lv.15\` → ${levelMilestoneEmoji(20)} \`Lv.20\` → ${levelMilestoneEmoji(35)} \`Lv.35\` → ${levelMilestoneEmoji(45)} \`Lv.45\` → ${levelMilestoneEmoji(60)} \`Lv.60\` → ${levelMilestoneEmoji(80)} \`Lv.80\` → ${levelMilestoneEmoji(100)} \`Lv.100\``,
         inline: false,
       },
     ],
@@ -118,18 +127,18 @@ export const WIKI_CATEGORIES = {
 
   battle: {
     id: 'battle',
-    title: '🥋 Đấu Trường & Ngũ Hành Tương Khắc',
-    icon: '🥋',
+    title: `${em('su_arena')} Đấu Trường & Ngũ Hành Tương Khắc`,
+    icon: em('su_arena'),
     description: 'Quy tắc 1v1, sơ đồ vòng xoay Ngũ Hành và Tứ Đại Dị Tố đặc thù.',
     image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.png`,
     sections: [
       {
         heading: '1. Vòng Xoay Ngũ Hành',
-        content: '• Kim ➜ Mộc ➜ Thổ ➜ Thủy ➜ Hỏa ➜ Kim.\n• Thuận khắc: +30% sát thương (×1.30).\n• Bị khắc: -20% sát thương gây ra (×0.80).',
+        content: '• Kim → Mộc → Thổ → Thủy → Hỏa → Kim.\n• Thuận khắc: +30% sát thương (×1.30).\n• Bị khắc: -20% sát thương gây ra (×0.80).',
       },
       {
         heading: '2. Tứ Đại Dị Tố Đặc Thù',
-        content: '• Lôi: Khắc mạnh Thủy & Kim (+30% DMG); Thủy/Kim đánh Lôi giảm -20%.\n• Ám ⚔️ Quang: Tương sát lưỡng cực (+25% DMG hai chiều).\n• Hỗn Độn / Hư Không: Ngoài ngũ hành, không bị khắc, +20% sát thương chuẩn xuyên giáp & -15% sát thương nhận vào.',
+        content: '• Lôi: Khắc mạnh Thủy & Kim (+30% DMG); Thủy/Kim đánh Lôi giảm -20%.\n• Ám vs Quang: Tương sát lưỡng cực (+25% DMG hai chiều).\n• Hỗn Độn / Hư Không: Ngoài ngũ hành, không bị khắc, +20% sát thương chuẩn xuyên giáp & -15% sát thương nhận vào.',
       },
       {
         heading: '3. Quy Tắc 1v1 (/battle)',
@@ -138,17 +147,17 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '🌀 Ngũ Hành Tương Khắc',
-        value: '`Kim ➜ Mộc ➜ Thổ ➜ Thủy ➜ Hỏa ➜ Kim`\n• Thuận khắc: **+30% DMG** (`×1.30`) • Bị khắc: **-20% DMG** (`×0.80`).',
+        name: `${em('su_element_wheel')} Ngũ Hành Tương Khắc`,
+        value: `${elementEmoji('Kim')} Kim → ${elementEmoji('Mộc')} Mộc → ${elementEmoji('Thổ')} Thổ → ${elementEmoji('Thủy')} Thủy → ${elementEmoji('Hỏa')} Hỏa → Kim\n• Thuận khắc: **+30% DMG** (\`×1.30\`) • Bị khắc: **-20% DMG** (\`×0.80\`).`,
         inline: false,
       },
       {
-        name: '⚡ Dị Tố Đặc Thù',
-        value: '• **Lôi**: Khắc Thủy & Kim (`+30% DMG`).\n• **Ám ⚔️ Quang**: Tương sát lưỡng cực (`+25% DMG`).\n• **Hỗn Độn / Hư Không**: Ngoài ngũ hành, `+20%` xuyên giáp & `-15%` sát thương nhận vào.',
+        name: `${em('su_thunder_hax')} Dị Tố Đặc Thù`,
+        value: `• ${elementEmoji('Lôi')} **Lôi**: Khắc Thủy & Kim (\`+30% DMG\`).\n• ${elementEmoji('Ám')} **Ám** ${em('su_crossed_swords')} ${elementEmoji('Quang')} **Quang**: Tương sát lưỡng cực (\`+25% DMG\`).\n• ${elementEmoji('Hỗn Độn')} **Hỗn Độn / Hư Không**: Ngoài ngũ hành, \`+20%\` xuyên giáp & \`-15%\` sát thương nhận vào.`,
         inline: false,
       },
       {
-        name: '⚔️ Luật Đấu Trường 1v1',
+        name: `${em('su_crossed_swords')} Luật Đấu Trường 1v1`,
         value: '• Thứ tự đánh: `Lôi Quang Tốc` > `Final SPD` cao hơn.\n• `HP = (Lv × 1.000) + (DEF × 5) + Bonus HP` • Tối đa **20 hiệp**.',
         inline: false,
       },
@@ -158,8 +167,8 @@ export const WIKI_CATEGORIES = {
 
   equipment: {
     id: 'equipment',
-    title: '⚔️ Trang Bị Loadout (45 Pháp Bảo)',
-    icon: '⚔️',
+    title: `${em('su_crossed_swords')} Trang Bị Loadout (45 Pháp Bảo)`,
+    icon: em('su_crossed_swords'),
     description: '3 Slot trang bị (15 Vũ Khí, 15 Bảo Ngọc, 15 Chiến Hồn), tỉ lệ rớt và quy tắc 9 Pháp Bảo Thần Thoại Độc Nhất.',
     image_url: '',
     sections: [
@@ -174,17 +183,17 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '🛡️ 3 Nhóm Pháp Bảo',
-        value: '• ⚔️ **Vũ Khí** (15 món): `ATK • SPD • CRIT`\n• 💎 **Bảo Ngọc** (15 món): `DEF • HP • Khiên`\n• 🦊 **Chiến Hồn** (15 món): `ATK • DEF • SPD • HAX`',
+        name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo`,
+        value: `• ${em('su_crossed_swords')} **Vũ Khí** (15 món): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (15 món): \`DEF • HP • Khiên\`\n• ${em('su_fox_mascot')} **Chiến Hồn** (15 món): \`ATK • DEF • SPD • HAX\``,
         inline: true,
       },
       {
-        name: '🎲 Tỉ Lệ Rớt',
-        value: '• ⚪ Phàm Phẩm: **60%**\n• 🔵 Linh Phẩm: **25%**\n• 🟣 Tiên Phẩm: **14%**\n• 🔴 Thần Thoại: **1%** *(Độc Nhất)*',
+        name: `${em('su_gacha_dice')} Tỉ Lệ Rớt`,
+        value: `• ${tierEmoji('common')} Phàm Phẩm: **60%**\n• ${tierEmoji('rare')} Linh Phẩm: **25%**\n• ${tierEmoji('epic')} Tiên Phẩm: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **1%** *(Độc Nhất)*`,
         inline: true,
       },
       {
-        name: '👑 Quy Tắc Độc Nhất (9 Món Thần Thoại)',
+        name: `${tierEmoji('supreme')} Quy Tắc Độc Nhất (9 Món Thần Thoại)`,
         value: 'Mỗi pháp bảo Thần Thoại chỉ tồn tại **duy nhất 1 bản trên toàn server**. Chọn trực tiếp món đồ ở **3 Dropdown bên dưới** để xem thẻ chỉ số Full HD+ và Chủ Sở Hữu hiện tại.',
         inline: false,
       },
@@ -194,8 +203,8 @@ export const WIKI_CATEGORIES = {
 
   pets: {
     id: 'pets',
-    title: '🐾 Linh Thú Tiên Giới (20 Chiến Pet)',
-    icon: '🐾',
+    title: `${em('su_pet_paw')} Linh Thú Tiên Giới (20 Chiến Pet)`,
+    icon: em('su_pet_paw'),
     description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (Phàm / Linh / Tiên / Thần Thoại).',
     image_url: '',
     sections: [
@@ -210,13 +219,13 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '📘 Khái Niệm & Công Thức',
+        name: `${em('su_wiki_scroll')} Khái Niệm & Công Thức`,
         value: 'Linh Thú là chiến hữu xuất trận trong `/battle`, mang Hệ Ngũ Hành & Kỹ Năng HAX riêng.\n• **Pet khởi đầu**: `Hóa Thạch Nham Nham Thú` *(Phàm Phẩm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Chiến Lực**: `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị`.',
         inline: false,
       },
       {
-        name: '✨ 4 Bậc Phẩm Cấp',
-        value: '• ⚪ **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• 🔵 **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• 🟣 **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• 🔴 **Thần Thoại** *(6 loài)* — Tuyệt kỹ HAX tối thượng',
+        name: `${em('su_sparkle')} 4 Bậc Phẩm Cấp`,
+        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• ${tierEmoji('rare')} **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• ${tierEmoji('epic')} **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• ${tierEmoji('mythic')} **Thần Thoại** *(6 loài)* — Tuyệt kỹ HAX tối thượng`,
         inline: false,
       },
     ],
@@ -225,8 +234,8 @@ export const WIKI_CATEGORIES = {
 
   economy: {
     id: 'economy',
-    title: '💎 Kinh Tế Linh Thạch & Gia Tộc',
-    icon: '💎',
+    title: `${em('su_linhthach')} Kinh Tế Linh Thạch & Gia Tộc`,
+    icon: em('su_linhthach'),
     description: 'Tiền tệ Linh Thạch, nguồn thu nhập và hệ thống Gia Tộc / Bang Chiến 24H.',
     image_url: '',
     sections: [
@@ -241,13 +250,13 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: '💎 Linh Thạch',
+        name: `${em('su_linhthach')} Linh Thạch`,
         value: '• Dùng để triệu hồi Linh Thú, rèn Pháp Bảo, nâng sao và đóng góp Gia Tộc.\n• **Buff**: `Tài Vận Hanh Thông` (+20%) • `Sáng Thế Thần Quân` (×2.5).',
         inline: false,
       },
       {
-        name: '🏰 Gia Tộc & Clan Wars 24H',
-        value: '• Quy mô cấp 1–10 (`10–50` thành viên).\n• Gia tộc tiêu biểu: **Thiên Hồ Thần Tộc (`🦊TH`)**.\n• **Clan Wars 24H**: Đặt cược Linh Thạch, tranh đoạt ngân khố trong 24 giờ.',
+        name: `${em('su_clan_castle')} Gia Tộc & Clan Wars 24H`,
+        value: '• Quy mô cấp 1–10 (`10–50` thành viên).\n• Gia tộc tiêu biểu: **Thiên Hồ Thần Tộc (`TH`)**.\n• **Clan Wars 24H**: Đặt cược Linh Thạch, tranh đoạt ngân khố trong 24 giờ.',
         inline: false,
       },
     ],
@@ -351,7 +360,7 @@ async function resolveMythicItemOwner(itemId) {
 
   // Fallback chỉ khi chạy offline không kết nối Supabase
   if (['weapon_mythic_1', 'gem_mythic_3', 'soul_mythic_1'].includes(itemId)) {
-    return { user_id: FUYUMI_USER_ID, username: 'Fuyumi 🌸' };
+    return { user_id: FUYUMI_USER_ID, username: `Fuyumi ${em('su_sakura')}` };
   }
   return null;
 }
@@ -387,17 +396,17 @@ export async function getWikiItemDetail(itemId) {
 
   const ownerLine = item.is_unique
     ? (currentOwner
-      ? `👑 **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)`
-      : '👑 **Độc Nhất Toàn Server** — Chưa có chủ sở hữu')
+      ? `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)`
+      : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
     : null;
 
   const effectLine = item.hax_skill
-    ? `⚡ **${item.hax_skill}**: ${item.hax_description}`
-    : (item.hax_description ? `✨ ${item.hax_description}` : 'Tăng trực tiếp chỉ số chiến đấu cho Linh Thú.');
+    ? `${em('su_thunder_hax')} **${item.hax_skill}**: ${item.hax_description}`
+    : (item.hax_description ? `${em('su_sparkle')} ${item.hax_description}` : 'Tăng trực tiếp chỉ số chiến đấu cho Linh Thú.');
 
   const descriptionLines = [
-    `${tier.emoji} **${item.rarity}** • ${slotLabel} • Hệ **${item.element}** • Tỉ lệ rớt **${item.drop_rate}%**`,
-    `📊 **Chỉ số**: \`${statParts.join(' | ') || 'Không có'}\``,
+    `${tier.emoji} **${item.rarity}** • ${slotLabel} • ${elementEmoji(item.element)} Hệ **${item.element}** • Tỉ lệ rớt **${item.drop_rate}%**`,
+    `${em('su_stats_chart')} **Chỉ số**: \`${statParts.join(' | ') || 'Không có'}\``,
     effectLine,
   ];
   if (ownerLine) descriptionLines.push(ownerLine);
@@ -417,7 +426,7 @@ export async function getWikiItemDetail(itemId) {
       asset_path: `items/${item.item_id}.png`,
     },
     embed: {
-      title: `${item.icon} ${item.item_name}`,
+      title: `${itemEmoji(item.item_id, item.icon)} ${item.item_name}`.trim(),
       description: descriptionLines.join('\n'),
       color: tier.color,
       color_dec: tier.colorDec,
@@ -448,12 +457,12 @@ export async function getWikiPetDetail(petType) {
   const tier = RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
 
   const tagNotes = [];
-  if (pet.is_starter) tagNotes.push('🌱 Linh Thú Khởi Đầu Mặc Định');
+  if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
 
   const descriptionLines = [
-    `${tier.emoji} **${pet.rarity}** • Hệ **${pet.element}**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
-    `📊 **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
-    `⚡ **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
+    `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
+    `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
+    `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];
 
   const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.png`;
@@ -465,7 +474,7 @@ export async function getWikiPetDetail(petType) {
       image_url: imageUrl,
     },
     embed: {
-      title: `${pet.icon} ${pet.pet_name}`,
+      title: `${petEmoji(pet.pet_type, pet.icon)} ${pet.pet_name}`.trim(),
       description: descriptionLines.join('\n'),
       color: tier.color,
       color_dec: tier.colorDec,

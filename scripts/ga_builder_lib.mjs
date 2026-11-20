@@ -790,7 +790,10 @@ export async function deployViaCDP({ groupId = GA_GROUP_ID, mode, name, elements
     wait_action: { title: 'Wait before running another action', description: 'Wait before running another action', isActionBlock: true },
     set_unique_variable: { title: 'Set a unique variable', description: 'Set a unique variable', isActionBlock: true },
     advanced_message: { title: 'Send or Edit a Message', description: 'Send or edit a message', isActionBlock: false },
-    api_action: { title: 'Send an API Request', description: 'Send an API Request', isActionBlock: true }
+    api_action: { title: 'Send an API Request', description: 'Send an API Request', isActionBlock: true },
+    role_add: { title: 'Add Roles', description: 'Adds one or more roles to a user', isActionBlock: false },
+    role_remove: { title: 'Remove Roles', description: 'Removes one or more roles from a user', isActionBlock: false },
+    loop: { title: 'Run a Loop', description: 'Run blocks again and again: a set number of times, for each item or member, or while something is true', isActionBlock: false },
   };
   const condMap = {
     comparison: { title: 'Compare values', description: 'Compare two values', isActionBlock: false }

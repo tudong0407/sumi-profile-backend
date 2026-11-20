@@ -69,8 +69,8 @@ describe('Tier 1 - Phase 1 Economy (/daily, /doiqua demote, /roll gacha)', () =>
 
   it('3. POST /api/economy/doiqua converts 1000 EXP -> 10 Linh Thach and allows level demotion', async () => {
     if (!supabase) return;
-    // Seed user at Lv.6 with 100 EXP (> 1000 total accumulated EXP)
-    await supabase.from('users').update({ level: 6, exp: 100, linh_thach: 500 }).eq('user_id', TEMP_ECON_USER);
+    // Seed user at Lv.7 with 100 EXP (~2,489 total EXP >= 2,000 under 60 * lv^1.45)
+    await supabase.from('users').update({ level: 7, exp: 100, linh_thach: 500 }).eq('user_id', TEMP_ECON_USER);
 
     const res = await testServer.fetch('/api/economy/doiqua', {
       method: 'POST',
@@ -83,10 +83,11 @@ describe('Tier 1 - Phase 1 Economy (/daily, /doiqua demote, /roll gacha)', () =>
     assert.equal(j.spent_exp, 2000);
     assert.equal(j.linh_thach_gained, 20);
     assert.equal(j.demoted, true);
-    assert.equal(j.old_level, 6);
-    assert.ok(j.new_level < 6);
+    assert.equal(j.old_level, 7);
+    assert.ok(j.new_level < 5);
     assert.ok(Array.isArray(j.revoked_level_role_ids));
     assert.ok(j.revoked_level_role_ids.includes('1038406122417176586'));
+    assert.ok(String(j.revoked_level_role_csv).includes('1038406122417176586'));
   });
 
   it('4. POST /api/economy/doiqua rejects non-multiples of 1000 and excessive EXP', async () => {

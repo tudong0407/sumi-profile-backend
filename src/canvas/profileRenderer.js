@@ -7,6 +7,10 @@ import {
   drawAntiAliasedAvatarWithBorder,
   sanitizeText,
   resolveAssetPath,
+  loadBadgeImage,
+  stripLeadingEmojis,
+  drawIconText,
+  drawAutoFitSingleLineText,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -39,7 +43,7 @@ export async function renderProfileCard(data) {
     realm: sanitizeText(data.realm || 'I. Luyện Khí Sơ Kỳ'),
     level: Math.max(1, Number(data.level) || 1),
     exp: Math.max(0, Number(data.exp) || 0),
-    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(100 * Math.pow(data.level || 1, 1.8)))),
+    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(60 * Math.pow(data.level || 1, 1.45)))),
     linhThach: Math.max(0, Number(data.linh_thach) || 0),
     maxSlots: Math.min(5, Math.max(1, Number(data.max_role_slots) || 1)),
     clan: data.clan || null,
@@ -76,13 +80,39 @@ export async function renderProfileCard(data) {
   const gemSource = equipGem?.image_url || gemFallback;
   const soulSource = equipSoul?.image_url || soulFallback;
 
-  const [bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg] = await Promise.all([
+  const petIconRel = petType && petType !== 'cuu_vi_hong_ho'
+    ? (resolveAssetPath(`pets/icons/${petType}.png`) ? `pets/icons/${petType}.png` : 'badges/su_fox_mascot.png')
+    : 'badges/su_fox_mascot.png';
+
+  const ringFile = (() => {
+    const rId = String(data.marry_ring_id || data.married?.ring_id || '').toLowerCase();
+    if (rId.includes('mythic')) return 'rings/ring_mythic.png';
+    if (rId.includes('epic')) return 'rings/ring_epic.png';
+    if (rId.includes('rare')) return 'rings/ring_rare.png';
+    return 'rings/ring_common.png';
+  })();
+
+  const [
+    bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg,
+    icoClan, icoRing, icoLinhThach, icoPaw, icoPetMini, icoFox, icoBolt, icoSwords, icoShield, icoSparkle, icoGemSlot,
+  ] = await Promise.all([
     loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
     loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(profile.pet?.image_url, 2500, petAsset),
     weaponSource ? loadImageSafe(weaponSource, 2000, weaponFallback) : null,
     gemSource ? loadImageSafe(gemSource, 2000, gemFallback) : null,
     soulSource ? loadImageSafe(soulSource, 2000, soulFallback) : null,
+    loadBadgeImage('badges/su_clan_castle.png'),
+    loadBadgeImage(ringFile),
+    loadBadgeImage('badges/su_linhthach.png'),
+    loadBadgeImage('badges/su_pet_paw.png'),
+    loadBadgeImage(petIconRel),
+    loadBadgeImage('badges/su_fox_mascot.png'),
+    loadBadgeImage('badges/su_thunder_hax.png'),
+    loadBadgeImage('badges/su_crossed_swords.png'),
+    loadBadgeImage('badges/su_shield_def.png'),
+    loadBadgeImage('badges/su_sparkle.png'),
+    loadBadgeImage('badges/su_linhthach.png'),
   ]);
 
   // ============================================================================
@@ -220,14 +250,14 @@ export async function renderProfileCard(data) {
   // ============================================================================
   const headerX = 195;
 
-  // Tên Người Dùng (Discord Username)
+  // Tên Người Dùng (Discord Username) - dành chỗ cho cột Meta bên phải (metaBoxX = 515)
   ctx.save();
-  ctx.font = `bold 26px ${FONT_FAMILY}`;
+  ctx.font = `bold 25px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
   ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
   ctx.shadowBlur = 10;
   ctx.textBaseline = 'top';
-  const nameDisplay = truncateText(ctx, profile.username, 370);
+  const nameDisplay = truncateText(ctx, profile.username, 306);
   ctx.fillText(nameDisplay, headerX, 36);
   ctx.restore();
 
@@ -280,64 +310,73 @@ export async function renderProfileCard(data) {
 
   // ============================================================================
   // LỚP 4: CỘT THÔNG TIN PHỤ BÊN PHẢI (GIA TỘC, TIÊN LỮ, LINH THẠCH)
+  // Đẩy sang trái (metaBoxX = 515, metaBoxW = 435) để tên Gia Tộc hiển thị đầy đủ không cắt cụt
   // ============================================================================
-  const metaBoxX = 580;
-  const metaBoxW = 370;
+  const metaBoxX = 515;
+  const metaBoxW = 435;
   const metaBoxH = 32;
 
   // Box 1: Gia Tộc (Clan)
   ctx.save();
   const clanY = 34;
   drawRoundRect(ctx, metaBoxX, clanY, metaBoxW, metaBoxH, 8);
-  ctx.fillStyle = 'rgba(23, 17, 43, 0.65)';
+  ctx.fillStyle = 'rgba(23, 17, 43, 0.68)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `13px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
+  const clanLabel = 'Gia Tộc: ';
+  ctx.font = `bold 12.5px ${FONT_FAMILY}`;
+  const clanLblW = drawIconText(ctx, icoClan, clanLabel, metaBoxX + 12, clanY + metaBoxH / 2, {
+    iconSize: 16,
+    gap: 6,
+    font: `bold 12.5px ${FONT_FAMILY}`,
+    fillStyle: '#f472b6',
+  });
+  const clanValX = metaBoxX + 12 + Math.ceil(clanLblW) + 3;
 
-  ctx.fillStyle = '#f472b6';
-  const clanLabel = '🦊 Gia Tộc: ';
-  ctx.fillText(clanLabel, metaBoxX + 14, clanY + metaBoxH / 2);
-  const clanValX = metaBoxX + 14 + Math.ceil(ctx.measureText(clanLabel).width) + 2;
-
+  ctx.font = `12.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'middle';
   let clanStr = 'Chưa gia nhập bang hội';
   if (profile.clan) {
     const roleClan = profile.clan.is_leader ? 'Tộc Trưởng' : 'Tộc Viên';
     clanStr = `[${profile.clan.clan_name}] • ${roleClan} (Cấp ${profile.clan.clan_level})`;
   }
-  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 12 - clanValX);
-  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2);
+  const cleanClanStr = truncateText(ctx, clanStr, metaBoxX + metaBoxW - 10 - clanValX);
+  ctx.fillText(cleanClanStr, clanValX, clanY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // Box 2: Tiên Lữ Kết Hôn (Marriage)
   ctx.save();
   const marryY = 74;
   drawRoundRect(ctx, metaBoxX, marryY, metaBoxW, metaBoxH, 8);
-  ctx.fillStyle = 'rgba(23, 17, 43, 0.65)';
+  ctx.fillStyle = 'rgba(23, 17, 43, 0.68)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `13px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
+  const marryLabel = 'Tiên Lữ: ';
+  const marryLblW = drawIconText(ctx, icoRing, marryLabel, metaBoxX + 12, marryY + metaBoxH / 2, {
+    iconSize: 16,
+    gap: 6,
+    font: `bold 12.5px ${FONT_FAMILY}`,
+    fillStyle: '#fb7185',
+  });
+  const marryValX = metaBoxX + 12 + Math.ceil(marryLblW) + 3;
 
-  ctx.fillStyle = '#fb7185';
-  const marryLabel = '💍 Tiên Lữ: ';
-  ctx.fillText(marryLabel, metaBoxX + 14, marryY + metaBoxH / 2);
-  const marryValX = metaBoxX + 14 + Math.ceil(ctx.measureText(marryLabel).width) + 2;
-
+  ctx.font = `12.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fed7aa';
+  ctx.textBaseline = 'middle';
   let marryStr = 'Độc thân tu đạo';
   if (profile.married) {
-    marryStr = `Đã kết hôn cùng ${profile.married.username}`;
+    const cleanSpouse = stripLeadingEmojis(String(profile.married.username || '')).replace(/[💍]+/g, '').trim() || profile.married.username;
+    marryStr = `Đã kết hôn cùng ${cleanSpouse}`;
   }
-  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 12 - marryValX);
-  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2);
+  const cleanMarryStr = truncateText(ctx, marryStr, metaBoxX + metaBoxW - 10 - marryValX);
+  ctx.fillText(cleanMarryStr, marryValX, marryY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // Box 3: Số Dư Linh Thạch (Linh Thach Balance)
@@ -345,28 +384,30 @@ export async function renderProfileCard(data) {
   const stoneY = 114;
   drawRoundRect(ctx, metaBoxX, stoneY, metaBoxW, metaBoxH, 8);
   const stoneBg = ctx.createLinearGradient(metaBoxX, stoneY, metaBoxX + metaBoxW, stoneY + metaBoxH);
-  stoneBg.addColorStop(0, 'rgba(15, 23, 42, 0.7)');
-  stoneBg.addColorStop(1, 'rgba(30, 41, 59, 0.6)');
+  stoneBg.addColorStop(0, 'rgba(15, 23, 42, 0.72)');
+  stoneBg.addColorStop(1, 'rgba(30, 41, 59, 0.62)');
   ctx.fillStyle = stoneBg;
   ctx.fill();
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  ctx.font = `13px ${FONT_FAMILY}`;
-  ctx.textBaseline = 'middle';
+  const stoneLabel = 'Linh Thạch: ';
+  const stoneLblW = drawIconText(ctx, icoLinhThach, stoneLabel, metaBoxX + 12, stoneY + metaBoxH / 2, {
+    iconSize: 16,
+    gap: 6,
+    font: `bold 12.5px ${FONT_FAMILY}`,
+    fillStyle: '#38bdf8',
+  });
+  const stoneValX = metaBoxX + 12 + Math.ceil(stoneLblW) + 3;
 
-  ctx.fillStyle = '#38bdf8';
-  const stoneLabel = '💎 Linh Thạch: ';
-  ctx.fillText(stoneLabel, metaBoxX + 14, stoneY + metaBoxH / 2);
-  const stoneValX = metaBoxX + 14 + Math.ceil(ctx.measureText(stoneLabel).width) + 2;
-
-  ctx.font = `bold 14px ${FONT_FAMILY}`;
+  ctx.font = `bold 13.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#7dd3fc';
+  ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(56, 189, 248, 0.6)';
   ctx.shadowBlur = 6;
   const stoneStr = `${profile.linhThach.toLocaleString('vi-VN')} Viên`;
-  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 12 - stoneValX), stoneValX, stoneY + metaBoxH / 2);
+  ctx.fillText(truncateText(ctx, stoneStr, metaBoxX + metaBoxW - 10 - stoneValX), stoneValX, stoneY + metaBoxH / 2 + 0.5);
   ctx.restore();
 
   // ============================================================================
@@ -424,13 +465,14 @@ export async function renderProfileCard(data) {
 
   // ----------------------------------------------------------------------------
   // BẢNG 6A: LINH THÚ XUẤT TRẬN (PET SYSTEM VỚI NGŨ HÀNH & KỸ NĂNG HAX)
+  // Mở rộng petW lên 490px (+100px từ bảng Roles) để hiển thị trọn vẹn tên Linh Thú & Pháp Bảo
   // ----------------------------------------------------------------------------
-  const petW = 390;
+  const petW = 490;
   const petX = 50;
 
   ctx.save();
   drawRoundRect(ctx, petX, bottomY, petW, bottomH, 16);
-  ctx.fillStyle = 'rgba(18, 14, 32, 0.75)';
+  ctx.fillStyle = 'rgba(18, 14, 32, 0.78)';
   ctx.fill();
   const petBorder = ctx.createLinearGradient(petX, bottomY, petX + petW, bottomY + bottomH);
   petBorder.addColorStop(0, 'rgba(251, 146, 60, 0.55)');
@@ -439,20 +481,22 @@ export async function renderProfileCard(data) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Tiêu đề Pet Header (Cách lề 22px thoáng đãng)
-  ctx.font = `bold 13px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#fdba74';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🐾 LINH THÚ XUẤT TRẬN', petX + 22, bottomY + 20);
+  // Tiêu đề Pet Header
+  drawIconText(ctx, icoPaw, 'LINH THÚ XUẤT TRẬN', petX + 20, bottomY + 20, {
+    iconSize: 15,
+    gap: 6,
+    font: `bold 13px ${FONT_FAMILY}`,
+    fillStyle: '#fdba74',
+  });
 
   if (profile.pet) {
     const hasPetImg = !!petImg;
-    // Khung Linh Thú Chuyên Biệt (Dedicated Pet Frame)
-    const petFrameW = 92;
+    // Khung Linh Thú Chuyên Biệt
+    const petFrameW = 94;
     const petFrameH = 78;
     const petFrameX = petX + petW - 18 - petFrameW;
-    const petFrameY = bottomY + 25;
-    const leftTextW = petFrameX - petX - 28;
+    const petFrameY = bottomY + 23;
+    const leftTextW = petFrameX - petX - 30;
 
     // 1. Huy hiệu Độ hiếm (Rarity Badge) căn giữa ngay trên nóc Khung Pet
     const rarityText = profile.pet.rarity || 'Thần Thoại';
@@ -527,16 +571,19 @@ export async function renderProfileCard(data) {
     ctx.fillText(rarityText, rarPillX + rarPillW / 2, rarPillY + rarPillH / 2);
     ctx.textAlign = 'left';
 
-    // Tên Linh Thú (Lề trái 20px)
+    // Tên Linh Thú (PNG mini icon + chữ trắng phát sáng)
+    ctx.save();
     ctx.font = `bold 15px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#ffffff';
     ctx.shadowColor = 'rgba(255, 105, 180, 0.6)';
     ctx.shadowBlur = 8;
-    const petIcon = profile.pet.icon || '🦊';
-    const petNameOnly = `${petIcon} ${profile.pet.name}`;
-    const cleanPetName = truncateText(ctx, petNameOnly, leftTextW);
-    ctx.fillText(cleanPetName, petX + 20, bottomY + 44);
-    ctx.shadowBlur = 0;
+    const cleanPetName = truncateText(ctx, profile.pet.name, leftTextW - 22);
+    drawIconText(ctx, icoPetMini, cleanPetName, petX + 20, bottomY + 44, {
+      iconSize: 18,
+      gap: 6,
+      font: `bold 15px ${FONT_FAMILY}`,
+      fillStyle: '#ffffff',
+    });
+    ctx.restore();
 
     // Hàng 2: Pill Hệ Ngũ Hành + Pill Cấp Độ
     const elementStr = profile.pet.element ? `Hệ ${profile.pet.element}` : 'Hệ Hỗn Độn';
@@ -580,18 +627,23 @@ export async function renderProfileCard(data) {
 
     // Kỹ năng HAX Lật Kèo (HAX Skill Badge)
     const haxName = profile.pet.hax_skill || 'Tuyệt Kỹ Phá Cách (HAX)';
+    ctx.save();
     ctx.font = `bold 11px ${FONT_FAMILY}`;
-    const haxDisplay = truncateText(ctx, `⚡ ${haxName}`, leftTextW);
-    ctx.fillStyle = '#fde047';
+    const haxDisplay = truncateText(ctx, haxName, leftTextW - 20);
     ctx.shadowColor = 'rgba(253, 224, 71, 0.5)';
     ctx.shadowBlur = 5;
-    ctx.fillText(haxDisplay, petX + 20, bottomY + 90);
-    ctx.shadowBlur = 0;
+    drawIconText(ctx, icoBolt, haxDisplay, petX + 20, bottomY + 90, {
+      iconSize: 14,
+      gap: 5,
+      font: `bold 11px ${FONT_FAMILY}`,
+      fillStyle: '#fde047',
+    });
+    ctx.restore();
 
     // Bảng Chiến Lực Nổi Bật (Power Score Box)
-    const powerBoxX = petX + 18;
-    const powerBoxW = petW - 36;
-    const powerBoxY = bottomY + 106;
+    const powerBoxX = petX + 16;
+    const powerBoxW = petW - 32;
+    const powerBoxY = bottomY + 104;
     const powerBoxH = 24;
     drawRoundRect(ctx, powerBoxX, powerBoxY, powerBoxW, powerBoxH, 6);
     const powerBg = ctx.createLinearGradient(powerBoxX, powerBoxY, powerBoxX + powerBoxW, powerBoxY + powerBoxH);
@@ -603,39 +655,46 @@ export async function renderProfileCard(data) {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.font = `bold 12.5px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#fef08a';
+    ctx.save();
     ctx.shadowColor = 'rgba(245, 158, 11, 0.8)';
     ctx.shadowBlur = 7;
-    ctx.textAlign = 'center';
     const powerFormatted = (profile.pet.power || 0).toLocaleString('vi-VN');
-    ctx.fillText(`⚔️ Chiến Lực: ${powerFormatted}`, powerBoxX + powerBoxW / 2, powerBoxY + powerBoxH / 2);
-    ctx.shadowBlur = 0;
-    ctx.textAlign = 'left';
+    drawIconText(ctx, icoSwords, `Chiến Lực: ${powerFormatted}`, powerBoxX + powerBoxW / 2, powerBoxY + powerBoxH / 2, {
+      iconSize: 15,
+      gap: 6,
+      align: 'center',
+      font: `bold 12.5px ${FONT_FAMILY}`,
+      fillStyle: '#fef08a',
+    });
+    ctx.restore();
 
-    // Thuộc tính chi tiết (ATK / DEF / SPD)
-    const statsY = bottomY + 144;
-    ctx.font = `11px ${FONT_FAMILY}`;
-    ctx.fillStyle = '#cbd5e1';
+    // Thuộc tính chi tiết của Linh Thú (GIỮ LẠI theo A1 — thay icon Unicode bằng PNG badge sắc nét)
+    const statsY = bottomY + 141;
     const atkStr = `ATK: ${(profile.pet.atk || 0).toLocaleString('vi-VN')}`;
     const defStr = `DEF: ${(profile.pet.def || 0).toLocaleString('vi-VN')}`;
     const spdStr = `SPD: ${(profile.pet.spd || 0).toLocaleString('vi-VN')}`;
-    ctx.fillText(`🗡️ ${atkStr}    🛡️ ${defStr}    ⚡ ${spdStr}`, petX + 20, statsY);
+    const col1X = petX + 20;
+    const col2X = petX + 172;
+    const col3X = petX + 324;
+    drawIconText(ctx, icoSwords, atkStr, col1X, statsY, { iconSize: 13, gap: 5, font: `bold 11px ${FONT_FAMILY}`, fillStyle: '#fca5a5' });
+    drawIconText(ctx, icoShield, defStr, col2X, statsY, { iconSize: 13, gap: 5, font: `bold 11px ${FONT_FAMILY}`, fillStyle: '#93c5fd' });
+    drawIconText(ctx, icoBolt, spdStr, col3X, statsY, { iconSize: 13, gap: 5, font: `bold 11px ${FONT_FAMILY}`, fillStyle: '#fde047' });
 
     // ========================================================================
-    // 3 SLOTS TRANG BỊ LINH THÚ (Vũ Khí, Bảo Ngọc, Chiến Hồn) VỚI RARITY GLOW
+    // 3 SLOTS TRANG BỊ LINH THÚ (Vũ Khí, Bảo Ngọc, Chiến Hồn)
+    // Bỏ dòng stats +720ATK bên trong thẻ; hiển thị ĐẦY ĐỦ tên 1 dòng không cắt cụt, không xuống dòng!
     // ========================================================================
-    const equipY = bottomY + 164;
-    const equipH = 58;
-    const equipPadX = 18;
+    const equipY = bottomY + 157;
+    const equipH = 68;
+    const equipPadX = 16;
     const availEquipW = petW - equipPadX * 2;
-    const equipGap = 6;
+    const equipGap = 7;
     const slotW = Math.floor((availEquipW - equipGap * 2) / 3);
 
     const slotConfigs = [
-      { key: 'weapon', label: '⚔️ VŨ KHÍ', defaultIcon: '⚔️' },
-      { key: 'gem', label: '💎 BẢO NGỌC', defaultIcon: '💎' },
-      { key: 'soul', label: '🦊 CHIẾN HỒN', defaultIcon: '🦊' },
+      { key: 'weapon', label: 'VŨ KHÍ', badgeImg: icoSwords },
+      { key: 'gem', label: 'BẢO NGỌC', badgeImg: icoGemSlot },
+      { key: 'soul', label: 'CHIẾN HỒN', badgeImg: icoFox },
     ];
 
     function getEquipColors(rarity) {
@@ -725,34 +784,13 @@ export async function renderProfileCard(data) {
         ctx.stroke();
         ctx.restore();
 
-        const statTokens = [];
-        if (item.bonus_atk) statTokens.push(`+${item.bonus_atk}ATK`);
-        if (item.bonus_def) statTokens.push(`+${item.bonus_def}DEF`);
-        if (item.bonus_spd) statTokens.push(`+${item.bonus_spd}SPD`);
-        if (item.bonus_hp) statTokens.push(`+${item.bonus_hp}HP`);
-        if (item.bonus_crit) statTokens.push(`+${item.bonus_crit}%CRIT`);
-
-        const formatFittedStats = (availW) => {
-          if (statTokens.length === 0) return item.rarity || 'Thần Thoại';
-          let fitted = statTokens[0];
-          for (let i = 1; i < statTokens.length; i++) {
-            const candidate = `${fitted} ${statTokens[i]}`;
-            if (ctx.measureText(candidate).width <= availW) {
-              fitted = candidate;
-            } else {
-              break;
-            }
-          }
-          return fitted;
-        };
-
         const cleanName = (item.item_name || 'Vật Phẩm').replace(/[«»]/g, '').trim();
 
         if (itemImg) {
-          // Layout có hình ảnh trang bị: Thumbnail 34x34 bo góc bên trái
-          const thumbSize = 34;
-          const thumbX = sx + 4;
-          const thumbY = sy + Math.floor((equipH - thumbSize) / 2);
+          // Layout mới thoáng & rõ: Hàng trên Thumbnail 30x30 + Nhãn Slot; Hàng dưới ĐẦY ĐỦ Tên 1 dòng (không cắt, không stats)
+          const thumbSize = 30;
+          const thumbX = sx + 10;
+          const thumbY = sy + 7;
 
           ctx.save();
           drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
@@ -760,7 +798,6 @@ export async function renderProfileCard(data) {
           ctx.drawImage(itemImg, 0, 0, itemImg.width, itemImg.height, thumbX, thumbY, thumbSize, thumbSize);
           ctx.restore();
 
-          // Viền phát sáng bọc ngoài Thumbnail
           ctx.save();
           drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
           ctx.strokeStyle = colors.borderGrad[0];
@@ -770,68 +807,60 @@ export async function renderProfileCard(data) {
           ctx.stroke();
           ctx.restore();
 
-          // Thông tin trang bị ở bên phải thumbnail (tối ưu hóa độ rộng đạt ~72-74px)
-          const textX = sx + thumbSize + 6;
-          const maxTextW = slotW - thumbSize - 8;
+          // Nhãn loại slot (VŨ KHÍ / BẢO NGỌC / CHIẾN HỒN) ở bên phải ảnh
+          drawIconText(ctx, cfg.badgeImg, cfg.label, thumbX + thumbSize + 7, thumbY + thumbSize / 2, {
+            iconSize: 12,
+            gap: 4,
+            font: `bold 9.5px ${FONT_FAMILY}`,
+            fillStyle: colors.text,
+          });
 
-          // Line 1: Header loại slot
-          ctx.font = `bold 8px ${FONT_FAMILY}`;
-          ctx.fillStyle = colors.text;
-          ctx.textAlign = 'left';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(cfg.label, textX, sy + 12);
-
-          // Line 2: Tên trang bị
-          ctx.font = `bold 8.5px ${FONT_FAMILY}`;
-          ctx.fillStyle = '#ffffff';
-          ctx.fillText(truncateText(ctx, cleanName, maxTextW), textX, sy + 27);
-
-          // Line 3: Chỉ số cộng thêm
-          ctx.font = `7.5px ${FONT_FAMILY}`;
-          ctx.fillStyle = colors.text;
-          const statText = formatFittedStats(maxTextW);
-          ctx.fillText(truncateText(ctx, statText, maxTextW), textX, sy + 43);
+          // Tên đầy đủ 1 dòng duy nhất, tự thu nhỏ cỡ chữ vừa khít slotW - 10 (tuyệt đối không cắt cụt, không xuống dòng)
+          drawAutoFitSingleLineText(ctx, cleanName, sx + slotW / 2, sy + 52, slotW - 10, {
+            maxFont: 10.5,
+            minFont: 6.0,
+            weight: 'bold',
+            align: 'center',
+            color: '#ffffff',
+          });
         } else {
-          // Fallback nếu chưa tải được ảnh: Hiển thị icon và text ở giữa
-          // Line 1: Header nhãn loại slot (Vũ Khí / Bảo Ngọc / Chiến Hồn)
-          ctx.font = `bold 8.5px ${FONT_FAMILY}`;
-          ctx.fillStyle = colors.text;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(cfg.label, sx + slotW / 2, sy + 11);
-
-          // Line 2: Icon & Tên trang bị
-          const icon = item.icon || cfg.defaultIcon;
-          ctx.font = `bold 10px ${FONT_FAMILY}`;
-          ctx.fillStyle = '#ffffff';
-          const displayItemName = truncateText(ctx, `${icon} ${cleanName}`, slotW - 8);
-          ctx.fillText(displayItemName, sx + slotW / 2, sy + 27);
-
-          // Line 3: Chỉ số cộng thêm / Rarity
-          ctx.font = `8.5px ${FONT_FAMILY}`;
-          ctx.fillStyle = colors.text;
-          const statText = formatFittedStats(slotW - 6);
-          ctx.fillText(truncateText(ctx, statText, slotW - 6), sx + slotW / 2, sy + 43);
+          // Fallback nếu không có ảnh món đồ
+          drawIconText(ctx, cfg.badgeImg, cfg.label, sx + slotW / 2, sy + 18, {
+            iconSize: 13,
+            gap: 5,
+            align: 'center',
+            font: `bold 9.5px ${FONT_FAMILY}`,
+            fillStyle: colors.text,
+          });
+          drawAutoFitSingleLineText(ctx, cleanName, sx + slotW / 2, sy + 46, slotW - 10, {
+            maxFont: 10.5,
+            minFont: 6.0,
+            weight: 'bold',
+            align: 'center',
+            color: '#ffffff',
+          });
         }
       } else {
-        // Slot trống
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+        // Slot trống (sạch bóng Unicode)
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Nhãn slot
-        ctx.font = `bold 8.5px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#64748b';
+        drawIconText(ctx, cfg.badgeImg, cfg.label, sx + slotW / 2, sy + 20, {
+          iconSize: 12,
+          gap: 4,
+          align: 'center',
+          font: `bold 9.5px ${FONT_FAMILY}`,
+          fillStyle: '#64748b',
+        });
+
+        ctx.font = `10.5px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#475569';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(cfg.label, sx + slotW / 2, sy + 14);
-
-        // Chữ Trống
-        ctx.font = `10px ${FONT_FAMILY}`;
-        ctx.fillStyle = '#475569';
-        ctx.fillText('➕ Trống', sx + slotW / 2, sy + 36);
+        ctx.fillText('— Trống —', sx + slotW / 2, sy + 48);
       }
     });
 
@@ -843,20 +872,20 @@ export async function renderProfileCard(data) {
     ctx.fillText('Chưa triệu hồi Linh Thú đồng hành', petX + petW / 2, bottomY + 105);
     ctx.font = `12px ${FONT_FAMILY}`;
     ctx.fillStyle = '#64748b';
-    ctx.fillText('Dùng lệnh /pet summon hoặc gacha để ấp trứng!', petX + petW / 2, bottomY + 135);
+    ctx.fillText('Dùng lệnh /linhthu hoặc /roll để triệu hồi!', petX + petW / 2, bottomY + 135);
     ctx.textAlign = 'left';
   }
   ctx.restore();
 
   // ----------------------------------------------------------------------------
-  // BẢNG 6B: ROLES QUYỀN NĂNG ĐANG TRANG BỊ (EQUIPPED ROLES - TỐI ĐA 5 SLOTS)
+  // BẢNG 6B: ROLES QUYỀN NĂNG ĐANG TRANG BỊ (NHỎ LẠI 20%: rolesW = 392, rolesX = 558)
   // ----------------------------------------------------------------------------
-  const rolesX = 460;
-  const rolesW = 490;
+  const rolesX = 558;
+  const rolesW = 392;
 
   ctx.save();
   drawRoundRect(ctx, rolesX, bottomY, rolesW, bottomH, 16);
-  ctx.fillStyle = 'rgba(18, 14, 32, 0.75)';
+  ctx.fillStyle = 'rgba(18, 14, 32, 0.78)';
   ctx.fill();
   const rolesBorder = ctx.createLinearGradient(rolesX, bottomY, rolesX + rolesW, bottomY + bottomH);
   rolesBorder.addColorStop(0, 'rgba(168, 85, 247, 0.55)');
@@ -865,27 +894,30 @@ export async function renderProfileCard(data) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Tiêu đề Roles Header (Cách lề 22px)
-  ctx.font = `bold 13px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#c084fc';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('✨ ROLES QUYỀN NĂNG', rolesX + 22, bottomY + 22);
+  // Tiêu đề Roles Header
+  drawIconText(ctx, icoSparkle, 'ROLES QUYỀN NĂNG', rolesX + 14, bottomY + 20, {
+    iconSize: 15,
+    gap: 6,
+    font: `bold 12.5px ${FONT_FAMILY}`,
+    fillStyle: '#c084fc',
+  });
 
-  ctx.font = `11.5px ${FONT_FAMILY}`;
+  ctx.font = `11px ${FONT_FAMILY}`;
   ctx.fillStyle = '#94a3b8';
   ctx.textAlign = 'right';
-  ctx.fillText(`Số Slot Mở Khóa: ${profile.maxSlots}/5`, rolesX + rolesW - 22, bottomY + 22);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`Slot: ${profile.maxSlots}/5`, rolesX + rolesW - 14, bottomY + 20);
   ctx.textAlign = 'left';
 
-  // Hiển thị 5 Slots Role (Cách đều 22px hai bên, khe hở 10px, đệm trong thoáng đãng)
-  const slotW = 217;
-  const fullSlotW = 446;
+  // 5 Slots Role vừa khít rolesW = 392 (pad=14, gap=8 -> slotW=178, fullSlotW=364)
+  const slotW = 178;
+  const fullSlotW = 364;
   const roleSlotsLayout = [
-    { slot: 1, x: rolesX + 22, y: bottomY + 38, w: slotW, h: 50 },
-    { slot: 2, x: rolesX + 251, y: bottomY + 38, w: slotW, h: 50 },
-    { slot: 3, x: rolesX + 22, y: bottomY + 96, w: slotW, h: 50 },
-    { slot: 4, x: rolesX + 251, y: bottomY + 96, w: slotW, h: 50 },
-    { slot: 5, x: rolesX + 22, y: bottomY + 154, w: fullSlotW, h: 50 },
+    { slot: 1, x: rolesX + 14, y: bottomY + 38, w: slotW, h: 50 },
+    { slot: 2, x: rolesX + 200, y: bottomY + 38, w: slotW, h: 50 },
+    { slot: 3, x: rolesX + 14, y: bottomY + 96, w: slotW, h: 50 },
+    { slot: 4, x: rolesX + 200, y: bottomY + 96, w: slotW, h: 50 },
+    { slot: 5, x: rolesX + 14, y: bottomY + 154, w: fullSlotW, h: 50 },
   ];
 
   roleSlotsLayout.forEach(layout => {
@@ -895,7 +927,6 @@ export async function renderProfileCard(data) {
     drawRoundRect(ctx, layout.x, layout.y, layout.w, layout.h, 8);
 
     if (!isUnlocked) {
-      // Slot bị khóa
       ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -903,11 +934,10 @@ export async function renderProfileCard(data) {
       ctx.stroke();
 
       ctx.fillStyle = '#64748b';
-      ctx.font = `12px ${FONT_FAMILY}`;
+      ctx.font = `11px ${FONT_FAMILY}`;
       ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}] 🔒 Chưa mở khóa (/equip)`, layout.x + 14, layout.y + layout.h / 2);
+      ctx.fillText(`[${layout.slot}] Chưa mở (/equip)`, layout.x + 10, layout.y + layout.h / 2);
     } else if (roleItem) {
-      // Slot có trang bị Role
       const roleBg = ctx.createLinearGradient(layout.x, layout.y, layout.x + layout.w, layout.y + layout.h);
       if (roleItem.rarity === 'mythic') {
         roleBg.addColorStop(0, 'rgba(217, 70, 239, 0.35)');
@@ -923,26 +953,26 @@ export async function renderProfileCard(data) {
       ctx.lineWidth = 1;
       ctx.stroke();
 
-      // Số thứ tự Slot
       ctx.fillStyle = '#fde047';
-      ctx.font = `bold 11.5px ${FONT_FAMILY}`;
+      ctx.font = `bold 11px ${FONT_FAMILY}`;
       ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}]`, layout.x + 12, layout.y + 16);
+      ctx.fillText(`[${layout.slot}]`, layout.x + 10, layout.y + 16);
 
-      // Tên Role (Line 1 - Căn giữa dọc thoáng đãng, lùi mép phải 16px)
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold 11.5px ${FONT_FAMILY}`;
-      const roleName = truncateText(ctx, roleItem.name, layout.w - 50);
-      ctx.fillText(roleName, layout.x + 36, layout.y + 16);
+      ctx.font = `bold 11px ${FONT_FAMILY}`;
+      const roleName = truncateText(ctx, roleItem.name, layout.w - 40);
+      ctx.fillText(roleName, layout.x + 32, layout.y + 16);
 
-      // Đặc Quyền Role (Line 2 - Căn giữa dọc thoáng đãng)
-      ctx.fillStyle = roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd';
-      ctx.font = `10.5px ${FONT_FAMILY}`;
-      const perkText = roleItem.perk || '✨ Quyền Năng Tiên Giới';
-      const cleanPerk = truncateText(ctx, perkText, layout.w - 50);
-      ctx.fillText(cleanPerk, layout.x + 36, layout.y + 35);
+      const cleanPerkRaw = stripLeadingEmojis(roleItem.perk || 'Quyền Năng Tiên Giới');
+      ctx.font = `10px ${FONT_FAMILY}`;
+      const cleanPerk = truncateText(ctx, cleanPerkRaw, layout.w - 50);
+      drawIconText(ctx, icoSparkle, cleanPerk, layout.x + 32, layout.y + 35, {
+        iconSize: 11,
+        gap: 4,
+        font: `10px ${FONT_FAMILY}`,
+        fillStyle: roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd',
+      });
     } else {
-      // Slot đã mở nhưng đang để trống
       ctx.fillStyle = 'rgba(30, 41, 59, 0.35)';
       ctx.fill();
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
@@ -950,23 +980,23 @@ export async function renderProfileCard(data) {
       ctx.stroke();
 
       ctx.fillStyle = '#94a3b8';
-      ctx.font = `12px ${FONT_FAMILY}`;
+      ctx.font = `11px ${FONT_FAMILY}`;
       ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}] ➕ Trống (/equip role)`, layout.x + 14, layout.y + layout.h / 2);
+      ctx.fillText(`[${layout.slot}] Trống (/equip role)`, layout.x + 10, layout.y + layout.h / 2);
     }
   });
   ctx.restore();
 
   // ============================================================================
-  // FOOTER CHỮ KÝ ĐẶC TRƯNG MÁY CHỦ SUMI FAMILY
+  // FOOTER CHỮ KÝ ĐẶC TRƯNG MÁY CHỦ SUMI FAMILY (ICON LINH HỒ TÁCH NỀN)
   // ============================================================================
-  ctx.save();
-  ctx.font = `11px ${FONT_FAMILY}`;
-  ctx.fillStyle = 'rgba(226, 232, 240, 0.45)';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText('🦊 SuMi Family • Trợ Lý Linh Hồ AI Nhiễm Nhiễm', width - 28, height - 16);
-  ctx.restore();
+  drawIconText(ctx, icoFox, 'SuMi Family • Trợ Lý Linh Hồ AI Nhiễm Nhiễm', width - 28, height - 22, {
+    iconSize: 14,
+    gap: 5,
+    align: 'right',
+    font: `11px ${FONT_FAMILY}`,
+    fillStyle: 'rgba(226, 232, 240, 0.55)',
+  });
 
   // Xuất ra PNG Buffer
   return canvas.toBuffer('image/png');

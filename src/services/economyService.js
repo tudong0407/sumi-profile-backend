@@ -16,6 +16,13 @@ import {
   MYTHIC_UNIQUE_ITEM_IDS,
 } from '../data/catalog.js';
 import {
+  em,
+  tierEmoji,
+  itemEmoji,
+  petEmoji,
+  realmEmoji,
+} from '../config/emojiHelper.js';
+import {
   sanitizeUserId,
   getRealmByLevel,
   getExpForNextLevel,
@@ -133,7 +140,7 @@ export async function claimDaily(userId, options = {}) {
         streak: user.streak || 1,
         reward: 0,
         linh_thach: Number(user.linh_thach || 0),
-        message: `Hôm nay đạo hữu đã điểm danh rồi! Chuỗi hiện tại: **${user.streak || 1} ngày**.`,
+        message: `${em('su_linhthach')} Hôm nay đạo hữu đã điểm danh rồi! Chuỗi hiện tại: **${user.streak || 1} ngày**.`,
       };
     }
 
@@ -164,7 +171,7 @@ export async function claimDaily(userId, options = {}) {
       base_reward: baseReward,
       reward,
       linh_thach: newBalance,
-      message: `Điểm danh ngày thứ **${newStreak}** (Chuỗi ${cycleDay}/7) thành công! Nhận **+${reward} Linh Thạch** (Số dư: **${newBalance.toLocaleString('vi-VN')}**).`,
+      message: `${em('su_sparkle')} Điểm danh ngày thứ **${newStreak}** (Chuỗi ${cycleDay}/7) thành công! Nhận **+${reward}** ${em('su_linhthach')} **Linh Thạch** (Số dư: **${newBalance.toLocaleString('vi-VN')}**).`,
     };
   });
 }
@@ -256,9 +263,11 @@ export async function convertExpToLinhThach(userId, amountExp, options = {}) {
       next_level_exp: nextState.nextLevelExp,
       new_realm: nextState.realm,
       revoked_level_role_ids: revokedRoleIds,
+      revoked_level_role_first: revokedRoleIds[0] || '',
+      revoked_level_role_csv: revokedRoleIds.join(','),
       message: demoted
-        ? `Phế **${parsedAmount.toLocaleString('vi-VN')} EXP** (Tụt cấp **Lv.${oldLevel} → Lv.${nextState.level}** • ${nextState.realm}), thu về **+${gainedLinhThach} Linh Thạch**!`
-        : `Phế **${parsedAmount.toLocaleString('vi-VN')} EXP** thành công (Lv.${nextState.level} • ${nextState.exp.toLocaleString('vi-VN')} EXP), thu về **+${gainedLinhThach} Linh Thạch**!`,
+        ? `${em('su_level_up')} Phế **${parsedAmount.toLocaleString('vi-VN')} EXP** (Tụt cấp **Lv.${oldLevel} → Lv.${nextState.level}** • ${realmEmoji(nextState.level)} ${nextState.realm}), thu về **+${gainedLinhThach}** ${em('su_linhthach')} **Linh Thạch**!`
+        : `${em('su_linhthach')} Phế **${parsedAmount.toLocaleString('vi-VN')} EXP** thành công (Lv.${nextState.level} • ${nextState.exp.toLocaleString('vi-VN')} EXP), thu về **+${gainedLinhThach}** ${em('su_linhthach')} **Linh Thạch**!`,
     };
   });
 }
@@ -381,6 +390,7 @@ export async function rollGacha(userId, options = {}) {
             bonusStarStones += 5;
             results.push({
               kind: 'refund',
+              emoji: tierEmoji('mythic'),
               rarity: 'Thần Thoại',
               name: 'Thần Thoại Độc Nhất Đã Hết — Hoàn Quà Bồi Thường',
               compensation: '+500 Linh Thạch & +5 Tinh Thạch Nâng Sao',
@@ -404,9 +414,10 @@ export async function rollGacha(userId, options = {}) {
           bonusStarStones += dupStone;
           results.push({
             kind: 'duplicate_item',
+            emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
             item_id: picked.item_id,
             name: picked.item_name,
-            rarity: picked.rarity,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
             refund_linh_thach: dupRefund,
             bonus_star_stones: dupStone,
           });
@@ -419,9 +430,10 @@ export async function rollGacha(userId, options = {}) {
           });
           results.push({
             kind: 'new_item',
+            emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
             item_id: picked.item_id,
             name: picked.item_name,
-            rarity: picked.rarity,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
             slot: picked.item_type,
           });
         }
@@ -442,9 +454,10 @@ export async function rollGacha(userId, options = {}) {
           bonusStarStones += dupStone;
           results.push({
             kind: 'duplicate_pet',
+            emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
             pet_type: picked.pet_type,
             name: picked.pet_name,
-            rarity: picked.rarity,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
             refund_linh_thach: dupRefund,
             bonus_star_stones: dupStone,
           });
@@ -466,9 +479,10 @@ export async function rollGacha(userId, options = {}) {
           });
           results.push({
             kind: 'new_pet',
+            emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
             pet_type: picked.pet_type,
             name: picked.pet_name,
-            rarity: picked.rarity,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
             element: picked.element,
           });
         }
@@ -497,6 +511,7 @@ export async function rollGacha(userId, options = {}) {
       bonus_star_stones: bonusStarStones,
       linh_thach: finalBalance,
       results,
+      message: `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${pool === 'pet' ? 'Linh Thú' : 'Pháp Bảo'}**! ${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim(),
     };
   });
 }

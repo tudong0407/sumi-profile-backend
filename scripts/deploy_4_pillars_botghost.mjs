@@ -9,6 +9,7 @@ import {
 } from './ga_builder_lib.mjs';
 import { EQUIPMENT_CATALOG, PET_CATALOG } from '../src/data/catalog.js';
 import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
+import { em, emId } from '../src/config/emojiHelper.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
@@ -42,7 +43,7 @@ class ExtendedGraphBuilder extends GraphBuilder {
           basic_options: basic_options.map((opt) => ({
             label: String(opt.label).slice(0, 95),
             description: String(opt.description || '').slice(0, 95),
-            emoji_id: '',
+            emoji_id: opt.emoji_id ? String(opt.emoji_id) : '',
             value: String(opt.value).slice(0, 95),
           })),
           type_options: {},
@@ -137,14 +138,14 @@ export function buildProfileCmd() {
   gb.link('root', cHas.condId);
 
   makeEmbedAction(gb, 'action_profile_opt', {
-    title: '🦊 SUMI FAMILY • HỒ SƠ TU TIÊN',
+    title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/profile/{option_user}.png?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_profile_self', {
-    title: '🦊 SUMI FAMILY • HỒ SƠ TU TIÊN',
+    title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/profile/{user_id}.png?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
@@ -168,14 +169,14 @@ export function buildRankCmd() {
   gb.link('root', cHas.condId);
 
   makeEmbedAction(gb, 'action_rank_opt', {
-    title: '🦊 SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN',
+    title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/rank/{option_user}.png?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_rank_self', {
-    title: '🦊 SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN',
+    title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/rank/{user_id}.png?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
@@ -211,7 +212,7 @@ export function buildBattleCmd() {
 
   // Immediate ACK to satisfy Discord 3s interaction window
   makeEmbedAction(gb, 'battle_ack', {
-    title: '⚔️ ĐẤU TRƯỜNG LINH THÚ 1V1 • ĐANG GIAO CHIẾN...',
+    title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • ĐANG GIAO CHIẾN...`,
     description: 'Đang mô phỏng trận đấu và kết xuất Ảnh Chiến Báo Full HD+...',
     color: '#ff75b5',
     editId: 'battle_ack',
@@ -277,8 +278,9 @@ function buildItemOptions(itemType) {
     ].filter(Boolean).join(' • ');
     const uniqueTag = i.is_unique ? ' • Độc Nhất 1%' : ` • ${i.drop_rate}%`;
     return {
-      label: `${i.icon} ${i.item_name}`,
+      label: String(i.item_name).slice(0, 95),
       description: `${i.rarity} • ${statSummary}${uniqueTag}`,
+      emoji_id: emId(i.emoji_key),
       value: i.item_id,
     };
   });
@@ -288,8 +290,9 @@ function buildPetOptions(rarityKeys) {
   return PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && rarityKeys.includes(p.rarity_key)).map((p) => {
     const tag = p.is_starter ? 'Khởi đầu tân thủ' : p.hax_skill;
     return {
-      label: `${p.icon} ${p.pet_name}`,
+      label: String(p.pet_name).slice(0, 95),
       description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag}`,
+      emoji_id: emId(p.emoji_key),
       value: p.pet_type,
     };
   });
@@ -327,7 +330,7 @@ export function buildWikiCmd() {
 
   // --- Trang Chủ Wiki Tổng Quan + Dropdown Chọn 6 Chuyên Mục ---
   makeEmbedAction(gb, 'msg_wiki_home', {
-    title: '🦊 CẨM NANG TU TIÊN • TỔNG QUAN',
+    title: `${em('su_fox_mascot')} CẨM NANG TU TIÊN • TỔNG QUAN`,
     description: ov.content,
     color: '#ec4899',
     fields: ov.fields,
@@ -336,18 +339,18 @@ export function buildWikiCmd() {
   gb.link(rHome, 'msg_wiki_home');
 
   gb.advSelectMenu('sel_wiki_cat', 'msg_wiki_home', {
-    placeholder: '📑 Chọn chuyên mục Cẩm Nang Tu Tiên...',
+    placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên...',
     customVariableName: 'wiki_cat',
     row: '1',
     weight: '1',
     showReplies: 'show',
     basic_options: [
-      { label: '📜 Tổng Quan Tu Tiên', description: 'Khởi đầu tân thủ & danh sách lệnh cốt lõi', value: 'overview' },
-      { label: '🌌 Hệ Thống Cảnh Giới & Thăng Cấp', description: '7 Đại Cảnh Giới, công thức EXP, mốc Role & Slot', value: 'realms' },
-      { label: '🥋 Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', value: 'battle' },
-      { label: '⚔️ Trang Bị Loadout (45 Pháp Bảo)', description: '3 Dropdown tra cứu Vũ Khí / Bảo Ngọc / Chiến Hồn', value: 'equipment' },
-      { label: '🐾 Linh Thú Tiên Giới (20 Chiến Pet)', description: '4 Dropdown tra cứu theo Phẩm Cấp Phàm -> Thần Thoại', value: 'pets' },
-      { label: '💎 Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gia Tộc & Clan Wars 24H', value: 'economy' },
+      { label: 'Tổng Quan Tu Tiên', description: 'Khởi đầu tân thủ & danh sách lệnh cốt lõi', emoji_id: emId('su_wiki_scroll'), value: 'overview' },
+      { label: 'Hệ Thống Cảnh Giới & Thăng Cấp', description: '7 Đại Cảnh Giới, công thức EXP, mốc Role & Slot', emoji_id: emId('su_realm_7_hondondao'), value: 'realms' },
+      { label: 'Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', emoji_id: emId('su_arena'), value: 'battle' },
+      { label: 'Trang Bị Loadout (45 Pháp Bảo)', description: '3 Dropdown tra cứu Vũ Khí / Bảo Ngọc / Chiến Hồn', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
+      { label: 'Linh Thú Tiên Giới (20 Chiến Pet)', description: '4 Dropdown tra cứu theo Phẩm Cấp Phàm -> Thần Thoại', emoji_id: emId('su_pet_paw'), value: 'pets' },
+      { label: 'Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gia Tộc & Clan Wars 24H', emoji_id: emId('su_linhthach'), value: 'economy' },
     ],
   }, { x: 800, y: 820 });
 
@@ -417,7 +420,7 @@ export function buildWikiCmd() {
   gb.link(sEquip, 'msg_wiki_equip');
 
   gb.advSelectMenu('sel_eq_weapon', 'msg_wiki_equip', {
-    placeholder: '⚔️ Chọn Vũ Khí (15 món)...',
+    placeholder: 'Chọn Vũ Khí (15 món)...',
     customVariableName: 'picked_weapon',
     row: '1',
     weight: '1',
@@ -426,7 +429,7 @@ export function buildWikiCmd() {
   }, { x: -450, y: 1620 });
 
   gb.advSelectMenu('sel_eq_gem', 'msg_wiki_equip', {
-    placeholder: '💎 Chọn Bảo Ngọc (15 món)...',
+    placeholder: 'Chọn Bảo Ngọc (15 món)...',
     customVariableName: 'picked_gem',
     row: '2',
     weight: '1',
@@ -435,7 +438,7 @@ export function buildWikiCmd() {
   }, { x: -150, y: 1620 });
 
   gb.advSelectMenu('sel_eq_soul', 'msg_wiki_equip', {
-    placeholder: '🦊 Chọn Chiến Hồn (15 món)...',
+    placeholder: 'Chọn Chiến Hồn (15 món)...',
     customVariableName: 'picked_soul',
     row: '3',
     weight: '1',
@@ -451,7 +454,7 @@ export function buildWikiCmd() {
   gb.link('sel_eq_soul', 'set_item_s');
 
   makeEmbedAction(gb, 'eq_detail_ack', {
-    title: '⚔️ Đang tải Thẻ Pháp Bảo Full HD+...',
+    title: `${em('su_crossed_swords')} Đang tải Thẻ Pháp Bảo Full HD+...`,
     description: 'Đang tra cứu thông số, kỹ năng HAX và chủ sở hữu hiện tại từ Supabase...',
     color: '#f59e0b',
     editId: 'eq_detail_ack',
@@ -508,7 +511,7 @@ export function buildWikiCmd() {
   gb.link(sPets, 'msg_wiki_pets');
 
   gb.advSelectMenu('sel_pet_common', 'msg_wiki_pets', {
-    placeholder: '⚪ Phàm Phẩm (5 Linh Thú)...',
+    placeholder: 'Phàm Phẩm (5 Linh Thú)...',
     customVariableName: 'picked_pet_c',
     row: '1',
     weight: '1',
@@ -517,7 +520,7 @@ export function buildWikiCmd() {
   }, { x: 450, y: 1620 });
 
   gb.advSelectMenu('sel_pet_rare', 'msg_wiki_pets', {
-    placeholder: '🔵 Linh Phẩm (5 Linh Thú)...',
+    placeholder: 'Linh Phẩm (5 Linh Thú)...',
     customVariableName: 'picked_pet_r',
     row: '2',
     weight: '1',
@@ -526,7 +529,7 @@ export function buildWikiCmd() {
   }, { x: 750, y: 1620 });
 
   gb.advSelectMenu('sel_pet_epic', 'msg_wiki_pets', {
-    placeholder: '🟣 Tiên Phẩm (4 Linh Thú)...',
+    placeholder: 'Tiên Phẩm (4 Linh Thú)...',
     customVariableName: 'picked_pet_e',
     row: '3',
     weight: '1',
@@ -535,7 +538,7 @@ export function buildWikiCmd() {
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: '🔴 Thần Thoại (6 Linh Thú)...',
+    placeholder: 'Thần Thoại (6 Linh Thú)...',
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',
@@ -553,7 +556,7 @@ export function buildWikiCmd() {
   gb.link('sel_pet_mythic', 'set_pet_m');
 
   makeEmbedAction(gb, 'pet_detail_ack', {
-    title: '🐾 Đang tải Thẻ Linh Thú Full HD+...',
+    title: `${em('su_pet_paw')} Đang tải Thẻ Linh Thú Full HD+...`,
     description: 'Đang tra cứu hệ nguyên tố, bộ chỉ số ATK/DEF/SPD/HP và kỹ năng HAX...',
     color: '#ec4899',
     editId: 'pet_detail_ack',
@@ -652,7 +655,7 @@ export function buildChatExpEvent() {
   gb.link('ce_api', cLvl.condId);
 
   makeEmbedAction(gb, 'ce_notify', {
-    title: '✨ ĐỘT PHÁ CẢNH GIỚI TU TIÊN',
+    title: `${em('su_level_up')} ĐỘT PHÁ CẢNH GIỚI TU TIÊN`,
     description: '{exp_res.response.level_up_message}',
     color: '#fbbf24',
     target: { id: LEVEL_UP_NOTIFY_CHANNEL_ID },

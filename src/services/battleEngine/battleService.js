@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { compileCombatant } from './statsCompiler.js';
 import { getElementalAdvantage } from './elementalMatrix.js';
 import { PUBLIC_BASE_URL } from '../../data/catalog.js';
+import { em, petEmoji } from '../../config/emojiHelper.js';
 import {
   triggerBattleStart,
   triggerTurnStart,
@@ -227,7 +228,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     : { id: attacker.id, name: attacker.name, pet: attacker.petName };
 
   const summary = `Trận đấu kết thúc sau ${turnNumber} hiệp. ${winner.name} cùng linh thú ${winner.pet} giành chiến thắng áp đảo!`;
-  const headline = `🏆 ${winner.name} (${winner.pet}) chiến thắng ${loser.name} (${loser.pet}) sau ${turnNumber} hiệp!`;
+  const headline = `${em('su_winner_trophy')} ${winner.name} (${winner.pet}) chiến thắng ${loser.name} (${loser.pet}) sau ${turnNumber} hiệp!`;
 
   const elementMatchup = {
     attackerToDefender: getElementalAdvantage(attacker.element, defender.element),
@@ -269,7 +270,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     petName: c.petName,
     petType: c.petType,
     petRarity: c.petRarity || 'Phàm Phẩm',
-    petIcon: c.petIcon || '🐾',
+    petIcon: c.petIcon || petEmoji(c.petType, em('su_pet_paw')),
     element: c.element,
     level: c.level,
     star: c.star,
@@ -292,7 +293,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     const w = c.equipment?.weapon?.item_name || 'Không có';
     const g = c.equipment?.gem?.item_name || 'Không có';
     const s = c.equipment?.soul?.item_name || 'Không có';
-    return `🗡️ ${w} • 💎 ${g} • 🦊 ${s}`;
+    return `${em('su_crossed_swords')} ${w} • ${em('su_linhthach')} ${g} • ${em('su_fox_mascot')} ${s}`;
   };
   const formatHaxLine = (c) => {
     const list = [c.hax?.pet, c.hax?.weapon, c.hax?.gem, c.hax?.soul].filter(Boolean);
@@ -302,16 +303,16 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     const actorObj = t.actor === 'attacker' ? attacker : defender;
     const targetObj = t.actor === 'attacker' ? defender : attacker;
     if (t.action === 'skip') {
-      return `• **Hiệp ${t.turn}** [${actorObj.petName}]: ❄️ ${t.haxTriggered || 'Mất lượt'}`;
+      return `• **Hiệp ${t.turn}** [${actorObj.petName}]: ${em('su_shield_def')} ${t.haxTriggered || 'Mất lượt'}`;
     }
-    const critTag = t.isCrit ? ' 💥**BẠO KÍCH!**' : '';
+    const critTag = t.isCrit ? ` ${em('su_crit_boom')} **BẠO KÍCH!**` : '';
     const elemTag = t.elementAdvantage ? ` *(${t.elementAdvantage})*` : '';
-    const haxTag = t.haxTriggered ? `\n  ↳ ⚡ *HAX: ${t.haxTriggered}*` : '';
-    return `• **Hiệp ${t.turn}** — **${actorObj.petName}** (${actorObj.name}) công kích **${targetObj.petName}** gây **${t.damage.toLocaleString('vi-VN')}** sát thương!${critTag}${elemTag}${haxTag}\n  ↳ ❤️ HP còn lại: ${attacker.petName} **${t.attackerHp.toLocaleString('vi-VN')}** | ${defender.petName} **${t.defenderHp.toLocaleString('vi-VN')}**`;
+    const haxTag = t.haxTriggered ? `\n  -> ${em('su_thunder_hax')} *HAX: ${t.haxTriggered}*` : '';
+    return `• **Hiệp ${t.turn}** — **${actorObj.petName}** (${actorObj.name}) công kích **${targetObj.petName}** gây **${t.damage.toLocaleString('vi-VN')}** sát thương!${critTag}${elemTag}${haxTag}\n  -> ${em('su_sparkle')} HP còn lại: ${attacker.petName} **${t.attackerHp.toLocaleString('vi-VN')}** | ${defender.petName} **${t.defenderHp.toLocaleString('vi-VN')}**`;
   });
 
   const discordReport = [
-    `### ⚔️ ĐẤU TRƯỜNG LINH THÚ NGŨ HÀNH & HAX`,
+    `### ${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ NGŨ HÀNH & HAX`,
     `**1. Phe Công Kích:** **${attacker.name}** — **${attacker.petName}** *(Hệ ${attacker.element} • Cấp ${attacker.level})*`,
     `• Chỉ số: \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
     `• Trang bị Loadout: ${formatEquipLine(attacker)}`,
@@ -322,10 +323,10 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     `• Trang bị Loadout: ${formatEquipLine(defender)}`,
     `• Tuyệt kỹ HAX: \`${formatHaxLine(defender)}\``,
     ``,
-    `### 📜 DIỄN BIẾN TRẬN CHIẾN (${turnNumber} HIỆP)`,
+    `### ${em('su_wiki_scroll')} DIỄN BIẾN TRẬN CHIẾN (${turnNumber} HIỆP)`,
     ...turnLines,
     ``,
-    `🏆 **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
+    `${em('su_winner_trophy')} **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
   ].join('\n');
 
   const finalResult = {

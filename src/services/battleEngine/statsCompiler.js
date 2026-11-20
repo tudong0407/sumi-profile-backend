@@ -1,4 +1,5 @@
 import { getProfileData } from '../profileService.js';
+import { em, petEmoji } from '../../config/emojiHelper.js';
 
 /**
  * Trình biên dịch chỉ số chiến đấu (Stats Compiler)
@@ -32,7 +33,7 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const petName = pet.name || pet.pet_name || 'Hóa Thạch Nham Nham Thú';
   const petType = pet.type || pet.pet_type || 'hoa_thach_nham_nham';
   const petRarity = pet.rarity || pet.pet_rarity || 'Phàm Phẩm';
-  const petIcon = pet.icon || '🐾';
+  const petIcon = pet.icon || petEmoji(petType, em('su_pet_paw'));
   const element = pet.element || 'Thổ';
   const level = Math.max(1, Number(pet.level) || 1);
   const star = Math.max(1, Number(pet.star) || 1);

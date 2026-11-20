@@ -9,7 +9,15 @@ import {
   EQUIPMENT_BY_ID,
   PET_BY_TYPE,
   BACKGROUND_BY_ID,
+  SHOP_CONSUMABLES,
+  MARRY_RING_BY_ID,
 } from '../data/catalog.js';
+import {
+  em,
+  itemEmoji,
+  petEmoji,
+  tierEmoji,
+} from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
   ensureUserInitialized,
@@ -39,10 +47,36 @@ export async function getInventory(userId, options = {}) {
     supabase.from('user_inventory').select('*').eq('user_id', cleanId).gt('quantity', 0),
   ]);
 
+  const SHOP_CONS_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
+
+  const pets = (petsRes.data || []).map((p) => ({
+    ...p,
+    icon: petEmoji(p.pet_type, em('su_fox_mascot')),
+    tier_icon: tierEmoji((PET_BY_TYPE[p.pet_type]?.rarity_key) || 'common'),
+  }));
+
   const items = (itemsRes.data || []).map((row) => ({
     ...row,
     ...(EQUIPMENT_BY_ID[row.item_id] || {}),
+    icon: itemEmoji(row.item_id, em('su_crossed_swords')),
   }));
+
+  const roles = (rolesRes.data || []).map((r) => ({
+    ...r,
+    icon: em('su_medal_role'),
+  }));
+
+  const consumables = (invRes.data || []).map((inv) => {
+    const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
+    const bgMeta = BACKGROUND_BY_ID[inv.item_id];
+    const icon = cMeta?.icon || (bgMeta ? em('su_frame_token') : em('su_pin_sigil'));
+    const displayName = cMeta?.name || bgMeta?.name || inv.item_id;
+    return {
+      ...inv,
+      icon,
+      display_name: displayName,
+    };
+  });
 
   return {
     success: true,
@@ -55,10 +89,10 @@ export async function getInventory(userId, options = {}) {
       background_url: user.background_url || 'default_background.png',
       marry_ring_id: user.marry_ring_id || null,
     },
-    pets: petsRes.data || [],
+    pets,
     equipment_items: items,
-    roles: rolesRes.data || [],
-    consumables_and_unlocks: invRes.data || [],
+    roles,
+    consumables_and_unlocks: consumables,
   };
 }
 
@@ -117,7 +151,7 @@ export async function equipTarget(userId, payload = {}) {
       equipped_id: targetId,
       slot: itemMeta.item_type,
       equipped_to_pet: targetPetType,
-      message: `Đã trang bị **${itemMeta.item_name}** vào ô **${itemMeta.item_type.toUpperCase()}** cho **${activePet?.pet_name || targetPetType}**!`,
+      message: `${itemEmoji(targetId, em('su_crossed_swords'))} Đã trang bị **${itemMeta.item_name}** vào ô **${itemMeta.item_type.toUpperCase()}** cho **${activePet?.pet_name || targetPetType}**!`.trim(),
     };
   }
 
@@ -164,7 +198,7 @@ export async function equipTarget(userId, payload = {}) {
       slot: freeSlot,
       add_role_id: targetRole.role_id,
       role_name: targetRole.role_name,
-      message: `Đã trang bị **${targetRole.role_name}** vào Slot #${freeSlot}/${maxSlots}!`,
+      message: `${em('su_medal_role')} Đã trang bị **${targetRole.role_name}** vào Slot #${freeSlot}/${maxSlots}!`,
     };
   }
 
@@ -193,7 +227,7 @@ export async function equipTarget(userId, payload = {}) {
       success: true,
       category: 'background',
       background_url: bg.file,
-      message: `Đã đổi ảnh nền Profile & Rank sang **${bg.name}**!`,
+      message: `${em('su_frame_token')} Đã đổi ảnh nền Profile & Rank sang **${bg.name}**!`,
     };
   }
 
@@ -223,7 +257,7 @@ export async function unequipTarget(userId, payload = {}) {
     return {
       success: true,
       category: 'item',
-      message: `Đã tháo pháp bảo **${targetId}** khỏi Linh Thú xuất trận.`,
+      message: `${em('su_crossed_swords')} Đã tháo pháp bảo **${targetId}** khỏi Linh Thú xuất trận.`,
     };
   }
 
@@ -252,7 +286,7 @@ export async function unequipTarget(userId, payload = {}) {
       category: 'role',
       remove_role_id: targetRole.role_id,
       role_name: targetRole.role_name,
-      message: `Đã tháo Role **${targetRole.role_name}** khỏi hồ sơ!`,
+      message: `${em('su_medal_role')} Đã tháo Role **${targetRole.role_name}** khỏi hồ sơ!`,
     };
   }
 
@@ -266,7 +300,7 @@ export async function unequipTarget(userId, payload = {}) {
       success: true,
       category: 'background',
       background_url: 'default_background.png',
-      message: 'Đã khôi phục ảnh nền Đạo Cảnh Mặc Định.',
+      message: `${em('su_frame_token')} Đã khôi phục ảnh nền Đạo Cảnh Mặc Định.`,
     };
   }
 
@@ -295,7 +329,7 @@ export async function setActivePet(userId, petIdentifier) {
   return {
     success: true,
     active_pet: { ...target, is_active: true },
-    message: `Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star}★)!`,
+    message: `${petEmoji(target.pet_type, em('su_pet_paw'))} Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star} ${em('su_realm_star')})!`,
   };
 }
 
@@ -322,7 +356,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
   if (mode === 'star') {
     const currentStar = Number(target.star || 1);
     if (currentStar >= 10) {
-      return { success: false, status: 400, error: 'MAX_STAR', message: `**${target.pet_name}** đã đạt tối đa **10★**!` };
+      return { success: false, status: 400, error: 'MAX_STAR', message: `**${target.pet_name}** đã đạt tối đa **10 Sao** ${em('su_realm_star')}!` };
     }
     const stoneCost = currentStar;
     const ltCost = currentStar * 200;
@@ -341,7 +375,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
         success: false,
         status: 400,
         error: 'INSUFFICIENT_MATERIALS',
-        message: `Cần **${stoneCost} Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost} Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1}★**!`,
+        message: `Cần **${stoneCost}** ${em('su_star_stone')} **Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost}** ${em('su_linhthach')} **Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1} Sao** ${em('su_realm_star')}!`,
       };
     }
 
@@ -365,7 +399,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
       new_star: nextStar,
       linh_thach: currentBal - ltCost,
       power_score: newPower,
-      message: `Đột phá sao thành công! **${target.pet_name}** lên **${nextStar}★** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+      message: `${em('su_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** lên **${nextStar} Sao** ${em('su_realm_star')} (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
     };
   }
 
@@ -381,7 +415,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
       success: false,
       status: 400,
       error: 'INSUFFICIENT_LINH_THACH',
-      message: `Cần **${ltCost} Linh Thạch** để nâng **${target.pet_name}** lên Lv.${currentLvl + 1} (hiện có ${currentBal}).`,
+      message: `Cần **${ltCost}** ${em('su_linhthach')} **Linh Thạch** để nâng **${target.pet_name}** lên Lv.${currentLvl + 1} (hiện có ${currentBal}).`,
     };
   }
 
@@ -404,6 +438,6 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
     new_level: nextLvl,
     linh_thach: currentBal - ltCost,
     power_score: newPower,
-    message: `Thăng cấp thành công! **${target.pet_name}** đạt **Lv.${nextLvl}** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+    message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** đạt **Lv.${nextLvl}** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
   };
 }

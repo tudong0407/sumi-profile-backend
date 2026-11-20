@@ -10,6 +10,7 @@ import {
   LEVEL_ROLE_MILESTONES,
   STARTER_PET,
 } from '../data/catalog.js';
+import { em, realmEmoji } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
   getRealmByLevel,
@@ -20,11 +21,11 @@ import {
 } from './profileService.js';
 
 export const CHAT_COOLDOWN_MS = 45 * 1000;
-export const CHAT_EXP_MIN = 15;
-export const CHAT_EXP_MAX = 25;
+export const CHAT_EXP_MIN = 20;
+export const CHAT_EXP_MAX = 30;
 export const VOICE_BLOCK_MINUTES = 5;
-export const VOICE_EXP_MIN = 50;
-export const VOICE_EXP_MAX = 100;
+export const VOICE_EXP_MIN = 70;
+export const VOICE_EXP_MAX = 110;
 export const MAX_VOICE_SESSION_MINUTES = 240;
 
 const LOCKED_XP_ROLES = new Set([
@@ -321,7 +322,7 @@ export async function grantChatExp(params = {}, opts = {}) {
       unlocked_level_role_name: prog.unlockedRole?.name || '',
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `🎉 <@${cleanId}> đột phá lên **Cấp ${prog.level}** — Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up', '✨')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });
@@ -482,7 +483,7 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       unlocked_level_role_name: prog.unlockedRole?.name || '',
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `🎉 <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up', '✨')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });

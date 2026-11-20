@@ -15,6 +15,8 @@ import {
   drawPetal,
   drawStarSparkle,
   sanitizeText,
+  loadBadgeImage,
+  drawIconText,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -123,14 +125,16 @@ function drawCelestialBackground(ctx, accentColor = 'rgba(236, 72, 153, 0.20)') 
   ctx.restore();
 }
 
-function drawFooter(ctx, label = '🦊 SuMi Family • Cẩm Nang Tu Tiên Toàn Thư') {
-  ctx.save();
-  ctx.font = `11px ${FONT_FAMILY}`;
-  ctx.fillStyle = 'rgba(226, 232, 240, 0.45)';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'bottom';
-  ctx.fillText(sanitizeText(label), LOGICAL_W - 28, LOGICAL_H - 20);
-  ctx.restore();
+async function drawFooter(ctx, label = 'SuMi Family • Cẩm Nang Tu Tiên Toàn Thư') {
+  const cleanLabel = String(label || '').replace(/🦊\s*/g, '').trim();
+  const icoFox = await loadBadgeImage('badges/su_fox_mascot.png');
+  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 25, {
+    iconSize: 14,
+    gap: 5,
+    align: 'right',
+    font: `11px ${FONT_FAMILY}`,
+    fillStyle: 'rgba(226, 232, 240, 0.52)',
+  });
 }
 
 function drawCurvedArrow(ctx, x1, y1, x2, y2, cx, cy, color = '#fbbf24') {
@@ -414,7 +418,7 @@ export async function renderElementalChart() {
   });
   ctx.restore();
 
-  drawFooter(ctx, '🦊 SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố Full HD+');
+  await drawFooter(ctx, 'SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố Full HD+');
   return canvas.toBuffer('image/png');
 }
 
@@ -675,7 +679,7 @@ export async function renderWikiItemCard(itemData) {
   }
   ctx.restore();
 
-  drawFooter(ctx, `🦊 SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
+  await drawFooter(ctx, `SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
   return canvas.toBuffer('image/png');
 }
 
@@ -904,6 +908,6 @@ export async function renderWikiPetCard(petData) {
   });
   ctx.restore();
 
-  drawFooter(ctx, `🦊 SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
+  await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
   return canvas.toBuffer('image/png');
 }

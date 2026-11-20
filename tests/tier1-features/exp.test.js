@@ -64,7 +64,7 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     assert.equal(lockedJson.reason, 'locked_xp');
   });
 
-  it('3. First Chat EXP auto-seeds beginner profile (Lv.1 + Hóa Thạch Nham Nham Thú) and awards 15-25 EXP, then enforces 45s cooldown', async () => {
+  it('3. First Chat EXP auto-seeds beginner profile (Lv.1 + Hóa Thạch Nham Nham Thú) and awards 20-30 EXP, then enforces 45s cooldown', async () => {
     const t0 = Date.now();
     const first = await grantChatExp(
       { userId: TEMP_TEST_USER_ID, username: 'Tân Thủ Kiểm Thử' },
@@ -72,7 +72,7 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     );
     assert.equal(first.success, true);
     assert.equal(first.awarded, true);
-    assert.ok(first.exp_gained >= 15 && first.exp_gained <= 25, `Expected 15-25 EXP, got ${first.exp_gained}`);
+    assert.ok(first.exp_gained >= 20 && first.exp_gained <= 30, `Expected 20-30 EXP, got ${first.exp_gained}`);
     assert.equal(first.level, 1);
 
     // Verify starter pet was seeded in profile
@@ -105,7 +105,7 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     assert.equal(third.exp, first.exp + third.exp_gained);
   });
 
-  it('4. Voice EXP join -> 10 minutes -> leave awards 2 blocks (100-200 EXP) and triggers Lv.2 level-up', async () => {
+  it('4. Voice EXP join -> 10 minutes -> leave awards 2 blocks (140-220 EXP) and triggers Lv.2+ level-up', async () => {
     const tJoin = Date.now() + 120_000;
     const joined = await handleVoiceExp(
       { userId: TEMP_TEST_USER_ID, username: 'Tân Thủ Kiểm Thử', action: 'join' },
@@ -115,7 +115,7 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     assert.equal(joined.action, 'join');
     assert.equal(joined.awarded, false);
 
-    // Leave after 10 minutes -> 2 blocks of 50-100 EXP -> guaranteed to cross Lv.1 (100 EXP) into Lv.2
+    // Leave after 10 minutes -> 2 blocks of 70-110 EXP -> guaranteed to cross Lv.1 (60 EXP) into Lv.2+
     const left = await handleVoiceExp(
       { userId: TEMP_TEST_USER_ID, username: 'Tân Thủ Kiểm Thử', action: 'leave' },
       { now: tJoin + 10 * 60 * 1000, rng: () => 0.5 }
@@ -124,7 +124,7 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     assert.equal(left.action, 'leave');
     assert.equal(left.awarded, true);
     assert.equal(left.blocks_rewarded, 2);
-    assert.ok(left.exp_gained >= 100 && left.exp_gained <= 200);
+    assert.ok(left.exp_gained >= 140 && left.exp_gained <= 220, `Expected 140-220 EXP, got ${left.exp_gained}`);
     assert.equal(left.leveled_up, true);
     assert.ok(left.level >= 2, `Expected level >= 2, got ${left.level}`);
     assert.ok(left.level_up_message.includes('Cấp'), 'Must generate concise level-up announcement');
