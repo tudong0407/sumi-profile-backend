@@ -12,6 +12,7 @@ import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
+const LEVEL_UP_NOTIFY_CHANNEL_ID = '1033227438735507488';
 
 class ExtendedGraphBuilder extends GraphBuilder {
   advSelectMenu(id, parentMsgId, {
@@ -654,7 +655,7 @@ export function buildChatExpEvent() {
     title: '✨ ĐỘT PHÁ CẢNH GIỚI TU TIÊN',
     description: '{exp_res.response.level_up_message}',
     color: '#fbbf24',
-    target: { id: '{event_message_channel_id}' },
+    target: { id: LEVEL_UP_NOTIFY_CHANNEL_ID },
     footerText: 'SuMi Family • Chat EXP Tu Luyện',
   }, { x: -180, y: 1040 });
   gb.link(cLvl.yes, 'ce_notify');
