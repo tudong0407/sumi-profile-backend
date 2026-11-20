@@ -15,7 +15,7 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     if (testServer) await testServer.close();
   });
 
-  it('1. POST /api/profile/render with 3 custom equipped loadout items produces valid 1000x500 PNG', async () => {
+  it('1. POST /api/profile/render with 3 custom equipped loadout items produces valid 2000x1000 Full HD+ PNG', async () => {
     const payload = {
       user_id: '600000000000000001',
       username: 'Hiệp Sĩ Hoàng Gia',
@@ -75,7 +75,7 @@ describe('Tier 3 - Custom Payload Canvas Rendering (Profile & Rank)', () => {
     assertPngValid(buffer, 2000, 1000);
   });
 
-  it('3. POST /api/rank/render with custom clan, title, and level produces valid 1000x205 PNG', async () => {
+  it('3. POST /api/rank/render with custom clan, title, and level produces valid 2000x410 Full HD+ PNG', async () => {
     const payload = {
       user_id: '600000000000000003',
       username: 'Trưởng Lão Gia Tộc',

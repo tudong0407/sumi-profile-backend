@@ -53,7 +53,7 @@ describe('Tier 1 - Mini Rank Card Rendering (PNG & JSON)', () => {
     assert.ok('linh_thach' in json.data);
   });
 
-  it('4. POST /api/rank/render renders custom rank payload to 1000x205 PNG', async () => {
+  it('4. POST /api/rank/render renders custom rank payload to 2000x410 Full HD+ PNG', async () => {
     const customPayload = {
       user_id: '998877665544332211',
       username: 'Đạo Hữu Tu Tiên 🌸',

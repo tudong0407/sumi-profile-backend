@@ -55,14 +55,6 @@ const RARITY_STYLES = {
     bgTint: 'rgba(159, 18, 57, 0.30)',
     badgeBg: 'rgba(190, 18, 60, 0.90)',
   },
-  supreme: {
-    label: 'TỐI THƯỢNG THẦN THOẠI',
-    primary: '#fde047',
-    secondary: '#ec4899',
-    glow: 'rgba(236, 72, 153, 0.78)',
-    bgTint: 'rgba(190, 24, 93, 0.34)',
-    badgeBg: 'rgba(219, 39, 119, 0.92)',
-  },
 };
 
 const ELEMENT_COLORS = {
@@ -699,7 +691,7 @@ export async function renderWikiPetCard(petData) {
 
   const rarityStyle = RARITY_STYLES[petData.rarity_key] || RARITY_STYLES.common;
   const elemMeta = ELEMENT_COLORS[petData.element] || { color: '#94a3b8', icon: '✨' };
-  const petImg = await loadImageSafe(petData.image_file || `pets/${petData.pet_type}.png`, 2500, 'pets/cuu_vi_hong_ho_transparent.png');
+  const petImg = await loadImageSafe(petData.image_file || `pets/${petData.pet_type}.png`, 2500, 'pets/hoa_thach_nham_nham.png');
 
   drawCelestialBackground(ctx, rarityStyle.bgTint);
 
@@ -737,22 +729,20 @@ export async function renderWikiPetCard(petData) {
   ctx.arc(cx, cy, 148, 0, Math.PI * 2);
   ctx.fill();
 
-  // Ribbon trên cùng nếu là Starter hoặc Độc quyền Fuyumi
-  const topTag = petData.is_exclusive_fuyumi
-    ? 'ĐỘC QUYỀN TIỂU THƯ FUYUMI'
-    : petData.is_starter
-      ? 'LINH THÚ KHỞI ĐẦU TÂN THỦ'
-      : `HỆ ${String(petData.element || 'KIM').toUpperCase()}`;
+  // Ribbon trên cùng: Linh Thú Khởi Đầu hoặc Hệ Nguyên Tố
+  const topTag = petData.is_starter
+    ? 'LINH THÚ KHỞI ĐẦU TÂN THỦ'
+    : `HỆ ${String(petData.element || 'KIM').toUpperCase()}`;
 
   ctx.font = `bold 11px ${FONT_FAMILY}`;
   const tw = ctx.measureText(topTag).width + 24;
   drawRoundRect(ctx, cx - tw / 2, leftY + 16, tw, 26, 8);
   ctx.fillStyle = 'rgba(15, 12, 28, 0.90)';
   ctx.fill();
-  ctx.strokeStyle = petData.is_exclusive_fuyumi ? '#fde047' : petData.is_starter ? '#4ade80' : elemMeta.color;
+  ctx.strokeStyle = petData.is_starter ? '#4ade80' : elemMeta.color;
   ctx.lineWidth = 1.2;
   ctx.stroke();
-  ctx.fillStyle = petData.is_exclusive_fuyumi ? '#fde047' : petData.is_starter ? '#86efac' : elemMeta.color;
+  ctx.fillStyle = petData.is_starter ? '#86efac' : elemMeta.color;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(topTag, cx, leftY + 29);
@@ -836,8 +826,8 @@ export async function renderWikiPetCard(petData) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('BỘ CHỈ SỐ GỐC (CẤP 1 • 1 SAO)', rightX, 134);
 
-  const statMax = petData.is_exclusive_fuyumi ? 99999 : 600;
-  const hpMax = petData.is_exclusive_fuyumi ? 500995 : 4000;
+  const statMax = 600;
+  const hpMax = 4000;
   const statList = [
     { label: 'ATK', icon: '🗡️', val: petData.base_atk || 0, max: statMax, color: '#f87171' },
     { label: 'DEF', icon: '🛡️', val: petData.base_def || 0, max: statMax, color: '#60a5fa' },

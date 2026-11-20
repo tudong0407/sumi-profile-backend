@@ -5,27 +5,29 @@ import { supabase } from '../../src/config/supabase.js';
 import { grantChatExp, handleVoiceExp, CHAT_COOLDOWN_MS } from '../../src/services/expService.js';
 
 const TEMP_TEST_USER_ID = '999999999999999901';
+const TEMP_BURST_USER_ID = '999999999999999902';
+const TEMP_DECO_USER_ID = '999999999999999903';
+
+async function cleanupTestUsers() {
+  if (!supabase) return;
+  for (const uid of [TEMP_TEST_USER_ID, TEMP_BURST_USER_ID, TEMP_DECO_USER_ID]) {
+    await supabase.from('user_pets').delete().eq('user_id', uid);
+    await supabase.from('user_roles').delete().eq('user_id', uid);
+    await supabase.from('user_pet_items').delete().eq('user_id', uid);
+    await supabase.from('users').delete().eq('user_id', uid);
+  }
+}
 
 describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding', () => {
   let testServer;
 
   before(async () => {
     testServer = await createTestServer();
-    if (supabase) {
-      await supabase.from('user_pets').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('user_roles').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('user_pet_items').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('users').delete().eq('user_id', TEMP_TEST_USER_ID);
-    }
+    await cleanupTestUsers();
   });
 
   after(async () => {
-    if (supabase) {
-      await supabase.from('user_pets').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('user_roles').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('user_pet_items').delete().eq('user_id', TEMP_TEST_USER_ID);
-      await supabase.from('users').delete().eq('user_id', TEMP_TEST_USER_ID);
-    }
+    await cleanupTestUsers();
     if (testServer) await testServer.close();
   });
 
@@ -128,12 +130,67 @@ describe('Tier 1 - Pillar 2 Chat & Voice EXP Progression + Beginner Auto-Seeding
     assert.ok(left.level_up_message.includes('Cấp'), 'Must generate concise level-up announcement');
   });
 
-  it('5. POST /api/exp/voice rejects invalid action with HTTP 400', async () => {
+  it('5. POST /api/exp/voice rejects invalid action with HTTP 400 and ignores bots / Locked XP / Cách Ly', async () => {
     const res = await testServer.fetch('/api/exp/voice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: TEMP_TEST_USER_ID, action: 'explode' }),
     });
     assert.equal(res.status, 400);
+
+    const botRes = await testServer.fetch('/api/exp/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: TEMP_TEST_USER_ID, action: 'join', isBot: 'true' }),
+    });
+    assert.equal(botRes.status, 200);
+    const botJson = await botRes.json();
+    assert.equal(botJson.awarded, false);
+    assert.equal(botJson.reason, 'bot_ignored');
+
+    const lockedRes = await testServer.fetch('/api/exp/voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: TEMP_TEST_USER_ID, action: 'leave', minutes: 10, roleIds: '1474776271883079681' }),
+    });
+    assert.equal(lockedRes.status, 200);
+    const lockedJson = await lockedRes.json();
+    assert.equal(lockedJson.awarded, false);
+    assert.equal(lockedJson.reason, 'locked_xp');
+  });
+
+  it('6. Unresolved BotGhost variables fallback cleanly to fallbackUsername while decorative {Kitsune} usernames are preserved', async () => {
+    const t0 = Date.now();
+    // Simulate unresolved {event_user_display_name} falling back to {event_user_name} = 'RealDiscordName'
+    const r1 = await grantChatExp(
+      { userId: TEMP_DECO_USER_ID, username: '{event_user_display_name}', fallbackUsername: 'RealDiscordName' },
+      { now: t0, rng: () => 0.5 }
+    );
+    assert.equal(r1.success, true);
+    assert.equal(r1.username, 'RealDiscordName');
+
+    // Decorative {Kitsune} must be accepted by GET /api/profile override (not stripped as BotGhost var)
+    const profRes = await testServer.fetch(`/api/profile/${TEMP_DECO_USER_ID}?format=json&username=${encodeURIComponent('{Kitsune}')}`);
+    assert.equal(profRes.status, 200);
+    const profJson = await profRes.json();
+    assert.equal(profJson.data.username, '{Kitsune}');
+  });
+
+  it('7. Concurrent burst Chat EXP calls for a brand-new user award EXP once and seed exactly one starter pet', async () => {
+    const tBurst = Date.now();
+    const [a, b] = await Promise.all([
+      grantChatExp({ userId: TEMP_BURST_USER_ID, username: '{Kitsune}' }, { now: tBurst, rng: () => 0.5 }),
+      grantChatExp({ userId: TEMP_BURST_USER_ID, username: '{Kitsune}' }, { now: tBurst + 200, rng: () => 0.5 }),
+    ]);
+    assert.equal(a.success, true);
+    assert.equal(b.success, true);
+    const awardedCount = [a, b].filter((x) => x.awarded).length;
+    assert.equal(awardedCount, 1, 'Exactly one burst message should award EXP; the second must hit cooldown');
+    assert.equal(a.username, '{Kitsune}', 'Decorative {Kitsune} username must be preserved on auto-init');
+
+    if (supabase) {
+      const { data: pets } = await supabase.from('user_pets').select('pet_id').eq('user_id', TEMP_BURST_USER_ID);
+      assert.equal(pets?.length, 1, 'Must seed exactly 1 starter pet even under concurrent requests');
+    }
   });
 });

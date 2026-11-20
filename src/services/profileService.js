@@ -275,11 +275,39 @@ export function getDefaultUserMock(userId) {
   return createBeginnerProfile(userId);
 }
 
+const inFlightInitPromises = new Map();
+
+/**
+ * Nhận diện đúng biến placeholder chưa được BotGhost thay thế (ví dụ: {event_user_display_name}, {user_displayName[option_user]}, {option_user})
+ * mà vẫn chấp nhận các tên hiển thị trang trí có ngoặc nhọn như {Kitsune} hoặc {🌸 Alice 🌸}.
+ */
+export function isUnresolvedBotGhostVar(val) {
+  if (typeof val !== 'string') return false;
+  const s = val.trim();
+  if (!s.startsWith('{') || !s.endsWith('}')) return false;
+  return /^\{(?:event_|user_|option_|server_|channel_|member_|target_|time_|encode_text|BGVAR_|isBot\b|[a-z0-9_]+\.[a-z0-9_.]+)/i.test(s);
+}
+
+/**
+ * Chọn giá trị hợp lệ đầu tiên (không rỗng và không phải biến BotGhost chưa resolve)
+ */
+export function pickCleanDisplayValue(...candidates) {
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') continue;
+    const trimmed = raw.trim();
+    if (trimmed && !isUnresolvedBotGhostVar(trimmed)) {
+      return trimmed;
+    }
+  }
+  return null;
+}
+
 /**
  * Tự động khởi tạo hồ sơ tân thủ Lv.1 + Pet Phàm Phẩm mặc định trong Supabase nếu chưa tồn tại.
  * Bảo toàn 100% dữ liệu Tiểu thư Fuyumi (757091869183311872).
+ * Khử trùng lặp đồng thời (in-flight coalescing) theo userId để không bao giờ nhân đôi Pet khởi đầu.
  * @param {string} userId
- * @param {{ username?: string|null, avatarUrl?: string|null }} meta
+ * @param {{ username?: string|null, fallbackUsername?: string|null, avatarUrl?: string|null }} meta
  */
 export async function ensureUserInitialized(userId, meta = {}) {
   const cleanId = sanitizeUserId(userId);
@@ -290,120 +318,130 @@ export async function ensureUserInitialized(userId, meta = {}) {
     return { user: null, initializedNewUser: false };
   }
 
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('*')
-    .eq('user_id', cleanId)
-    .maybeSingle();
+  if (inFlightInitPromises.has(cleanId)) {
+    return inFlightInitPromises.get(cleanId);
+  }
 
-  let userRow = existingUser;
-  let initializedNewUser = false;
-
-  const isUnresolvedTemplate = (val) => /^\{[a-zA-Z0-9_.\[\]{}-]+\}$/.test(val);
-  const rawName = typeof meta.username === 'string' ? meta.username.trim() : '';
-  const cleanName = rawName && !isUnresolvedTemplate(rawName)
-    ? rawName.slice(0, 100)
-    : null;
-  const rawAvatar = typeof meta.avatarUrl === 'string' ? meta.avatarUrl.trim() : '';
-  const cleanAvatar = rawAvatar && !isUnresolvedTemplate(rawAvatar)
-    ? rawAvatar
-    : null;
-
-  if (!userRow) {
-    if (cleanId === FUYUMI_USER_ID) {
-      return { user: null, initializedNewUser: false };
-    }
-    const shortId = cleanId.slice(-4);
-    const insertPayload = {
-      user_id: cleanId,
-      username: cleanName || `Tu Sĩ #${shortId}`,
-      discriminator: '0',
-      avatar_url: cleanAvatar || 'assets/default_avatar.png',
-      exp: 0,
-      level: 1,
-      linh_thach: 0,
-      avatar_frame: 'default',
-      background_url: 'assets/default_background.png',
-      bio: 'Một vị tu sĩ mới bước vào tiên giới SuMi Family',
-      custom_title: 'Tân Thủ Nhập Đạo',
-      max_role_slots: 1,
-      clan_id: null,
-      streak: 0,
-      total_voice_minutes: 0,
-    };
-
-    const { data: created, error: insertErr } = await supabase
+  const run = (async () => {
+    const { data: existingUser } = await supabase
       .from('users')
-      .upsert(insertPayload, { onConflict: 'user_id', ignoreDuplicates: true })
       .select('*')
+      .eq('user_id', cleanId)
       .maybeSingle();
 
-    if (insertErr) {
-      console.warn(`[ProfileService] ensureUserInitialized insert error for ${cleanId}:`, insertErr.message);
-    }
+    let userRow = existingUser;
+    let initializedNewUser = false;
 
-    if (created) {
-      userRow = created;
-      initializedNewUser = true;
-    } else {
-      const { data: refetched } = await supabase.from('users').select('*').eq('user_id', cleanId).maybeSingle();
-      userRow = refetched || insertPayload;
-    }
-  } else if (cleanId !== FUYUMI_USER_ID) {
-    // Cập nhật nhẹ username/avatar thật nếu đang là placeholder
-    const patch = {};
-    if (cleanName && (!userRow.username || userRow.username.startsWith('Tu Sĩ '))) {
-      patch.username = cleanName;
-    }
-    if (cleanAvatar && (!userRow.avatar_url || userRow.avatar_url === 'assets/default_avatar.png')) {
-      patch.avatar_url = cleanAvatar;
-    }
-    if (Object.keys(patch).length > 0) {
-      patch.updated_at = new Date().toISOString();
-      const { data: updated } = await supabase
+    const cleanNameRaw = pickCleanDisplayValue(meta.username, meta.fallbackUsername);
+    const cleanName = cleanNameRaw ? cleanNameRaw.slice(0, 100) : null;
+    const rawAvatarCandidate = pickCleanDisplayValue(meta.avatarUrl);
+    const cleanAvatar = rawAvatarCandidate && (/^https?:\/\//i.test(rawAvatarCandidate) || rawAvatarCandidate.startsWith('assets/'))
+      ? rawAvatarCandidate
+      : null;
+
+    if (!userRow) {
+      if (cleanId === FUYUMI_USER_ID) {
+        return { user: null, initializedNewUser: false };
+      }
+      const shortId = cleanId.slice(-4);
+      const insertPayload = {
+        user_id: cleanId,
+        username: cleanName || `Tu Sĩ #${shortId}`,
+        discriminator: '0',
+        avatar_url: cleanAvatar || 'assets/default_avatar.png',
+        exp: 0,
+        level: 1,
+        linh_thach: 0,
+        avatar_frame: 'default',
+        background_url: 'assets/default_background.png',
+        bio: 'Một vị tu sĩ mới bước vào tiên giới SuMi Family',
+        custom_title: 'Tân Thủ Nhập Đạo',
+        max_role_slots: 1,
+        clan_id: null,
+        streak: 0,
+        total_voice_minutes: 0,
+      };
+
+      const { data: created, error: insertErr } = await supabase
         .from('users')
-        .update(patch)
-        .eq('user_id', cleanId)
+        .upsert(insertPayload, { onConflict: 'user_id', ignoreDuplicates: true })
         .select('*')
         .maybeSingle();
-      if (updated) userRow = updated;
-    }
-  }
 
-  // Đảm bảo mọi thành viên (trừ Fuyumi đã có Cửu Vĩ Hồng Hồ) đều có ít nhất Pet Phàm Phẩm khởi đầu
-  if (cleanId !== FUYUMI_USER_ID) {
-    const { data: existingPets } = await supabase
-      .from('user_pets')
-      .select('pet_id')
-      .eq('user_id', cleanId)
-      .eq('is_active', true)
-      .limit(1);
+      if (insertErr) {
+        console.warn(`[ProfileService] ensureUserInitialized insert error for ${cleanId}:`, insertErr.message);
+      }
 
-    if (!existingPets || existingPets.length === 0) {
-      const { error: petErr } = await supabase.from('user_pets').insert({
-        user_id: cleanId,
-        pet_name: STARTER_PET.pet_name,
-        pet_type: STARTER_PET.pet_type,
-        pet_rarity: STARTER_PET.rarity,
-        element: STARTER_PET.element,
-        hax_skill: STARTER_PET.hax_skill,
-        hax_description: STARTER_PET.hax_description,
-        level: 1,
-        exp: 0,
-        star: 1,
-        atk: STARTER_PET.base_atk,
-        def: STARTER_PET.base_def,
-        spd: STARTER_PET.base_spd,
-        power_score: STARTER_PET.base_power,
-        is_active: true,
-      });
-      if (petErr) {
-        console.warn(`[ProfileService] Starter pet seed error for ${cleanId}:`, petErr.message);
+      if (created) {
+        userRow = created;
+        initializedNewUser = true;
+      } else {
+        const { data: refetched } = await supabase.from('users').select('*').eq('user_id', cleanId).maybeSingle();
+        userRow = refetched || insertPayload;
+      }
+    } else if (cleanId !== FUYUMI_USER_ID) {
+      // Cập nhật nhẹ username/avatar thật nếu đang là placeholder
+      const patch = {};
+      if (cleanName && (!userRow.username || userRow.username.startsWith('Tu Sĩ '))) {
+        patch.username = cleanName;
+      }
+      if (cleanAvatar && (!userRow.avatar_url || userRow.avatar_url === 'assets/default_avatar.png')) {
+        patch.avatar_url = cleanAvatar;
+      }
+      if (Object.keys(patch).length > 0) {
+        patch.updated_at = new Date().toISOString();
+        const { data: updated } = await supabase
+          .from('users')
+          .update(patch)
+          .eq('user_id', cleanId)
+          .select('*')
+          .maybeSingle();
+        if (updated) userRow = updated;
       }
     }
-  }
 
-  return { user: userRow, initializedNewUser };
+    // Đảm bảo mọi thành viên (trừ Fuyumi đã có Cửu Vĩ Hồng Hồ) đều có ít nhất Pet Phàm Phẩm khởi đầu
+    if (cleanId !== FUYUMI_USER_ID) {
+      const { data: existingPets } = await supabase
+        .from('user_pets')
+        .select('pet_id')
+        .eq('user_id', cleanId)
+        .eq('is_active', true)
+        .limit(1);
+
+      if (!existingPets || existingPets.length === 0) {
+        const { error: petErr } = await supabase.from('user_pets').insert({
+          user_id: cleanId,
+          pet_name: STARTER_PET.pet_name,
+          pet_type: STARTER_PET.pet_type,
+          pet_rarity: STARTER_PET.rarity,
+          element: STARTER_PET.element,
+          hax_skill: STARTER_PET.hax_skill,
+          hax_description: STARTER_PET.hax_description,
+          level: 1,
+          exp: 0,
+          star: 1,
+          atk: STARTER_PET.base_atk,
+          def: STARTER_PET.base_def,
+          spd: STARTER_PET.base_spd,
+          power_score: STARTER_PET.base_power,
+          is_active: true,
+        });
+        if (petErr) {
+          console.warn(`[ProfileService] Starter pet seed error for ${cleanId}:`, petErr.message);
+        }
+      }
+    }
+
+    return { user: userRow, initializedNewUser };
+  })();
+
+  inFlightInitPromises.set(cleanId, run);
+  try {
+    return await run;
+  } finally {
+    inFlightInitPromises.delete(cleanId);
+  }
 }
 
 /**

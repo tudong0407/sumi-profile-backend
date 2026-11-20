@@ -104,7 +104,9 @@ export async function renderBattleCard(battleResult) {
     equipment: {},
   };
 
-  const atkWon = String(battleResult?.winner?.id) === String(atk.id);
+  const atkWon = battleResult?.winnerRole
+    ? battleResult.winnerRole === 'attacker'
+    : String(battleResult?.winner?.id) === String(atk.id);
   const turnCount = Number(battleResult?.turnCount) || (battleResult?.turns?.length ? battleResult.turns[battleResult.turns.length - 1].turn : 1);
 
   // Tải song song avatar, ảnh pet và 6 icon trang bị
@@ -258,10 +260,17 @@ export async function renderBattleCard(battleResult) {
       ctx.restore();
     }
 
-    // Tag Hệ + Lv ở góc trên trái & Rarity ở góc trên phải khung pet
-    ctx.font = `bold 9.5px ${FONT_FAMILY}`;
+    // Tag Hệ + Lv ở góc trên trái & Rarity ở góc trên phải khung pet (tránh đè nhau khi nhãn dài)
+    ctx.font = `bold 9px ${FONT_FAMILY}`;
     const elTag = `Hệ ${fighter.element} • Lv.${fighter.level}`;
-    const elW = ctx.measureText(elTag).width + 14;
+    const elW = ctx.measureText(elTag).width + 12;
+    let rarTag = sanitizeText(fighter.petRarity || 'Phàm Phẩm');
+    let rarW = ctx.measureText(rarTag).width + 12;
+    if (elW + rarW > petBoxW - 22 && rarTag.length > 14) {
+      rarTag = rarTag.replace(/Thần Thoại/i, '').trim() || rarTag;
+      rarW = ctx.measureText(rarTag).width + 12;
+    }
+
     drawRoundRect(ctx, petBoxX + 8, petBoxY + 8, elW, 19, 5);
     ctx.fillStyle = 'rgba(15, 12, 28, 0.88)';
     ctx.fill();
@@ -270,8 +279,6 @@ export async function renderBattleCard(battleResult) {
     ctx.textBaseline = 'middle';
     ctx.fillText(elTag, petBoxX + 8 + elW / 2, petBoxY + 17.5);
 
-    const rarTag = sanitizeText(fighter.petRarity || 'Phàm Phẩm');
-    const rarW = ctx.measureText(rarTag).width + 14;
     drawRoundRect(ctx, petBoxX + petBoxW - rarW - 8, petBoxY + 8, rarW, 19, 5);
     ctx.fillStyle = rStyle.bg;
     ctx.fill();

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getProfileData, sanitizeUserId } from './services/profileService.js';
+import { getProfileData, sanitizeUserId, isUnresolvedBotGhostVar } from './services/profileService.js';
 import {
   getWikiData,
   getWikiCatalogSummary,
@@ -41,11 +41,11 @@ app.use('/assets', express.static(path.join(PROJECT_ROOT, 'assets')));
 function getCleanParam(val, fallback) {
   if (val && typeof val === 'string') {
     const trimmed = val.trim();
-    if (trimmed && !trimmed.startsWith('{')) return trimmed;
+    if (trimmed && !isUnresolvedBotGhostVar(trimmed)) return trimmed;
   }
   if (fallback && typeof fallback === 'string') {
     const trimmed = fallback.trim();
-    if (trimmed && !trimmed.startsWith('{')) return trimmed;
+    if (trimmed && !isUnresolvedBotGhostVar(trimmed)) return trimmed;
   }
   return null;
 }

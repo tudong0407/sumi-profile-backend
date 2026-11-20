@@ -1,10 +1,14 @@
 import pg from 'pg';
 import fs from 'fs';
+import 'dotenv/config';
 
 const { Client } = pg;
 
-const password = 'TXU4k3VtkkFMAKl7';
-const projectRef = 'lfvtysacdoadtvskqgkt';
+const password = process.env.SUPABASE_DB_PASSWORD || '';
+const projectRef = process.env.SUPABASE_PROJECT_REF || '';
+if (!password || !projectRef) {
+  throw new Error('Missing SUPABASE_DB_PASSWORD or SUPABASE_PROJECT_REF in environment.');
+}
 
 const configs = [
   {

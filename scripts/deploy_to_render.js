@@ -1,5 +1,6 @@
 import http from 'http';
 import WebSocket from 'ws';
+import 'dotenv/config';
 
 function getJson(url) {
   return new Promise((resolve, reject) => {
@@ -35,11 +36,17 @@ async function main() {
     ws.send(JSON.stringify({ id, method, params }));
   });
 
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_KEY in environment.');
+  }
+
   const envContent = [
     'PORT=3000',
     'NODE_ENV=production',
-    'SUPABASE_URL=https://lfvtysacdoadtvskqgkt.supabase.co',
-    'SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmdnR5c2FjZG9hZHR2c2txZ2t0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5NTA4Nzc1NiwiZXhwIjoyMTEwNjYzNzU2fQ.an706_l9ItnKr10NjXq6i6X3jb2UP7Y7nISXX-_dH9k'
+    `SUPABASE_URL=${supabaseUrl}`,
+    `SUPABASE_KEY=${supabaseKey}`
   ].join('\n');
 
   console.log('Filling dotenv textarea...');

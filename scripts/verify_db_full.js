@@ -1,12 +1,21 @@
 import pg from 'pg';
+import 'dotenv/config';
 const { Client } = pg;
 
-const password = 'TXU4k3VtkkFMAKl7';
-const projectRef = 'lfvtysacdoadtvskqgkt';
+const password = process.env.SUPABASE_DB_PASSWORD || '';
+const projectRef = process.env.SUPABASE_PROJECT_REF || '';
+const connectionString =
+  process.env.DATABASE_URL ||
+  (password && projectRef
+    ? `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres`
+    : '');
+if (!connectionString) {
+  throw new Error('Missing DATABASE_URL or SUPABASE_DB_PASSWORD + SUPABASE_PROJECT_REF in environment.');
+}
 
 async function verify() {
   const client = new Client({
-    connectionString: `postgresql://postgres:${encodeURIComponent(password)}@db.${projectRef}.supabase.co:5432/postgres`,
+    connectionString,
     ssl: { rejectUnauthorized: false }
   });
 

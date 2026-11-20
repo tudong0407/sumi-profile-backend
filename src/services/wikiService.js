@@ -1,7 +1,8 @@
 /**
  * src/services/wikiService.js
- * Dữ liệu Cẩm Nang Tu Tiên SuMi Family chuẩn hóa (6 chuyên mục độc lập + tra cứu chi tiết 45 Pháp Bảo & 21 Linh Thú).
+ * Dữ liệu Cẩm Nang Tu Tiên SuMi Family chuẩn hóa (6 chuyên mục độc lập + tra cứu chi tiết 45 Pháp Bảo & 20 Linh Thú tiêu chuẩn).
  * Văn phong chuyên nghiệp, súc tích, không lời chào hỏi rườm rà.
+ * Lưu ý: Không liệt kê hoặc nhắc đến pet độc quyền Cửu Vĩ Hồng Hồ trên /wiki.
  */
 
 import { supabase } from '../config/supabase.js';
@@ -193,7 +194,7 @@ export const WIKI_CATEGORIES = {
 
   pets: {
     id: 'pets',
-    title: '🐾 Linh Thú Tiên Giới (20+ Chiến Pet)',
+    title: '🐾 Linh Thú Tiên Giới (20 Chiến Pet)',
     icon: '🐾',
     description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (Phàm / Linh / Tiên / Thần Thoại).',
     image_url: '',
@@ -204,7 +205,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Phân Chia 4 Bậc Phẩm Cấp',
-        content: '• Phàm Phẩm (5 loài): Linh thú sơ khai, nền tảng tân thủ.\n• Linh Phẩm (5 loài): Khai mở linh trí, có hiệu ứng khống chế/xuyên giáp.\n• Tiên Phẩm (4 loài): Sở hữu kỹ năng HAX hút máu, khóa HAX, làm mù.\n• Thần Thoại (6 loài + Cửu Vĩ Hồng Hồ độc quyền Fuyumi): Nắm giữ tuyệt kỹ HAX định đoạt trận đấu.',
+        content: '• Phàm Phẩm (5 loài): Linh thú sơ khai, nền tảng tân thủ.\n• Linh Phẩm (5 loài): Khai mở linh trí, có hiệu ứng khống chế/xuyên giáp.\n• Tiên Phẩm (4 loài): Sở hữu kỹ năng HAX hút máu, khóa HAX, làm mù.\n• Thần Thoại (6 loài): Nắm giữ tuyệt kỹ HAX định đoạt trận đấu.',
       },
     ],
     fields: [
@@ -215,7 +216,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: '✨ 4 Bậc Phẩm Cấp',
-        value: '• ⚪ **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• 🔵 **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• 🟣 **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• 🔴 **Thần Thoại** *(6 loài + 1 Độc quyền)* — Tuyệt kỹ HAX tối thượng',
+        value: '• ⚪ **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• 🔵 **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• 🟣 **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• 🔴 **Thần Thoại** *(6 loài)* — Tuyệt kỹ HAX tối thượng',
         inline: false,
       },
     ],
@@ -297,9 +298,10 @@ export function getWikiData(categoryId = null) {
 }
 
 /**
- * Trả về danh mục phân nhóm phục vụ Dropdown Trang Bị (3 nhóm) & Linh Thú (4 phẩm cấp)
+ * Trả về danh mục phân nhóm phục vụ Dropdown Trang Bị (3 nhóm) & Linh Thú (4 phẩm cấp — đúng 20 Linh Thú tiêu chuẩn)
  */
 export function getWikiCatalogSummary() {
+  const standardPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
   return {
     success: true,
     equipment: {
@@ -308,10 +310,10 @@ export function getWikiCatalogSummary() {
       soul: EQUIPMENT_CATALOG.filter((i) => i.item_type === 'soul'),
     },
     pets: {
-      common: PET_CATALOG.filter((p) => p.rarity_key === 'common'),
-      rare: PET_CATALOG.filter((p) => p.rarity_key === 'rare'),
-      epic: PET_CATALOG.filter((p) => p.rarity_key === 'epic'),
-      mythic: PET_CATALOG.filter((p) => p.rarity_key === 'mythic' || p.rarity_key === 'supreme'),
+      common: standardPets.filter((p) => p.rarity_key === 'common'),
+      rare: standardPets.filter((p) => p.rarity_key === 'rare'),
+      epic: standardPets.filter((p) => p.rarity_key === 'epic'),
+      mythic: standardPets.filter((p) => p.rarity_key === 'mythic'),
     },
   };
 }
@@ -426,7 +428,7 @@ export async function getWikiItemDetail(itemId) {
 }
 
 /**
- * Tra cứu chi tiết 1 Linh Thú theo mã pet_type
+ * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (chỉ trả 20 Linh Thú tiêu chuẩn, ẩn pet độc quyền Fuyumi khỏi /wiki)
  */
 export async function getWikiPetDetail(petType) {
   if (!petType || typeof petType !== 'string') {
@@ -434,7 +436,7 @@ export async function getWikiPetDetail(petType) {
   }
 
   const cleanType = petType.trim().toLowerCase().replace(/\.png$/i, '');
-  if (!Object.prototype.hasOwnProperty.call(PET_BY_TYPE, cleanType)) {
+  if (!Object.prototype.hasOwnProperty.call(PET_BY_TYPE, cleanType) || PET_BY_TYPE[cleanType].is_exclusive_fuyumi) {
     return {
       success: false,
       error: 'Pet not found',
@@ -447,7 +449,6 @@ export async function getWikiPetDetail(petType) {
 
   const tagNotes = [];
   if (pet.is_starter) tagNotes.push('🌱 Linh Thú Khởi Đầu Mặc Định');
-  if (pet.is_exclusive_fuyumi) tagNotes.push('👑 Độc Quyền Tiểu Thư Fuyumi');
 
   const descriptionLines = [
     `${tier.emoji} **${pet.rarity}** • Hệ **${pet.element}**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,

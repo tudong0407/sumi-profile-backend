@@ -284,8 +284,8 @@ function buildItemOptions(itemType) {
 }
 
 function buildPetOptions(rarityKeys) {
-  return PET_CATALOG.filter((p) => rarityKeys.includes(p.rarity_key)).map((p) => {
-    const tag = p.is_exclusive_fuyumi ? 'Độc quyền Fuyumi' : p.is_starter ? 'Khởi đầu tân thủ' : p.hax_skill;
+  return PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && rarityKeys.includes(p.rarity_key)).map((p) => {
+    const tag = p.is_starter ? 'Khởi đầu tân thủ' : p.hax_skill;
     return {
       label: `${p.icon} ${p.pet_name}`,
       description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag}`,
@@ -345,7 +345,7 @@ export function buildWikiCmd() {
       { label: '🌌 Hệ Thống Cảnh Giới & Thăng Cấp', description: '7 Đại Cảnh Giới, công thức EXP, mốc Role & Slot', value: 'realms' },
       { label: '🥋 Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', value: 'battle' },
       { label: '⚔️ Trang Bị Loadout (45 Pháp Bảo)', description: '3 Dropdown tra cứu Vũ Khí / Bảo Ngọc / Chiến Hồn', value: 'equipment' },
-      { label: '🐾 Linh Thú Tiên Giới (20+ Chiến Pet)', description: '4 Dropdown tra cứu theo Phẩm Cấp Phàm -> Thần Thoại', value: 'pets' },
+      { label: '🐾 Linh Thú Tiên Giới (20 Chiến Pet)', description: '4 Dropdown tra cứu theo Phẩm Cấp Phàm -> Thần Thoại', value: 'pets' },
       { label: '💎 Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gia Tộc & Clan Wars 24H', value: 'economy' },
     ],
   }, { x: 800, y: 820 });
@@ -534,12 +534,12 @@ export function buildWikiCmd() {
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: '🔴 Thần Thoại (6 + Cửu Vĩ Hồng Hồ)...',
+    placeholder: '🔴 Thần Thoại (6 Linh Thú)...',
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildPetOptions(['mythic', 'supreme']),
+    basic_options: buildPetOptions(['mythic']),
   }, { x: 1350, y: 1620 });
 
   gb.act('set_pet_c', 'set_unique_variable', { reference: 'wiki_pet_id', value: '{picked_pet_c}', success_handles: false }, { x: 450, y: 1800 });
@@ -618,6 +618,7 @@ export function buildChatExpEvent() {
   gb.link(cSrv.yes, cBot.condId);
 
   // Gọi Backend POST /api/exp/chat
+  // Lưu ý: messageCreate của BotGhost KHÔNG định nghĩa {event_user_display_name}; dùng {user_displayName} + fallback {event_user_name}
   gb.act('ce_api', 'api_action', {
     name: 'exp_res',
     ephemeral: false,
@@ -627,7 +628,7 @@ export function buildChatExpEvent() {
       headers: [{ key: 'Content-Type', value: 'application/json' }],
       params: [],
       body: [],
-      rawBody: '{"userId":"{event_user_id}","username":"{event_user_display_name}","avatarUrl":"{event_user_avatar}","roleIds":"{user_role_ids[{event_user_id}]}"}',
+      rawBody: '{"userId":"{event_user_id}","username":"{user_displayName}","fallbackUsername":"{event_user_name}","avatarUrl":"{event_user_avatar}","roleIds":"{user_role_ids[{event_user_id}]},{user_role_ids}","isBot":"{isBot}"}',
       contentType: 'application/json',
       options: {
         excludeEmptyFields: true,
@@ -685,6 +686,10 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
   const cSrv = gb.cmp('ve_srv', '{server_id}', SUMI_GUILD_ID, 'equal_to', {}, { x: 0, y: 200 });
   gb.link('root', cSrv.condId);
 
+  // Bỏ qua bot vào/ra phòng thoại
+  const cBot = gb.cmp('ve_bot', '{isBot}', 'true', 'equal_to', { ignoreCase: true }, { x: -180, y: 380 });
+  gb.link(cSrv.yes, cBot.condId);
+
   gb.act('ve_api', 'api_action', {
     name: 'vexp_res',
     ephemeral: false,
@@ -694,7 +699,7 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
       headers: [{ key: 'Content-Type', value: 'application/json' }],
       params: [],
       body: [],
-      rawBody: `{"userId":"{event_user_id}","username":"{event_user_display_name}","action":"${action}"}`,
+      rawBody: `{"userId":"{event_user_id}","username":"{event_user_display_name}","fallbackUsername":"{event_user_name}","avatarUrl":"{user_icon}","roleIds":"{user_role_ids[{event_user_id}]},{user_role_ids}","isBot":"{isBot}","action":"${action}"}`,
       contentType: 'application/json',
       options: {
         excludeEmptyFields: true,
@@ -709,17 +714,17 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
       },
     },
     success_handles: false,
-  }, { x: -180, y: 420 });
-  gb.link(cSrv.yes, 've_api');
+  }, { x: 0, y: 580 });
+  gb.link(cBot.no, 've_api');
 
   if (action === 'leave' || action === 'switch') {
-    const cLvl = gb.cmp('ve_lvl', '{vexp_res.response.leveled_up}', 'true', 'equal_to', { ignoreCase: true }, { x: -180, y: 620 });
+    const cLvl = gb.cmp('ve_lvl', '{vexp_res.response.leveled_up}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 780 });
     gb.link('ve_api', cLvl.condId);
 
-    gb.act('ve_wait_role', 'wait_action', { seconds: '1', success_handles: false }, { x: -340, y: 840 });
+    gb.act('ve_wait_role', 'wait_action', { seconds: '1', success_handles: false }, { x: -180, y: 980 });
     gb.link(cLvl.yes, 've_wait_role');
 
-    const cRole = gb.cmp('ve_has_role', '{vexp_res.response.unlocked_level_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: -340, y: 1020 });
+    const cRole = gb.cmp('ve_has_role', '{vexp_res.response.unlocked_level_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: -180, y: 1160 });
     gb.link('ve_wait_role', cRole.condId);
 
     gb.act('ve_add_role', 'role_add', {
@@ -728,7 +733,7 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
       success_handles: false,
       target: { variable: '{event_user_id}' },
       server_id: '',
-    }, { x: -480, y: 1240 });
+    }, { x: -340, y: 1380 });
     gb.link(cRole.yes, 've_add_role');
   }
 
@@ -757,6 +762,12 @@ async function main() {
     const errs = validateGraph(els);
     if (errs.length) throw new Error(`Offline validateGraph failed for ${t.name}:\n- ${errs.join('\n- ')}`);
     assertAcyclicDAG(els, t.name);
+    if (t.name === 'wiki') {
+      const serialized = JSON.stringify(els);
+      if (/cuu_vi_hong_ho|Cửu Vĩ Hồng Hồ/i.test(serialized)) {
+        throw new Error('Wiki graph must NOT contain Fuyumi exclusive pet (cuu_vi_hong_ho / Cửu Vĩ Hồng Hồ)');
+      }
+    }
     console.log(`[Offline OK] ${t.mode} "${t.name}": ${els.length} elements (acyclic DAG, regex & schema valid)`);
 
     if (!dryRun) {

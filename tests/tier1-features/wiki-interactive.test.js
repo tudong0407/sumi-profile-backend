@@ -4,7 +4,7 @@ import { createTestServer } from '../helpers/testServer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
 import { FIXTURE_USERS } from '../helpers/fixtures.js';
 
-describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 21 Pets, Unique Mythic Owners)', () => {
+describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets, Unique Mythic Owners)', () => {
   let testServer;
 
   before(async () => {
@@ -15,7 +15,7 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 21 Pets, Unique 
     if (testServer) await testServer.close();
   });
 
-  it('1. GET /api/wiki/catalog returns 45 items (15/15/15) and 21 pets across 4 canonical tiers (5/5/4/7)', async () => {
+  it('1. GET /api/wiki/catalog returns 45 items (15/15/15) and exactly 20 standard pets (5/5/4/6), excluding Fuyumi exclusive pet', async () => {
     const res = await testServer.fetch('/api/wiki/catalog');
     assert.equal(res.status, 200);
     const json = await res.json();
@@ -28,15 +28,27 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 21 Pets, Unique 
     assert.equal(json.pets.common.length, 5, 'Must have 5 Phàm Phẩm pets');
     assert.equal(json.pets.rare.length, 5, 'Must have 5 Linh Phẩm pets');
     assert.equal(json.pets.epic.length, 4, 'Must have 4 Tiên Phẩm pets');
-    assert.equal(json.pets.mythic.length, 7, 'Must have 6 Thần Thoại + 1 Cửu Vĩ Hồng Hồ');
+    assert.equal(json.pets.mythic.length, 6, 'Must have exactly 6 standard Thần Thoại pets');
+
+    const allWikiPets = [
+      ...json.pets.common,
+      ...json.pets.rare,
+      ...json.pets.epic,
+      ...json.pets.mythic,
+    ];
+    assert.equal(allWikiPets.length, 20, 'Wiki catalog must expose exactly 20 standard pets');
+    assert.ok(!allWikiPets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.is_exclusive_fuyumi), 'Exclusive Fuyumi pet must NOT appear in wiki catalog');
   });
 
-  it('2. Standalone realms category exists and all 6 wiki categories use concise non-greeting copy', async () => {
+  it('2. Standalone realms category exists, all 6 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200);
     const json = await res.json();
     const ids = json.categories.map((c) => c.id);
     assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy']);
+
+    const fullWikiText = JSON.stringify(json.categories);
+    assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive pet Cửu Vĩ Hồng Hồ');
 
     for (const cat of json.categories) {
       assert.ok(!/chào mừng đạo hữu/i.test(cat.content), `Category ${cat.id} should not contain verbose greeting`);
@@ -105,12 +117,24 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 21 Pets, Unique 
     assertPngValid(Buffer.from(await resPng.arrayBuffer()), 2000, 1000);
   });
 
-  it('7. Prototype pollution and invalid IDs on /api/wiki/item and /api/wiki/pet return 404', async () => {
+  it('7. Prototype pollution, invalid IDs, and Fuyumi exclusive pet (cuu_vi_hong_ho) return 404 on /api/wiki/pet while Fuyumi profile keeps it 100%', async () => {
     for (const bad of ['constructor', '__proto__', 'toString', 'nonexistent_xyz']) {
       const rItem = await testServer.fetch(`/api/wiki/item/${bad}`);
       assert.equal(rItem.status, 404, `Expected 404 for item ${bad}`);
       const rPet = await testServer.fetch(`/api/wiki/pet/${bad}`);
       assert.equal(rPet.status, 404, `Expected 404 for pet ${bad}`);
     }
+
+    const rExclusiveJson = await testServer.fetch('/api/wiki/pet/cuu_vi_hong_ho');
+    assert.equal(rExclusiveJson.status, 404, 'cuu_vi_hong_ho must be excluded from /api/wiki/pet JSON');
+    const rExclusivePng = await testServer.fetch('/api/wiki/pet/cuu_vi_hong_ho.png');
+    assert.equal(rExclusivePng.status, 404, 'cuu_vi_hong_ho must be excluded from /api/wiki/pet PNG');
+
+    // Confirm Fuyumi's profile still retains Cửu Vĩ Hồng Hồ 100%
+    const fuProf = await testServer.fetch(`/api/profile/${FIXTURE_USERS.fuyumi.userId}?format=json`);
+    assert.equal(fuProf.status, 200);
+    const fuJson = await fuProf.json();
+    assert.equal(fuJson.data.pet?.pet_type, 'cuu_vi_hong_ho');
+    assert.equal(fuJson.data.pet?.name, 'Cửu Vĩ Hồng Hồ');
   });
 });

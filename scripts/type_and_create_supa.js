@@ -1,6 +1,7 @@
 import http from 'http';
 import WebSocket from 'ws';
 import fs from 'fs';
+import 'dotenv/config';
 
 function getJson(url) {
   return new Promise((resolve, reject) => {
@@ -57,7 +58,10 @@ async function main() {
   await sleep(1000);
 
   console.log('2. Focus and type dbPass...');
-  const dbPassword = 'Fuyumi@Sumi2026!Db';
+  const dbPassword = process.env.SUPABASE_DB_PASSWORD || '';
+  if (!dbPassword) {
+    throw new Error('Missing SUPABASE_DB_PASSWORD in environment.');
+  }
   await send('Runtime.evaluate', {
     expression: `(() => {
       const pass = document.querySelector('#dbPass') || document.querySelector('input[name="dbPass"]');

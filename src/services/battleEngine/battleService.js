@@ -235,7 +235,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   };
 
   // Trích lọc tối đa 5 diễn biến tiêu biểu ngắn gọn cho Ảnh Chiến Báo Full HD+
-  const shortPet = (s) => (s && s.length > 14 ? s.slice(0, 13) + '…' : s);
+  const shortPet = (s) => (s && s.length > 12 ? s.slice(0, 11) + '…' : s);
   const highlights = [];
   for (const ev of battleStartEvents.slice(0, 2)) {
     const actorName = shortPet(ev.actor === attacker.id ? attacker.petName : defender.petName);
@@ -332,6 +332,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     success: true,
     battleId,
     turnCount: turnNumber,
+    winnerRole: attackerWon ? 'attacker' : 'defender',
     winner,
     loser,
     turns,

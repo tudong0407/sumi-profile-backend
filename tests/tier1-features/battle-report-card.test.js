@@ -59,4 +59,22 @@ describe('Tier 1 - Pillar 3 Full HD+ Battle Report Image (2000x1000)', () => {
     const json = await res.json();
     assert.equal(json.success, false);
   });
+
+  it('4. Mirror battle (attackerId === defenderId) reports winnerRole and renders 2000x1000 PNG cleanly', async () => {
+    const simRes = await testServer.fetch('/api/battle/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        attackerId: FIXTURE_USERS.hanabiraMei.userId,
+        defenderId: FIXTURE_USERS.hanabiraMei.userId,
+        options: { maxTurns: 20, seed: 11 },
+      }),
+    });
+    assert.equal(simRes.status, 200);
+    const json = await simRes.json();
+    assert.ok(['attacker', 'defender'].includes(json.winnerRole), 'Must expose winnerRole for mirror matches');
+    const imgRes = await testServer.fetch(`/api/battle/report/${json.battleId}.png`);
+    assert.equal(imgRes.status, 200);
+    assertPngValid(Buffer.from(await imgRes.arrayBuffer()), 2000, 1000);
+  });
 });
