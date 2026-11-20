@@ -13,6 +13,14 @@ import {
 } from './services/wikiService.js';
 import { simulateBattle, getCachedBattleReport } from './services/battleService.js';
 import { grantChatExp, handleVoiceExp } from './services/expService.js';
+import { claimDaily, convertExpToLinhThach, rollGacha } from './services/economyService.js';
+import {
+  getInventory,
+  equipTarget,
+  unequipTarget,
+  setActivePet,
+  upgradePet,
+} from './services/inventoryService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { renderBattleCard } from './canvas/battleRenderer.js';
@@ -98,6 +106,15 @@ app.get('/', (req, res) => {
       battle_render_custom: 'POST /api/battle/render',
       exp_chat: 'POST /api/exp/chat',
       exp_voice: 'POST /api/exp/voice',
+      economy_daily: 'POST /api/economy/daily',
+      economy_doiqua: 'POST /api/economy/doiqua',
+      economy_roll: 'POST /api/economy/roll',
+      inventory: 'GET /api/inv/:userId',
+      equip: 'POST /api/equip',
+      unequip: 'POST /api/unequip',
+      pet_list: 'GET /api/pet/:userId',
+      pet_active: 'POST /api/pet/active',
+      pet_upgrade: 'POST /api/pet/upgrade',
       profile_png: 'GET /api/profile/:userId[.png]',
       profile_json: 'GET /api/profile/:userId?format=json',
       profile_render_custom: 'POST /api/profile/render',
@@ -500,6 +517,133 @@ app.post('/api/profile/render', async (req, res) => {
       error: 'Lỗi khi kết xuất ảnh tùy biến',
       message: err.message,
     });
+  }
+});
+
+// ============================================================================
+// PHASE 1: ECONOMY (/daily, /doiqua, /roll) & INVENTORY/LOADOUT (/inv, /equip, /unequip, /pet)
+// ============================================================================
+app.post('/api/economy/daily', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await claimDaily(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/economy/daily error:', err);
+    return res.status(500).json({ success: false, error: 'DAILY_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/economy/doiqua', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await convertExpToLinhThach(body.userId, body.amountExp ?? body.amount, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/economy/doiqua error:', err);
+    return res.status(500).json({ success: false, error: 'DOIQUA_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/economy/roll', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await rollGacha(body.userId, {
+      pool: body.pool,
+      count: body.count,
+      useTicket: body.useTicket,
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/economy/roll error:', err);
+    return res.status(500).json({ success: false, error: 'ROLL_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/inv/:userId', async (req, res) => {
+  try {
+    const result = await getInventory(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/inv error:', err);
+    return res.status(500).json({ success: false, error: 'INV_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/equip', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await equipTarget(body.userId, {
+      category: body.category,
+      targetId: body.targetId,
+      slot: body.slot,
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/equip error:', err);
+    return res.status(500).json({ success: false, error: 'EQUIP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/unequip', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await unequipTarget(body.userId, {
+      category: body.category,
+      targetId: body.targetId,
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/unequip error:', err);
+    return res.status(500).json({ success: false, error: 'UNEQUIP_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/pet/:userId', async (req, res) => {
+  try {
+    const inv = await getInventory(req.params.userId);
+    if (!inv.success) return res.status(inv.status || 400).json(inv);
+    return res.json({ success: true, user: inv.user, pets: inv.pets });
+  } catch (err) {
+    console.error('[Server] /api/pet error:', err);
+    return res.status(500).json({ success: false, error: 'PET_LIST_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/active', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await setActivePet(body.userId, body.petId || body.petType);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/active error:', err);
+    return res.status(500).json({ success: false, error: 'PET_ACTIVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/upgrade', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await upgradePet(body.userId, body.petId || body.petType, body.mode || 'level');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/upgrade error:', err);
+    return res.status(500).json({ success: false, error: 'PET_UPGRADE_FAILED', message: err.message });
   }
 });
 

@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS users (
     marry_user_id VARCHAR(32) DEFAULT NULL,
     marry_username VARCHAR(100) DEFAULT NULL,
     marry_date TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    marry_ring_id VARCHAR(50) DEFAULT NULL,
     clan_id VARCHAR(50) DEFAULT NULL REFERENCES clans(clan_id) ON DELETE SET NULL,
     streak INT DEFAULT 0 CHECK (streak >= 0),
     last_daily TIMESTAMP WITH TIME ZONE DEFAULT NULL,

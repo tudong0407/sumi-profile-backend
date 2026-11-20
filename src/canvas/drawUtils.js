@@ -78,8 +78,44 @@ export function resolveAssetPath(filePathOrName) {
   if (fs.existsSync(petPath)) {
     return petPath;
   }
+  const bgPath = path.join(ASSETS_DIR, 'backgrounds', basename);
+  if (fs.existsSync(bgPath)) {
+    return bgPath;
+  }
 
   return null;
+}
+
+/**
+ * Vẽ ảnh nền theo chế độ cover (giữ tỷ lệ không méo hình) + lớp phủ tối dịu mắt
+ */
+export function drawCoverBackground(ctx, img, width, height, overlayAlpha = 0.56) {
+  if (!img || !img.width || !img.height) return false;
+  const imgRatio = img.width / img.height;
+  const boxRatio = width / height;
+  let drawW = width;
+  let drawH = height;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (imgRatio > boxRatio) {
+    drawH = height;
+    drawW = height * imgRatio;
+    offsetX = (width - drawW) / 2;
+  } else {
+    drawW = width;
+    drawH = width / imgRatio;
+    offsetY = (height - drawH) / 2;
+  }
+
+  ctx.save();
+  ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+  if (overlayAlpha > 0) {
+    ctx.fillStyle = `rgba(10, 7, 22, ${overlayAlpha})`;
+    ctx.fillRect(0, 0, width, height);
+  }
+  ctx.restore();
+  return true;
 }
 
 /**

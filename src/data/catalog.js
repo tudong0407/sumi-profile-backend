@@ -179,3 +179,54 @@ export function createStarterPetObject() {
     },
   };
 }
+
+/**
+ * 4 Cấp Nhẫn Cưới Tiên Lữ (/marry & /shop)
+ */
+export const MARRY_RINGS = [
+  { item_id: 'ring_common', name: 'Thanh Ngọc Đồng Tâm Giới', rarity: 'Phàm Phẩm', rarity_key: 'common', price: 500, exp_bonus_pct: 5, power_bonus_pct: 5, icon: '💍', description: 'Nhẫn ngọc bích cơ bản: +5% EXP & +5% Chiến Lực đôi.' },
+  { item_id: 'ring_rare', name: 'Lưu Ly Bích Hải Giới', rarity: 'Linh Phẩm', rarity_key: 'rare', price: 2000, exp_bonus_pct: 10, power_bonus_pct: 10, icon: '💍', description: 'Nhẫn lưu ly xanh biển: +10% EXP & +10% Chiến Lực đôi.' },
+  { item_id: 'ring_epic', name: 'Tử Tiêu Phượng Hoàng Giới', rarity: 'Tiên Phẩm', rarity_key: 'epic', price: 6000, exp_bonus_pct: 15, power_bonus_pct: 15, icon: '💍', description: 'Nhẫn vàng hồng phượng hoàng: +15% EXP & +15% Chiến Lực đôi.' },
+  { item_id: 'ring_mythic', name: 'Cửu Vĩ Vĩnh Kết Thần Giới', rarity: 'Thần Thoại', rarity_key: 'mythic', price: 18000, exp_bonus_pct: 20, power_bonus_pct: 20, icon: '💍', description: 'Thần giới Cửu Vĩ tối thượng: +20% EXP & +20% Chiến Lực đôi.' },
+];
+
+export const MARRY_RING_BY_ID = Object.fromEntries(MARRY_RINGS.map((r) => [r.item_id, r]));
+
+/**
+ * Vật phẩm tiêu hao / nâng cấp bán thẳng trong /shop
+ */
+export const SHOP_CONSUMABLES = [
+  { item_id: 'gacha_ticket_equip', name: 'Vé Rèn Pháp Bảo', category: 'consumable', price: 50, icon: '🎫', description: 'Dùng thay 50 Linh Thạch khi quay Gacha Pháp Bảo (/roll).' },
+  { item_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', category: 'consumable', price: 50, icon: '🎫', description: 'Dùng thay 50 Linh Thạch khi quay Gacha Linh Thú (/roll).' },
+  { item_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', category: 'consumable', price: 100, icon: '⭐', description: 'Nguyên liệu đột phá cấp Sao (1★ → 10★) cho Linh Thú (/pet).' },
+  { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: '🏷️', description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
+];
+
+/**
+ * Role Quyền Năng nhóm tiện ích / cấp thấp bán thẳng trong /shop (7 ngày / 30 ngày / Vĩnh viễn)
+ */
+export const SHOP_ROLE_PACKAGES = [
+  { role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: '⚡ Miễn Chờ Chat Chậm', prices: { '7d': 150, '30d': 500, permanent: 1500 } },
+  { role_id: '1573186053500833802', name: '« Họa Đồ Linh Sư »', perk: '🖼️ Đăng Ảnh Kênh Giới Hạn', prices: { '7d': 150, '30d': 500, permanent: 1500 } },
+  { role_id: '1573186057778888745', name: '« Vạn Tượng Linh Hồ »', perk: '✨ Dùng Emoji Ngoại Server', prices: { '7d': 200, '30d': 650, permanent: 2000 } },
+  { role_id: '1573186061860077568', name: '« Thần Phù Thượng Quan »', perk: '🌟 Dùng Sticker Ngoại', prices: { '7d': 150, '30d': 500, permanent: 1500 } },
+  { role_id: '1573186066134073394', name: '« Khai Sơn Tiên Phong »', perk: '💬 Tạo Chủ Đề Công Khai', prices: { '7d': 120, '30d': 400, permanent: 1200 } },
+  { role_id: '1573186040716468316', name: '« Huyễn Diện Đạo Quân »', perk: '🎭 Tự Do Đổi Biệt Danh', prices: { '7d': 180, '30d': 600, permanent: 1800 } },
+  { role_id: '1573186078402158776', name: '« Huyễn Âm Tiên Cô »', perk: '🔊 Dùng Bảng Âm Thanh', prices: { '7d': 150, '30d': 500, permanent: 1500 } },
+  { role_id: '1573186087088554085', name: '« Linh Hồn Tu Luyện »', perk: '📈 Buff +15% EXP Solo', prices: { '7d': 400, '30d': 1200, permanent: 4000 } },
+  { role_id: '1573186091094245416', name: '« Tài Vận Hanh Thông »', perk: '💎 Buff +20% Linh Thạch', prices: { '7d': 450, '30d': 1400, permanent: 4500 } },
+];
+
+/**
+ * Danh mục Background Profile & Namecard (/rank) — bao gồm 5 ảnh Pinterest đã nạp sẵn & bộ thiết kế Shop
+ */
+export const BACKGROUND_CATALOG = [
+  { bg_id: 'default_background.png', name: 'Đạo Cảnh Mặc Định', rarity: 'Mặc Định', price: 0, file: 'default_background.png', available: true },
+  { bg_id: 'bg_pin_1_starry_cloud.jpg', name: 'Mây Đêm Tinh Tú Cổ Điển', rarity: 'Linh Phẩm', price: 600, file: 'backgrounds/bg_pin_1_starry_cloud.jpg', available: true },
+  { bg_id: 'bg_pin_2_arcane_astrology.jpg', name: 'Pháp Trận Chiêm Tinh Tử Kim', rarity: 'Tiên Phẩm', price: 1500, file: 'backgrounds/bg_pin_2_arcane_astrology.jpg', available: true },
+  { bg_id: 'bg_pin_3_celestial_moon.jpg', name: 'Ngân Hà Trăng Sáng Pastel', rarity: 'Tiên Phẩm', price: 1500, file: 'backgrounds/bg_pin_3_celestial_moon.jpg', available: true },
+  { bg_id: 'bg_pin_4_lantern_blossom.jpg', name: 'Hoa Đăng Tiên Cảnh Ấm Áp', rarity: 'Linh Phẩm', price: 800, file: 'backgrounds/bg_pin_4_lantern_blossom.jpg', available: true },
+  { bg_id: 'bg_pin_5_witch_spirit.jpg', name: 'Linh Hồn Ma Nhỏ Bí Ngô', rarity: 'Linh Phẩm', price: 700, file: 'backgrounds/bg_pin_5_witch_spirit.jpg', available: true },
+];
+
+export const BACKGROUND_BY_ID = Object.fromEntries(BACKGROUND_CATALOG.map((b) => [b.bg_id, b]));

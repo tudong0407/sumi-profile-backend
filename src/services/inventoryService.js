@@ -1,0 +1,409 @@
+/**
+ * src/services/inventoryService.js
+ * Quản lý Túi Đồ (/inv), Mặc/Tháo Pháp Bảo, Role Quyền Năng & Background (/equip, /unequip),
+ * và Quản lý/Nâng Cấp Linh Thú (/pet).
+ */
+
+import { supabase } from '../config/supabase.js';
+import {
+  EQUIPMENT_BY_ID,
+  PET_BY_TYPE,
+  BACKGROUND_BY_ID,
+} from '../data/catalog.js';
+import {
+  sanitizeUserId,
+  ensureUserInitialized,
+  pickCleanDisplayValue,
+  getMaxRoleSlotsByLevel,
+} from './profileService.js';
+
+export async function getInventory(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) {
+    return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  }
+  if (!supabase) {
+    return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  }
+
+  const { user } = await ensureUserInitialized(cleanId, {
+    username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+    avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+  });
+  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+  const [petsRes, itemsRes, rolesRes, invRes] = await Promise.all([
+    supabase.from('user_pets').select('*').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
+    supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
+    supabase.from('user_roles').select('*').eq('user_id', cleanId).order('is_equipped', { ascending: false }),
+    supabase.from('user_inventory').select('*').eq('user_id', cleanId).gt('quantity', 0),
+  ]);
+
+  const items = (itemsRes.data || []).map((row) => ({
+    ...row,
+    ...(EQUIPMENT_BY_ID[row.item_id] || {}),
+  }));
+
+  return {
+    success: true,
+    user: {
+      user_id: cleanId,
+      username: user.username,
+      level: user.level,
+      linh_thach: Number(user.linh_thach || 0),
+      max_role_slots: getMaxRoleSlotsByLevel(user.level || 1),
+      background_url: user.background_url || 'default_background.png',
+      marry_ring_id: user.marry_ring_id || null,
+    },
+    pets: petsRes.data || [],
+    equipment_items: items,
+    roles: rolesRes.data || [],
+    consumables_and_unlocks: invRes.data || [],
+  };
+}
+
+export async function equipTarget(userId, payload = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const category = String(payload.category || '').toLowerCase();
+  const targetId = String(payload.targetId || '').trim();
+  const { user } = await ensureUserInitialized(cleanId);
+  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+  if (category === 'item') {
+    const itemMeta = EQUIPMENT_BY_ID[targetId];
+    if (!itemMeta) return { success: false, status: 404, error: 'ITEM_NOT_FOUND', message: `Không tìm thấy pháp bảo '${targetId}'.` };
+
+    const { data: own } = await supabase
+      .from('user_pet_items')
+      .select('id, equipped_to_pet, slot')
+      .eq('user_id', cleanId)
+      .eq('item_id', targetId)
+      .maybeSingle();
+
+    if (!own) return { success: false, status: 404, error: 'ITEM_NOT_OWNED', message: `Bạn chưa sở hữu **${itemMeta.item_name}**.` };
+
+    const { data: activePet } = await supabase
+      .from('user_pets')
+      .select('pet_type, pet_name')
+      .eq('user_id', cleanId)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle();
+
+    const targetPetType = activePet?.pet_type || 'hoa_thach_nham_nham';
+
+    // Tháo mọi món cùng slot (weapon/gem/soul) trước
+    const sameTypeIds = Object.values(EQUIPMENT_BY_ID)
+      .filter((x) => x.item_type === itemMeta.item_type)
+      .map((x) => x.item_id);
+
+    await supabase
+      .from('user_pet_items')
+      .update({ equipped_to_pet: null, slot: null })
+      .eq('user_id', cleanId)
+      .in('item_id', sameTypeIds);
+
+    await supabase
+      .from('user_pet_items')
+      .update({ equipped_to_pet: targetPetType, slot: itemMeta.item_type })
+      .eq('id', own.id);
+
+    return {
+      success: true,
+      category: 'item',
+      equipped_id: targetId,
+      slot: itemMeta.item_type,
+      equipped_to_pet: targetPetType,
+      message: `Đã trang bị **${itemMeta.item_name}** vào ô **${itemMeta.item_type.toUpperCase()}** cho **${activePet?.pet_name || targetPetType}**!`,
+    };
+  }
+
+  if (category === 'role') {
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', cleanId);
+
+    const targetRole = (userRoles || []).find((r) => r.role_id === targetId || r.role_name === targetId);
+    if (!targetRole) {
+      return { success: false, status: 404, error: 'ROLE_NOT_OWNED', message: 'Bạn chưa sở hữu Role Quyền Năng này trong túi.' };
+    }
+    if (targetRole.expires_at && new Date(targetRole.expires_at) < new Date()) {
+      return { success: false, status: 400, error: 'ROLE_EXPIRED', message: `Role **${targetRole.role_name}** đã hết hạn sử dụng.` };
+    }
+    if (targetRole.is_equipped) {
+      return { success: true, category: 'role', already_equipped: true, add_role_id: targetRole.role_id, message: `Role **${targetRole.role_name}** đang được trang bị sẵn ở slot #${targetRole.equipped_slot}.` };
+    }
+
+    const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
+    const usedSlots = new Set((userRoles || []).filter((r) => r.is_equipped && r.equipped_slot).map((r) => Number(r.equipped_slot)));
+    let freeSlot = null;
+    for (let s = 1; s <= maxSlots; s += 1) {
+      if (!usedSlots.has(s)) { freeSlot = s; break; }
+    }
+    if (!freeSlot) {
+      return {
+        success: false,
+        status: 400,
+        error: 'NO_FREE_ROLE_SLOT',
+        message: `Đã dùng hết **${maxSlots}/${maxSlots}** Slot Role của cảnh giới hiện tại. Hãy tháo bớt bằng \`/unequip\`!`,
+      };
+    }
+
+    await supabase
+      .from('user_roles')
+      .update({ is_equipped: true, equipped_slot: freeSlot })
+      .eq('id', targetRole.id);
+
+    return {
+      success: true,
+      category: 'role',
+      slot: freeSlot,
+      add_role_id: targetRole.role_id,
+      role_name: targetRole.role_name,
+      message: `Đã trang bị **${targetRole.role_name}** vào Slot #${freeSlot}/${maxSlots}!`,
+    };
+  }
+
+  if (category === 'background') {
+    const bg = BACKGROUND_BY_ID[targetId];
+    if (!bg) return { success: false, status: 404, error: 'BG_NOT_FOUND', message: `Không tìm thấy Background '${targetId}'.` };
+
+    if (bg.price > 0) {
+      const { data: ownBg } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', bg.bg_id)
+        .maybeSingle();
+      if (!ownBg || ownBg.quantity < 1) {
+        return { success: false, status: 403, error: 'BG_NOT_OWNED', message: `Bạn chưa mở khóa nền **${bg.name}**. Hãy mua trong \`/shop\`!` };
+      }
+    }
+
+    await supabase
+      .from('users')
+      .update({ background_url: bg.file, updated_at: new Date().toISOString() })
+      .eq('user_id', cleanId);
+
+    return {
+      success: true,
+      category: 'background',
+      background_url: bg.file,
+      message: `Đã đổi ảnh nền Profile & Rank sang **${bg.name}**!`,
+    };
+  }
+
+  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại trang bị phải là `item`, `role`, hoặc `background`.' };
+}
+
+export async function unequipTarget(userId, payload = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const category = String(payload.category || '').toLowerCase();
+  const targetId = String(payload.targetId || '').trim();
+
+  if (category === 'item') {
+    const query = supabase
+      .from('user_pet_items')
+      .update({ equipped_to_pet: null, slot: null })
+      .eq('user_id', cleanId);
+
+    if (['weapon', 'gem', 'soul'].includes(targetId.toLowerCase())) {
+      await query.eq('slot', targetId.toLowerCase());
+    } else {
+      await query.eq('item_id', targetId);
+    }
+
+    return {
+      success: true,
+      category: 'item',
+      message: `Đã tháo pháp bảo **${targetId}** khỏi Linh Thú xuất trận.`,
+    };
+  }
+
+  if (category === 'role') {
+    const { data: userRoles } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', cleanId)
+      .eq('is_equipped', true);
+
+    const slotNum = Number(targetId);
+    const targetRole = (userRoles || []).find((r) =>
+      r.role_id === targetId || r.role_name === targetId || (Number.isInteger(slotNum) && r.equipped_slot === slotNum));
+
+    if (!targetRole) {
+      return { success: false, status: 404, error: 'ROLE_NOT_EQUIPPED', message: 'Không tìm thấy Role đang đeo khớp yêu cầu.' };
+    }
+
+    await supabase
+      .from('user_roles')
+      .update({ is_equipped: false, equipped_slot: null })
+      .eq('id', targetRole.id);
+
+    return {
+      success: true,
+      category: 'role',
+      remove_role_id: targetRole.role_id,
+      role_name: targetRole.role_name,
+      message: `Đã tháo Role **${targetRole.role_name}** khỏi hồ sơ!`,
+    };
+  }
+
+  if (category === 'background') {
+    await supabase
+      .from('users')
+      .update({ background_url: 'default_background.png', updated_at: new Date().toISOString() })
+      .eq('user_id', cleanId);
+
+    return {
+      success: true,
+      category: 'background',
+      background_url: 'default_background.png',
+      message: 'Đã khôi phục ảnh nền Đạo Cảnh Mặc Định.',
+    };
+  }
+
+  return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại cần tháo phải là `item`, `role`, hoặc `background`.' };
+}
+
+export async function setActivePet(userId, petIdentifier) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  await ensureUserInitialized(cleanId);
+  const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
+
+  const needle = String(petIdentifier || '').trim().toLowerCase();
+  const target = (pets || []).find((p) =>
+    String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle);
+
+  if (!target) {
+    return { success: false, status: 404, error: 'PET_NOT_FOUND', message: `Bạn không sở hữu Linh Thú '${petIdentifier}'.` };
+  }
+
+  await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
+  await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', target.pet_id);
+
+  return {
+    success: true,
+    active_pet: { ...target, is_active: true },
+    message: `Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star}★)!`,
+  };
+}
+
+export async function upgradePet(userId, petIdentifier, mode = 'level') {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const { user } = await ensureUserInitialized(cleanId);
+  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+  const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
+
+  const needle = String(petIdentifier || '').trim().toLowerCase();
+  const target = needle
+    ? (pets || []).find((p) => String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle)
+    : (pets || []).find((p) => p.is_active) || (pets || [])[0];
+
+  if (!target) {
+    return { success: false, status: 404, error: 'PET_NOT_FOUND', message: 'Không tìm thấy Linh Thú để nâng cấp.' };
+  }
+
+  const baseMeta = PET_BY_TYPE[target.pet_type] || { base_atk: target.atk, base_def: target.def, base_spd: target.spd };
+
+  if (mode === 'star') {
+    const currentStar = Number(target.star || 1);
+    if (currentStar >= 10) {
+      return { success: false, status: 400, error: 'MAX_STAR', message: `**${target.pet_name}** đã đạt tối đa **10★**!` };
+    }
+    const stoneCost = currentStar;
+    const ltCost = currentStar * 200;
+    const currentBal = Number(user.linh_thach || 0);
+
+    const { data: stoneRow } = await supabase
+      .from('user_inventory')
+      .select('quantity')
+      .eq('user_id', cleanId)
+      .eq('item_id', 'pet_star_stone')
+      .maybeSingle();
+
+    const ownedStones = Number(stoneRow?.quantity || 0);
+    if (ownedStones < stoneCost || currentBal < ltCost) {
+      return {
+        success: false,
+        status: 400,
+        error: 'INSUFFICIENT_MATERIALS',
+        message: `Cần **${stoneCost} Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost} Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1}★**!`,
+      };
+    }
+
+    const nextStar = currentStar + 1;
+    const newAtk = Math.round(target.atk + baseMeta.base_atk * 0.15);
+    const newDef = Math.round(target.def + baseMeta.base_def * 0.15);
+    const newSpd = Math.round(target.spd + baseMeta.base_spd * 0.15);
+    const newPower = newAtk * 3 + newDef * 2 + newSpd * 2 + target.level * 50;
+
+    await Promise.all([
+      supabase.from('user_inventory').update({ quantity: ownedStones - stoneCost }).eq('user_id', cleanId).eq('item_id', 'pet_star_stone'),
+      supabase.from('users').update({ linh_thach: currentBal - ltCost }).eq('user_id', cleanId),
+      supabase.from('user_pets').update({ star: nextStar, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+    ]);
+
+    return {
+      success: true,
+      mode: 'star',
+      pet_name: target.pet_name,
+      old_star: currentStar,
+      new_star: nextStar,
+      linh_thach: currentBal - ltCost,
+      power_score: newPower,
+      message: `Đột phá sao thành công! **${target.pet_name}** lên **${nextStar}★** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+    };
+  }
+
+  // mode === 'level'
+  const currentLvl = Number(target.level || 1);
+  if (currentLvl >= 100) {
+    return { success: false, status: 400, error: 'MAX_PET_LEVEL', message: `**${target.pet_name}** đã đạt cấp tối đa **Lv.100**!` };
+  }
+  const ltCost = currentLvl * 50;
+  const currentBal = Number(user.linh_thach || 0);
+  if (currentBal < ltCost) {
+    return {
+      success: false,
+      status: 400,
+      error: 'INSUFFICIENT_LINH_THACH',
+      message: `Cần **${ltCost} Linh Thạch** để nâng **${target.pet_name}** lên Lv.${currentLvl + 1} (hiện có ${currentBal}).`,
+    };
+  }
+
+  const nextLvl = currentLvl + 1;
+  const newAtk = Math.round(target.atk + Math.max(5, baseMeta.base_atk * 0.05));
+  const newDef = Math.round(target.def + Math.max(5, baseMeta.base_def * 0.05));
+  const newSpd = Math.round(target.spd + Math.max(4, baseMeta.base_spd * 0.05));
+  const newPower = newAtk * 3 + newDef * 2 + newSpd * 2 + nextLvl * 50;
+
+  await Promise.all([
+    supabase.from('users').update({ linh_thach: currentBal - ltCost }).eq('user_id', cleanId),
+    supabase.from('user_pets').update({ level: nextLvl, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+  ]);
+
+  return {
+    success: true,
+    mode: 'level',
+    pet_name: target.pet_name,
+    old_level: currentLvl,
+    new_level: nextLvl,
+    linh_thach: currentBal - ltCost,
+    power_score: newPower,
+    message: `Thăng cấp thành công! **${target.pet_name}** đạt **Lv.${nextLvl}** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+  };
+}
