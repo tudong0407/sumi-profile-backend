@@ -494,29 +494,30 @@ export function buildShopCmd() {
   gb.styledBtn('btn_role_30d', 'shop_role_prev_edit', { label: 'Thuê 30 Ngày', style: 'PRIMARY', emojiKey: 'su_linhthach', row: '1', weight: '2' }, { x: 260, y: 2340 });
   gb.styledBtn('btn_role_perm', 'shop_role_prev_edit', { label: 'Mua Vĩnh Viễn', style: 'SUCCESS', emojiKey: 'su_winner_trophy', row: '1', weight: '3' }, { x: 480, y: 2340 });
 
-  apiAction(gb, 'api_role_7d', 'sh_rbuy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"7d"}', { x: 40, y: 2520 });
-  apiAction(gb, 'api_role_30d', 'sh_rbuy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"30d"}', { x: 260, y: 2520 });
-  apiAction(gb, 'api_role_perm', 'sh_rbuy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"permanent"}', { x: 480, y: 2520 });
-  gb.link('btn_role_7d', 'api_role_7d');
-  gb.link('btn_role_30d', 'api_role_30d');
-  gb.link('btn_role_perm', 'api_role_perm');
+  gb.act('set_role_7d', 'set_unique_variable', { reference: 'shop_role_dur', value: '7d', success_handles: false }, { x: 40, y: 2520 });
+  gb.act('set_role_30d', 'set_unique_variable', { reference: 'shop_role_dur', value: '30d', success_handles: false }, { x: 260, y: 2520 });
+  gb.act('set_role_perm', 'set_unique_variable', { reference: 'shop_role_dur', value: 'permanent', success_handles: false }, { x: 480, y: 2520 });
+  gb.link('btn_role_7d', 'set_role_7d');
+  gb.link('btn_role_30d', 'set_role_30d');
+  gb.link('btn_role_perm', 'set_role_perm');
+
+  apiAction(gb, 'api_role_buy', 'sh_rbuy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"{shop_role_dur}"}', { x: 260, y: 2700 });
+  gb.link('set_role_7d', 'api_role_buy');
+  gb.link('set_role_30d', 'api_role_buy');
+  gb.link('set_role_perm', 'api_role_buy');
 
   embedMsg(gb, 'shop_role_buy_msg', {
     title: `${em('su_medal_role')} MUA / THUÊ ROLE QUYỀN NĂNG`,
     description: '{sh_rbuy_res.response.message}',
     color: '#10b981',
-  }, { x: 260, y: 2700 });
-  gb.link('api_role_7d', 'shop_role_buy_msg');
-  gb.link('api_role_30d', 'shop_role_buy_msg');
-  gb.link('api_role_perm', 'shop_role_buy_msg');
+  }, { x: 260, y: 2880 });
+  gb.link('api_role_buy', 'shop_role_buy_msg');
 
-  gb.act('sh_role_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 260, y: 2880 });
+  gb.act('sh_role_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 260, y: 3060 });
   gb.link('shop_role_buy_msg', 'sh_role_wait');
 
-  const cAddRole = gb.cmp('sh_has_role', '{sh_rbuy_res.response.add_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 260, y: 3060 });
+  const cAddRole = gb.cmp('sh_has_role', '{sh_rbuy_res.response.add_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 260, y: 3240 });
   gb.link('sh_role_wait', cAddRole.condId);
 
   gb.act('sh_add_role', 'role_add', {
@@ -525,7 +526,7 @@ export function buildShopCmd() {
     success_handles: false,
     target: { variable: '{user_id}' },
     server_id: '',
-  }, { x: 100, y: 3260 });
+  }, { x: 100, y: 3440 });
   gb.link(cAddRole.yes, 'sh_add_role');
 
   return gb.elements();
@@ -582,21 +583,23 @@ export function buildMarryCmd() {
   gb.styledBtn('btn_marry_accept', 'msg_marry_prop', { label: 'Đồng Ý Kết Hôn', style: 'SUCCESS', emojiKey: 'su_ring_thanthoai', row: '1', weight: '1' }, { x: -660, y: 1200 });
   gb.styledBtn('btn_marry_reject', 'msg_marry_prop', { label: 'Từ Chối', style: 'DANGER', row: '1', weight: '2' }, { x: -380, y: 1200 });
 
-  apiAction(gb, 'm_acc_api', 'm_resp_res', 'POST', `${BACKEND_BASE}/api/marry/respond`,
-    '{"responderId":"{user_id}","decision":"accept"}', { x: -660, y: 1380 });
-  apiAction(gb, 'm_rej_api', 'm_resp_res', 'POST', `${BACKEND_BASE}/api/marry/respond`,
-    '{"responderId":"{user_id}","decision":"reject"}', { x: -380, y: 1380 });
-  gb.link('btn_marry_accept', 'm_acc_api');
-  gb.link('btn_marry_reject', 'm_rej_api');
+  gb.act('set_m_acc', 'set_unique_variable', { reference: 'marry_decision', value: 'accept', success_handles: false }, { x: -660, y: 1380 });
+  gb.act('set_m_rej', 'set_unique_variable', { reference: 'marry_decision', value: 'reject', success_handles: false }, { x: -380, y: 1380 });
+  gb.link('btn_marry_accept', 'set_m_acc');
+  gb.link('btn_marry_reject', 'set_m_rej');
+
+  apiAction(gb, 'm_resp_api', 'm_resp_res', 'POST', `${BACKEND_BASE}/api/marry/respond`,
+    '{"responderId":"{user_id}","decision":"{marry_decision}"}', { x: -520, y: 1560 });
+  gb.link('set_m_acc', 'm_resp_api');
+  gb.link('set_m_rej', 'm_resp_api');
 
   embedMsg(gb, 'msg_marry_resp', {
     title: `${em('su_sparkle')} HỒI ÂM LỜI CẦU HÔN`,
     description: '{m_resp_res.response.message}',
     color: '#f43f5e',
     imageUrl: '{m_resp_res.response.image_url}',
-  }, { x: -520, y: 1580 });
-  gb.link('m_acc_api', 'msg_marry_resp');
-  gb.link('m_rej_api', 'msg_marry_resp');
+  }, { x: -520, y: 1740 });
+  gb.link('m_resp_api', 'msg_marry_resp');
 
   // Upgrade Ring
   apiAction(gb, 'm_upd_api', 'm_upd_res', 'POST', `${BACKEND_BASE}/api/marry/upgrade-ring`,
@@ -737,6 +740,18 @@ const TARGETS = [
   { name: 'giatoc', build: buildGiatocCmd },
 ];
 
+function assertUniqueApiActionNames(elements, label) {
+  const seen = new Set();
+  for (const el of elements) {
+    if (el.type === 'action' && el.data?.data?.type === 'api_action') {
+      const n = String(el.data.data.name || '').trim();
+      if (!n) throw new Error(`Empty api_action name in ${label} (${el.id})`);
+      if (seen.has(n)) throw new Error(`Duplicate api_action name "${n}" in ${label}`);
+      seen.add(n);
+    }
+  }
+}
+
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const filterArg = process.argv.find((a) => a.startsWith('--only='));
@@ -746,6 +761,7 @@ async function main() {
     if (onlyNames && !onlyNames.has(t.name)) continue;
     const els = t.build();
     assertAcyclicDAG(els, t.name);
+    assertUniqueApiActionNames(els, t.name);
     const errs = validateGraph(els);
     if (errs.length) throw new Error(`Validation failed for ${t.name}: ${errs.join(', ')}`);
     console.log(`[Offline OK] command "${t.name}": ${els.length} elements (DAG acyclic + schema valid)`);
