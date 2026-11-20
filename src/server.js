@@ -618,7 +618,7 @@ app.get('/api/pet/:userId', async (req, res) => {
   try {
     const inv = await getInventory(req.params.userId);
     if (!inv.success) return res.status(inv.status || 400).json(inv);
-    return res.json({ success: true, user: inv.user, pets: inv.pets });
+    return res.json({ success: true, user: inv.user, pets: inv.pets, summary_pets: inv.summary_pets });
   } catch (err) {
     console.error('[Server] /api/pet error:', err);
     return res.status(500).json({ success: false, error: 'PET_LIST_FAILED', message: err.message });

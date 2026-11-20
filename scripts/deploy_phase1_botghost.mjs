@@ -180,7 +180,7 @@ export function buildRollCmd() {
 
   embedMsg(gb, 'rl_edit', {
     title: `${em('su_sparkle')} KẾT QUẢ TRIỆU HỒI GACHA`,
-    description: `${em('su_gacha_dice')} **Bể quay**: \`{option_loai}\` (\`{roll_res.response.count}\` lượt • Chi phí \`{roll_res.response.cost}\` ${em('su_linhthach')})\n${em('su_linhthach')} **Số dư còn lại**: \`{roll_res.response.linh_thach}\` Linh Thạch\n${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+{roll_res.response.refund_linh_thach}\` Linh Thạch • \`+{roll_res.response.bonus_star_stones}\` Tinh Thạch Sao\n${em('su_sparkle')} **Kết quả**:\n{roll_res.response.results.each[• {emoji} **{name}** ({rarity}) — \`{kind}\`]}\n{roll_res.response.message}`,
+    description: `${em('su_gacha_dice')} **Bể quay**: \`{option_loai}\` (\`{roll_res.response.count}\` lượt • Chi phí \`{roll_res.response.cost}\` ${em('su_linhthach')})\n${em('su_linhthach')} **Số dư còn lại**: \`{roll_res.response.linh_thach_fmt}\` Linh Thạch\n${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+{roll_res.response.refund_linh_thach}\` Linh Thạch • \`+{roll_res.response.bonus_star_stones}\` Tinh Thạch Sao\n${em('su_sparkle')} **Kết quả**:\n{roll_res.response.summary_results}\n{roll_res.response.message}`,
     color: '#f59e0b',
     target: { editId: 'rl_ack' },
     action_id: 'rl_ack',
@@ -195,7 +195,7 @@ export function buildInvCmd() {
   gb.errorHandlerWait();
 
   embedMsg(gb, 'inv_ack', {
-    title: `${em('su_pin_sigil')} Đang mở Túi Trữ Vật...`,
+    title: `${em('su_sparkle')} Đang mở Túi Trữ Vật...`,
     description: 'Đang kiểm kê kho báu của {user_displayName}...',
     color: '#38bdf8',
     editId: 'inv_ack',
@@ -214,8 +214,8 @@ export function buildInvCmd() {
   gb.link('inv_ack', 'inv_api');
 
   embedMsg(gb, 'inv_edit', {
-    title: `${em('su_pin_sigil')} TÚI TRỮ VẬT CỦA {inv_res.response.user.username}`,
-    description: `${em('su_linhthach')} **Linh Thạch**: \`{inv_res.response.user.linh_thach}\` • ${em('su_frame_token')} **Nền hiện tại**: \`{inv_res.response.user.background_url}\`\n\n${em('su_pet_paw')} **Linh Thú sở hữu**:\n{inv_res.response.pets.each[• {icon} **{pet_name}** (\`{pet_type}\`) — Lv.{level} • {star} Sao]}\n\n${em('su_crossed_swords')} **Pháp Bảo Loadout**:\n{inv_res.response.equipment_items.each[• {icon} **{item_name}** (\`{item_id}\`)]}\n\n${em('su_medal_role')} **Role Quyền Năng**:\n{inv_res.response.roles.each[• {icon} {role_name} (\`{role_id}\`)]}\n\n${em('su_pin_sigil')} **Vật Phẩm & Mở Khóa**:\n{inv_res.response.consumables_and_unlocks.each[• {icon} **{display_name}** (\`{item_id}\`) × **{quantity}**]}`,
+    title: `${em('su_sparkle')} TÚI TRỮ VẬT CỦA {inv_res.response.user.username}`,
+    description: `${em('su_linhthach')} **Linh Thạch**: \`{inv_res.response.user.linh_thach_fmt}\` • ${em('su_frame_token')} **Nền hiện tại**: \`{inv_res.response.user.background_name}\`\n\n${em('su_pet_paw')} **Linh Thú sở hữu**:\n{inv_res.response.summary_pets}\n\n${em('su_crossed_swords')} **Pháp Bảo Loadout**:\n{inv_res.response.summary_items}\n\n${em('su_realm_star')} **Role Quyền Năng**:\n{inv_res.response.summary_roles}\n\n${em('su_star_stone')} **Vật Phẩm & Mở Khóa**:\n{inv_res.response.summary_consumables}`,
     color: '#a855f7',
     target: { editId: 'inv_ack' },
     action_id: 'inv_ack',
@@ -366,7 +366,7 @@ export function buildPetCmd() {
   gb.link(bList, 'p_list_api');
   embedMsg(gb, 'p_list_msg', {
     title: `${em('su_pet_paw')} KHO LINH THÚ CỦA {pet_list_res.response.user.username}`,
-    description: '{pet_list_res.response.pets.each[• {icon} **{pet_name}** (`{pet_type}`) — Lv.{level} • {star} Sao • Chiến lực `{power_score}`]}',
+    description: '{pet_list_res.response.summary_pets}',
     color: '#ec4899',
   }, { x: 600, y: 800 });
   gb.link('p_list_api', 'p_list_msg');
@@ -386,7 +386,11 @@ const TARGETS = [
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  const filterArg = process.argv.find((a) => a.startsWith('--only='));
+  const onlyNames = filterArg ? new Set(filterArg.slice('--only='.length).split(',')) : null;
+
   for (const t of TARGETS) {
+    if (onlyNames && !onlyNames.has(t.name)) continue;
     const els = t.build();
     const errs = validateGraph(els);
     if (errs.length) throw new Error(`Validation failed for ${t.name}: ${errs.join(', ')}`);

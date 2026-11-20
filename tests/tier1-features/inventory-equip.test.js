@@ -35,6 +35,11 @@ describe('Tier 1 - Phase 1 Inventory (/inv), Equip/Unequip & Pet Upgrade (/pet)'
     assert.equal(j.pets.length, 1);
     assert.equal(j.pets[0].pet_type, 'hoa_thach_nham_nham');
     assert.equal(j.pets[0].is_active, true);
+    assert.equal(typeof j.summary_pets, 'string');
+    assert.ok(j.summary_pets.length > 0);
+    assert.equal(typeof j.summary_items, 'string');
+    assert.equal(typeof j.summary_roles, 'string');
+    assert.equal(typeof j.summary_consumables, 'string');
   });
 
   it('2. POST /api/equip & /api/unequip supports items, roles, and unlocked backgrounds', async () => {

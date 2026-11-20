@@ -501,6 +501,18 @@ export async function rollGacha(userId, options = {}) {
       await addInventoryQuantity(cleanId, 'pet_star_stone', 'consumable', bonusStarStones);
     }
 
+    const kindLabelMap = {
+      new_item: 'Mới',
+      new_pet: 'Mới',
+      duplicate_item: 'Trùng lặp',
+      duplicate_pet: 'Trùng lặp',
+      refund: 'Bồi thường',
+    };
+    const resultLines = results.map((r) => `• ${r.emoji || em('su_sparkle')} **${r.name}** (${r.rarity}) — ${kindLabelMap[r.kind] || r.kind}`);
+    const summaryResults = resultLines.length
+      ? resultLines.join('\n').slice(0, 1500)
+      : '• Không có kết quả triệu hồi.';
+
     return {
       success: true,
       pool,
@@ -510,7 +522,9 @@ export async function rollGacha(userId, options = {}) {
       refund_linh_thach: refundLinhThach,
       bonus_star_stones: bonusStarStones,
       linh_thach: finalBalance,
+      linh_thach_fmt: finalBalance.toLocaleString('vi-VN'),
       results,
+      summary_results: summaryResults,
       message: `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${pool === 'pet' ? 'Linh Thú' : 'Pháp Bảo'}**! ${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim(),
     };
   });

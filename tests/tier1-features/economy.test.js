@@ -120,6 +120,8 @@ describe('Tier 1 - Phase 1 Economy (/daily, /doiqua demote, /roll gacha)', () =>
     assert.equal(j.success, true);
     assert.equal(j.cost, 50);
     assert.equal(j.results.length, 1);
+    assert.equal(typeof j.summary_results, 'string');
+    assert.ok(j.summary_results.length > 0);
     assert.ok(j.linh_thach >= 150);
   });
 });

@@ -8,6 +8,7 @@ import { supabase } from '../config/supabase.js';
 import {
   EQUIPMENT_BY_ID,
   PET_BY_TYPE,
+  BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   SHOP_CONSUMABLES,
   MARRY_RING_BY_ID,
@@ -63,7 +64,7 @@ export async function getInventory(userId, options = {}) {
 
   const roles = (rolesRes.data || []).map((r) => ({
     ...r,
-    icon: em('su_medal_role'),
+    icon: em('su_realm_star'),
   }));
 
   const consumables = (invRes.data || []).map((inv) => {
@@ -78,6 +79,34 @@ export async function getInventory(userId, options = {}) {
     };
   });
 
+  const capLines = (lines, emptyText, maxItems = 12) => {
+    if (!lines.length) return emptyText;
+    const shown = lines.slice(0, maxItems);
+    const extra = lines.length - shown.length;
+    return extra > 0 ? `${shown.join('\n')}\n• *... và ${extra} mục khác*` : shown.join('\n');
+  };
+
+  const bgRaw = user.background_url || 'default_background.png';
+  const bgObj = BACKGROUND_BY_ID[bgRaw] || BACKGROUND_CATALOG.find((b) => b.file === bgRaw || `assets/${b.file}` === bgRaw);
+  const bgName = bgObj?.name || (bgRaw.includes('celestial_palace_pink') ? 'Thiên Cung Cửu Vĩ' : 'Đạo Cảnh Mặc Định');
+
+  const summaryPets = capLines(
+    pets.map((p) => `• ${p.icon} **${p.pet_name}** (\`${p.pet_type}\`) — Lv.${p.level} • ${p.star} Sao${p.is_active ? ' *(Đang xuất trận)*' : ''}`),
+    '• Chưa có Linh Thú nào.',
+  );
+  const summaryItems = capLines(
+    items.map((it) => `• ${it.icon} **${it.item_name}** (\`${it.item_id}\`)${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`),
+    '• Chưa có Pháp Bảo nào.',
+  );
+  const summaryRoles = capLines(
+    roles.map((r) => `• ${r.icon} ${r.role_name} (\`${r.role_id}\`)${r.is_equipped ? ` *(Slot #${r.equipped_slot})*` : ''}`),
+    '• Chưa có Role Quyền Năng nào.',
+  );
+  const summaryConsumables = capLines(
+    consumables.map((c) => `• ${c.icon} **${c.display_name}** (\`${c.item_id}\`) × **${c.quantity}**`),
+    '• Chưa có vật phẩm mở khóa nào.',
+  );
+
   return {
     success: true,
     user: {
@@ -85,14 +114,20 @@ export async function getInventory(userId, options = {}) {
       username: user.username,
       level: user.level,
       linh_thach: Number(user.linh_thach || 0),
+      linh_thach_fmt: Number(user.linh_thach || 0).toLocaleString('vi-VN'),
       max_role_slots: getMaxRoleSlotsByLevel(user.level || 1),
-      background_url: user.background_url || 'default_background.png',
+      background_url: bgRaw,
+      background_name: bgName,
       marry_ring_id: user.marry_ring_id || null,
     },
     pets,
     equipment_items: items,
     roles,
     consumables_and_unlocks: consumables,
+    summary_pets: summaryPets,
+    summary_items: summaryItems,
+    summary_roles: summaryRoles,
+    summary_consumables: summaryConsumables,
   };
 }
 
