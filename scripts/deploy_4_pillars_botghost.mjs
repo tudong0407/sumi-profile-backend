@@ -736,7 +736,7 @@ export function buildChatExpEvent() {
     request_options: {
       method: 'POST',
       url: `${BACKEND_BASE}/api/exp/chat`,
-      headers: [{ key: 'Content-Type', value: 'application/json' }],
+      headers: [{ key: 'Content-Type', value: 'application/json' }, { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' }],
       params: [],
       body: [],
       rawBody: '{"userId":"{event_user_id}","username":"{user_displayName}","fallbackUsername":"{event_user_name}","avatarUrl":"{event_user_avatar}","roleIds":"{user_role_ids[{event_user_id}]},{user_role_ids}","isBot":"{isBot}"}',
@@ -807,7 +807,7 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
     request_options: {
       method: 'POST',
       url: `${BACKEND_BASE}/api/exp/voice`,
-      headers: [{ key: 'Content-Type', value: 'application/json' }],
+      headers: [{ key: 'Content-Type', value: 'application/json' }, { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' }],
       params: [],
       body: [],
       rawBody: `{"userId":"{event_user_id}","username":"{event_user_display_name}","fallbackUsername":"{event_user_name}","avatarUrl":"{user_icon}","roleIds":"{user_role_ids[{event_user_id}]},{user_role_ids}","isBot":"{isBot}","action":"${action}"}`,
@@ -851,6 +851,41 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
   return gb.elements();
 }
 
+export function buildRenderKeepAliveEvent() {
+  const gb = new ExtendedGraphBuilder();
+  gb.rootEvent('SuMi — Render Keep-Alive (12m)', 'timedEvent', {
+    timer_id: 'sumirenderkeepalive12m',
+    guild_id: SUMI_GUILD_ID,
+  });
+  gb.errorHandlerWait();
+
+  gb.act('ka_ping_api', 'api_action', {
+    name: 'keepalive_res',
+    ephemeral: false,
+    request_options: {
+      method: 'GET',
+      url: `${BACKEND_BASE}/health`,
+      headers: [],
+      params: [],
+      body: [],
+      rawBody: '',
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        failOnError: false,
+      },
+    },
+    success_handles: false,
+  }, { x: 0, y: 240 });
+  gb.link('root', 'ka_ping_api');
+
+  return gb.elements();
+}
+
 const TARGETS = [
   { mode: 'command', name: 'profile', build: buildProfileCmd },
   { mode: 'command', name: 'rank', build: buildRankCmd },
@@ -860,6 +895,7 @@ const TARGETS = [
   { mode: 'event', name: 'SuMi — Voice EXP (Join)', build: () => buildVoiceExpEvent('SuMi — Voice EXP (Join)', 'voiceChannelJoin', 'join') },
   { mode: 'event', name: 'SuMi — Voice EXP (Leave)', build: () => buildVoiceExpEvent('SuMi — Voice EXP (Leave)', 'voiceChannelLeave', 'leave') },
   { mode: 'event', name: 'SuMi — Voice EXP (Switch)', build: () => buildVoiceExpEvent('SuMi — Voice EXP (Switch)', 'voiceChannelSwitch', 'switch') },
+  { mode: 'event', name: 'SuMi — Render Keep-Alive (12m)', build: buildRenderKeepAliveEvent },
 ];
 
 async function main() {

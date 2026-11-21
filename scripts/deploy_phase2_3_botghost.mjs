@@ -134,7 +134,9 @@ function apiAction(gb, id, name, method, url, rawBody = '', pos = { x: 0, y: 0 }
     request_options: {
       method,
       url,
-      headers: isPost ? [{ key: 'Content-Type', value: 'application/json' }] : [],
+      headers: isPost
+        ? [{ key: 'Content-Type', value: 'application/json' }, { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' }]
+        : [],
       params: [],
       body: [],
       rawBody,

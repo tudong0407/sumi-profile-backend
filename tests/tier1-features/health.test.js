@@ -68,4 +68,38 @@ describe('Tier 1 - Health & Root Metadata Endpoints', () => {
     assert.ok('supabase_connected' in json, 'Response must have supabase_connected property');
     assert.equal(typeof json.supabase_connected, 'boolean', 'supabase_connected must be boolean');
   });
+
+  it('6. requireBackendApiKey enforces x-api-key on write routes while keeping /health public', async () => {
+    const prevKey = process.env.BACKEND_API_KEY;
+    process.env.BACKEND_API_KEY = 'test-secret-key-sumi-123';
+    try {
+      const noKeyRes = await testServer.fetch('/api/economy/daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      assert.equal(noKeyRes.status, 401);
+
+      const wrongKeyRes = await testServer.fetch('/api/economy/daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'wrong-key' },
+        body: JSON.stringify({}),
+      });
+      assert.equal(wrongKeyRes.status, 401);
+
+      const validKeyRes = await testServer.fetch('/api/economy/daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': 'test-secret-key-sumi-123' },
+        body: JSON.stringify({}),
+      });
+      assert.notEqual(validKeyRes.status, 401);
+      assert.equal(validKeyRes.status, 400);
+
+      const healthRes = await testServer.fetch('/health');
+      assert.equal(healthRes.status, 200);
+    } finally {
+      if (prevKey === undefined) delete process.env.BACKEND_API_KEY;
+      else process.env.BACKEND_API_KEY = prevKey;
+    }
+  });
 });
