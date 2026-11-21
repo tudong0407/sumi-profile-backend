@@ -14,8 +14,32 @@ import {
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
+import { normalizeEnchantGrade, ENCHANT_GRADES } from '../data/catalog.js';
 
 const RENDER_SCALE = 2;
+
+function drawProfileGradeBadge(ctx, gradeBadges, rawGrade, x, y, size = 18) {
+  const grade = normalizeEnchantGrade(rawGrade || 'D');
+  const img = gradeBadges?.[grade] || null;
+  if (img) {
+    ctx.drawImage(img, x, y, size, size);
+    return;
+  }
+  const meta = ENCHANT_GRADES[grade] || ENCHANT_GRADES.D;
+  ctx.save();
+  drawRoundRect(ctx, x, y, size, size, 4);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+  ctx.fill();
+  ctx.strokeStyle = meta.color;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.fillStyle = meta.color;
+  ctx.font = `bold ${Math.round(size * 0.62)}px ${FONT_FAMILY}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(grade, x + size / 2, y + size / 2 + 0.5);
+  ctx.restore();
+}
 
 /**
  * Render thẻ Profile Tiên Giới SuMi Family Full HD+ (2000 x 1000 px, 2x High-DPI)
@@ -97,6 +121,7 @@ export async function renderProfileCard(data, options = {}) {
   const [
     bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg,
     icoClan, icoRing, icoLinhThach, icoPaw, icoPetMini, icoFox, icoBolt, icoSwords, icoShield, icoSparkle, icoGemSlot,
+    gD, gC, gB, gA, gS,
   ] = await Promise.all([
     loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
     loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
@@ -115,7 +140,13 @@ export async function renderProfileCard(data, options = {}) {
     loadBadgeImage('badges/su_shield_def.png'),
     loadBadgeImage('badges/su_sparkle.png'),
     loadBadgeImage('badges/su_linhthach.png'),
+    loadBadgeImage('badges/grade_d.png'),
+    loadBadgeImage('badges/grade_c.png'),
+    loadBadgeImage('badges/grade_b.png'),
+    loadBadgeImage('badges/grade_a.png'),
+    loadBadgeImage('badges/grade_s.png'),
   ]);
+  const gradeBadges = { D: gD, C: gC, B: gB, A: gA, S: gS };
 
   // ============================================================================
   // LỚP 1: HÌNH NỀN (BACKGROUND - BẦU TRỜI TIÊN GIỚI CỬU VĨ HỒ)
@@ -685,6 +716,9 @@ export async function renderProfileCard(data, options = {}) {
     ctx.fillText(starStr, starPillX + starPillW / 2, starPillY + 9);
     ctx.textAlign = 'left';
 
+    // 4. Huy hiệu Phẩm Chất Khắc Ấn Pet (D -> S)
+    drawProfileGradeBadge(ctx, gradeBadges, profile.pet.enchant_grade || 'D', starPillX + starPillW + 6, elemPillY - 1, 20);
+
     // Kỹ năng HAX Lật Kèo (HAX Skill Badge — tự co cỡ chữ, không cắt cụt)
     const haxName = profile.pet.hax_skill || 'Tuyệt Kỹ Phá Cách (HAX)';
     ctx.save();
@@ -874,6 +908,7 @@ export async function renderProfileCard(data, options = {}) {
             font: `bold 9.5px ${FONT_FAMILY}`,
             fillStyle: colors.text,
           });
+          drawProfileGradeBadge(ctx, gradeBadges, item.enchant_grade || 'D', thumbX + thumbSize - 11, thumbY + thumbSize - 11, 16);
 
           // Tên đầy đủ 1 dòng duy nhất, tự thu nhỏ cỡ chữ vừa khít slotW - 10 (tuyệt đối không cắt cụt, không xuống dòng)
           drawAutoFitSingleLineText(ctx, cleanName, sx + slotW / 2, sy + 52, slotW - 10, {
@@ -892,6 +927,7 @@ export async function renderProfileCard(data, options = {}) {
             font: `bold 9.5px ${FONT_FAMILY}`,
             fillStyle: colors.text,
           });
+          drawProfileGradeBadge(ctx, gradeBadges, item.enchant_grade || 'D', sx + slotW - 21, sy + 5, 16);
           drawAutoFitSingleLineText(ctx, cleanName, sx + slotW / 2, sy + 46, slotW - 10, {
             maxFont: 10.5,
             minFont: 6.0,

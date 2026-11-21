@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { loadImage } from '@napi-rs/canvas';
 import { createTestServer } from '../helpers/testServer.js';
 import { FIXTURE_USERS, MOCK_ITEMS } from '../helpers/fixtures.js';
+import { markUserAckedInCache, clearUpdateGateCache } from '../../src/services/updateGateService.js';
 
 function assertWebpValid(buf, expectedWidth, expectedHeight) {
   assert.ok(buf && buf.length >= 16, 'WebP buffer must exist');
@@ -19,14 +20,18 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
   let testServer;
 
   before(async () => {
+    markUserAckedInCache(FIXTURE_USERS.fuyumi.userId);
+    markUserAckedInCache(FIXTURE_USERS.hanabiraMei.userId);
     testServer = await createTestServer();
   });
 
   after(async () => {
+    clearUpdateGateCache(FIXTURE_USERS.fuyumi.userId);
+    clearUpdateGateCache(FIXTURE_USERS.hanabiraMei.userId);
     if (testServer) await testServer.close();
   });
 
-  it('1. 1-shot battle generates 2 adaptive frames (1000x500 mid -> 2000x1000 final WebP) and logs by channelId', async () => {
+  it('1. 1-shot battle generates 2 adaptive frames (800x400 mid -> 1400x700 final WebP) and logs by channelId', async () => {
     const channelId = '1466390891399876668';
     const simRes = await testServer.fetch('/api/battle/simulate', {
       method: 'POST',
@@ -48,18 +53,21 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     assert.ok(json.frame2Url?.endsWith(`/api/battle/report/${json.battleId}/2.webp`));
     assert.ok(json.finalImageWebpUrl?.endsWith(`/api/battle/report/${json.battleId}/2.webp`));
 
+    const f1First = await testServer.fetch(`/api/battle/report/${json.battleId}/1.webp`);
+    assert.equal(f1First.status, 200);
+    assert.ok(f1First.headers.get('content-type')?.includes('image/webp'));
+    await assertWebpValid(Buffer.from(await f1First.arrayBuffer()), 800, 400);
+
     const t0 = Date.now();
     const f1Res = await testServer.fetch(`/api/battle/report/${json.battleId}/1.webp`);
     const f1Ms = Date.now() - t0;
     assert.equal(f1Res.status, 200);
-    assert.ok(f1Res.headers.get('content-type')?.includes('image/webp'));
-    await assertWebpValid(Buffer.from(await f1Res.arrayBuffer()), 1000, 500);
-    assert.ok(f1Ms < 200, `Expected RAM-cached frame 1 under 200ms, got ${f1Ms}ms`);
+    assert.ok(f1Ms < 100, `Expected RAM-cached frame 1 under 100ms, got ${f1Ms}ms`);
 
     const f2Res = await testServer.fetch(`/api/battle/report/${json.battleId}/2.webp`);
     assert.equal(f2Res.status, 200);
     assert.ok(f2Res.headers.get('content-type')?.includes('image/webp'));
-    await assertWebpValid(Buffer.from(await f2Res.arrayBuffer()), 2000, 1000);
+    await assertWebpValid(Buffer.from(await f2Res.arrayBuffer()), 1400, 700);
 
     // Logs lookup via channelId, userId, and battleId
     const logByCh = await testServer.fetch('/api/battle/logs', {
@@ -76,7 +84,7 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     assert.ok(logJson.description.includes('Diễn Biến Chi Tiết'));
   });
 
-  it('2. 5+ turn battle generates 3 adaptive frames (1000x500 -> 1000x500 -> 2000x1000) cleanly', async () => {
+  it('2. 5+ turn battle generates 3 adaptive frames (800x400 -> 800x400 -> 1400x700) cleanly', async () => {
     const tankA = {
       user_id: '900000000000000011',
       username: 'Đấu Sĩ Thanh Long',
@@ -141,9 +149,9 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     assert.equal(r1.status, 200);
     assert.equal(r2.status, 200);
     assert.equal(r3.status, 200);
-    await assertWebpValid(Buffer.from(await r1.arrayBuffer()), 1000, 500);
-    await assertWebpValid(Buffer.from(await r2.arrayBuffer()), 1000, 500);
-    await assertWebpValid(Buffer.from(await r3.arrayBuffer()), 2000, 1000);
+    await assertWebpValid(Buffer.from(await r1.arrayBuffer()), 800, 400);
+    await assertWebpValid(Buffer.from(await r2.arrayBuffer()), 800, 400);
+    await assertWebpValid(Buffer.from(await r3.arrayBuffer()), 1400, 700);
   });
 
   it('3. Profile, Rank, and Wiki endpoints serve valid WebP when requested with .webp', async () => {

@@ -151,3 +151,17 @@ export function levelMilestoneEmojiKey(level) {
 export function levelMilestoneEmoji(level, fallback = '') {
   return em(levelMilestoneEmojiKey(level), fallback);
 }
+
+export function gradeEmojiKey(grade) {
+  const g = String(grade || 'D').trim().toUpperCase();
+  if (['D', 'C', 'B', 'A', 'S'].includes(g)) {
+    return `su_grade_${g.toLowerCase()}`;
+  }
+  return 'su_grade_d';
+}
+
+export function gradeEmoji(grade, fallback = '') {
+  const g = String(grade || 'D').trim().toUpperCase();
+  const valid = ['D', 'C', 'B', 'A', 'S'].includes(g) ? g : 'D';
+  return em(gradeEmojiKey(valid), fallback || `[${valid}]`);
+}

@@ -3,7 +3,7 @@
  * Hệ thống Kinh Tế Linh Thạch:
  * - /daily: Điểm danh nhận 40–60 Linh Thạch + Streak 7 ngày (theo ngày UTC+7).
  * - /doiqua: Phế Tu Vi Đổi Linh Bảo (1.000 EXP -> 10 Linh Thạch), CHO PHÉP TỤT CẤP đến tối thiểu Lv.1, 0 EXP.
- * - /roll: Gacha Pháp Bảo / Linh Thú (50 Linh Thạch/lượt, 450/10 lượt, 60/25/14/1%, khóa 9 Thần Thoại Độc Nhất).
+ * - /roll: Gacha Pháp Bảo / Linh Thú / Role (50 Linh Thạch/lượt, 450/10 lượt, 60.5/25/14/0.5%, khóa 9 Thần Thoại Độc Nhất).
  */
 
 import { supabase } from '../config/supabase.js';
@@ -17,6 +17,7 @@ import {
   GACHA_ROLE_CATALOG,
   ROLE_GACHA_DURATION_TIERS,
   getClanLevelConfig,
+  rollDefaultEnchantGrade,
 } from '../data/catalog.js';
 import {
   em,
@@ -25,6 +26,7 @@ import {
   itemEmoji,
   petEmoji,
   realmEmoji,
+  gradeEmoji,
 } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
@@ -36,6 +38,7 @@ import {
   ROLE_PERKS_MAP,
   computeRoleBuffTotals,
 } from './profileService.js';
+import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
 
 export const DAILY_BASE_MIN = 40;
 export const DAILY_BASE_MAX = 60;
@@ -300,9 +303,9 @@ export async function convertExpToLinhThach(userId, amountExp, options = {}) {
 
 function rollRarityByRate(rng = Math.random) {
   const r = rng() * 100;
-  if (r < 1.0) return 'mythic';
-  if (r < 15.0) return 'epic';
-  if (r < 40.0) return 'rare';
+  if (r < 0.5) return 'mythic';
+  if (r < 14.5) return 'epic';
+  if (r < 39.5) return 'rare';
   return 'common';
 }
 
@@ -618,6 +621,7 @@ export async function rollGacha(userId, options = {}) {
             bonus_star_stones: dupStone,
           });
         } else {
+          const rolledGrade = rollDefaultEnchantGrade(rng);
           await supabase.from('user_pet_items').insert({
             user_id: cleanId,
             item_id: picked.item_id,
@@ -625,10 +629,17 @@ export async function rollGacha(userId, options = {}) {
             slot: null,
             source: 'gacha',
             paid_price: 0,
+            enchant_grade: rolledGrade,
+            enchant_pity: 0,
           });
+          if (picked.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(picked.item_id)) {
+            invalidateUniqueItemCard(picked.item_id);
+          }
           results.push({
             kind: 'new_item',
             emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(rolledGrade),
+            enchant_grade: rolledGrade,
             item_id: picked.item_id,
             name: picked.item_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -660,6 +671,7 @@ export async function rollGacha(userId, options = {}) {
             bonus_star_stones: dupStone,
           });
         } else {
+          const rolledGrade = rollDefaultEnchantGrade(rng);
           await supabase.from('user_pets').insert({
             user_id: cleanId,
             pet_name: picked.pet_name,
@@ -676,10 +688,14 @@ export async function rollGacha(userId, options = {}) {
             is_active: false,
             source: 'gacha',
             paid_price: 0,
+            enchant_grade: rolledGrade,
+            enchant_pity: 0,
           });
           results.push({
             kind: 'new_pet',
             emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(rolledGrade),
+            enchant_grade: rolledGrade,
             pet_type: picked.pet_type,
             name: picked.pet_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -712,7 +728,7 @@ export async function rollGacha(userId, options = {}) {
       duplicate_role_refund: 'Đã Vĩnh Viễn (Hoàn Quà)',
       refund: 'Bồi thường',
     };
-    const resultLines = results.map((r) => `• ${r.emoji || em('su_sparkle')} **${r.name}** (${r.rarity}) — ${kindLabelMap[r.kind] || r.kind}`);
+    const resultLines = results.map((r) => `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${kindLabelMap[r.kind] || r.kind}`);
     const summaryResults = resultLines.length
       ? resultLines.join('\n').slice(0, 1500)
       : '• Không có kết quả triệu hồi.';

@@ -18,7 +18,7 @@ import {
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
-import { GACHA_DISMANTLE_VALUES } from './inventoryService.js';
+import { GACHA_DISMANTLE_VALUES, normalizeEmojiAwareQuery } from './inventoryService.js';
 import {
   em,
   tierEmoji,
@@ -55,7 +55,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     };
   }
 
-  const cleanMention = raw.replace(/^<@&(\d+)>$/, '$1').trim();
+  const cleanMention = normalizeEmojiAwareQuery(raw).replace(/^<@&(\d+)>$/, '$1').trim();
   const qLower = cleanMention.toLowerCase();
   const qNorm = normText(cleanMention);
   const isFuyumi = String(requesterId || '').trim() === FUYUMI_USER_ID;
@@ -105,8 +105,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const p = matchedPet;
     const isShopSold = !p.is_exclusive_fuyumi && (p.rarity_key === 'common' || p.rarity_key === 'rare');
     const shopPrice = isShopSold ? (SHOP_PET_PRICES[p.rarity_key] || 300) : null;
-    const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.5) : null;
-    const gachaDismantle = GACHA_DISMANTLE_VALUES.pet[p.rarity_key] || 15;
+    const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.25) : null;
+    const gachaDismantle = GACHA_DISMANTLE_VALUES.pet[p.rarity_key] || 5;
     const sourceText = p.is_exclusive_fuyumi
       ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
       : isShopSold
@@ -121,8 +121,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• **Nguồn sở hữu:** ${sourceText}`,
       p.is_exclusive_fuyumi
         ? '• **Phân rã (`/dismantle`):** Không thể phân rã'
-        : '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (50%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
-      `• *Dùng \`/linhthu hanh_dong:active linh_thu:${p.pet_type}\` để xuất trận.*`,
+        : '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (25%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
+      `• *Dùng \`/linhthu hanh_dong:active linh_thu:${p.pet_type}\` để xuất trận hoặc \`/enchant loai:pet muc_tieu:${p.pet_type}\` để khắc ấn.*`,
     ];
 
     return {
@@ -132,8 +132,10 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       name: p.pet_name,
       title: `${petEmoji(p.pet_type, em('su_pet_paw'))} LINH THÚ: ${p.pet_name}`,
       description: lines.join('\n'),
-      color: p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.png`,
+      color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
+      image_url: p.is_exclusive_fuyumi
+        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.2`
+        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.2`,
       footer: `SuMi Family • Tra cứu UID: ${p.pet_type}`,
     };
   }
@@ -142,8 +144,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const it = matchedItem;
     const isShopSold = it.rarity_key === 'common' || it.rarity_key === 'rare';
     const shopPrice = isShopSold ? (SHOP_EQUIPMENT_PRICES[it.rarity_key] || 250) : null;
-    const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.5) : null;
-    const gachaDismantle = GACHA_DISMANTLE_VALUES.item[it.rarity_key] || 15;
+    const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.20) : null;
+    const gachaDismantle = GACHA_DISMANTLE_VALUES.item[it.rarity_key] || 3;
     const slotLabel = it.item_type === 'weapon' ? 'Vũ Khí' : it.item_type === 'gem' ? 'Bảo Ngọc' : 'Chiến Hồn';
     const statParts = [
       it.bonus_atk ? `ATK+${it.bonus_atk}` : '',
@@ -163,8 +165,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• ${em('su_stats_chart')} **Chỉ số cộng:** \`${statParts || 'Cơ bản'}\``,
       `• ${em('su_thunder_hax')} **HAX / Nội tại${it.hax_skill ? ` (${it.hax_skill})` : ''}:** ${it.hax_description || 'Gia tăng chỉ số cơ bản.'}`,
       `• **Nguồn sở hữu:** ${sourceText}`,
-      '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (50%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
-      `• *Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị cho Pet xuất trận.*`,
+      '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (20%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
+      `• *Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị hoặc \`/enchant loai:item muc_tieu:${it.item_id}\` để khắc ấn.*`,
     ];
 
     return {
@@ -175,7 +177,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${itemEmoji(it.item_id, em('su_crossed_swords'))} PHÁP BẢO: ${it.item_name}`,
       description: lines.join('\n'),
       color: it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.2`,
       footer: `SuMi Family • Tra cứu UID: ${it.item_id}`,
     };
   }
@@ -183,20 +185,21 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   if (matchedRole) {
     const r = matchedRole;
     const isShopRole = r.rarity_key === 'common';
-    const gPerm = GACHA_DISMANTLE_VALUES.role.permanent[r.rarity_key] || 25;
-    const g30 = GACHA_DISMANTLE_VALUES.role.timed_30d[r.rarity_key] || 15;
-    const g7 = GACHA_DISMANTLE_VALUES.role.timed_7d[r.rarity_key] || 10;
+    const gPerm = GACHA_DISMANTLE_VALUES.role.permanent[r.rarity_key] || 10;
+    const gLong = GACHA_DISMANTLE_VALUES.role.timed_60d?.[r.rarity_key] || 6;
+    const g30 = GACHA_DISMANTLE_VALUES.role.timed_30d[r.rarity_key] || 5;
+    const g7 = GACHA_DISMANTLE_VALUES.role.timed_7d[r.rarity_key] || 3;
 
     const lines = [
       `• **Mã Role ID:** \`${r.role_id}\``,
       `• **Bậc Role:** ${roleTierEmoji(r.rarity_key)} **${r.rarity}**`,
       `• **Đặc quyền:** ${r.perk}`,
       isShopRole
-        ? `• **Nguồn sở hữu:** Mua tại \`/shop\` (**7d:** \`${r.prices['7d']}\` | **30d:** \`${r.prices['30d']}\` | **Vĩnh Viễn:** \`${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}) hoặc quay \`/roll loai:role\` (**60%**)`
-        : `• **Nguồn sở hữu:** Độc quyền Gacha \`/roll loai:role\` (**${r.rarity === 'Linh Phẩm' ? '25%' : r.rarity === 'Tiên Phẩm' ? '14%' : '1%'}**) *(thời hạn 7d/30d/60d/90d/2% Vĩnh Viễn)*`,
+        ? `• **Nguồn sở hữu:** Mua tại \`/shop\` (**7d:** \`${r.prices['7d']}\` | **30d:** \`${r.prices['30d']}\` | **Vĩnh Viễn:** \`${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}) hoặc quay \`/roll loai:role\` (**60.5%**)`
+        : `• **Nguồn sở hữu:** Độc quyền Gacha \`/roll loai:role\` (**${r.rarity === 'Linh Phẩm' ? '25%' : r.rarity === 'Tiên Phẩm' ? '14%' : '0.5%'}**) *(thời hạn 7d/30d/60d/90d/2% Vĩnh Viễn)*`,
       isShopRole
-        ? '• **Giá thu hồi (`/dismantle`):** ' + `Mua Shop hoàn **50%** giá thực trả *(7d: ${Math.floor(r.prices['7d'] * 0.5)} / Vĩnh viễn: ${Math.floor(r.prices.permanent * 0.5).toLocaleString('vi-VN')} LT)* • Quay Gacha: **${g7}/${g30}/${gPerm}** ${lt}`
-        : '• **Giá thu hồi (`/dismantle` từ Gacha):** ' + `7d: **${g7}** ${lt} • 30d+: **${g30}** ${lt} • Vĩnh viễn: **${gPerm}** ${lt}`,
+        ? '• **Giá thu hồi (`/dismantle`):** ' + `Mua Shop hoàn **25%** giá thực trả *(7d: ${Math.floor(r.prices['7d'] * 0.25)} / Vĩnh viễn: ${Math.floor(r.prices.permanent * 0.25).toLocaleString('vi-VN')} LT)* • Quay Gacha: **${g7}/${g30}/${gLong}/${gPerm}** ${lt}`
+        : '• **Giá thu hồi (`/dismantle` từ Gacha):** ' + `7d: **${g7}** ${lt} • 30d: **${g30}** ${lt} • 60–90d: **${gLong}** ${lt} • Vĩnh viễn: **${gPerm}** ${lt}`,
     ];
 
     return {
@@ -234,6 +237,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   if (matchedCons) {
     const c = matchedCons;
     const isTowerCard = c.item_id === 'tower_reset_card';
+    const isEnchantStone = c.item_id === 'enchant_stone';
     return {
       success: true,
       category: 'consumable',
@@ -246,7 +250,9 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• **Công dụng:** ${c.description}`,
         isTowerCard
           ? `• **Giới hạn:** Mua tối đa **3 thẻ/ngày** • Tích trữ tối đa **10 thẻ** trong túi • Dùng qua \`/nhiemvu hanh_dong:reset\`.`
-          : '• **Nguồn kiếm:** Mua tại `/shop` (hoặc thưởng `/nhiemvu` / Tháp Thí Luyện).',
+          : isEnchantStone
+            ? `• **Giới hạn & Nguồn:** Mua tối đa **5 viên/ngày** tại \`/shop\` (túi tối đa **99 viên**), rơi thêm tại **Boss Tháp mỗi 5 tầng** & **Hợp Đồng Tuần**. Dùng qua \`/enchant\`.`
+            : '• **Nguồn kiếm:** Mua tại `/shop` (hoặc thưởng `/nhiemvu` / Tháp Thí Luyện).',
       ].join('\n'),
       color: '#38bdf8',
       image_url: `${PUBLIC_BASE_URL}/assets/shop/${c.item_id}.png`,

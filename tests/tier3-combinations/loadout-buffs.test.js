@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
 import { FIXTURE_USERS, MOCK_ITEMS } from '../helpers/fixtures.js';
+import { getEnchantMultiplier } from '../../src/data/catalog.js';
 
 describe('Tier 3 - Loadout Item Buffs & Profile Card Integration', () => {
   let testServer;
@@ -22,10 +23,11 @@ describe('Tier 3 - Loadout Item Buffs & Profile Card Integration', () => {
     const json = await res.json();
     assert.ok(json.data.pet?.equipment?.weapon, 'Fuyumi must have equipped weapon');
     const weapon = json.data.pet.equipment.weapon;
+    const wMult = getEnchantMultiplier(weapon.enchant_grade || 'D');
 
     assert.equal(weapon.item_id, 'weapon_mythic_1');
-    assert.equal(weapon.bonus_atk, MOCK_ITEMS.weaponMythic.bonus_atk);
-    assert.equal(weapon.bonus_spd, MOCK_ITEMS.weaponMythic.bonus_spd);
+    assert.equal(weapon.bonus_atk, Math.round(MOCK_ITEMS.weaponMythic.bonus_atk * wMult));
+    assert.equal(weapon.bonus_spd, Math.round(MOCK_ITEMS.weaponMythic.bonus_spd * wMult));
     assert.equal(weapon.bonus_crit, MOCK_ITEMS.weaponMythic.bonus_crit);
     assert.equal(weapon.hax_skill, MOCK_ITEMS.weaponMythic.hax_skill);
   });
@@ -36,11 +38,12 @@ describe('Tier 3 - Loadout Item Buffs & Profile Card Integration', () => {
 
     assert.ok(json.data.pet?.equipment?.gem, 'Fuyumi must have equipped gem');
     const gem = json.data.pet.equipment.gem;
+    const gMult = getEnchantMultiplier(gem.enchant_grade || 'D');
 
     assert.equal(gem.item_id, 'gem_mythic_3');
-    assert.equal(gem.bonus_def, MOCK_ITEMS.gemMythic.bonus_def);
-    assert.equal(gem.bonus_spd, MOCK_ITEMS.gemMythic.bonus_spd);
-    assert.equal(gem.bonus_hp, MOCK_ITEMS.gemMythic.bonus_hp);
+    assert.equal(gem.bonus_def, Math.round(MOCK_ITEMS.gemMythic.bonus_def * gMult));
+    assert.equal(gem.bonus_spd, Math.round(MOCK_ITEMS.gemMythic.bonus_spd * gMult));
+    assert.equal(gem.bonus_hp, Math.round(MOCK_ITEMS.gemMythic.bonus_hp * gMult));
     assert.equal(gem.hax_skill, MOCK_ITEMS.gemMythic.hax_skill);
   });
 

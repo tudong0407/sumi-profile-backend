@@ -114,7 +114,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.ok(dmGachaJson.refund_linh_thach < 50, `Rolled rare item refund (${dmGachaJson.refund_linh_thach}) must be < 50 LT`);
     assert.ok(dmGachaJson.linh_thach <= 5000, 'Net LT after gacha->dismantle must NOT exceed starting 5000 LT');
 
-    // Buy Shop common equipment -> source='shop', paid_price=250 -> dismantle yields exact 50% (125 LT)
+    // Buy Shop common equipment -> source='shop', paid_price=250 -> dismantle yields exact 20% (50 LT)
     const shopBuy = await buyShopItem(USER_V11_A, { category: 'equipment', itemId: 'weapon_common_5' });
     assert.equal(shopBuy.success, true);
     assert.equal(shopBuy.cost, 250);
@@ -126,7 +126,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     const dmShopJson = await dmShop.json();
     assert.equal(dmShopJson.success, true);
     assert.equal(dmShopJson.source, 'shop');
-    assert.equal(dmShopJson.refund_linh_thach, 125);
+    assert.equal(dmShopJson.refund_linh_thach, 50);
   });
 
   it('2. All 65 Equipment HAX & 40 Public Pet HAX execute cleanly + 5 HAX bugs fixed + circular counter matrix', async () => {
@@ -335,12 +335,12 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.equal(fullReset.success, false);
     assert.equal(fullReset.error, 'TOWER_ATTEMPTS_FULL');
 
-    // Challenge Tower Floor 1 (win) -> +48 floor + 10 bonus = +58 LT
+    // Challenge Tower Floor 1 (win) -> +22 floor + 10 bonus = +32 LT (v1.2 200-floor formula: 20 + f*2)
     await supabase.from('users').update({ linh_thach: 100 }).eq('user_id', USER_V11_A);
     const towerWin = await challengeTower(USER_V11_A, { preRender: false, seed: 11 });
     assert.equal(towerWin.success, true);
     assert.equal(towerWin.won, true);
-    assert.equal(towerWin.reward_linh_thach, 48 + 10);
+    assert.equal(towerWin.reward_linh_thach, 22 + 10);
     assert.equal(towerWin.attempts_used, 1);
 
     // Use reset card -> restores 0/5 and leaves 8 cards
@@ -429,7 +429,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     const batchJson = await batchDm.json();
     assert.equal(batchJson.dismantled_count, 2);
     assert.equal(batchJson.skipped_equipped_count, 1);
-    assert.equal(batchJson.refund_linh_thach, 15 + 125); // 15 (gacha weapon_common_2) + 125 (50% shop gem_common_5)
+    assert.equal(batchJson.refund_linh_thach, 3 + 50); // 3 (Mức A gacha weapon_common_2) + 50 (20% shop gem_common_5)
 
     // /pet sort & /update
     const petSortRes = await testServer.fetch(`/api/pet/${USER_V11_A}?sort=star_desc`);
@@ -437,7 +437,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     const updRes = await testServer.fetch('/api/update');
     assert.equal(updRes.status, 200);
     const updJson = await updRes.json();
-    assert.equal(updJson.version, '1.1');
+    assert.equal(updJson.version, '1.2');
     const updMissing = await testServer.fetch('/api/update/9.9');
     assert.equal(updMissing.status, 404);
 

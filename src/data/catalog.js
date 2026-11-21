@@ -16,16 +16,18 @@ import {
   petEmojiKey,
   ringEmoji,
   elementEmoji,
+  gradeEmoji,
+  gradeEmojiKey,
 } from '../config/emojiHelper.js';
 
 export const FUYUMI_USER_ID = '757091869183311872';
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://sumi-profile-backend.onrender.com').replace(/\/$/, '');
 
 export const RARITY_TIERS = {
-  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.0, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
+  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.5, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
   rare: { key: 'rare', label: 'Linh Phẩm', dbKey: 'Linh Pham', dropRate: 25.0, color: '#3b82f6', colorDec: 3900150, emoji: tierEmoji('rare'), emoji_key: tierEmojiKey('rare') },
   epic: { key: 'epic', label: 'Tiên Phẩm', dbKey: 'Tien Pham', dropRate: 14.0, color: '#a855f7', colorDec: 11032055, emoji: tierEmoji('epic'), emoji_key: tierEmojiKey('epic') },
-  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 1.0, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
+  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 0.5, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
   supreme: { key: 'supreme', label: 'Tối Thượng Thần Thoại', dbKey: 'Tối Thượng Thần Thoại', dropRate: 0.0, color: '#ec4899', colorDec: 15485081, emoji: tierEmoji('supreme'), emoji_key: tierEmojiKey('supreme') },
 };
 
@@ -147,6 +149,7 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'soul_mythic_5', item_name: '« Tinh Tú Huyền Nữ Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Quang', bonus_atk: 310, bonus_def: 360, bonus_spd: 460, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Tinh Quang Chúc Phúc', hax_description: 'Miễn nhiễm Choáng/Đóng Băng/Mị Hoặc & hồi 10% HP tối đa/hiệp.', drop_rate: 1.0, is_unique: false },
 ].map((item) => ({
   ...item,
+  drop_rate: RARITY_TIERS[item.rarity_key]?.dropRate ?? item.drop_rate,
   icon: itemEmoji(item.item_id),
   emoji_key: itemEmojiKey(item.item_id),
   element_icon: elementEmoji(item.element),
@@ -211,7 +214,7 @@ export const PET_CATALOG = [
   { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc. Độc quyền Tiểu thư Fuyumi.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
-  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 1.0 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.0,
+  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.5 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.5,
   icon: petEmoji(p.pet_type, em('su_fox_mascot')),
   emoji_key: petEmojiKey(p.pet_type),
   element_icon: elementEmoji(p.element),
@@ -238,6 +241,8 @@ export function createStarterPetObject() {
     def: STARTER_PET.base_def,
     spd: STARTER_PET.base_spd,
     power: STARTER_PET.base_power,
+    enchant_grade: 'D',
+    enchant_pity: 0,
     base_atk: STARTER_PET.base_atk,
     base_def: STARTER_PET.base_def,
     base_spd: STARTER_PET.base_spd,
@@ -302,6 +307,7 @@ export const SHOP_CONSUMABLES = [
   { item_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', category: 'consumable', price: 50, icon: em('su_ticket_pet'), description: 'Dùng thay 50 Linh Thạch khi quay Gacha Linh Thú (/roll).' },
   { item_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', category: 'consumable', price: 100, icon: em('su_star_stone'), description: 'Nguyên liệu đột phá cấp Sao (1 -> 10 Sao) cho Linh Thú (/linhthu).' },
   { item_id: 'tower_reset_card', name: 'Thẻ Reset Lượt Đi Tháp', category: 'consumable', price: 200, daily_limit: 3, max_stack: 10, icon: em('su_tower_reset_card', '🗼'), description: 'Hồi ngay 5/5 lượt khiêu chiến Tháp Thí Luyện trong ngày (/nhiemvu hanh_dong:reset). Giới hạn mua 3/ngày, tối đa 10 thẻ trong túi.' },
+  { item_id: 'enchant_stone', name: 'Đá Khắc Ấn', category: 'consumable', price: 150, daily_limit: 5, max_stack: 99, icon: em('su_enchant_stone', '🔮'), description: 'Đá Khắc Ấn dùng để cường hóa Phẩm Chất D→C→B→A→S cho Linh Thú & Pháp Bảo (/enchant). Giới hạn mua 5/ngày trong Shop; săn thêm tại Boss Tháp mỗi 5 tầng.' },
   { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: em('su_title_card'), description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
   { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản', category: 'consumable', price: 800, icon: em('su_frame_token'), description: 'Mở khóa khung viền Avatar đặc biệt trên /profile & /rank.' },
 ];
@@ -349,7 +355,7 @@ export function getClanLevelConfig(level) {
 
 /**
  * Toàn bộ 21 Role Quyền Năng Đơn Năng (1 chức năng) bán thẳng trong /shop (7d / 30d / Vĩnh Viễn)
- * đồng thời nằm ở nhóm Phàm Phẩm (60%) trong Gacha Role (/roll loai:role).
+ * đồng thời nằm ở nhóm Phàm Phẩm (60.5%) trong Gacha Role (/roll loai:role).
  */
 export const SHOP_ROLE_PACKAGES = [
   { role_id: '1573186019858317422', name: '« Linh Âm Hồ Ca »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sparkle')} Triệu Hồi Hát Live & Tâm Sự`, prices: { '7d': 220, '30d': 700, permanent: 2200 } },
@@ -400,7 +406,7 @@ export const MULTI_PERK_ROLES = [
 ];
 
 /**
- * 5 Role Tối Thượng Thần Thoại (1% — 5+ chức năng) trong Gacha Role
+ * 5 Role Tối Thượng Thần Thoại (0.5% — 5+ chức năng) trong Gacha Role
  */
 export const SUPREME_ROLES = [
   { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🛡️ Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
@@ -502,3 +508,162 @@ export const BACKGROUND_CATALOG = [
 ];
 
 export const BACKGROUND_BY_ID = Object.fromEntries(BACKGROUND_CATALOG.map((b) => [b.bg_id, b]));
+
+/**
+ * Hệ thống Phẩm Chất Khắc Ấn (Enchant D -> C -> B -> A -> S) cho Linh Thú & Pháp Bảo (v1.2)
+ * Mặc định lúc quay Gacha/mua Shop chỉ rơi từ D -> A (0% S); hạng S chỉ đạt qua cường hóa (/enchant).
+ */
+export const ENCHANT_GRADE_ORDER = ['D', 'C', 'B', 'A', 'S'];
+
+export const ENCHANT_GRADES = {
+  D: { grade: 'D', label: 'Hạng D', bonusPct: 0, multiplier: 1.00, dropWeight: 40, color: '#94a3b8', emoji: gradeEmoji('D'), emoji_key: gradeEmojiKey('D') },
+  C: { grade: 'C', label: 'Hạng C', bonusPct: 6, multiplier: 1.06, dropWeight: 32, color: '#22c55e', emoji: gradeEmoji('C'), emoji_key: gradeEmojiKey('C') },
+  B: { grade: 'B', label: 'Hạng B', bonusPct: 14, multiplier: 1.14, dropWeight: 20, color: '#3b82f6', emoji: gradeEmoji('B'), emoji_key: gradeEmojiKey('B') },
+  A: { grade: 'A', label: 'Hạng A', bonusPct: 24, multiplier: 1.24, dropWeight: 8, color: '#a855f7', emoji: gradeEmoji('A'), emoji_key: gradeEmojiKey('A') },
+  S: { grade: 'S', label: 'Hạng S', bonusPct: 40, multiplier: 1.40, dropWeight: 0, color: '#f59e0b', emoji: gradeEmoji('S'), emoji_key: gradeEmojiKey('S') },
+};
+
+export const ENCHANT_UPGRADE_CONFIG = {
+  D: { next: 'C', stones: 1, lt: 50, baseRate: 85, pityStep: 5 },
+  C: { next: 'B', stones: 2, lt: 100, baseRate: 65, pityStep: 5 },
+  B: { next: 'A', stones: 4, lt: 250, baseRate: 45, pityStep: 5 },
+  A: { next: 'S', stones: 8, lt: 500, baseRate: 20, pityStep: 5 },
+  S: null,
+};
+
+export function normalizeEnchantGrade(raw) {
+  const g = String(raw || 'D').trim().toUpperCase();
+  return ENCHANT_GRADES[g] ? g : 'D';
+}
+
+export function getEnchantMultiplier(rawGrade) {
+  const g = normalizeEnchantGrade(rawGrade);
+  return ENCHANT_GRADES[g]?.multiplier || 1.0;
+}
+
+export function getEnchantBonusPct(rawGrade) {
+  const g = normalizeEnchantGrade(rawGrade);
+  return ENCHANT_GRADES[g]?.bonusPct || 0;
+}
+
+export function rollDefaultEnchantGrade(rng = Math.random) {
+  const r = rng() * 100;
+  if (r < 40) return 'D';
+  if (r < 72) return 'C';
+  if (r < 92) return 'B';
+  return 'A';
+}
+
+export function getEnchantUpgradeQuote(currentGrade, pityCount = 0) {
+  const g = normalizeEnchantGrade(currentGrade);
+  const cfg = ENCHANT_UPGRADE_CONFIG[g];
+  if (!cfg) return null;
+  const pity = Math.max(0, Number(pityCount) || 0);
+  const effectiveRate = Math.min(100, cfg.baseRate + pity * cfg.pityStep);
+  return {
+    from: g,
+    to: cfg.next,
+    stones: cfg.stones,
+    lt: cfg.lt,
+    baseRate: cfg.baseRate,
+    pityCount: pity,
+    pityBonusPct: pity * cfg.pityStep,
+    effectiveRate,
+  };
+}
+
+/**
+ * Hệ thống Nghề Tu Tiên & Hợp Đồng Tuần (/job & /nhiemvu, v1.2)
+ */
+export const JOB_DAILY_LIMIT = 6;
+export const JOB_COOLDOWN_MS = 60 * 60 * 1000;
+
+export const JOBS_CATALOG = [
+  {
+    job_id: 'quet_san',
+    name: 'Quét Dọn Sân Tiên Điện',
+    icon: '🧹',
+    ltMin: 35,
+    ltMax: 50,
+    exp: 18,
+    summary: 'Nhẹ nhàng, sạch sẽ, không bỏ sót góc khuất.',
+    stories: [
+      'Cầm chổi trúc quét sạch lá hoa anh đào rụng đầy sân Tiên Điện.',
+      'Lau bóng lan can bạch ngọc trước cổng lớn SuMi Family.',
+    ],
+  },
+  {
+    job_id: 'rua_bat',
+    name: 'Rửa Bát Yến Tiệc',
+    icon: '🥣',
+    ltMin: 38,
+    ltMax: 52,
+    exp: 20,
+    summary: 'Phụ bếp Tiên Điện dọn dẹp sau đại tiệc.',
+    stories: [
+      'Rửa sạch hàng trăm chén ngọc Lưu Ly sau buổi tiệc linh tửu.',
+      'Sắp xếp lại bộ ấm trà Phượng Hoàng sáng bóng như mới.',
+    ],
+  },
+  {
+    job_id: 'tuoi_cay',
+    name: 'Tưới Cây Thảo Dược',
+    icon: '🌱',
+    ltMin: 42,
+    ltMax: 58,
+    exp: 22,
+    summary: 'Chăm sóc vườn Linh Dược quý của Tiểu thư Fuyumi.',
+    stories: [
+      'Múc nước suối Thanh Tuyền tưới đều vườn Tuyết Liên nghìn năm.',
+      'Nhổ cỏ dại và bắt sâu cho khóm Nhân Sâm Thần Địa.',
+    ],
+  },
+  {
+    job_id: 'giao_trasua',
+    name: 'Giao Trà Sữa SuMi',
+    icon: '🧋',
+    ltMin: 45,
+    ltMax: 62,
+    exp: 25,
+    summary: 'Shipper tốc độ cao khắp các sảnh SuMi.',
+    stories: [
+      'Cưỡi gió giao 10 ly Trà Sữa Trân Châu Đường Đen tới sảnh Voice trước khi đá tan!',
+      'Giao đơn đặc biệt cho trưởng lão đúng giờ hẹn và được tip thêm.',
+    ],
+  },
+  {
+    job_id: 'cau_ca',
+    name: 'Câu Cá Linh Trì',
+    icon: '🎣',
+    ltMin: 48,
+    ltMax: 68,
+    exp: 28,
+    summary: 'Thả cần bên hồ Nguyệt Ảnh săn Cá Chép Vàng.',
+    stories: [
+      'Giật lên một chú Cá Chép Vàng vảy óng ánh giữa làn sương sớm.',
+      'Thu hoạch giỏ Tôm Tích Băng phục vụ bữa tối Tiên Điện.',
+    ],
+  },
+  {
+    job_id: 'tuan_tra',
+    name: 'Tuần Tra Đêm Sơn Môn',
+    icon: '🏮',
+    ltMin: 55,
+    ltMax: 75,
+    exp: 32,
+    summary: 'Canh giữ kết giới Sơn Môn suốt đêm thanh vắng.',
+    stories: [
+      'Thắp sáng lồng đèn đi tuần dọc trường lang bảo vệ kết giới Hồ Tộc.',
+      'Phát hiện và xua đuổi vài yêu quái nhỏ lén lút ngoài bìa rừng.',
+    ],
+  },
+];
+
+export const JOB_BY_ID = Object.fromEntries(JOBS_CATALOG.map((j) => [j.job_id, j]));
+
+export const WEEKLY_CONTRACTS_CONFIG = {
+  jobs: { target: 15, rewardLt: 400, rewardStones: 2, label: 'Hoàn thành 15 ca Làm Việc (/job)' },
+  wins: { target: 25, rewardLt: 500, rewardStones: 3, label: 'Thắng 25 trận Battle / Tháp' },
+  exp: { target: 10000, rewardLt: 450, rewardStones: 2, label: 'Tích lũy 10.000 EXP trong tuần' },
+  bonus: { rewardLt: 600, rewardStones: 5, label: 'Thưởng Hoàn Tất 3/3 Hợp Đồng Tuần' },
+};

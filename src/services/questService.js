@@ -6,24 +6,38 @@
  *   2. Tích lũy tối thiểu 50 EXP (Chat/Voice) trong ngày
  *   3. Tham gia ít nhất 1 trận /battle hoặc Tháp Thí Luyện trong ngày
  *   -> Hoàn tất đủ 3: Nhận +100 Linh Thạch + 1 Vé Rèn Pháp Bảo + 1 Tinh Thạch Nâng Sao
- * - Tháp Thí Luyện PvE (Tầng 1 -> 100, tối đa 5 lượt mỗi ngày UTC+7):
- *   -> Mỗi tầng 5 là Boss Yêu Vương (thưởng x2 Linh Thạch + Tinh Thạch Sao + Vé Gacha mỗi 10 tầng).
+ * - 3 Hợp Đồng Tuần (Reset Thứ Hai 00:00 UTC+7):
+ *   -> 15 ca Làm Việc (/job), 25 trận Thắng (/battle / Tháp), 10.000 EXP Tuần + Thưởng Hoàn Tất 3/3
+ * - Tháp Thí Luyện PvE (Tầng 1 -> 200 chia 4 bậc x 50 tầng, tối đa 5 lượt mỗi ngày UTC+7):
+ *   -> Toàn bộ 40 Linh Thú xoay vòng kèm 1->3 Pháp Bảo & 100% HAX. Boss mỗi 5 tầng rơi +1 Tinh Thạch Sao & +1 Đá Khắc Ấn.
  */
 
 import { supabase } from '../config/supabase.js';
+import {
+  PET_CATALOG,
+  EQUIPMENT_CATALOG,
+  WEEKLY_CONTRACTS_CONFIG,
+} from '../data/catalog.js';
 import { em } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
+import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
 
 export const DAILY_QUEST_EXP_TARGET = 50;
 export const DAILY_QUEST_BATTLE_TARGET = 1;
 export const DAILY_QUEST_REWARD_LT = 100;
-export const TOWER_MAX_FLOOR = 100;
+export const TOWER_MAX_FLOOR = 200;
 export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
 export const TOWER_WIN_BONUS_LT = 10;
 export const TOWER_LOSS_PENALTY_LT = 5;
 
-const TOWER_ELEMENTS = ['Kim', 'Mộc', 'Thổ', 'Thủy', 'Hỏa', 'Lôi', 'Quang', 'Ám'];
+export const TOWER_MILESTONE_BONUSES = {
+  50: { lt: 500, enchantStones: 5, tickets: 0 },
+  100: { lt: 1000, enchantStones: 10, tickets: 1 },
+  150: { lt: 2000, enchantStones: 15, tickets: 2 },
+  200: { lt: 5000, enchantStones: 25, tickets: 3 },
+};
+
 const TOWER_BOSS_NAMES = [
   'Thạch Khôi Lỗi Thủ Vệ',
   'Hắc Phong Lang Vương',
@@ -32,6 +46,36 @@ const TOWER_BOSS_NAMES = [
   'Cửu U Ma Viên',
   'Thái Cổ Lôi Ưng',
 ];
+
+const PUBLIC_TOWER_PETS_BY_RARITY = {
+  common: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'common'),
+  rare: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'rare'),
+  epic: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'epic'),
+  mythic: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'mythic'),
+};
+
+const TOWER_EQUIP_BY_TIER_SLOT = {
+  common: {
+    weapon: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'common' && e.item_type === 'weapon'),
+    gem: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'common' && e.item_type === 'gem'),
+    soul: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'common' && e.item_type === 'soul'),
+  },
+  rare: {
+    weapon: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'rare' && e.item_type === 'weapon'),
+    gem: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'rare' && e.item_type === 'gem'),
+    soul: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'rare' && e.item_type === 'soul'),
+  },
+  epic: {
+    weapon: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'epic' && e.item_type === 'weapon'),
+    gem: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'epic' && e.item_type === 'gem'),
+    soul: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'epic' && e.item_type === 'soul'),
+  },
+  mythic: {
+    weapon: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'mythic' && e.item_type === 'weapon'),
+    gem: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'mythic' && e.item_type === 'gem'),
+    soul: EQUIPMENT_CATALOG.filter((e) => e.rarity_key === 'mythic' && e.item_type === 'soul'),
+  },
+};
 
 const questLocks = new Map();
 
@@ -53,6 +97,17 @@ async function withQuestLock(userId, fn) {
 export function getVnDateKey(date = new Date()) {
   const vnTime = new Date(date.getTime() + 7 * 3600 * 1000);
   return vnTime.toISOString().slice(0, 10);
+}
+
+/**
+ * Khóa tuần theo Thứ Hai 00:00 UTC+7 (YYYY-MM-DD của ngày Thứ Hai trong tuần đó)
+ */
+export function getVnWeekKey(date = new Date()) {
+  const vnMs = date.getTime() + 7 * 3600 * 1000;
+  const vnDate = new Date(vnMs);
+  const diffToMonday = (vnDate.getUTCDay() + 6) % 7;
+  const monday = new Date(vnMs - diffToMonday * 86400000);
+  return monday.toISOString().slice(0, 10);
 }
 
 async function addInventoryItem(userId, itemId, category, delta) {
@@ -82,6 +137,7 @@ async function addInventoryItem(userId, itemId, category, delta) {
 
 async function loadNormalizedQuestRow(cleanId, now = new Date()) {
   const todayKey = getVnDateKey(now);
+  const weekKey = getVnWeekKey(now);
   const { data: row } = await supabase
     .from('user_quests')
     .select('*')
@@ -90,6 +146,7 @@ async function loadNormalizedQuestRow(cleanId, now = new Date()) {
 
   const sameQuestDay = row?.quest_date === todayKey;
   const sameTowerDay = row?.tower_attempts_date === todayKey;
+  const sameWeek = row?.weekly_week_key === weekKey;
 
   return {
     exists: Boolean(row),
@@ -100,21 +157,37 @@ async function loadNormalizedQuestRow(cleanId, now = new Date()) {
     tower_floor: Number(row?.tower_floor || 0),
     tower_attempts_date: todayKey,
     tower_attempts_today: sameTowerDay ? Number(row?.tower_attempts_today || 0) : 0,
+    weekly_week_key: weekKey,
+    weekly_jobs_done: sameWeek ? Number(row?.weekly_jobs_done || 0) : 0,
+    weekly_battle_wins: sameWeek ? Number(row?.weekly_battle_wins || 0) : 0,
+    weekly_exp_earned: sameWeek ? Number(row?.weekly_exp_earned || 0) : 0,
+    weekly_claimed_jobs: sameWeek ? Boolean(row?.weekly_claimed_jobs) : false,
+    weekly_claimed_wins: sameWeek ? Boolean(row?.weekly_claimed_wins) : false,
+    weekly_claimed_exp: sameWeek ? Boolean(row?.weekly_claimed_exp) : false,
+    weekly_bonus_claimed: sameWeek ? Boolean(row?.weekly_bonus_claimed) : false,
   };
 }
 
 /**
- * Ghi nhận tiến độ nhiệm vụ hàng ngày không làm nghẽn luồng chính (non-blocking).
+ * Ghi nhận tiến độ nhiệm vụ hàng ngày & Hợp Đồng Tuần (non-blocking).
  */
-export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0, now = new Date() } = {}) {
+export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0, winDelta = 0, jobDelta = 0, now = new Date() } = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId || !/^[0-9]{17,20}$/.test(cleanId) || !supabase) return null;
 
   try {
     return await withQuestLock(cleanId, async () => {
       const state = await loadNormalizedQuestRow(cleanId, now);
-      const nextExp = state.chat_exp_today + Math.max(0, Number(expDelta) || 0);
-      const nextBattles = state.battles_today + Math.max(0, Number(battleDelta) || 0);
+      const addExp = Math.max(0, Number(expDelta) || 0);
+      const addBat = Math.max(0, Number(battleDelta) || 0);
+      const addWin = Math.max(0, Number(winDelta) || 0);
+      const addJob = Math.max(0, Number(jobDelta) || 0);
+
+      const nextExp = state.chat_exp_today + addExp;
+      const nextBattles = state.battles_today + addBat;
+      const nextWeeklyExp = state.weekly_exp_earned + addExp;
+      const nextWeeklyWins = state.weekly_battle_wins + addWin;
+      const nextWeeklyJobs = state.weekly_jobs_done + addJob;
       const nowIso = now.toISOString();
 
       await supabase.from('user_quests').upsert({
@@ -126,10 +199,24 @@ export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0
         tower_floor: state.tower_floor,
         tower_attempts_date: state.tower_attempts_date,
         tower_attempts_today: state.tower_attempts_today,
+        weekly_week_key: state.weekly_week_key,
+        weekly_jobs_done: nextWeeklyJobs,
+        weekly_battle_wins: nextWeeklyWins,
+        weekly_exp_earned: nextWeeklyExp,
+        weekly_claimed_jobs: state.weekly_claimed_jobs,
+        weekly_claimed_wins: state.weekly_claimed_wins,
+        weekly_claimed_exp: state.weekly_claimed_exp,
+        weekly_bonus_claimed: state.weekly_bonus_claimed,
         updated_at: nowIso,
       }, { onConflict: 'user_id' });
 
-      return { chat_exp_today: nextExp, battles_today: nextBattles };
+      return {
+        chat_exp_today: nextExp,
+        battles_today: nextBattles,
+        weekly_jobs_done: nextWeeklyJobs,
+        weekly_battle_wins: nextWeeklyWins,
+        weekly_exp_earned: nextWeeklyExp,
+      };
     });
   } catch {
     return null;
@@ -148,11 +235,13 @@ export async function getQuestStatus(userId, options = {}) {
   });
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
-  const [state, resetCardRes] = await Promise.all([
+  const [state, resetCardRes, stoneRes] = await Promise.all([
     loadNormalizedQuestRow(cleanId, now),
     supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'tower_reset_card').maybeSingle(),
+    supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'enchant_stone').maybeSingle(),
   ]);
   const ownedResetCards = Number(resetCardRes?.data?.quantity || 0);
+  const ownedEnchantStones = Number(stoneRes?.data?.quantity || 0);
   const dailyDone = Boolean(user.last_daily && getVnDateKey(new Date(user.last_daily)) === state.quest_date);
   const expDone = state.chat_exp_today >= DAILY_QUEST_EXP_TARGET;
   const battleDone = state.battles_today >= DAILY_QUEST_BATTLE_TARGET;
@@ -165,20 +254,62 @@ export async function getQuestStatus(userId, options = {}) {
     { id: 'battle', name: 'Tham gia `/battle` hoặc Tháp Thí Luyện', progress: Math.min(state.battles_today, DAILY_QUEST_BATTLE_TARGET), target: DAILY_QUEST_BATTLE_TARGET, done: battleDone },
   ];
 
-  const mark = (done) => (done ? '✅' : '⬜');
+  const weeklyContracts = [
+    {
+      id: 'jobs',
+      label: WEEKLY_CONTRACTS_CONFIG.jobs.label,
+      progress: Math.min(state.weekly_jobs_done, WEEKLY_CONTRACTS_CONFIG.jobs.target),
+      target: WEEKLY_CONTRACTS_CONFIG.jobs.target,
+      done: state.weekly_jobs_done >= WEEKLY_CONTRACTS_CONFIG.jobs.target,
+      claimed: state.weekly_claimed_jobs,
+      rewardLt: WEEKLY_CONTRACTS_CONFIG.jobs.rewardLt,
+      rewardStones: WEEKLY_CONTRACTS_CONFIG.jobs.rewardStones,
+    },
+    {
+      id: 'wins',
+      label: WEEKLY_CONTRACTS_CONFIG.wins.label,
+      progress: Math.min(state.weekly_battle_wins, WEEKLY_CONTRACTS_CONFIG.wins.target),
+      target: WEEKLY_CONTRACTS_CONFIG.wins.target,
+      done: state.weekly_battle_wins >= WEEKLY_CONTRACTS_CONFIG.wins.target,
+      claimed: state.weekly_claimed_wins,
+      rewardLt: WEEKLY_CONTRACTS_CONFIG.wins.rewardLt,
+      rewardStones: WEEKLY_CONTRACTS_CONFIG.wins.rewardStones,
+    },
+    {
+      id: 'exp',
+      label: WEEKLY_CONTRACTS_CONFIG.exp.label,
+      progress: Math.min(state.weekly_exp_earned, WEEKLY_CONTRACTS_CONFIG.exp.target),
+      target: WEEKLY_CONTRACTS_CONFIG.exp.target,
+      done: state.weekly_exp_earned >= WEEKLY_CONTRACTS_CONFIG.exp.target,
+      claimed: state.weekly_claimed_exp,
+      rewardLt: WEEKLY_CONTRACTS_CONFIG.exp.rewardLt,
+      rewardStones: WEEKLY_CONTRACTS_CONFIG.exp.rewardStones,
+    },
+  ];
+  const weeklyAllDone = weeklyContracts.every((c) => c.done);
+  const weeklyClaimable = weeklyContracts.some((c) => c.done && !c.claimed) || (weeklyAllDone && !state.weekly_bonus_claimed);
+
+  const mark = (done, claimed = false) => (claimed ? '🏅' : done ? '✅' : '⬜');
+  const nextFloor = Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1);
+  const nextTierName = nextFloor <= 50 ? 'Phàm Cảnh (1–50)' : nextFloor <= 100 ? 'Linh Cảnh (51–100)' : nextFloor <= 150 ? 'Tiên Cảnh (101–150)' : 'Thần Thoại (151–200)';
+
   const lines = [
     `**1. Nhiệm Vụ Hàng Ngày (${state.quest_date})**`,
     ...quests.map((q) => `${mark(q.done)} **${q.name}** — \`${q.progress}/${q.target}\``),
-    `• **Phần thưởng hoàn tất 3/3:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('su_ticket_equip')} Vé Pháp Bảo • \`+1\` ${em('su_star_stone')} Tinh Thạch Sao`,
+    `• **Phần thưởng 3/3:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('su_ticket_equip')} • \`+1\` ${em('su_star_stone')}`,
     alreadyClaimed
       ? `${em('su_sparkle')} **Trạng thái:** Đã nhận thưởng Nhiệm Vụ Ngày hôm nay!`
       : allCompleted
         ? `${em('su_sparkle')} **Trạng thái:** Đã hoàn thành 3/3! Dùng \`/nhiemvu hanh_dong:claim\` để nhận thưởng.`
         : `• *Hoàn thành đủ 3 nhiệm vụ rồi dùng \`/nhiemvu hanh_dong:claim\`.*`,
     ``,
-    `**2. Tháp Thí Luyện & Săn Boss PvE**`,
-    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset Tháp:** \`${ownedResetCards}/10\` ${em('su_tower_reset_card', '🗼')}`,
-    `• Dùng \`/nhiemvu hanh_dong:tower\` để khiêu chiến **Tầng ${Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1)}** *(Thắng +${TOWER_WIN_BONUS_LT} LT thưởng thêm / Thua -${TOWER_LOSS_PENALTY_LT} LT)*!`,
+    `**2. Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00)**`,
+    ...weeklyContracts.map((c) => `${mark(c.done, c.claimed)} **${c.label}** — \`${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}\` *(+${c.rewardLt} LT + ${c.rewardStones} ${em('su_enchant_stone')})*`),
+    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt} LT + ${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('su_enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
+    ``,
+    `**3. Tháp Thí Luyện 200 Tầng (${nextTierName})**`,
+    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/10\` ${em('su_tower_reset_card', '🗼')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('su_enchant_stone')}`,
+    `• Dùng \`/nhiemvu hanh_dong:tower\` để khiêu chiến **Tầng ${nextFloor}** *(Win +${TOWER_WIN_BONUS_LT} LT / Lose -${TOWER_LOSS_PENALTY_LT} LT • Boss 5 tầng rơi +1 Tinh Thạch & +1 Đá Khắc Ấn)*!`,
     state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
   ].filter(Boolean);
 
@@ -187,14 +318,20 @@ export async function getQuestStatus(userId, options = {}) {
     user_id: cleanId,
     username: user.username,
     quest_date: state.quest_date,
+    week_key: state.weekly_week_key,
     quests,
     all_completed: allCompleted,
     already_claimed: alreadyClaimed,
     can_claim: allCompleted && !alreadyClaimed,
+    weekly_contracts: weeklyContracts,
+    weekly_bonus_claimed: state.weekly_bonus_claimed,
+    weekly_can_claim: weeklyClaimable,
     tower_floor: state.tower_floor,
+    tower_max_floor: TOWER_MAX_FLOOR,
     tower_attempts_used: state.tower_attempts_today,
     tower_attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
     tower_reset_cards: ownedResetCards,
+    enchant_stones: ownedEnchantStones,
     message: lines.join('\n'),
   };
 }
@@ -250,6 +387,14 @@ export async function claimDailyQuests(userId, options = {}) {
         tower_floor: state.tower_floor,
         tower_attempts_date: state.tower_attempts_date,
         tower_attempts_today: state.tower_attempts_today,
+        weekly_week_key: state.weekly_week_key,
+        weekly_jobs_done: state.weekly_jobs_done,
+        weekly_battle_wins: state.weekly_battle_wins,
+        weekly_exp_earned: state.weekly_exp_earned,
+        weekly_claimed_jobs: state.weekly_claimed_jobs,
+        weekly_claimed_wins: state.weekly_claimed_wins,
+        weekly_claimed_exp: state.weekly_claimed_exp,
+        weekly_bonus_claimed: state.weekly_bonus_claimed,
         updated_at: nowIso,
       }, { onConflict: 'user_id' }),
     ]);
@@ -263,55 +408,103 @@ export async function claimDailyQuests(userId, options = {}) {
   });
 }
 
-function buildTowerGuardian(floor) {
-  const isBoss = floor % 5 === 0;
-  const mult = isBoss ? 1.25 : 1.0;
-  const element = TOWER_ELEMENTS[(floor - 1) % TOWER_ELEMENTS.length];
-  const bossTitle = TOWER_BOSS_NAMES[(floor - 1) % TOWER_BOSS_NAMES.length];
-  const atk = Math.round((85 + (floor - 1) * 28) * mult);
-  const def = Math.round((75 + (floor - 1) * 25) * mult);
-  const spd = Math.round((75 + (floor - 1) * 20) * mult);
-  const maxHp = Math.max(1000, Math.round((1100 + (floor - 1) * 900) * mult));
+export async function buildTowerGuardian(floor) {
+  const f = Math.min(TOWER_MAX_FLOOR, Math.max(1, Number(floor) || 1));
+  const isBoss = f % 5 === 0;
+  const isMilestoneBoss = Boolean(TOWER_MILESTONE_BONUSES[f]);
+  const bossTitle = TOWER_BOSS_NAMES[(f - 1) % TOWER_BOSS_NAMES.length];
 
-  return {
-    id: `tower_guardian_${floor}`,
-    name: isBoss ? `Boss Tầng ${floor}` : `Hộ Tháp Tầng ${floor}`,
-    avatarUrl: null,
-    userLevel: floor,
-    avatarFrame: 'default',
-    petName: isBoss ? `[BOSS] ${bossTitle}` : bossTitle,
-    petType: 'hoa_thach_nham_nham',
-    petRarity: isBoss ? 'Tiên Phẩm' : floor >= 20 ? 'Linh Phẩm' : 'Phàm Phẩm',
-    petIcon: em('su_arena'),
-    element,
-    level: floor,
-    star: Math.min(10, Math.max(1, Math.ceil(floor / 10))),
-    atk,
-    def,
-    spd,
-    critRate: isBoss ? 0.12 : 0.05,
-    bonusCrit: 0,
-    maxHp,
-    currentHp: maxHp,
-    shield: 0,
-    equipment: { weapon: null, gem: null, soul: null },
-    hax: { pet: null, weapon: null, gem: null, soul: null },
-    state: {
-      isImmortalTurns: 0,
-      antiImmortalityTurns: 0,
-      antiShieldTurns: 0,
-      isStunned: false,
-      isCharmed: false,
-      isDoubleTurn: false,
-      reviveUsed: false,
-      cheatDeathUsed: false,
-      hpSwapUsed: false,
-      doubleTurnUsed: false,
-      missChanceTurns: 0,
-      pierceDefNext: false,
-      haxLockedTurns: 0,
+  let tierKey = 'common';
+  let equipSlotsCount = 1;
+  let enchantGrade = 'D';
+  let level = 1;
+  let star = 1;
+  let statScale = 1.0;
+
+  if (f <= 50) {
+    tierKey = 'common';
+    equipSlotsCount = f >= 5 ? 1 : 0;
+    enchantGrade = 'D';
+    level = Math.max(1, Math.round(1 + (f - 1) * 0.55));
+    star = f >= 26 ? 2 : 1;
+    statScale = f <= 4 ? (0.68 + (f - 1) * 0.08) : (0.72 + (f - 1) * 0.024);
+  } else if (f <= 100) {
+    tierKey = 'rare';
+    equipSlotsCount = 2;
+    enchantGrade = f >= 75 ? 'C' : 'D';
+    level = Math.round(29 + (f - 51) * 0.55);
+    star = 3 + Math.floor((f - 51) / 18);
+    statScale = 1.08 + (f - 51) * 0.032;
+  } else if (f <= 150) {
+    tierKey = 'epic';
+    equipSlotsCount = 3;
+    enchantGrade = f >= 125 ? 'B' : 'C';
+    level = Math.round(57 + (f - 101) * 0.52);
+    star = 5 + Math.floor((f - 101) / 18);
+    statScale = 1.55 + (f - 101) * 0.042;
+  } else {
+    tierKey = 'mythic';
+    equipSlotsCount = 3;
+    enchantGrade = f >= 200 ? 'S' : f >= 185 ? 'A' : 'B';
+    level = Math.min(100, Math.round(83 + (f - 151) * 0.35));
+    star = Math.min(10, 8 + Math.floor((f - 151) / 18));
+    statScale = 2.25 + (f - 151) * 0.055;
+  }
+
+  const bossMult = isMilestoneBoss ? 1.18 : (isBoss ? 1.12 : 1.0);
+  const tierPets = PUBLIC_TOWER_PETS_BY_RARITY[tierKey] || PUBLIC_TOWER_PETS_BY_RARITY.common;
+  const pickedPet = tierPets[(f - 1) % tierPets.length];
+  const tierPool = TOWER_EQUIP_BY_TIER_SLOT[tierKey] || TOWER_EQUIP_BY_TIER_SLOT.common;
+
+  const pickEquip = (slotName, offset) => {
+    const arr = tierPool[slotName] || [];
+    if (!arr.length) return null;
+    const picked = arr[(f - 1 + offset) % arr.length];
+    return { ...picked, slot: slotName, enchant_grade: enchantGrade };
+  };
+
+  const equipObj = {
+    weapon: equipSlotsCount >= 1 ? pickEquip('weapon', 0) : null,
+    gem: equipSlotsCount >= 2 ? pickEquip('gem', 2) : null,
+    soul: equipSlotsCount >= 3 ? pickEquip('soul', 4) : null,
+  };
+
+  const baseAtk = Math.round(pickedPet.base_atk * statScale * bossMult);
+  const baseDef = Math.round(pickedPet.base_def * statScale * bossMult);
+  const baseSpd = Math.round(pickedPet.base_spd * statScale * bossMult);
+
+  const npcProfile = {
+    user_id: `tower_guardian_${f}`,
+    username: isBoss ? `Boss Tầng ${f} • ${bossTitle}` : `Hộ Tháp Tầng ${f}`,
+    avatar_url: 'assets/default_avatar.png',
+    avatar_frame: tierKey === 'mythic' ? 'crimson_phoenix' : tierKey === 'epic' ? 'amethyst_celestial' : 'default',
+    level,
+    pet: {
+      pet_type: pickedPet.pet_type,
+      pet_name: isBoss ? `[BOSS] ${pickedPet.pet_name}` : pickedPet.pet_name,
+      rarity: pickedPet.rarity,
+      rarity_key: pickedPet.rarity_key,
+      element: pickedPet.element,
+      level,
+      star,
+      enchant_grade: enchantGrade,
+      base_atk: baseAtk,
+      base_def: baseDef,
+      base_spd: baseSpd,
+      bonus_atk: 0,
+      bonus_def: 0,
+      bonus_spd: 0,
+      hax_skill: pickedPet.hax_skill,
+      hax_description: pickedPet.hax_description,
+      equipment: equipObj,
     },
   };
+
+  const combatant = await compileCombatant(npcProfile, 'defender');
+  if (isBoss) {
+    combatant.critRate = Math.max(combatant.critRate, 0.12);
+  }
+  return combatant;
 }
 
 export async function challengeTower(userId, options = {}) {
@@ -348,9 +541,10 @@ export async function challengeTower(userId, options = {}) {
 
     const targetFloor = state.tower_floor + 1;
     const isBoss = targetFloor % 5 === 0;
-    const guardian = buildTowerGuardian(targetFloor);
+    const milestone = TOWER_MILESTONE_BONUSES[targetFloor] || null;
+    const guardian = await buildTowerGuardian(targetFloor);
     const battleRes = await simulateBattle(cleanId, guardian, {
-      maxTurns: 20,
+      maxTurns: 25,
       preRender: options.preRender !== false,
       skipQuestTracking: true,
       seed: options.seed,
@@ -360,15 +554,25 @@ export async function challengeTower(userId, options = {}) {
     const nextFloor = won ? targetFloor : state.tower_floor;
     const nextAttempts = state.tower_attempts_today + 1;
     const nextBattles = state.battles_today + 1;
+    const nextWeeklyWins = state.weekly_battle_wins + (won ? 1 : 0);
 
     let rewardLt = 0;
     let rewardStarStones = 0;
+    let rewardEnchantStones = 0;
     let rewardTickets = 0;
 
     if (won) {
-      rewardLt = (40 + targetFloor * 8) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
-      if (isBoss) rewardStarStones = 1;
-      if (targetFloor % 10 === 0) rewardTickets = 1;
+      rewardLt = (20 + Math.floor(targetFloor * 2)) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
+      if (isBoss) {
+        rewardStarStones += 1;
+        rewardEnchantStones += 1;
+      }
+      if (targetFloor % 10 === 0) rewardTickets += 1;
+      if (milestone) {
+        rewardLt += milestone.lt;
+        rewardEnchantStones += milestone.enchantStones;
+        rewardTickets += milestone.tickets;
+      }
     }
 
     const nowIso = now.toISOString();
@@ -386,6 +590,14 @@ export async function challengeTower(userId, options = {}) {
         tower_floor: nextFloor,
         tower_attempts_date: state.tower_attempts_date,
         tower_attempts_today: nextAttempts,
+        weekly_week_key: state.weekly_week_key,
+        weekly_jobs_done: state.weekly_jobs_done,
+        weekly_battle_wins: nextWeeklyWins,
+        weekly_exp_earned: state.weekly_exp_earned,
+        weekly_claimed_jobs: state.weekly_claimed_jobs,
+        weekly_claimed_wins: state.weekly_claimed_wins,
+        weekly_claimed_exp: state.weekly_claimed_exp,
+        weekly_bonus_claimed: state.weekly_bonus_claimed,
         updated_at: nowIso,
       }, { onConflict: 'user_id' }),
     ];
@@ -396,6 +608,9 @@ export async function challengeTower(userId, options = {}) {
     if (rewardStarStones > 0) {
       dbTasks.push(addInventoryItem(cleanId, 'pet_star_stone', 'consumable', rewardStarStones));
     }
+    if (rewardEnchantStones > 0) {
+      dbTasks.push(addInventoryItem(cleanId, 'enchant_stone', 'consumable', rewardEnchantStones));
+    }
     if (rewardTickets > 0) {
       dbTasks.push(addInventoryItem(cleanId, 'gacha_ticket_pet', 'consumable', rewardTickets));
     }
@@ -404,6 +619,7 @@ export async function challengeTower(userId, options = {}) {
     const rewardSummary = [
       rewardLt > 0 ? `+${rewardLt.toLocaleString('vi-VN')} ${em('su_linhthach')} *(gồm +${TOWER_WIN_BONUS_LT} LT thắng trận)*` : '',
       rewardStarStones > 0 ? `+${rewardStarStones} ${em('su_star_stone')}` : '',
+      rewardEnchantStones > 0 ? `+${rewardEnchantStones} ${em('su_enchant_stone')}` : '',
       rewardTickets > 0 ? `+${rewardTickets} ${em('su_ticket_pet')}` : '',
     ].filter(Boolean).join(' • ');
 
@@ -412,18 +628,143 @@ export async function challengeTower(userId, options = {}) {
       won,
       floor: targetFloor,
       is_boss: isBoss,
+      is_milestone: Boolean(milestone),
       new_tower_floor: nextFloor,
       attempts_used: nextAttempts,
       attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
       reward_linh_thach: won ? rewardLt : actualLtDelta,
       reward_star_stones: rewardStarStones,
+      reward_enchant_stones: rewardEnchantStones,
       reward_tickets: rewardTickets,
       linh_thach: newBal,
       battle_id: battleRes.battleId,
       image_url: battleRes.finalImageWebpUrl || battleRes.reportImageUrl,
       message: won
-        ? `${em('su_winner_trophy')} **VƯỢT THÁP TẦNG ${targetFloor} THÀNH CÔNG!**${isBoss ? ' *(Hạ gục Yêu Vương Boss!)*' : ''}\n• Giao chiến với **${guardian.petName}** (Hệ ${guardian.element}) thắng sau **${battleRes.turnCount} hiệp**.\n• Phần thưởng: **${rewardSummary}**\n• Tiến độ Tháp: \`Tầng ${nextFloor}/${TOWER_MAX_FLOOR}\` • Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``
-        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardian.petName}** quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Phạt thất bại: **${actualLtDelta} ${em('su_linhthach')} Linh Thạch** *(Ví còn: ${newBal.toLocaleString('vi-VN')} LT)*.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+        ? `${em('su_winner_trophy')} **VƯỢT THÁP TẦNG ${targetFloor} THÀNH CÔNG!**${milestone ? ` *(CHINH PHỤC MỐC TẦNG ${targetFloor}!)*` : isBoss ? ' *(Hạ gục Yêu Vương Boss!)*' : ''}\n• Giao chiến với **${guardian.petName}** (Hệ ${guardian.element} • Lv.${guardian.level}) thắng sau **${battleRes.turnCount} hiệp**.\n• Phần thưởng: **${rewardSummary}**\n• Tiến độ Tháp: \`Tầng ${nextFloor}/${TOWER_MAX_FLOOR}\` • Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``
+        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardian.petName}** (Hệ ${guardian.element} • Lv.${guardian.level}) quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Phạt thất bại: **${actualLtDelta} ${em('su_linhthach')} Linh Thạch** *(Ví còn: ${newBal.toLocaleString('vi-VN')} LT)*.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`), Khắc Ấn (\`/enchant\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+    };
+  });
+}
+
+export async function claimWeeklyQuests(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  return withQuestLock(cleanId, async () => {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const { user } = await ensureUserInitialized(cleanId, {
+      username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+      avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+    });
+    if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+    const state = await loadNormalizedQuestRow(cleanId, now);
+    const jobsDone = state.weekly_jobs_done >= WEEKLY_CONTRACTS_CONFIG.jobs.target;
+    const winsDone = state.weekly_battle_wins >= WEEKLY_CONTRACTS_CONFIG.wins.target;
+    const expDone = state.weekly_exp_earned >= WEEKLY_CONTRACTS_CONFIG.exp.target;
+    const allDone = jobsDone && winsDone && expDone;
+
+    let totalLt = 0;
+    let totalStones = 0;
+    const claimedLabels = [];
+
+    let nextClaimedJobs = state.weekly_claimed_jobs;
+    let nextClaimedWins = state.weekly_claimed_wins;
+    let nextClaimedExp = state.weekly_claimed_exp;
+    let nextBonusClaimed = state.weekly_bonus_claimed;
+
+    if (jobsDone && !nextClaimedJobs) {
+      nextClaimedJobs = true;
+      totalLt += WEEKLY_CONTRACTS_CONFIG.jobs.rewardLt;
+      totalStones += WEEKLY_CONTRACTS_CONFIG.jobs.rewardStones;
+      claimedLabels.push(WEEKLY_CONTRACTS_CONFIG.jobs.label);
+    }
+    if (winsDone && !nextClaimedWins) {
+      nextClaimedWins = true;
+      totalLt += WEEKLY_CONTRACTS_CONFIG.wins.rewardLt;
+      totalStones += WEEKLY_CONTRACTS_CONFIG.wins.rewardStones;
+      claimedLabels.push(WEEKLY_CONTRACTS_CONFIG.wins.label);
+    }
+    if (expDone && !nextClaimedExp) {
+      nextClaimedExp = true;
+      totalLt += WEEKLY_CONTRACTS_CONFIG.exp.rewardLt;
+      totalStones += WEEKLY_CONTRACTS_CONFIG.exp.rewardStones;
+      claimedLabels.push(WEEKLY_CONTRACTS_CONFIG.exp.label);
+    }
+    if (allDone && !nextBonusClaimed) {
+      nextBonusClaimed = true;
+      totalLt += WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt;
+      totalStones += WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones;
+      claimedLabels.push(WEEKLY_CONTRACTS_CONFIG.bonus.label);
+    }
+
+    if (claimedLabels.length === 0) {
+      if (nextClaimedJobs && nextClaimedWins && nextClaimedExp && nextBonusClaimed) {
+        return {
+          success: false,
+          status: 400,
+          error: 'WEEKLY_ALREADY_CLAIMED',
+          message: `${em('su_sparkle')} Bạn đã nhận trọn bộ thưởng **Hợp Đồng Tuần (${state.weekly_week_key})** rồi! Chờ Thứ Hai \`00:00 UTC+7\` nhé.`,
+        };
+      }
+      return {
+        success: false,
+        status: 400,
+        error: 'WEEKLY_NOT_READY',
+        message: [
+          `Chưa có Hợp Đồng Tuần mới nào đủ điều kiện nhận thưởng!`,
+          `• Làm việc: \`${state.weekly_jobs_done}/${WEEKLY_CONTRACTS_CONFIG.jobs.target}\` ${nextClaimedJobs ? '(Đã nhận)' : ''}`,
+          `• Thắng trận: \`${state.weekly_battle_wins}/${WEEKLY_CONTRACTS_CONFIG.wins.target}\` ${nextClaimedWins ? '(Đã nhận)' : ''}`,
+          `• EXP Tuần: \`${state.weekly_exp_earned.toLocaleString('vi-VN')}/${WEEKLY_CONTRACTS_CONFIG.exp.target.toLocaleString('vi-VN')}\` ${nextClaimedExp ? '(Đã nhận)' : ''}`,
+        ].join('\n'),
+      };
+    }
+
+    const nowIso = now.toISOString();
+    const newBal = Number(user.linh_thach || 0) + totalLt;
+
+    const tasks = [
+      supabase.from('users').update({ linh_thach: newBal, updated_at: nowIso }).eq('user_id', cleanId),
+      supabase.from('user_quests').upsert({
+        user_id: cleanId,
+        quest_date: state.quest_date,
+        daily_claimed_at: state.daily_claimed_at,
+        chat_exp_today: state.chat_exp_today,
+        battles_today: state.battles_today,
+        tower_floor: state.tower_floor,
+        tower_attempts_date: state.tower_attempts_date,
+        tower_attempts_today: state.tower_attempts_today,
+        weekly_week_key: state.weekly_week_key,
+        weekly_jobs_done: state.weekly_jobs_done,
+        weekly_battle_wins: state.weekly_battle_wins,
+        weekly_exp_earned: state.weekly_exp_earned,
+        weekly_claimed_jobs: nextClaimedJobs,
+        weekly_claimed_wins: nextClaimedWins,
+        weekly_claimed_exp: nextClaimedExp,
+        weekly_bonus_claimed: nextBonusClaimed,
+        updated_at: nowIso,
+      }, { onConflict: 'user_id' }),
+    ];
+    if (totalStones > 0) {
+      tasks.push(addInventoryItem(cleanId, 'enchant_stone', 'consumable', totalStones));
+    }
+    await Promise.all(tasks);
+
+    return {
+      success: true,
+      week_key: state.weekly_week_key,
+      claimed_contracts: claimedLabels,
+      reward_linh_thach: totalLt,
+      reward_enchant_stones: totalStones,
+      linh_thach: newBal,
+      linh_thach_fmt: newBal.toLocaleString('vi-VN'),
+      message: [
+        `${em('su_winner_trophy')} **NHẬN THƯỞNG HỢP ĐỒNG TUẦN THÀNH CÔNG!**`,
+        ...claimedLabels.map((lbl) => `• ✅ ${lbl}`),
+        `• Tổng nhận: **+${totalLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** • **+${totalStones}** ${em('su_enchant_stone')} **Đá Khắc Ấn**`,
+        `• Số dư hiện tại: **${newBal.toLocaleString('vi-VN')} Linh Thạch**`,
+      ].join('\n'),
     };
   });
 }
@@ -480,6 +821,14 @@ export async function resetTowerAttempts(userId, options = {}) {
         tower_floor: state.tower_floor,
         tower_attempts_date: state.tower_attempts_date,
         tower_attempts_today: 0,
+        weekly_week_key: state.weekly_week_key,
+        weekly_jobs_done: state.weekly_jobs_done,
+        weekly_battle_wins: state.weekly_battle_wins,
+        weekly_exp_earned: state.weekly_exp_earned,
+        weekly_claimed_jobs: state.weekly_claimed_jobs,
+        weekly_claimed_wins: state.weekly_claimed_wins,
+        weekly_claimed_exp: state.weekly_claimed_exp,
+        weekly_bonus_claimed: state.weekly_bonus_claimed,
         updated_at: nowIso,
       }, { onConflict: 'user_id' }),
     ]);

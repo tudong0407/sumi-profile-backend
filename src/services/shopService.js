@@ -20,6 +20,7 @@ import {
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   PUBLIC_BASE_URL,
+  rollDefaultEnchantGrade,
 } from '../data/catalog.js';
 import {
   em,
@@ -29,6 +30,7 @@ import {
   petEmoji,
   itemEmoji,
   elementEmoji,
+  gradeEmoji,
 } from '../config/emojiHelper.js';
 
 function getVnDateKey(date = new Date()) {
@@ -177,7 +179,7 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Linh Thú (${SHOP_PETS.length} loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
         `• **Pháp Bảo (${SHOP_EQUIPMENT.length} món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
         `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
-        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, Tinh Thạch Nâng Sao, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
+        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
       ].filter(Boolean).join('\n')
     : buildCategorySummary(cat);
@@ -483,18 +485,33 @@ export async function buyShopItem(userId, payload = {}) {
 
     const now = new Date();
     const todayKey = getVnDateKey(now);
-    let towerResetBoughtToday = 0;
+    const CONSUMABLE_DAILY_CAPS = {
+      tower_reset_card: {
+        dateCol: 'tower_reset_buy_date',
+        countCol: 'tower_reset_buys_today',
+        defaultDaily: 3,
+        defaultStack: 10,
+      },
+      enchant_stone: {
+        dateCol: 'enchant_stone_buy_date',
+        countCol: 'enchant_stone_buys_today',
+        defaultDaily: 5,
+        defaultStack: 99,
+      },
+    };
+    const dailyCapCfg = resolved.category === 'consumables' ? CONSUMABLE_DAILY_CAPS[resolved.item_id] : null;
+    let cappedBoughtToday = 0;
 
-    if (resolved.category === 'consumables' && resolved.item_id === 'tower_reset_card') {
-      const dailyLimit = Number(it.daily_limit || 3);
-      const maxStack = Number(it.max_stack || 10);
+    if (dailyCapCfg) {
+      const dailyLimit = Number(it.daily_limit || dailyCapCfg.defaultDaily);
+      const maxStack = Number(it.max_stack || dailyCapCfg.defaultStack);
 
       const [{ data: qRow }, { data: invRow }] = await Promise.all([
-        supabase.from('user_quests').select('tower_reset_buy_date, tower_reset_buys_today').eq('user_id', cleanId).maybeSingle(),
-        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'tower_reset_card').maybeSingle(),
+        supabase.from('user_quests').select(`${dailyCapCfg.dateCol}, ${dailyCapCfg.countCol}`).eq('user_id', cleanId).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', resolved.item_id).maybeSingle(),
       ]);
 
-      towerResetBoughtToday = qRow?.tower_reset_buy_date === todayKey ? Number(qRow?.tower_reset_buys_today || 0) : 0;
+      cappedBoughtToday = qRow?.[dailyCapCfg.dateCol] === todayKey ? Number(qRow?.[dailyCapCfg.countCol] || 0) : 0;
       const ownedQty = Number(invRow?.quantity || 0);
 
       if (ownedQty + quantity > maxStack) {
@@ -505,12 +522,12 @@ export async function buyShopItem(userId, payload = {}) {
           message: `Bạn chỉ có thể giữ tối đa **${maxStack}** **${it.name}** trong túi đồ (hiện có \`${ownedQty}/${maxStack}\`)!`,
         };
       }
-      if (towerResetBoughtToday + quantity > dailyLimit) {
+      if (cappedBoughtToday + quantity > dailyLimit) {
         return {
           success: false,
           status: 400,
           error: 'DAILY_BUY_LIMIT',
-          message: `Hôm nay chỉ được mua tối đa **${dailyLimit}** **${it.name}** mỗi ngày (đã mua \`${towerResetBoughtToday}/${dailyLimit}\` — reset 00:00 UTC+7)!`,
+          message: `Hôm nay chỉ được mua tối đa **${dailyLimit}** **${it.name}** mỗi ngày (đã mua \`${cappedBoughtToday}/${dailyLimit}\` — reset 00:00 UTC+7)!`,
         };
       }
     }
@@ -544,6 +561,7 @@ export async function buyShopItem(userId, payload = {}) {
 
     let addRoleId = '';
     let extraNote = '';
+    let rolledGrade = null;
 
     if (resolved.category === 'rings' || resolved.category === 'consumables' || resolved.category === 'backgrounds') {
       const invCat = resolved.category === 'rings' ? 'ring' : resolved.category === 'backgrounds' ? 'background' : 'consumable';
@@ -569,21 +587,28 @@ export async function buyShopItem(userId, payload = {}) {
           quantity: nextQty,
         });
       }
-      if (resolved.item_id === 'tower_reset_card') {
-        const nextBuyCount = towerResetBoughtToday + quantity;
+      if (dailyCapCfg) {
+        const nextBuyCount = cappedBoughtToday + quantity;
+        const dailyLimit = Number(it.daily_limit || dailyCapCfg.defaultDaily);
+        const maxStack = Number(it.max_stack || dailyCapCfg.defaultStack);
         await supabase.from('user_quests').upsert({
           user_id: cleanId,
-          tower_reset_buy_date: todayKey,
-          tower_reset_buys_today: nextBuyCount,
+          [dailyCapCfg.dateCol]: todayKey,
+          [dailyCapCfg.countCol]: nextBuyCount,
           updated_at: nowIso,
         }, { onConflict: 'user_id' });
-        extraNote = `\n• Dùng \`/nhiemvu hanh_dong:reset\` để hồi \`5/5\` lượt Tháp! *(Đã mua hôm nay: ${nextBuyCount}/3 • Túi: ${nextQty}/10)*`;
+        if (resolved.item_id === 'tower_reset_card') {
+          extraNote = `\n• Dùng \`/nhiemvu hanh_dong:reset\` để hồi \`5/5\` lượt Tháp! *(Đã mua hôm nay: ${nextBuyCount}/${dailyLimit} • Túi: ${nextQty}/${maxStack})*`;
+        } else if (resolved.item_id === 'enchant_stone') {
+          extraNote = `\n• Dùng \`/enchant\` để cường hóa Phẩm Chất **D → S** cho Linh Thú & Pháp Bảo! *(Đã mua hôm nay: ${nextBuyCount}/${dailyLimit} • Túi: ${nextQty}/${maxStack})*`;
+        }
       } else if (resolved.category === 'backgrounds') {
         extraNote = `\n• Dùng \`/equip loai:background ma_id:${resolved.item_id}\` để áp dụng ngay lên \`/profile\` & \`/rank\`!`;
       } else if (resolved.category === 'rings') {
         extraNote = `\n• Dùng \`/marry hanh_dong:propose nhan:${resolved.item_id}\` để cầu hôn hoặc \`/marry hanh_dong:upgrade_ring\` để nâng nhẫn!`;
       }
     } else if (resolved.category === 'pets') {
+      rolledGrade = rollDefaultEnchantGrade();
       await supabase.from('user_pets').insert({
         user_id: cleanId,
         pet_name: it.pet_name,
@@ -601,9 +626,12 @@ export async function buyShopItem(userId, payload = {}) {
         is_active: false,
         source: 'shop',
         paid_price: totalCost,
+        enchant_grade: rolledGrade,
+        enchant_pity: 0,
       });
-      extraNote = `\n• Dùng \`/linhthu hanh_dong:active linh_thu:${it.pet_type}\` để cho Linh Thú xuất trận!`;
+      extraNote = `\n• Phẩm Chất Khắc Ấn: ${gradeEmoji(rolledGrade)} **Hạng ${rolledGrade}**\n• Dùng \`/linhthu hanh_dong:active linh_thu:${it.pet_type}\` để cho Linh Thú xuất trận!`;
     } else if (resolved.category === 'equipment') {
+      rolledGrade = rollDefaultEnchantGrade();
       await supabase.from('user_pet_items').insert({
         user_id: cleanId,
         item_id: it.item_id,
@@ -611,8 +639,10 @@ export async function buyShopItem(userId, payload = {}) {
         slot: null,
         source: 'shop',
         paid_price: totalCost,
+        enchant_grade: rolledGrade,
+        enchant_pity: 0,
       });
-      extraNote = `\n• Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị cho Linh Thú đang xuất trận!`;
+      extraNote = `\n• Phẩm Chất Khắc Ấn: ${gradeEmoji(rolledGrade)} **Hạng ${rolledGrade}**\n• Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị cho Linh Thú đang xuất trận!`;
     } else if (resolved.category === 'roles') {
       const { data: userRoles } = await supabase.from('user_roles').select('*').eq('user_id', cleanId);
       const existing = (userRoles || []).find((r) => r.role_id === it.role_id);
@@ -690,6 +720,7 @@ export async function buyShopItem(userId, payload = {}) {
       item_name: displayName,
       quantity,
       duration: resolved.category === 'roles' ? duration : null,
+      enchant_grade: rolledGrade,
       cost: totalCost,
       linh_thach: nextBalance,
       linh_thach_fmt: nextBalance.toLocaleString('vi-VN'),

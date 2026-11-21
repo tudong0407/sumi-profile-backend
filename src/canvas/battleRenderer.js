@@ -20,10 +20,33 @@ import {
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
-import { FUYUMI_USER_ID, normalizeRarityKey } from '../data/catalog.js';
+import { FUYUMI_USER_ID, normalizeRarityKey, normalizeEnchantGrade, ENCHANT_GRADES } from '../data/catalog.js';
 
 const LOGICAL_W = 1000;
 const LOGICAL_H = 500;
+
+function drawGradeBadgeCanvas(ctx, gradeBadges, rawGrade, x, y, size = 18) {
+  const grade = normalizeEnchantGrade(rawGrade || 'D');
+  const img = gradeBadges?.[grade] || null;
+  if (img) {
+    ctx.drawImage(img, x, y, size, size);
+    return;
+  }
+  const meta = ENCHANT_GRADES[grade] || ENCHANT_GRADES.D;
+  ctx.save();
+  drawRoundRect(ctx, x, y, size, size, 4);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+  ctx.fill();
+  ctx.strokeStyle = meta.color;
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.fillStyle = meta.color;
+  ctx.font = `bold ${Math.round(size * 0.62)}px ${FONT_FAMILY}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(grade, x + size / 2, y + size / 2 + 0.5);
+  ctx.restore();
+}
 
 const RARITY_ACCENTS = {
   common: {
@@ -178,13 +201,16 @@ function drawCounterArrow(ctx, cx, cy, dir, color) {
  * @returns {Promise<Buffer>} PNG hoặc WebP Buffer
  */
 export async function renderBattleCard(battleResult, options = {}) {
-  const scale = Number(options.scale) === 1 ? 1 : 2;
+  const rawScale = Number(options.scale);
+  const scale = Number.isFinite(rawScale) && rawScale >= 0.5 && rawScale <= 2.5 ? rawScale : 2;
+  const canvasW = Math.round(LOGICAL_W * scale);
+  const canvasH = Math.round(LOGICAL_H * scale);
   const format = options.format || 'png';
   const webpQuality = options.webpQuality ?? 84;
   const frame = options.frame || null;
   const isFinal = frame ? frame.isFinal !== false : true;
 
-  const canvas = createCanvas(LOGICAL_W * scale, LOGICAL_H * scale);
+  const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
   ctx.scale(scale, scale);
   ctx.imageSmoothingEnabled = true;
@@ -240,7 +266,7 @@ export async function renderBattleCard(battleResult, options = {}) {
     eq?.soul?.item_id ? loadImageSafe(`items/${eq.soul.item_id}.png`, 2000, null) : null,
   ]);
 
-  const [atkAv, defAv, atkPetImg, defPetImg, atkEqImgs, defEqImgs, winnerPetMiniIcon] = await Promise.all([
+  const [atkAv, defAv, atkPetImg, defPetImg, atkEqImgs, defEqImgs, winnerPetMiniIcon, gD, gC, gB, gA, gS] = await Promise.all([
     loadImageSafe(atk.avatarUrl, 2500, atk.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(def.avatarUrl, 2500, def.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(resolvePetAsset(atk.petType), 2500, 'pets/hoa_thach_nham_nham.png'),
@@ -248,7 +274,13 @@ export async function renderBattleCard(battleResult, options = {}) {
     loadEquipIcons(atk.equipment),
     loadEquipIcons(def.equipment),
     loadBadgeImage(resolvePetMiniIconAsset(winnerPetType)),
+    loadBadgeImage('badges/grade_d.png'),
+    loadBadgeImage('badges/grade_c.png'),
+    loadBadgeImage('badges/grade_b.png'),
+    loadBadgeImage('badges/grade_a.png'),
+    loadBadgeImage('badges/grade_s.png'),
   ]);
+  const gradeBadges = { D: gD, C: gC, B: gB, A: gA, S: gS };
 
   // ============================================================================
   // LỚP 1: NỀN ĐẤU TRƯỜNG TIÊN GIỚI (Bỏ tiêu đề top để lấy tối đa không gian)
@@ -413,6 +445,9 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(rarTag, petBoxX + petBoxW - rarW - 8 + rarW / 2, petBoxY + 18);
 
+    // Huy hiệu Phẩm Chất Khắc Ấn Pet (góc dưới phải khung Pet)
+    drawGradeBadgeCanvas(ctx, gradeBadges, fighter.enchantGrade || fighter.enchant_grade || 'D', petBoxX + petBoxW - 30, petBoxY + petBoxH - 28, 22);
+
     // Tên Linh Thú (tự động fit 1 dòng, không cắt cụt)
     drawAutoFitSingleLineText(ctx, fighter.petName, x + w / 2, y + 255, w - 32, {
       maxFont: 15.5,
@@ -564,12 +599,14 @@ export async function renderBattleCard(battleResult, options = {}) {
           ctx.font = `bold 8.8px ${FONT_FAMILY}`;
           ctx.fillStyle = itemRar.text;
           ctx.fillText(slot.label, sx + 45, eqY + 24);
+          drawGradeBadgeCanvas(ctx, gradeBadges, item.enchant_grade || 'D', sx + 26, eqY + 26, 16);
         } else {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.font = `bold 9px ${FONT_FAMILY}`;
           ctx.fillStyle = itemRar.text;
           ctx.fillText(slot.label, sx + eqSlotW / 2, eqY + 22);
+          drawGradeBadgeCanvas(ctx, gradeBadges, item.enchant_grade || 'D', sx + eqSlotW - 21, eqY + 5, 15);
         }
 
         drawAutoFitSingleLineText(ctx, nm, sx + eqSlotW / 2, eqY + 61, eqSlotW - 10, {

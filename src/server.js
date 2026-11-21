@@ -19,6 +19,7 @@ import {
   getBattleFrameMeta,
   getBattleLogPayload,
   renderBattleLogHtml,
+  renderBattleCardQueued,
 } from './services/battleService.js';
 import { grantChatExp, handleVoiceExp, processVoiceHeartbeat } from './services/expService.js';
 import {
@@ -32,20 +33,36 @@ import { getServerLeaderboard } from './services/leaderboardService.js';
 import {
   getQuestStatus,
   claimDailyQuests,
+  claimWeeklyQuests,
   challengeTower,
   resetTowerAttempts,
 } from './services/questService.js';
 import {
   getInventory,
   getUserEquipment,
+  getUserRoles,
   equipTarget,
   unequipTarget,
   dismantleTarget,
   setActivePet,
   upgradePet,
+  enchantTarget,
 } from './services/inventoryService.js';
+import { getJobStatus, doJob } from './services/jobService.js';
+import { checkUpdateGate, acknowledgeUpdate } from './services/updateGateService.js';
 import { lookupInfo } from './services/infoService.js';
 import { getChangelogPayload, LATEST_VERSION } from './data/changelogs.js';
+import { PET_BY_TYPE } from './data/catalog.js';
+import {
+  getStaticElementChartBuffer,
+  getStaticPetCardBuffer,
+  getStaticNonUniqueItemCardBuffer,
+  getCachedUniqueItemCard,
+  warmStaticAssetsInBackground,
+  getPrerenderStatus,
+  computeDynamicDataHash,
+  getOrRenderDynamicCard,
+} from './services/staticAssetCacheService.js';
 import {
   getShopCatalog,
   previewShopItem,
@@ -76,11 +93,6 @@ import {
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { renderBattleCard } from './canvas/battleRenderer.js';
-import {
-  renderElementalChart,
-  renderWikiItemCard,
-  renderWikiPetCard,
-} from './canvas/wikiRenderer.js';
 import { supabase } from './config/supabase.js';
 
 dotenv.config();
@@ -130,6 +142,49 @@ function requireBackendApiKey(req, res, next) {
   return next();
 }
 
+function extractGateUserId(req) {
+  const body = req.body || {};
+  const candidates = [
+    req.params?.userId,
+    body.userId,
+    body.attackerId,
+    body.attacker_id,
+    body.attacker,
+    body.proposerId,
+    body.responderId,
+    body.leaderId,
+    body.senderId,
+    req.query?.userId,
+    req.query?.user_id,
+  ];
+  for (const c of candidates) {
+    const str = typeof c === 'string'
+      ? c
+      : (c && typeof c === 'object' ? (c.user_id || c.userId || '') : '');
+    const clean = sanitizeUserId(str);
+    if (clean) return clean;
+  }
+  return '';
+}
+
+/**
+ * Cổng xác nhận cập nhật v1.2 lần đầu cho 18 lệnh gameplay (không chặn EXP, /wiki, /info, /updates, /profile, /rank, /top).
+ */
+async function requireUpdateAck(req, res, next) {
+  try {
+    const uid = extractGateUserId(req);
+    if (!uid) return next();
+    const gate = await checkUpdateGate(uid);
+    if (gate.blocked) {
+      return res.status(200).json(gate.payload);
+    }
+    return next();
+  } catch (err) {
+    console.warn('[UpdateGate] Check warning:', err.message);
+    return next();
+  }
+}
+
 /**
  * Root directory info endpoint
  */
@@ -142,13 +197,15 @@ app.get('/', (req, res) => {
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
-      battle: '2000x1000 (mid-turn 1000x500 WebP)',
+      battle: '2000x1000 (.png) / 1400x700 final & 800x400 mid (.webp)',
       wiki: '2000x1000',
     },
     endpoints: {
       health: 'GET /health',
       update: 'GET /api/update[/:version]',
+      update_ack: 'POST /api/update/ack',
       info: 'GET /api/info/:query',
+      info_pet: 'GET /api/info/pet/:petType[.webp|.png|.json]',
       wiki: 'GET /api/wiki[?category=overview|realms|battle|equipment|pets|economy]',
       wiki_catalog: 'GET /api/wiki/catalog',
       wiki_chart_elements: 'GET /api/wiki/chart/elements[.png|.webp]',
@@ -171,13 +228,18 @@ app.get('/', (req, res) => {
       leaderboard: 'GET /api/leaderboard[?type=level|power|wealth|marry&limit=10]',
       quest_status: 'GET /api/quest/status/:userId',
       quest_claim: 'POST /api/quest/claim',
+      quest_claim_weekly: 'POST /api/quest/claim-weekly',
       quest_tower: 'POST /api/quest/tower',
       quest_tower_reset: 'POST /api/quest/tower/reset',
-      inventory: 'GET /api/inv/:userId',
+      job_status: 'GET /api/job/status/:userId',
+      job_work: 'POST /api/job/work',
+      inventory: 'GET /api/inv/:userId[?view=overview|items|pets|roles|resources]',
       equipment_list: 'GET /api/equipment/:userId[?sort=rarity_desc|rarity_asc|equipped&slot=all|weapon|gem|soul|equipped]',
+      roles_list: 'GET /api/roles/:userId[?filter=all|equipped|permanent|timed&sort=rarity_desc|duration_desc]',
       equip: 'POST /api/equip',
       unequip: 'POST /api/unequip',
       dismantle: 'POST /api/dismantle',
+      enchant: 'POST /api/enchant',
       pet_list: 'GET /api/pet/:userId[?sort=power_desc|rarity_desc|rarity_asc|level_desc|star_desc]',
       pet_active: 'POST /api/pet/active',
       pet_upgrade: 'POST /api/pet/upgrade',
@@ -221,6 +283,7 @@ app.get('/health', (req, res) => {
     service: 'sumi-profile-backend',
     version: '1.0.0',
     update_version: LATEST_VERSION,
+    prerender: getPrerenderStatus(),
     uptime: process.uptime(),
     supabase_connected: !!supabase,
     timestamp: new Date().toISOString(),
@@ -228,13 +291,59 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================================================
-// TRỤ CỘT 1: HỆ THỐNG /WIKI, /INFO & /UPDATE
+// TRỤ CỘT 1: HỆ THỐNG /WIKI, /INFO & /UPDATES
 // ============================================================================
 
 app.get(['/api/update', '/api/update/:version'], (req, res) => {
   const ver = getCleanParam(req.params.version || req.query.version, '');
   const result = getChangelogPayload(ver || LATEST_VERSION);
   return res.status(result.status || 200).json(result);
+});
+
+app.post('/api/update/ack', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await acknowledgeUpdate(body.userId || body.user_id || '');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/update/ack error:', err);
+    return res.status(500).json({ success: false, error: 'UPDATE_ACK_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/info/pet/:petType', async (req, res) => {
+  try {
+    const rawParam = String(req.params.petType || '').trim();
+    const lower = rawParam.toLowerCase();
+    const wantJson = lower.endsWith('.json') || req.query.format === 'json';
+    const wantPng = lower.endsWith('.png') || req.query.format === 'png';
+    const cleanType = lower.replace(/\.(png|webp|json)$/i, '');
+
+    if (!Object.prototype.hasOwnProperty.call(PET_BY_TYPE, cleanType)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Pet not found',
+        message: `Linh Thú '${rawParam}' không tồn tại.`,
+      });
+    }
+
+    const pet = PET_BY_TYPE[cleanType];
+    if (wantJson) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=300');
+      return res.status(200).json({ success: true, data: pet });
+    }
+
+    const fmt = wantPng ? 'png' : 'webp';
+    const imgBuffer = await getStaticPetCardBuffer(pet, fmt);
+    res.setHeader('Content-Type', fmt === 'png' ? 'image/png' : 'image/webp');
+    res.setHeader('Content-Length', imgBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(imgBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu /api/info/pet:', err);
+    return res.status(500).json({ success: false, error: 'INFO_PET_FAILED', message: err.message });
+  }
 });
 
 app.get('/api/info/:query', (req, res) => {
@@ -282,7 +391,7 @@ app.get('/api/wiki/catalog', (req, res) => {
 app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements.webp', '/api/wiki/chart/elements'], async (req, res) => {
   try {
     const isWebp = req.path.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
-    const imgBuffer = await renderElementalChart({ format: isWebp ? 'webp' : 'png' });
+    const imgBuffer = await getStaticElementChartBuffer(isWebp ? 'webp' : 'png');
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
     res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -306,10 +415,13 @@ app.get('/api/wiki/item/:itemId', async (req, res) => {
     }
 
     if (wantImg) {
-      const imgBuffer = await renderWikiItemCard(detail.data, { format: wantWebp ? 'webp' : 'png' });
+      const fmt = wantWebp ? 'webp' : 'png';
+      const imgBuffer = detail.data?.is_unique
+        ? await getCachedUniqueItemCard(detail.data, fmt)
+        : await getStaticNonUniqueItemCardBuffer(detail.data, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
-      res.setHeader('Cache-Control', 'public, max-age=30');
+      res.setHeader('Cache-Control', detail.data?.is_unique ? 'public, max-age=30' : 'public, max-age=3600');
       return res.end(imgBuffer);
     }
 
@@ -335,10 +447,11 @@ app.get('/api/wiki/pet/:petType', async (req, res) => {
     }
 
     if (wantImg) {
-      const imgBuffer = await renderWikiPetCard(detail.data, { format: wantWebp ? 'webp' : 'png' });
+      const fmt = wantWebp ? 'webp' : 'png';
+      const imgBuffer = await getStaticPetCardBuffer(detail.data, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
-      res.setHeader('Cache-Control', 'public, max-age=300');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
       return res.end(imgBuffer);
     }
 
@@ -391,7 +504,7 @@ app.post('/api/exp/voice-heartbeat', requireBackendApiKey, async (req, res) => {
 // TRỤ CỘT 3: ĐẤU TRƯỜNG /BATTLE 1V1 & PvE TỰ DO
 // ============================================================================
 
-app.post('/api/battle/simulate', async (req, res) => {
+app.post('/api/battle/simulate', requireUpdateAck, async (req, res) => {
   try {
     const { attackerId, defenderId, attacker, defender, options } = req.body || {};
 
@@ -417,18 +530,20 @@ app.post('/api/battle/simulate', async (req, res) => {
     const applyRewards = req.body?.applyRewards !== undefined
       ? Boolean(req.body.applyRewards)
       : (isFreePve || reqMode === 'pvp');
+    const rawEnforce = req.body?.enforceCooldown ?? options?.enforceCooldown;
 
     const mergedOptions = {
       ...(options && typeof options === 'object' ? options : {}),
       ...(channelId ? { channelId } : {}),
       mode: resolvedMode,
       applyRewards,
+      enforceCooldown: rawEnforce !== undefined ? Boolean(rawEnforce) : true,
     };
 
     const battleResult = await simulateBattle(cleanAttackerId, cleanDefenderId, mergedOptions);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.status(200).json(battleResult);
+    return res.status(battleResult.status || 200).json(battleResult);
   } catch (err) {
     console.error('[Server] Lỗi khi xử lý mô phỏng chiến đấu:', err);
     return res.status(500).json({
@@ -547,10 +662,10 @@ app.get('/api/battle/report/:battleId/:frameSpec', async (req, res) => {
 
     const frameMeta = getBattleFrameMeta(cleanId, frameIndex);
     const scale = frameMeta ? frameMeta.scale : 2;
-    const imgBuffer = await renderBattleCard(cached, {
+    const imgBuffer = await renderBattleCardQueued(`battle:${cleanId}:${frameIndex}:${isWebp ? 'webp' : 'png'}`, cached, {
       scale,
       format: isWebp ? 'webp' : 'png',
-      webpQuality: scale === 1 ? 82 : 85,
+      webpQuality: scale <= 1 ? 80 : 84,
       frame: frameMeta,
     });
     if (isWebp) {
@@ -592,7 +707,9 @@ app.get('/api/battle/report/:battleId', async (req, res) => {
       }
     }
 
-    const imgBuffer = await renderBattleCard(cached, { format: isWebp ? 'webp' : 'png' });
+    const imgBuffer = await renderBattleCardQueued(`battle:${cleanId}:default:${isWebp ? 'webp' : 'png'}`, cached, {
+      format: isWebp ? 'webp' : 'png',
+    });
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
     res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=300');
@@ -657,7 +774,13 @@ app.get('/api/profile/:userId', async (req, res) => {
     }
 
     const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
-    const imgBuffer = await renderProfileCard(profileData, { format: isWebp ? 'webp' : 'png' });
+    const fmt = isWebp ? 'webp' : 'png';
+    const cardHash = computeDynamicDataHash({ fmt, v: '1.2', ...profileData });
+    const imgBuffer = await getOrRenderDynamicCard(
+      `profile:${cleanUserId}:${fmt}`,
+      cardHash,
+      () => renderProfileCard(profileData, { format: fmt }),
+    );
 
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
     res.setHeader('Content-Length', imgBuffer.length);
@@ -722,7 +845,29 @@ app.get('/api/rank/:userId', async (req, res) => {
     }
 
     const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
-    const imgBuffer = await renderRankCard(profileData, { format: isWebp ? 'webp' : 'png' });
+    const fmt = isWebp ? 'webp' : 'png';
+    const cardHash = computeDynamicDataHash({
+      fmt,
+      v: '1.2',
+      user_id: profileData.user_id,
+      username: profileData.username,
+      avatar_url: profileData.avatar_url,
+      level: profileData.level,
+      exp: profileData.exp,
+      next_level_exp: profileData.next_level_exp,
+      realm: profileData.realm,
+      custom_title: profileData.custom_title,
+      linh_thach: profileData.linh_thach,
+      clan: profileData.clan,
+      married: profileData.married,
+      frame_id: profileData.frame_id,
+      background_url: profileData.background_url,
+    });
+    const imgBuffer = await getOrRenderDynamicCard(
+      `rank:${cleanUserId}:${fmt}`,
+      cardHash,
+      () => renderRankCard(profileData, { format: fmt }),
+    );
 
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
     res.setHeader('Content-Length', imgBuffer.length);
@@ -777,7 +922,7 @@ app.post('/api/profile/render', async (req, res) => {
 // ============================================================================
 // PHASE 1: ECONOMY (/daily, /doiqua, /roll) & INVENTORY/LOADOUT (/inv, /equip, /unequip, /pet)
 // ============================================================================
-app.post('/api/economy/daily', requireBackendApiKey, async (req, res) => {
+app.post('/api/economy/daily', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await claimDaily(body.userId, {
@@ -792,7 +937,7 @@ app.post('/api/economy/daily', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/economy/doiqua', requireBackendApiKey, async (req, res) => {
+app.post('/api/economy/doiqua', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await convertExpToLinhThach(body.userId, body.amountExp ?? body.amount, {
@@ -807,7 +952,7 @@ app.post('/api/economy/doiqua', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/economy/roll', requireBackendApiKey, async (req, res) => {
+app.post('/api/economy/roll', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await rollGacha(body.userId, {
@@ -825,9 +970,10 @@ app.post('/api/economy/roll', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/inv/:userId', async (req, res) => {
+app.get('/api/inv/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getInventory(req.params.userId, {
+      view: getCleanParam(req.query.view, 'overview') || 'overview',
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -839,7 +985,7 @@ app.get('/api/inv/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/equip', requireBackendApiKey, async (req, res) => {
+app.post('/api/equip', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await equipTarget(body.userId, {
@@ -854,7 +1000,7 @@ app.post('/api/equip', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/unequip', requireBackendApiKey, async (req, res) => {
+app.post('/api/unequip', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await unequipTarget(body.userId, {
@@ -868,7 +1014,7 @@ app.post('/api/unequip', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/dismantle', requireBackendApiKey, async (req, res) => {
+app.post('/api/dismantle', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await dismantleTarget(body.userId, {
@@ -885,7 +1031,7 @@ app.post('/api/dismantle', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/equipment/:userId', async (req, res) => {
+app.get('/api/equipment/:userId', requireUpdateAck, async (req, res) => {
   try {
     const filter = getCleanParam(req.query.filter, '');
     let sort = getCleanParam(req.query.sort, '') || 'rarity_desc';
@@ -909,19 +1055,44 @@ app.get('/api/equipment/:userId', async (req, res) => {
   }
 });
 
-app.get('/api/pet/:userId', async (req, res) => {
+app.get('/api/roles/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const filter = getCleanParam(req.query.filter, 'all') || 'all';
+    const sort = getCleanParam(req.query.sort, 'rarity_desc') || 'rarity_desc';
+    const result = await getUserRoles(req.params.userId, {
+      filter,
+      sort,
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/roles error:', err);
+    return res.status(500).json({ success: false, error: 'ROLES_LIST_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/pet/:userId', requireUpdateAck, async (req, res) => {
   try {
     const sort = getCleanParam(req.query.sort, 'power_desc') || 'power_desc';
     const inv = await getInventory(req.params.userId, { petSort: sort });
     if (!inv.success) return res.status(inv.status || 400).json(inv);
-    return res.json({ success: true, sort, user: inv.user, pets: inv.pets, summary_pets: inv.summary_pets });
+    return res.json({
+      success: true,
+      sort,
+      user: inv.user,
+      pets: inv.pets,
+      summary_pets: inv.summary_pets_detailed || inv.summary_pets,
+      summary_pets_compact: inv.summary_pets,
+    });
   } catch (err) {
     console.error('[Server] /api/pet error:', err);
     return res.status(500).json({ success: false, error: 'PET_LIST_FAILED', message: err.message });
   }
 });
 
-app.post('/api/pet/active', requireBackendApiKey, async (req, res) => {
+app.post('/api/pet/active', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await setActivePet(body.userId, body.petId || body.petType);
@@ -932,7 +1103,7 @@ app.post('/api/pet/active', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/pet/upgrade', requireBackendApiKey, async (req, res) => {
+app.post('/api/pet/upgrade', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await upgradePet(body.userId, body.petId || body.petType, body.mode || 'level');
@@ -940,6 +1111,52 @@ app.post('/api/pet/upgrade', requireBackendApiKey, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/pet/upgrade error:', err);
     return res.status(500).json({ success: false, error: 'PET_UPGRADE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/enchant', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await enchantTarget(body.userId, {
+      targetType: body.targetType || body.loai || body.category || '',
+      targetId: body.targetId || body.mucTieu || body.maId || '',
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/enchant error:', err);
+    return res.status(500).json({ success: false, error: 'ENCHANT_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/job/status/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getJobStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/job/status error:', err);
+    return res.status(500).json({ success: false, error: 'JOB_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/job/work', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await doJob(body.userId, body.jobId || body.nghe || body.job || '', {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/job/work error:', err);
+    return res.status(500).json({ success: false, error: 'JOB_WORK_FAILED', message: err.message });
   }
 });
 
@@ -960,7 +1177,7 @@ app.get('/api/shop/catalog', async (req, res) => {
   }
 });
 
-app.post('/api/shop/preview', async (req, res) => {
+app.post('/api/shop/preview', requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await previewShopItem(body.userId, body.category, body.itemId, {
@@ -975,7 +1192,7 @@ app.post('/api/shop/preview', async (req, res) => {
   }
 });
 
-app.post('/api/shop/buy', requireBackendApiKey, async (req, res) => {
+app.post('/api/shop/buy', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await buyShopItem(body.userId, {
@@ -994,7 +1211,7 @@ app.post('/api/shop/buy', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/marry/status/:userId', async (req, res) => {
+app.get('/api/marry/status/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getMarriageStatus(req.params.userId, {
       username: getCleanParam(req.query.username),
@@ -1008,7 +1225,7 @@ app.get('/api/marry/status/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/marry/propose', requireBackendApiKey, async (req, res) => {
+app.post('/api/marry/propose', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await proposeMarriage(
@@ -1029,7 +1246,7 @@ app.post('/api/marry/propose', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/marry/respond', requireBackendApiKey, async (req, res) => {
+app.post('/api/marry/respond', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await respondMarriage(body.responderId || body.userId, body.decision, {
@@ -1042,7 +1259,7 @@ app.post('/api/marry/respond', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/marry/upgrade-ring', requireBackendApiKey, async (req, res) => {
+app.post('/api/marry/upgrade-ring', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await upgradeMarriageRing(body.userId, getCleanParam(body.ringId || body.newRingId) || '');
@@ -1053,7 +1270,7 @@ app.post('/api/marry/upgrade-ring', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/marry/divorce', requireBackendApiKey, async (req, res) => {
+app.post('/api/marry/divorce', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await divorceMarriage(body.userId);
@@ -1077,7 +1294,7 @@ app.get('/api/clan/leaderboard', async (req, res) => {
   }
 });
 
-app.get('/api/clan/info/:userId', async (req, res) => {
+app.get('/api/clan/info/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getClanInfo(req.params.userId, getCleanParam(req.query.clan), {
       username: getCleanParam(req.query.username),
@@ -1091,7 +1308,7 @@ app.get('/api/clan/info/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/clan/create', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/create', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await createClan(body.userId, {
@@ -1109,7 +1326,7 @@ app.post('/api/clan/create', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/join', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/join', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await requestJoinClan(body.userId, getCleanParam(body.clanQuery || body.clanId || body.clanName), {
@@ -1123,7 +1340,7 @@ app.post('/api/clan/join', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/clan/requests/:userId', async (req, res) => {
+app.get('/api/clan/requests/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await listJoinRequests(req.params.userId);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
@@ -1133,7 +1350,7 @@ app.get('/api/clan/requests/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/clan/approve', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/approve', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await respondJoinRequest(body.leaderId || body.userId, body.applicantId || body.targetId, body.decision || 'approve');
@@ -1144,7 +1361,7 @@ app.post('/api/clan/approve', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/leave', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/leave', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const result = await leaveClan(req.body?.userId);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
@@ -1154,7 +1371,7 @@ app.post('/api/clan/leave', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/kick', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/kick', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await kickClanMember(body.leaderId || body.userId, body.targetId);
@@ -1165,7 +1382,7 @@ app.post('/api/clan/kick', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/donate', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/donate', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await donateToClan(body.userId, body.amount);
@@ -1176,7 +1393,7 @@ app.post('/api/clan/donate', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/upgrade', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/upgrade', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const result = await upgradeClan(req.body?.userId);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
@@ -1186,7 +1403,7 @@ app.post('/api/clan/upgrade', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/war/declare', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/war/declare', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await declareClanWar(body.leaderId || body.userId, getCleanParam(body.targetClan || body.targetQuery), body.betAmount);
@@ -1197,7 +1414,7 @@ app.post('/api/clan/war/declare', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/clan/war/respond', requireBackendApiKey, async (req, res) => {
+app.post('/api/clan/war/respond', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await respondClanWar(body.leaderId || body.userId, body.decision || 'accept');
@@ -1208,7 +1425,7 @@ app.post('/api/clan/war/respond', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/clan/war/status/:userId', async (req, res) => {
+app.get('/api/clan/war/status/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getClanWarStatus(req.params.userId);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
@@ -1231,7 +1448,7 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
-app.get('/api/quest/status/:userId', async (req, res) => {
+app.get('/api/quest/status/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getQuestStatus(req.params.userId, {
       username: getCleanParam(req.query.username),
@@ -1245,7 +1462,7 @@ app.get('/api/quest/status/:userId', async (req, res) => {
   }
 });
 
-app.post('/api/quest/claim', requireBackendApiKey, async (req, res) => {
+app.post('/api/quest/claim', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await claimDailyQuests(body.userId, {
@@ -1260,7 +1477,22 @@ app.post('/api/quest/claim', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/quest/tower', requireBackendApiKey, async (req, res) => {
+app.post(['/api/quest/claim-weekly', '/api/quests/claim-weekly'], requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await claimWeeklyQuests(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/quest/claim-weekly error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_WEEKLY_CLAIM_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/quest/tower', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await challengeTower(body.userId, {
@@ -1275,7 +1507,7 @@ app.post('/api/quest/tower', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/quest/tower/reset', requireBackendApiKey, async (req, res) => {
+app.post('/api/quest/tower/reset', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await resetTowerAttempts(body.userId, {
@@ -1290,7 +1522,7 @@ app.post('/api/quest/tower/reset', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.post('/api/economy/gift', requireBackendApiKey, async (req, res) => {
+app.post('/api/economy/gift', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
     const result = await sendGift(
@@ -1328,10 +1560,15 @@ const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.arg
 if (isMain) {
   app.listen(PORT, () => {
     console.log(`====================================================`);
-    console.log(`🌸 SuMi Family Profile Backend v2.0 (Full HD+) running on port ${PORT}`);
+    console.log(`🌸 SuMi Family Profile Backend v${LATEST_VERSION} (Full HD+) running on port ${PORT}`);
     console.log(`👉 Health check: http://localhost:${PORT}/health`);
     console.log(`👉 Fuyumi Profile Card (2000x1000): http://localhost:${PORT}/api/profile/757091869183311872`);
     console.log(`====================================================`);
+    setTimeout(() => {
+      warmStaticAssetsInBackground().catch((err) => {
+        console.warn('[StaticCache] Boot warm error:', err.message);
+      });
+    }, 250);
   });
 }
 

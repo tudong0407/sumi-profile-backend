@@ -2,15 +2,20 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { FIXTURE_USERS, BATTLE_FIXTURES } from '../helpers/fixtures.js';
+import { markUserAckedInCache, clearUpdateGateCache } from '../../src/services/updateGateService.js';
 
 describe('Tier 4 - Real-World Battle Simulation Scenarios', () => {
   let testServer;
 
   before(async () => {
+    markUserAckedInCache(FIXTURE_USERS.fuyumi.userId);
+    markUserAckedInCache(FIXTURE_USERS.hanabiraMei.userId);
     testServer = await createTestServer();
   });
 
   after(async () => {
+    clearUpdateGateCache(FIXTURE_USERS.fuyumi.userId);
+    clearUpdateGateCache(FIXTURE_USERS.hanabiraMei.userId);
     if (testServer) await testServer.close();
   });
 

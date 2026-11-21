@@ -3,15 +3,20 @@ import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
 import { FIXTURE_USERS } from '../helpers/fixtures.js';
+import { markUserAckedInCache, clearUpdateGateCache } from '../../src/services/updateGateService.js';
 
 describe('Tier 1 - Pillar 3 Full HD+ Battle Report Image (2000x1000)', () => {
   let testServer;
 
   before(async () => {
+    markUserAckedInCache(FIXTURE_USERS.fuyumi.userId);
+    markUserAckedInCache(FIXTURE_USERS.hanabiraMei.userId);
     testServer = await createTestServer();
   });
 
   after(async () => {
+    clearUpdateGateCache(FIXTURE_USERS.fuyumi.userId);
+    clearUpdateGateCache(FIXTURE_USERS.hanabiraMei.userId);
     if (testServer) await testServer.close();
   });
 

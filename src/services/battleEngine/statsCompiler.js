@@ -1,18 +1,33 @@
 import { getProfileData } from '../profileService.js';
-import { PET_BY_TYPE, EQUIPMENT_BY_ID } from '../../data/catalog.js';
+import {
+  PET_BY_TYPE,
+  EQUIPMENT_BY_ID,
+  normalizeEnchantGrade,
+  getEnchantMultiplier,
+} from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 
 function enrichEquipItem(rawItem, slot) {
   if (!rawItem) return null;
   const cat = rawItem.item_id ? EQUIPMENT_BY_ID[rawItem.item_id] : null;
-  return {
+  const grade = normalizeEnchantGrade(rawItem.enchant_grade || 'D');
+  const alreadyApplied = Boolean(rawItem.enchant_applied);
+  const mult = alreadyApplied ? 1.0 : getEnchantMultiplier(grade);
+  const merged = {
     ...(cat || {}),
     ...rawItem,
     slot: rawItem.slot || cat?.item_type || slot,
     rarity_key: rawItem.rarity_key || cat?.rarity_key || 'common',
+    enchant_grade: grade,
+    enchant_applied: true,
     hax_skill: rawItem.hax_skill ?? cat?.hax_skill ?? null,
     hax_description: rawItem.hax_description || cat?.hax_description || null,
   };
+  merged.bonus_atk = Math.round((Number(merged.bonus_atk) || 0) * mult);
+  merged.bonus_def = Math.round((Number(merged.bonus_def) || 0) * mult);
+  merged.bonus_spd = Math.round((Number(merged.bonus_spd) || 0) * mult);
+  merged.bonus_hp = Math.round((Number(merged.bonus_hp) || 0) * mult);
+  return merged;
 }
 
 /**
@@ -56,6 +71,8 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const element = pet.element || catalogPet?.element || 'Thổ';
   const level = Math.max(1, Number(pet.level) || 1);
   const star = Math.max(1, Number(pet.star) || 1);
+  const enchantGrade = normalizeEnchantGrade(pet.enchant_grade || 'D');
+  const petMult = pet.enchant_applied ? 1.0 : getEnchantMultiplier(enchantGrade);
 
   const equip = pet.equipment || profile?.equipment || {};
   const weapon = enrichEquipItem(equip.weapon, 'weapon');
@@ -77,15 +94,13 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     bonusCrit += Number(piece.bonus_crit) || 0;
   }
 
-  let finalAtk = Number(pet.atk) || (catalogPet ? catalogPet.base_atk : 200);
-  let finalDef = Number(pet.def) || (catalogPet ? catalogPet.base_def : 100);
-  let finalSpd = Number(pet.spd) || (catalogPet ? catalogPet.base_spd : 150);
+  const rawBaseAtk = pet.base_atk !== undefined ? Number(pet.base_atk) : (Number(pet.atk) || (catalogPet ? catalogPet.base_atk : 200));
+  const rawBaseDef = pet.base_def !== undefined ? Number(pet.base_def) : (Number(pet.def) || (catalogPet ? catalogPet.base_def : 100));
+  const rawBaseSpd = pet.base_spd !== undefined ? Number(pet.base_spd) : (Number(pet.spd) || (catalogPet ? catalogPet.base_spd : 150));
 
-  if (pet.base_atk !== undefined && pet.bonus_atk !== undefined) {
-    finalAtk = Number(pet.base_atk) + bonusAtk;
-    finalDef = Number(pet.base_def) + bonusDef;
-    finalSpd = Number(pet.base_spd) + bonusSpd;
-  }
+  let finalAtk = Math.round(rawBaseAtk * petMult) + bonusAtk;
+  let finalDef = Math.round(rawBaseDef * petMult) + bonusDef;
+  let finalSpd = Math.round(rawBaseSpd * petMult) + bonusSpd;
 
   const couplePowerPct = Number(profile?.married?.power_bonus_pct) || 0;
   if (couplePowerPct > 0) {
@@ -127,6 +142,8 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     element,
     level,
     star,
+    enchantGrade,
+    enchant_grade: enchantGrade,
     baseAtk: finalAtk,
     baseDef: finalDef,
     baseSpd: finalSpd,

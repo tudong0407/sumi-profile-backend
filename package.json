@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "prerender": "node scripts/prerender_static_assets.mjs",
     "test": "node --test tests/**/*.test.js",
     "test:tier1": "node --test tests/tier1-features/*.test.js",
     "test:tier2": "node --test tests/tier2-boundaries/*.test.js",

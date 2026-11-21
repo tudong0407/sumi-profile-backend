@@ -7,7 +7,11 @@ import {
   formatRarityLabel,
   LEVEL_ROLE_BUFF_CONFIG,
   ROLE_BUFF_CONFIG,
+  normalizeEnchantGrade,
+  getEnchantMultiplier,
+  getEnchantBonusPct,
 } from '../data/catalog.js';
+import { LATEST_VERSION } from '../data/changelogs.js';
 import { computeMarriageBuffs } from './marryService.js';
 
 export const ROLE_PERKS_MAP = {
@@ -229,6 +233,9 @@ export function getFuyumiProfileMock() {
       hax_desc: 'Bất tử 3 đòn đầu, phản lại 100% sát thương gốc',
       level: 99,
       star: 10,
+      enchant_grade: 'S',
+      enchant_bonus_pct: 40,
+      enchant_applied: true,
       atk: 101069,
       def: 101049,
       spd: 100949,
@@ -242,9 +249,12 @@ export function getFuyumiProfileMock() {
           slot: 'weapon',
           rarity: 'Than Thoai',
           element: 'Kim',
-          bonus_atk: 720,
+          enchant_grade: 'S',
+          enchant_bonus_pct: 40,
+          enchant_applied: true,
+          bonus_atk: 1008,
           bonus_def: 0,
-          bonus_spd: 300,
+          bonus_spd: 420,
           bonus_hp: 0,
           bonus_crit: 18,
           hax_skill: 'Tuyệt Diệt Bất Tử',
@@ -258,10 +268,13 @@ export function getFuyumiProfileMock() {
           slot: 'gem',
           rarity: 'Than Thoai',
           element: 'Hon Don',
+          enchant_grade: 'S',
+          enchant_bonus_pct: 40,
+          enchant_applied: true,
           bonus_atk: 0,
-          bonus_def: 750,
-          bonus_spd: 200,
-          bonus_hp: 5000,
+          bonus_def: 1050,
+          bonus_spd: 280,
+          bonus_hp: 7000,
           bonus_crit: 0,
           hax_skill: 'Thần Hồ Diễm Hộ',
           hax_description: 'Đầu trận tạo khiên hộ thể bằng 100% máu tối đa; khi khiên còn tồn tại, mọi đòn tấn công của đối phương bị giảm 50% uy lực!',
@@ -274,9 +287,12 @@ export function getFuyumiProfileMock() {
           slot: 'soul',
           rarity: 'Than Thoai',
           element: 'Hon Don',
-          bonus_atk: 350,
-          bonus_def: 300,
-          bonus_spd: 450,
+          enchant_grade: 'S',
+          enchant_bonus_pct: 40,
+          enchant_applied: true,
+          bonus_atk: 490,
+          bonus_def: 420,
+          bonus_spd: 630,
           bonus_hp: 0,
           bonus_crit: 0,
           hax_skill: 'Mị Hoặc Chúng Sinh',
@@ -434,6 +450,7 @@ export async function ensureUserInitialized(userId, meta = {}) {
         clan_id: null,
         streak: 0,
         total_voice_minutes: 0,
+        last_seen_update_version: LATEST_VERSION,
       };
 
       const { data: created, error: insertErr } = await supabase
@@ -500,6 +517,8 @@ export async function ensureUserInitialized(userId, meta = {}) {
           spd: STARTER_PET.base_spd,
           power_score: STARTER_PET.base_power,
           is_active: true,
+          enchant_grade: 'D',
+          enchant_pity: 0,
         });
         if (petErr) {
           console.warn(`[ProfileService] Starter pet seed error for ${cleanId}:`, petErr.message);
@@ -621,6 +640,12 @@ export async function getProfileData(userId, overrides = {}) {
             if (!item.slot) continue;
             const slotKey = String(item.slot).toLowerCase().trim();
             if (['weapon', 'gem', 'soul'].includes(slotKey)) {
+              const itemGrade = normalizeEnchantGrade(item.enchant_grade || 'D');
+              const itemMult = getEnchantMultiplier(itemGrade);
+              const effAtk = Math.round((Number(item.bonus_atk) || 0) * itemMult);
+              const effDef = Math.round((Number(item.bonus_def) || 0) * itemMult);
+              const effSpd = Math.round((Number(item.bonus_spd) || 0) * itemMult);
+              const effHp = Math.round((Number(item.bonus_hp) || 0) * itemMult);
               equipment[slotKey] = {
                 item_id: item.item_id,
                 item_name: item.item_name,
@@ -628,19 +653,23 @@ export async function getProfileData(userId, overrides = {}) {
                 slot: slotKey,
                 rarity: item.rarity,
                 element: item.element,
-                bonus_atk: Number(item.bonus_atk) || 0,
-                bonus_def: Number(item.bonus_def) || 0,
-                bonus_spd: Number(item.bonus_spd) || 0,
-                bonus_hp: Number(item.bonus_hp) || 0,
+                enchant_grade: itemGrade,
+                enchant_bonus_pct: getEnchantBonusPct(itemGrade),
+                enchant_pity: Number(item.enchant_pity) || 0,
+                enchant_applied: true,
+                bonus_atk: effAtk,
+                bonus_def: effDef,
+                bonus_spd: effSpd,
+                bonus_hp: effHp,
                 bonus_crit: Number(item.bonus_crit) || 0,
                 hax_skill: item.hax_skill || null,
                 hax_description: item.hax_description || null,
                 icon: item.icon || (slotKey === 'weapon' ? '⚔️' : slotKey === 'gem' ? '💎' : '🦊'),
               };
-              bonusAtk += Number(item.bonus_atk) || 0;
-              bonusDef += Number(item.bonus_def) || 0;
-              bonusSpd += Number(item.bonus_spd) || 0;
-              bonusHp += Number(item.bonus_hp) || 0;
+              bonusAtk += effAtk;
+              bonusDef += effDef;
+              bonusSpd += effSpd;
+              bonusHp += effHp;
             }
           }
         }
@@ -668,13 +697,22 @@ export async function getProfileData(userId, overrides = {}) {
         let petData = null;
         if (pet) {
           const catalogPet = PET_BY_TYPE[pet.pet_type] || null;
-          const baseAtk = Number(pet.atk) || 0;
-          const baseDef = Number(pet.def) || 0;
-          const baseSpd = Number(pet.spd) || 0;
+          const petGrade = normalizeEnchantGrade(pet.enchant_grade || 'D');
+          const petMult = getEnchantMultiplier(petGrade);
+          const rawBaseAtk = Number(pet.atk) || 0;
+          const rawBaseDef = Number(pet.def) || 0;
+          const rawBaseSpd = Number(pet.spd) || 0;
+          const baseAtk = Math.round(rawBaseAtk * petMult);
+          const baseDef = Math.round(rawBaseDef * petMult);
+          const baseSpd = Math.round(rawBaseSpd * petMult);
           const finalAtk = baseAtk + bonusAtk;
           const finalDef = baseDef + bonusDef;
           const finalSpd = baseSpd + bonusSpd;
-          const basePower = Number(pet.power_score) || (baseAtk * 3 + baseDef * 2 + baseSpd * 2 + (pet.level || 1) * 50);
+          const petLvl = Number(pet.level) || 1;
+          const computedBasePower = baseAtk * 3 + baseDef * 2 + baseSpd * 2 + petLvl * 50;
+          const basePower = pet.pet_type === 'cuu_vi_hong_ho' && Number(pet.power_score) > computedBasePower
+            ? Math.round(Number(pet.power_score) * petMult)
+            : computedBasePower;
           const bonusPower = (bonusAtk * 3) + (bonusDef * 2) + (bonusSpd * 2) + Math.floor(bonusHp * 0.5);
           const rawTotalPower = basePower + bonusPower;
           const couplePowerPct = marriedData?.power_bonus_pct || 0;
@@ -686,9 +724,13 @@ export async function getProfileData(userId, overrides = {}) {
             pet_type: pet.pet_type,
             rarity: formatRarityLabel(pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm'),
             element: pet.element || catalogPet?.element || 'Thổ',
+            enchant_grade: petGrade,
+            enchant_bonus_pct: getEnchantBonusPct(petGrade),
+            enchant_pity: Number(pet.enchant_pity) || 0,
+            enchant_applied: true,
             hax_skill: catalogPet?.hax_skill || pet.hax_skill || null,
             hax_desc: catalogPet?.hax_description || pet.hax_description || null,
-            level: Number(pet.level) || 1,
+            level: petLvl,
             star: Number(pet.star) || 1,
             atk: finalAtk,
             def: finalDef,

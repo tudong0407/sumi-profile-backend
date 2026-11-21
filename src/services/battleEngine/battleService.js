@@ -36,12 +36,81 @@ export const PVP_DAILY_LT_LIMIT = 15;
 export const PVE_FREE_DAILY_LT_LIMIT = 25;
 export const BATTLE_WIN_LT = 10;
 export const BATTLE_LOSS_LT = 5;
+export const BATTLE_COOLDOWN_MS = 5000;
 
 const BATTLE_CACHE_MAX = 120;
 const BATTLE_CACHE_TTL_MS = 30 * 60 * 1000;
+const MAX_CANVAS_CONCURRENT = 2;
 const battleReportCache = new Map();
 const latestBattleByChannel = new Map();
 const latestBattleByUser = new Map();
+const battleCooldowns = new Map();
+const inFlightCanvasRenders = new Map();
+const canvasWaitQueue = [];
+let activeCanvasRenders = 0;
+
+export function withCanvasRenderSlot(dedupKey, fn) {
+  const key = dedupKey ? String(dedupKey) : '';
+  if (key && inFlightCanvasRenders.has(key)) {
+    return inFlightCanvasRenders.get(key);
+  }
+
+  const exec = (async () => {
+    if (activeCanvasRenders >= MAX_CANVAS_CONCURRENT) {
+      await new Promise((resolve) => canvasWaitQueue.push(resolve));
+    }
+    activeCanvasRenders += 1;
+    try {
+      return await fn();
+    } finally {
+      activeCanvasRenders = Math.max(0, activeCanvasRenders - 1);
+      const next = canvasWaitQueue.shift();
+      if (next) next();
+      if (key && inFlightCanvasRenders.get(key) === exec) {
+        inFlightCanvasRenders.delete(key);
+      }
+    }
+  })();
+
+  if (key) {
+    inFlightCanvasRenders.set(key, exec);
+  }
+  return exec;
+}
+
+export function renderBattleCardQueued(dedupKey, battleResult, options = {}) {
+  return withCanvasRenderSlot(dedupKey, () => renderBattleCard(battleResult, options));
+}
+
+export function checkBattleCooldown(userId, nowMs = Date.now()) {
+  const uid = String(userId || '').replace(/[<@!>]/g, '').trim();
+  if (!uid) return { blocked: false, waitSeconds: 0, remainingMs: 0 };
+  const lastAt = battleCooldowns.get(uid) || 0;
+  const elapsed = nowMs - lastAt;
+  if (lastAt > 0 && elapsed < BATTLE_COOLDOWN_MS) {
+    const remainingMs = BATTLE_COOLDOWN_MS - elapsed;
+    return {
+      blocked: true,
+      waitSeconds: Math.max(1, Math.ceil(remainingMs / 1000)),
+      remainingMs,
+    };
+  }
+  return { blocked: false, waitSeconds: 0, remainingMs: 0 };
+}
+
+export function markBattleCooldown(userId, nowMs = Date.now()) {
+  const uid = String(userId || '').replace(/[<@!>]/g, '').trim();
+  if (!uid) return;
+  battleCooldowns.delete(uid);
+  battleCooldowns.set(uid, nowMs);
+  if (battleCooldowns.size > 500) {
+    const cutoff = nowMs - BATTLE_COOLDOWN_MS * 2;
+    for (const [k, ts] of battleCooldowns.entries()) {
+      if (ts < cutoff) battleCooldowns.delete(k);
+    }
+    trimIndexMap(battleCooldowns, 500);
+  }
+}
 
 function trimIndexMap(map, maxSize) {
   while (map.size > maxSize) {
@@ -368,7 +437,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     return [
       {
         index: 1,
-        scale: 1,
+        scale: 0.8,
         isFinal: false,
         currentTurn: 0,
         totalTurns: turnCount,
@@ -379,7 +448,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
       },
       {
         index: 2,
-        scale: 2,
+        scale: 1.4,
         isFinal: true,
         currentTurn: turnCount,
         totalTurns: turnCount,
@@ -396,7 +465,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     return [
       {
         index: 1,
-        scale: 1,
+        scale: 0.8,
         isFinal: false,
         currentTurn: 1,
         totalTurns: turnCount,
@@ -407,7 +476,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
       },
       {
         index: 2,
-        scale: 2,
+        scale: 1.4,
         isFinal: true,
         currentTurn: turnCount,
         totalTurns: turnCount,
@@ -425,7 +494,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
   return [
     {
       index: 1,
-      scale: 1,
+      scale: 0.8,
       isFinal: false,
       currentTurn: 1,
       totalTurns: turnCount,
@@ -436,7 +505,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     },
     {
       index: 2,
-      scale: 1,
+      scale: 0.8,
       isFinal: false,
       currentTurn: midTurn,
       totalTurns: turnCount,
@@ -447,7 +516,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     },
     {
       index: 3,
-      scale: 2,
+      scale: 1.4,
       isFinal: true,
       currentTurn: turnCount,
       totalTurns: turnCount,
@@ -1024,6 +1093,24 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const isFreePve = safeOptions.mode === 'pve_free' || defenderUserOrId === 'pve_free' || !defenderUserOrId;
   const mode = safeOptions.mode || (isFreePve ? 'pve_free' : 'pvp');
 
+  if (safeOptions.enforceCooldown === true) {
+    const rawCdUid = typeof attackerUserOrId === 'string'
+      ? attackerUserOrId
+      : (attackerUserOrId?.user_id || attackerUserOrId?.userId || '');
+    const cd = checkBattleCooldown(rawCdUid);
+    if (cd.blocked) {
+      return {
+        success: false,
+        status: 200,
+        error: 'BATTLE_COOLDOWN',
+        cooldown_seconds: cd.waitSeconds,
+        remaining_ms: cd.remainingMs,
+        message: `${em('su_thunder_hax')} Đạo hữu thao tác quá nhanh! Vui lòng chờ **${cd.waitSeconds} giây** để Linh Thú hồi sức rồi hãy khiêu chiến trận tiếp theo.`,
+      };
+    }
+    markBattleCooldown(rawCdUid);
+  }
+
   const attacker = await compileCombatant(attackerUserOrId, 'attacker');
   let defender = null;
   let opponentBand = null;
@@ -1260,6 +1347,8 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     element: c.element,
     level: c.level,
     star: c.star,
+    enchantGrade: c.enchantGrade || c.enchant_grade || 'D',
+    enchant_grade: c.enchantGrade || c.enchant_grade || 'D',
     atk: c.atk,
     def: c.def,
     spd: c.spd,
@@ -1340,14 +1429,22 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   };
 
   const frameBuffers = new Map();
+  cacheBattleReport(battleId, finalResult, {
+    channelId,
+    attackerId: attacker.id,
+    defenderId: defender.id,
+    framesMeta,
+    frameBuffers,
+  });
+
   const preRenderTask = safeOptions.preRender !== false
     ? Promise.all(
       framesMeta.map(async (f) => {
         try {
-          const buf = await renderBattleCard(finalResult, {
+          const buf = await renderBattleCardQueued(`battle:${battleId}:${f.index}:webp`, finalResult, {
             scale: f.scale,
             format: 'webp',
-            webpQuality: f.scale === 1 ? 82 : 85,
+            webpQuality: f.scale <= 1 ? 80 : 84,
             frame: f,
           });
           if (buf) frameBuffers.set(f.index, buf);
@@ -1386,18 +1483,15 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     : Promise.resolve();
 
   const questTrackTask = (!safeOptions.skipQuestTracking && /^[0-9]{17,20}$/.test(String(attacker.id || '')))
-    ? trackQuestActivity(attacker.id, { battleDelta: 1 })
+    ? trackQuestActivity(attacker.id, { battleDelta: 1, winDelta: attackerWon ? 1 : 0 })
     : Promise.resolve();
 
-  await Promise.all([preRenderTask, clanWarTask, questTrackTask]);
-
-  cacheBattleReport(battleId, finalResult, {
-    channelId,
-    attackerId: attacker.id,
-    defenderId: defender.id,
-    framesMeta,
-    frameBuffers,
-  });
+  const bgTasks = Promise.allSettled([preRenderTask, clanWarTask, questTrackTask]);
+  if (safeOptions.awaitBackgroundTasks) {
+    await bgTasks;
+  } else {
+    void bgTasks;
+  }
 
   return finalResult;
 }

@@ -58,6 +58,14 @@ const RARITY_STYLES = {
     bgTint: 'rgba(159, 18, 57, 0.30)',
     badgeBg: 'rgba(190, 18, 60, 0.90)',
   },
+  supreme: {
+    label: 'TỐI THƯỢNG THẦN THOẠI',
+    primary: '#ec4899',
+    secondary: '#fbbf24',
+    glow: 'rgba(236, 72, 153, 0.78)',
+    bgTint: 'rgba(190, 24, 93, 0.34)',
+    badgeBg: 'rgba(190, 24, 93, 0.92)',
+  },
 };
 
 const ELEMENT_COLORS = {
@@ -669,7 +677,7 @@ export async function renderWikiItemCard(itemData, options = {}) {
 
     ctx.font = `bold 11.5px ${FONT_FAMILY}`;
     ctx.fillStyle = hasOwner ? '#fde047' : '#94a3b8';
-    ctx.fillText('CHỦ SỞ HỮU HIỆN TẠI (ĐỘC NHẤT TOÀN SERVER • 1%)', rightX + 18, ownY + 14);
+    ctx.fillText('CHỦ SỞ HỮU HIỆN TẠI (ĐỘC NHẤT TOÀN SERVER • 0.5%)', rightX + 18, ownY + 14);
 
     ctx.font = `bold 18px ${FONT_FAMILY}`;
     ctx.fillStyle = hasOwner ? '#ffffff' : '#cbd5e1';
@@ -804,9 +812,9 @@ export async function renderWikiPetCard(petData, options = {}) {
   // Pills Phẩm cấp • Hệ • Chiến lực gốc Lv.1
   let px = rightX;
   const py = 90;
-  const petDropRate = petData.drop_rate ?? (petData.rarity_key === 'mythic' ? 1 : petData.rarity_key === 'epic' ? 14 : petData.rarity_key === 'rare' ? 25 : 60);
+  const petDropRate = petData.drop_rate ?? (petData.is_exclusive_fuyumi ? 0 : petData.rarity_key === 'mythic' ? 0.5 : petData.rarity_key === 'epic' ? 14 : petData.rarity_key === 'rare' ? 25 : 60.5);
   const pills = [
-    { text: `${petData.rarity} (${petDropRate}%)`, color: rarityStyle.primary, bg: rarityStyle.bgTint },
+    { text: petData.is_exclusive_fuyumi ? `${petData.rarity} (Độc Quyền)` : `${petData.rarity} (${petDropRate}%)`, color: rarityStyle.primary, bg: rarityStyle.bgTint },
     { text: `Hệ ${petData.element}`, color: elemMeta.color, bg: 'rgba(30, 27, 75, 0.72)' },
     { text: `Chiến lực Lv.1: ${(petData.base_power || 0).toLocaleString('vi-VN')}`, color: '#fde047', bg: 'rgba(120, 53, 15, 0.45)' },
   ];

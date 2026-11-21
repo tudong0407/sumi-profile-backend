@@ -459,9 +459,9 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(d7.status, 200);
     const j7 = await d7.json();
     assert.equal(j7.base_value, 150);
-    assert.equal(j7.refund_linh_thach, 75);
+    assert.equal(j7.refund_linh_thach, 37);
     assert.equal(j7.remove_role_id, '1573186049289756712');
-    assert.equal(j7.linh_thach, 175);
+    assert.equal(j7.linh_thach, 137);
 
     const dPerm = await testServer.fetch('/api/dismantle', {
       method: 'POST',
@@ -471,10 +471,10 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(dPerm.status, 200);
     const jp = await dPerm.json();
     assert.equal(jp.base_value, 10000);
-    assert.equal(jp.refund_linh_thach, 5000);
-    assert.equal(jp.linh_thach, 5175);
+    assert.equal(jp.refund_linh_thach, 2500);
+    assert.equal(jp.linh_thach, 2637);
 
-    // Gacha-sourced role refunds anti-exploit fixed value (10 LT for common 7d, NOT 50% of shop price)
+    // Gacha-sourced role refunds anti-exploit fixed value (3 LT for common 7d, NOT Shop refund)
     const dGachaRole = await testServer.fetch('/api/dismantle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -482,10 +482,10 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(dGachaRole.status, 200);
     const jgRole = await dGachaRole.json();
-    assert.equal(jgRole.refund_linh_thach, 10);
-    assert.equal(jgRole.linh_thach, 5185);
+    assert.equal(jgRole.refund_linh_thach, 3);
+    assert.equal(jgRole.linh_thach, 2640);
 
-    // Shop Equipment dismantle: weapon_common_1 (paid 250 -> 50% = 125 LT); Gacha Item -> 15 LT
+    // Shop Equipment dismantle: weapon_common_1 (paid 250 -> 20% = 50 LT); Gacha rare Item -> 8 LT
     await supabase.from('user_pet_items').delete().eq('user_id', USER_A);
     await supabase.from('user_pet_items').insert([
       {
@@ -513,9 +513,9 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(dItem.status, 200);
     const ji = await dItem.json();
     assert.equal(ji.base_value, 250);
-    assert.equal(ji.refund_linh_thach, 125);
+    assert.equal(ji.refund_linh_thach, 50);
     assert.equal(ji.remove_role_id, '');
-    assert.equal(ji.linh_thach, 5310);
+    assert.equal(ji.linh_thach, 2690);
 
     const dGachaItem = await testServer.fetch('/api/dismantle', {
       method: 'POST',
@@ -524,7 +524,7 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(dGachaItem.status, 200);
     const jgi = await dGachaItem.json();
-    assert.equal(jgi.refund_linh_thach, 35);
-    assert.equal(jgi.linh_thach, 5345);
+    assert.equal(jgi.refund_linh_thach, 8);
+    assert.equal(jgi.linh_thach, 2698);
   });
 });

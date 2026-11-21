@@ -1,13 +1,47 @@
 /**
  * src/data/changelogs.js
- * Nhật ký cập nhật chính thức (/update) — kiến trúc mở rộng cho v1.1 -> v1.2, v1.3...
+ * Nhật ký cập nhật chính thức (/updates) — kiến trúc mở rộng cho v1.1 -> v1.2, v1.3...
  */
 
-import { em } from '../config/emojiHelper.js';
+import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.1';
+export const LATEST_VERSION = '1.2';
 
 export const CHANGELOGS = [
+  {
+    version: '1.2',
+    title: 'ĐẠI CẢI TỔ PHÁP ẤN & KINH TẾ TU TIÊN v1.2',
+    released_at: '2026-11-22',
+    color: '#a855f7',
+    summary: 'Cường hóa Phẩm Chất D→S, Tháp 200 Tầng cân bằng, Nghề Tu Tiên (/job), Kho Emoji gọn kiểu OwO, Chốt Gacha Thần Thoại 0.5% & Tăng tốc /battle.',
+    sections: [
+      {
+        heading: `${gradeEmoji('S')} Khắc Ấn Phẩm Chất D → C → B → A → S (/enchant)`,
+        bullets: [
+          'Mỗi Linh Thú & Pháp Bảo mới nhận đều ngẫu nhiên phẩm chất **D (`40%`, +0%) / C (`32%`, +6%) / B (`20%`, +14%) / A (`8%`, +24%)** — **0%** rơi thẳng **S**.',
+          `Dùng **Đá Khắc Ấn** ${em('su_enchant_stone')} (\`150 LT\` trong \`/shop\`, mua tối đa \`5/ngày\` + rơi ở **Boss Tháp mỗi 5 tầng**) qua \`/enchant\` để đột phá tới **Hạng S (+40% chỉ số gốc)**.`,
+          'Cơ chế **Pity (+5%/lần xịt)** đảm bảo càng ép càng dễ lên, rớt không tụt hạng!',
+        ],
+      },
+      {
+        heading: `${em('su_tower_boss', '🗼')} Tháp Thí Luyện 200 Tầng & Hợp Đồng Tuần`,
+        bullets: [
+          '**Tháp nâng lên 200 Tầng (`4 × 50`):** 1–50 Phàm → 51–100 Linh → 101–150 Tiên → 151–200 Thần Thoại. Toàn bộ NPC xoay vòng đủ **40 Linh Thú**, đeo **1–3 Pháp Bảo** & **kích hoạt 100% HAX**!',
+          '**Boss Tháp (mỗi 5 tầng):** Thưởng **`+1 Tinh Thạch` + `1 Đá Khắc Ấn`**; mốc 50/100/150/200 thưởng lớn tới `+5.000 LT + 25 Đá`.',
+          '**6 Nghề Tu Tiên (`/job`)** (hồi `1h/ca`, tối đa `6 ca/ngày`): Quét sân, Rửa bát, Tưới cây, Giao trà sữa, Câu cá, Tuần tra nhận Linh Thạch & EXP; kèm **3 Hợp Đồng Tuần** trong `/nhiemvu` (reset Thứ Hai `00:00`).',
+        ],
+      },
+      {
+        heading: `${em('su_wiki_scroll')} Lệnh Mới, Kho OwO & Cân Bằng Kinh Tế`,
+        bullets: [
+          '**Kho `/inv` Emoji Kiểu OwO & Lệnh `/roles` Riêng:** Lưới icon `<Pet><Grade>⚡` gọn mắt không cắt dòng; thêm Dropdown chuyển tab và lệnh `/roles` chuyên biệt. `/info`, `/equip`, `/dismantle`, `/enchant` nhận cả Emoji!',
+          '**`/updates` + Xác Nhận Lần Đầu:** Gõ `/updates` luôn mở bản mới nhất & có Dropdown chọn lại `v1.1` / `v1.2`. Lần đầu vào game sau cập nhật chỉ cần bấm Xác Nhận 1 lần.',
+          '**Cân Bằng Kinh Tế:** Chốt tỷ lệ **Thần Thoại `0.5%`** đều cả **3 Gacha (Pháp Bảo / Linh Thú / Role)**. Siết giá `/dismantle` chống farm Gacha, mở rã hàng loạt cho cả **Pet & Role**.',
+          '**Tăng Tốc `/battle`:** Khắc phục triệt để lỗi treo `ĐANG TRIỆU HỒI...`, trả trận dưới `0.5s`, cooldown `5s/trận` mượt mà.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.1',
     title: 'ĐẠI NÂNG CẤP TU TIÊN GIỚI v1.1 — HAX & ĐẤU TRƯỜNG',
@@ -33,7 +67,7 @@ export const CHANGELOGS = [
           '`/phapbao` — Xem toàn bộ Pháp Bảo không bị cắt dòng, kèm Dropdown lọc & sắp xếp ở hàng trên cùng.',
           '`/linhthu` — Thêm Dropdown sắp xếp theo Chiến Lực / Phẩm / Cấp / Sao ở hàng trên cùng.',
           '`/dismantle` — Phá hàng loạt Pháp Bảo qua danh sách cách dấu phẩy hoặc `all_common` / `all_rare` / `all_epic` (tự động giữ lại món đang đeo).',
-          '`/update [phien_ban]` — Xem tóm tắt tính năng từng bản cập nhật.',
+          '`/updates` — Xem tóm tắt tính năng từng bản cập nhật qua Dropdown.',
         ],
       },
       {
@@ -42,8 +76,7 @@ export const CHANGELOGS = [
           '**Cân bằng 20 Pet cũ & sửa 5 lỗi HAX Engine:** Kích hoạt HAX cho toàn bộ 65 Pháp Bảo; sửa Bạch Kim Hổ Tử (`35%` xuyên giáp), Kim Sí Điêu Hoàng (mù đúng 2 hiệp), Tru Tiên (xuyên khiên 3 lượt), Luân Hồi Bất Diệt Chiến Hồn.',
           '**Sửa lỗi cấp Role Discord (Bug #7):** Đeo/quay Role nhận ngay Role thật trên Discord & cấp bù toàn bộ thành viên đang đeo.',
           '**Sửa lỗi treo Voice không lên EXP & tăng +20% Voice EXP (`85–135 / 5p`):** Chấm công treo Voice định kỳ mỗi 12 phút không cần thoát phòng.',
-          '**Chống Lạm Dụng Gacha → Dismantle:** Món mua Shop hoàn 50% giá thực trả; món từ Gacha dùng bảng giá phân rã chuẩn chống farm vô hạn Linh Thạch.',
-          'Xóa toàn bộ chữ `"Full HD+"` dư thừa trên giao diện.',
+          '**Chống Lạm Dụng Gacha → Dismantle:** Món mua Shop hoàn 20–25% giá thực trả; món từ Gacha dùng bảng giá phân rã chuẩn chống farm vô hạn Linh Thạch.',
         ],
       },
     ],
@@ -67,7 +100,7 @@ export function getChangelogPayload(rawVersion = '') {
       latest_version: LATEST_VERSION,
       available_versions: CHANGELOGS.map((c) => c.version),
       title: `${em('su_wiki_scroll')} Không tìm thấy phiên bản v${version}`,
-      description: `Phiên bản \`${version}\` chưa tồn tại trong nhật ký.\n• Các phiên bản hiện có: ${available}\n• Dùng \`/update\` (bỏ trống) để xem bản mới nhất **v${LATEST_VERSION}**.`,
+      description: `Phiên bản \`${version}\` chưa tồn tại trong nhật ký.\n• Các phiên bản hiện có: ${available}\n• Dùng \`/updates\` để xem bản mới nhất **v${LATEST_VERSION}**.`,
       color: '#f43f5e',
       footer: `SuMi Family • Phiên bản mới nhất v${LATEST_VERSION}`,
     };

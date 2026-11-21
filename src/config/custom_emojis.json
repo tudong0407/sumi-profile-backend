@@ -1024,5 +1024,41 @@
     "name": "su_tower_reset_card",
     "animated": false,
     "tag": "<:su_tower_reset_card:1573660276778078208>"
+  },
+  "su_enchant_stone": {
+    "id": "1573719323610980423",
+    "name": "su_enchant_stone",
+    "animated": true,
+    "tag": "<a:su_enchant_stone:1573719323610980423>"
+  },
+  "su_grade_d": {
+    "id": "1573719341185368106",
+    "name": "su_grade_d",
+    "animated": true,
+    "tag": "<a:su_grade_d:1573719341185368106>"
+  },
+  "su_grade_c": {
+    "id": "1573719376035586088",
+    "name": "su_grade_c",
+    "animated": true,
+    "tag": "<a:su_grade_c:1573719376035586088>"
+  },
+  "su_grade_b": {
+    "id": "1573719391118565497",
+    "name": "su_grade_b",
+    "animated": true,
+    "tag": "<a:su_grade_b:1573719391118565497>"
+  },
+  "su_grade_a": {
+    "id": "1573719407597850708",
+    "name": "su_grade_a",
+    "animated": true,
+    "tag": "<a:su_grade_a:1573719407597850708>"
+  },
+  "su_grade_s": {
+    "id": "1573719425172119672",
+    "name": "su_grade_s",
+    "animated": true,
+    "tag": "<a:su_grade_s:1573719425172119672>"
   }
 }
