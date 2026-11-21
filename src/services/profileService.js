@@ -5,6 +5,8 @@ import {
   STARTER_PET,
   createStarterPetObject,
   formatRarityLabel,
+  LEVEL_ROLE_BUFF_CONFIG,
+  ROLE_BUFF_CONFIG,
 } from '../data/catalog.js';
 import { computeMarriageBuffs } from './marryService.js';
 
@@ -66,7 +68,81 @@ export const ROLE_PERKS_MAP = {
   'tram_phong_kiem_khach': '🗣️ Gửi Tin Nhắn Giọng Nói TTS',
   '1573186103664574524': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
   'than_thong_thau_thi': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
+  // 14 Multi-Perk Roles (2-4 chức năng)
+  '1573577773279219763': '⚡📌 Miễn Slowmode & Ghim Tin Nhắn',
+  '1573577776454434899': '🎭✨ Đổi Nick, Emoji/Sticker Ngoại & +10% EXP',
+  '1573577779621138542': '🎙️📢 Di Chuyển & Ưu Tiên Nói Voice',
+  '1573577782380728410': '📺🔊 Stream HD, Soundboard Ngoại & +10% Daily LT',
+  '1573577786218651688': '💬👁️ Thread Kín/Mở, Kênh Ẩn & +12% EXP',
+  '1573577788965781504': '💎🏷️ Buff +25% Daily LT & Giảm 5% Giá Shop',
+  '1573577794091225108': '⚔️⚡ Buff +8% Chiến Lực Pet & Miễn Slowmode',
+  '1573577796742152314': '🎵📢 Ưu Tiên Voice, Âm Ngoại & +12% EXP',
+  '1573577799539892314': '🌬️🔇 Move/Mute Voice, Miễn Slowmode & +20% EXP',
+  '1573577805286080523': '🏷️📌 Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT',
+  '1573577808867762186': '💰✨ +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker',
+  '1573577811786993756': '🔥⚔️ +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode',
+  '1573577814437789797': '🌸💫 +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji',
+  '1573577816690401401': '🌌🛡️ Move/Mute/Deafen Voice, Ghim Tin & +25% EXP',
 };
+
+export function computeRoleBuffTotalsFromList(roleIds = [], userLevel = 1) {
+  const lvl = Number(userLevel) || 1;
+  const seen = new Set();
+  let expBonusPct = 0;
+  let dailyLtBonusPct = 0;
+  let petPowerBonusPct = 0;
+  let shopDiscountPct = 0;
+  let gachaDiscountPct = 0;
+
+  const levelBuff = LEVEL_ROLE_BUFF_CONFIG.find((c) => lvl >= c.level);
+  if (levelBuff) {
+    expBonusPct += Number(levelBuff.expPct || 0);
+    dailyLtBonusPct += Number(levelBuff.dailyLtPct || 0);
+    petPowerBonusPct += Number(levelBuff.petPowerPct || 0);
+  }
+
+  for (const rid of roleIds || []) {
+    const clean = String(rid || '').trim();
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    const cfg = ROLE_BUFF_CONFIG[clean];
+    if (!cfg) continue;
+    expBonusPct += Number(cfg.expPct || 0);
+    dailyLtBonusPct += Number(cfg.dailyLtPct || 0);
+    petPowerBonusPct += Number(cfg.petPowerPct || 0);
+    shopDiscountPct += Number(cfg.shopDiscountPct || 0);
+    gachaDiscountPct += Number(cfg.gachaDiscountPct || 0);
+  }
+
+  return {
+    expBonusPct,
+    dailyLtBonusPct,
+    petPowerBonusPct,
+    shopDiscountPct: Math.min(25, shopDiscountPct),
+    gachaDiscountPct: Math.min(20, gachaDiscountPct),
+  };
+}
+
+export async function computeRoleBuffTotals(userId, userLevel = 1, extraRoleIds = [], now = new Date()) {
+  const combined = [...(Array.isArray(extraRoleIds) ? extraRoleIds : [...(extraRoleIds || [])])];
+  if (supabase && userId) {
+    try {
+      const { data: equipped } = await supabase
+        .from('user_roles')
+        .select('role_id, is_permanent, expires_at')
+        .eq('user_id', userId)
+        .eq('is_equipped', true);
+      for (const r of equipped || []) {
+        if (r.is_permanent || !r.expires_at || new Date(r.expires_at) > now) {
+          combined.push(r.role_id);
+        }
+      }
+    } catch {
+      // non-blocking
+    }
+  }
+  return computeRoleBuffTotalsFromList(combined, userLevel);
+}
 
 /**
  * Tra cứu đặc quyền của Role
@@ -646,6 +722,13 @@ export async function getProfileData(userId, overrides = {}) {
           rarity: r.is_permanent ? 'mythic' : 'rare',
         }));
 
+        const userLvlNum = Number(user.level) || 1;
+        const roleBuffs = computeRoleBuffTotalsFromList(validRoles.map((r) => r.role_id), userLvlNum);
+        if (petData && roleBuffs.petPowerBonusPct > 0) {
+          petData.role_power_bonus_pct = roleBuffs.petPowerBonusPct;
+          petData.power = Math.round(petData.power * (1 + roleBuffs.petPowerBonusPct / 100));
+        }
+
         baseProfile = {
           user_id: user.user_id,
           username: user.username,
@@ -655,10 +738,10 @@ export async function getProfileData(userId, overrides = {}) {
           background_url: user.background_url,
           bio: user.bio,
           custom_title: user.custom_title,
-          realm: getRealmByLevel(Number(user.level) || 1),
-          level: Number(user.level) || 1,
+          realm: getRealmByLevel(userLvlNum),
+          level: userLvlNum,
           exp: Number(user.exp) || 0,
-          next_level_exp: getExpForNextLevel(Number(user.level) || 1),
+          next_level_exp: getExpForNextLevel(userLvlNum),
           linh_thach: Number(user.linh_thach) || 0,
           max_role_slots: Number(user.max_role_slots) || 1,
           streak: Number(user.streak) || 0,
@@ -667,6 +750,8 @@ export async function getProfileData(userId, overrides = {}) {
           married: marriedData,
           pet: petData,
           equipped_roles: equippedRoles,
+          role_pet_power_bonus_pct: roleBuffs.petPowerBonusPct,
+          role_buffs: roleBuffs,
         };
       }
     } catch (e) {

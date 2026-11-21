@@ -67,7 +67,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Lệnh Cốt Lõi',
-        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới Full HD+.\n• /battle: Thách đấu Linh Thú 1v1 bằng Ảnh Chiến Báo.\n• /daily, /doiqua, /roll, /shop: Kinh tế Linh Thạch, Gacha & Cửa Hàng Tiên Giới.\n• /inv, /equip, /unequip, /linhthu: Túi trữ vật, Pháp Bảo, Role, Ảnh Nền, Khung & Pet.\n• /marry & /divorce: Hệ thống Tiên Lữ (4 cấp Nhẫn + Streak kỷ niệm).\n• /giatoc: Thành lập, nâng cấp Gia Tộc Lv.1–10 & Bang Chiến 24H.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
+        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới Full HD+.\n• /battle: Thách đấu Linh Thú 1v1 bằng Ảnh Chiến Báo.\n• /daily, /doiqua, /roll, /shop, /tangqua: Linh Thạch, Gacha (Pháp Bảo/Pet/Role), Cửa Hàng & Tặng Quà.\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày, Tháp Thí Luyện 100 Tầng & BXH Server.\n• /inv, /equip, /unequip, /linhthu: Túi trữ vật, Pháp Bảo, Role, Ảnh Nền, Khung & Pet.\n• /marry & /divorce: Hệ thống Tiên Lữ (4 cấp Nhẫn + Streak kỷ niệm).\n• /giatoc: Thành lập, nâng cấp Gia Tộc Lv.1–10 & Bang Chiến 24H.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
       },
     ],
     fields: [
@@ -78,7 +78,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_pin_sigil')} Hệ Thống Lệnh`,
-        value: '• `/profile` • `/rank` • `/battle` — Hồ sơ Full HD+ & Đấu Trường 1v1.\n• `/daily` • `/doiqua` • `/roll` • `/shop` — Linh Thạch, Gacha & Cửa Hàng.\n• `/inv` • `/equip` • `/unequip` • `/linhthu` — Túi Đồ, Loadout & Linh Thú.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
+        value: '• `/profile` • `/rank` • `/battle` • `/top` — Hồ sơ Full HD+, Đấu Trường 1v1 & BXH.\n• `/daily` • `/doiqua` • `/roll` • `/shop` • `/tangqua` — Linh Thạch, Gacha (Pet/Trang Bị/Role), Shop & Chuyển Quà.\n• `/nhiemvu` • `/inv` • `/equip` • `/unequip` • `/linhthu` — Nhiệm Vụ/Tháp PvE, Túi Đồ & Loadout.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
         inline: false,
       },
     ],
@@ -240,8 +240,8 @@ export const WIKI_CATEGORIES = {
     image_url: '',
     sections: [
       {
-        heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop)',
-        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 Linh Thạch/lượt (450/10 lượt) săn Pet Tiên/Thần Thoại & 9 Pháp Bảo Độc Nhất.\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 9 Role (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.',
+        heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop, /tangqua, /nhiemvu, /top)',
+        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc & Role).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 Linh Thạch/lượt (450/10 lượt) quay bể Pháp Bảo, Linh Thú hoặc Role Quyền Năng (40 Role + 5 mốc thời hạn).\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.\n• /tangqua: Gửi Linh Thạch (tối đa 5.000/ngày, thuế 5%) hoặc Vé Gacha/Đá Sao (tối đa 5/ngày) từ Lv.10+.\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng (5 lượt/ngày) & BXH Server.',
       },
       {
         heading: '2. Tiên Lữ (/marry, /divorce)',
@@ -254,8 +254,8 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch & Cửa Hàng (/shop)`,
-        value: '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT`).\n• `/shop`: Bán thẳng Nhẫn Cưới, Pet/Pháp Bảo Phàm & Linh, Role 7d/30d/Vĩnh Viễn, Background & Vé/Đá.\n• **Buff**: `Tài Vận Hanh Thông` (`+20%`) • `Sáng Thế Thần Quân` (`×2.5`).',
+        name: `${em('su_linhthach')} Linh Thạch, Gacha & Hoạt Động (/shop)`,
+        value: '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT` bể Pháp Bảo, Pet & Role).\n• `/shop`: Nhẫn Cưới, Pet/Pháp Bảo, **21 Role Đơn** (`7d/30d/VV`), 20 Background & Vé/Đá.\n• `/tangqua` *(Lv.10+, thuế 5%)* • `/nhiemvu` *(Tháp 100 Tầng PvE)* • `/top` *(BXH Server)*.',
         inline: false,
       },
       {

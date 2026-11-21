@@ -20,7 +20,19 @@ import {
   getBattleLogPayload,
 } from './services/battleService.js';
 import { grantChatExp, handleVoiceExp } from './services/expService.js';
-import { claimDaily, convertExpToLinhThach, rollGacha } from './services/economyService.js';
+import {
+  claimDaily,
+  convertExpToLinhThach,
+  rollGacha,
+  sendGift,
+  cleanupExpiredRoles,
+} from './services/economyService.js';
+import { getServerLeaderboard } from './services/leaderboardService.js';
+import {
+  getQuestStatus,
+  claimDailyQuests,
+  challengeTower,
+} from './services/questService.js';
 import {
   getInventory,
   equipTarget,
@@ -120,7 +132,7 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '2.3.0',
+    version: '2.4.0',
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
@@ -145,6 +157,12 @@ app.get('/', (req, res) => {
       economy_daily: 'POST /api/economy/daily',
       economy_doiqua: 'POST /api/economy/doiqua',
       economy_roll: 'POST /api/economy/roll',
+      economy_gift: 'POST /api/economy/gift',
+      roles_cleanup_expired: 'POST /api/roles/cleanup-expired',
+      leaderboard: 'GET /api/leaderboard[?type=level|power|wealth|marry&limit=10]',
+      quest_status: 'GET /api/quest/status/:userId',
+      quest_claim: 'POST /api/quest/claim',
+      quest_tower: 'POST /api/quest/tower',
       inventory: 'GET /api/inv/:userId',
       equip: 'POST /api/equip',
       unequip: 'POST /api/unequip',
@@ -1081,6 +1099,97 @@ app.get('/api/clan/war/status/:userId', async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/clan/war/status error:', err);
     return res.status(500).json({ success: false, error: 'CLAN_WAR_STATUS_FAILED', message: err.message });
+  }
+});
+
+// ============================================================================
+// PHASE 4+: LEADERBOARD (/top), QUESTS & TOWER (/nhiemvu), GIFT (/tangqua), ROLE CLEANUP CRON
+// ============================================================================
+app.get('/api/leaderboard', async (req, res) => {
+  try {
+    const result = await getServerLeaderboard(req.query.type || 'level', req.query.limit || 10);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/leaderboard error:', err);
+    return res.status(500).json({ success: false, error: 'LEADERBOARD_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/quest/status/:userId', async (req, res) => {
+  try {
+    const result = await getQuestStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/quest/status error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/quest/claim', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await claimDailyQuests(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/quest/claim error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_CLAIM_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/quest/tower', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await challengeTower(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/quest/tower error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_TOWER_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/economy/gift', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await sendGift(
+      body.senderId || body.userId,
+      body.receiverId || body.targetId,
+      body.giftType || body.loaiQua || body.type,
+      body.amount ?? body.soLuong,
+      {
+        senderName: getCleanParam(body.senderName || body.username),
+        fallbackSenderName: getCleanParam(body.fallbackSenderName),
+        senderAvatar: getCleanParam(body.senderAvatar || body.avatarUrl),
+        receiverName: getCleanParam(body.receiverName || body.targetName),
+        fallbackReceiverName: getCleanParam(body.fallbackReceiverName),
+        receiverAvatar: getCleanParam(body.receiverAvatar),
+      },
+    );
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/economy/gift error:', err);
+    return res.status(500).json({ success: false, error: 'GIFT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/roles/cleanup-expired', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await cleanupExpiredRoles();
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/roles/cleanup-expired error:', err);
+    return res.status(500).json({ success: false, error: 'ROLE_CLEANUP_FAILED', message: err.message });
   }
 });
 

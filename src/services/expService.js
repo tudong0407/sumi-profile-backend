@@ -14,6 +14,7 @@ import {
 import { em, realmEmoji } from '../config/emojiHelper.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { recordClanWarScore } from './clanService.js';
+import { trackQuestActivity } from './questService.js';
 import {
   sanitizeUserId,
   getRealmByLevel,
@@ -21,6 +22,7 @@ import {
   getMaxRoleSlotsByLevel,
   ensureUserInitialized,
   pickCleanDisplayValue,
+  computeRoleBuffTotals,
 } from './profileService.js';
 
 export const CHAT_COOLDOWN_MS = 45 * 1000;
@@ -35,11 +37,6 @@ const LOCKED_XP_ROLES = new Set([
   '1471111216423370792', // Locked XP
   '1474776271883079681', // Cách Ly
 ]);
-
-const EXP_BUFF_ROLES = {
-  '1573186015785521265': 0.80, // « Cửu Vĩ Yêu Hậu » +80% EXP
-  '1573186087088554085': 0.15, // « Linh Hồn Tu Luyện » +15% EXP
-};
 
 // In-memory fallback store used ONLY when Supabase is unavailable
 const memoryUsers = new Map();
@@ -128,34 +125,8 @@ function computeLevelProgression(startLevel, startExp, gainedExp) {
 }
 
 async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new Date()) {
-  let bonus = 0;
-  const seen = new Set();
-
-  for (const rid of roleIdSet) {
-    if (EXP_BUFF_ROLES[rid] && !seen.has(rid)) {
-      bonus += EXP_BUFF_ROLES[rid];
-      seen.add(rid);
-    }
-  }
-
-  if (supabase) {
-    try {
-      const { data: equipped } = await supabase
-        .from('user_roles')
-        .select('role_id')
-        .eq('user_id', userId)
-        .eq('is_equipped', true);
-
-      for (const r of equipped || []) {
-        if (EXP_BUFF_ROLES[r.role_id] && !seen.has(r.role_id)) {
-          bonus += EXP_BUFF_ROLES[r.role_id];
-          seen.add(r.role_id);
-        }
-      }
-    } catch {
-      // ignore role buff lookup error
-    }
-  }
+  const roleBuffs = await computeRoleBuffTotals(userId, Number(userRow?.level || 1), [...roleIdSet], now);
+  let bonus = (roleBuffs.expBonusPct || 0) / 100;
 
   // Buff Tiên Lữ (/marry): Nhẫn Cưới + Streak + Ngày Kỷ Niệm
   if (userRow?.marry_user_id) {
@@ -331,6 +302,9 @@ export async function grantChatExp(params = {}, opts = {}) {
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
     }
+    if (persisted && expGained > 0) {
+      await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
+    }
 
     return {
       success: true,
@@ -491,6 +465,9 @@ export async function handleVoiceExp(params = {}, opts = {}) {
 
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
+    }
+    if (persisted && expGained > 0) {
+      await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
     }
 
     return {

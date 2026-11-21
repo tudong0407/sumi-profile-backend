@@ -5,6 +5,7 @@ import { PUBLIC_BASE_URL } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
+import { trackQuestActivity } from '../questService.js';
 import { renderBattleCard } from '../../canvas/battleRenderer.js';
 import {
   triggerBattleStart,
@@ -715,7 +716,11 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     })()
     : Promise.resolve();
 
-  await Promise.all([preRenderTask, clanWarTask]);
+  const questTrackTask = (!safeOptions.skipQuestTracking && /^[0-9]{17,20}$/.test(String(attacker.id || '')))
+    ? trackQuestActivity(attacker.id, { battleDelta: 1 })
+    : Promise.resolve();
+
+  await Promise.all([preRenderTask, clanWarTask, questTrackTask]);
 
   cacheBattleReport(battleId, finalResult, {
     channelId,

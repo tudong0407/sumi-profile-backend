@@ -35,7 +35,15 @@ import {
   ensureUserInitialized,
   pickCleanDisplayValue,
   getMaxRoleSlotsByLevel,
+  computeRoleBuffTotals,
 } from './profileService.js';
+
+function applyShopDiscount(price, discountPct) {
+  const p = Number(price || 0);
+  const pct = Number(discountPct || 0);
+  if (p <= 0 || pct <= 0) return p;
+  return Math.max(1, Math.round(p * (1 - pct / 100)));
+}
 
 export const SHOP_CATEGORIES = ['rings', 'pets', 'equipment', 'roles', 'consumables', 'backgrounds'];
 
@@ -120,7 +128,7 @@ function buildCategorySummary(cat) {
     const bgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
     return bgs.slice(0, 10).map((b) =>
       `• ${em('su_frame_token')} **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n• *... tổng cộng ${bgs.length} mẫu Background 2:1 & Pinterest*`;
+    ).join('\n') + `\n• *... tổng cộng ${bgs.length} mẫu Background Hồ Sơ Full HD+ (300 - 4.000 LT)*`;
   }
   return '';
 }
@@ -162,9 +170,9 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Nhẫn Cưới (4 cấp)**: Kết duyên Tiên Lữ, tăng EXP & Chiến Lực đôi.`,
         `• **Linh Thú (10 loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
         `• **Pháp Bảo (24 món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
-        `• **Role Quyền Năng (9 gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
+        `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
         `• **Vật Phẩm Tiêu Hao (5 món)**: Vé Gacha, Tinh Thạch Nâng Sao, Thẻ Đổi Danh Hiệu, Khung Viền.`,
-        `• **Background Hồ Sơ (20 mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
+        `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
       ].filter(Boolean).join('\n')
     : buildCategorySummary(cat);
 
@@ -198,6 +206,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   let balance = 0;
   let alreadyOwned = false;
   let ownedNote = '';
+  let shopDiscountPct = 0;
 
   if (supabase) {
     const { user } = await ensureUserInitialized(cleanId, {
@@ -206,6 +215,8 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     });
     if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
     balance = Number(user.linh_thach || 0);
+    const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level || 1));
+    shopDiscountPct = Number(roleBuffs?.shopDiscountPct || 0);
 
     await supabase
       .from('shop_selections')
@@ -246,6 +257,8 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
 
   const lt = em('su_linhthach');
   const it = resolved.item;
+  const disc = (base) => applyShopDiscount(base, shopDiscountPct);
+  const discTag = shopDiscountPct > 0 ? ` *(Giảm ${shopDiscountPct}% Role)*` : '';
   let title = '';
   let description = '';
   let imageUrl = '';
@@ -253,29 +266,29 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   let color = '#ec4899';
 
   if (resolved.category === 'rings') {
-    price = it.price;
+    price = disc(it.price);
     title = `${ringEmoji(it.item_id)} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${it.item_id}.png`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
     description = [
       `${tierEmoji(it.rarity_key)} **Phẩm Cấp**: **${it.rarity}** ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch** *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_sparkle')} **Hiệu ứng**: ${it.description}`,
       `${em('su_wiki_scroll')} Dùng cho \`/marry\` hoặc nâng cấp nhẫn đang đeo.`,
     ].join('\n');
   } else if (resolved.category === 'pets') {
-    price = it.price;
+    price = disc(it.price);
     title = `${petEmoji(it.pet_type)} ${it.pet_name}`;
     imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${it.pet_type}.png`;
     color = it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
     description = [
       `${tierEmoji(it.rarity_key)} **${it.rarity}** • ${elementEmoji(it.element)} Hệ **${it.element}** ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch** *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_stats_chart')} **Chỉ số gốc**: \`ATK ${it.base_atk} | DEF ${it.base_def} | SPD ${it.base_spd} | HP ${it.base_hp.toLocaleString('vi-VN')}\``,
       `${em('su_thunder_hax')} **HAX (${it.hax_skill})**: ${it.hax_description}`,
     ].join('\n');
   } else if (resolved.category === 'equipment') {
-    price = it.price;
+    price = disc(it.price);
     title = `${itemEmoji(it.item_id)} ${it.item_name}`;
     imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.png`;
     color = it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
@@ -288,40 +301,40 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     ].filter(Boolean).join(' • ');
     description = [
       `${tierEmoji(it.rarity_key)} **${it.rarity}** • ${elementEmoji(it.element)} Hệ **${it.element}** ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch** *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_stats_chart')} **Chỉ số**: \`${statParts}\``,
       `${em('su_sparkle')} ${it.hax_description}`,
     ].join('\n');
   } else if (resolved.category === 'roles') {
-    price = it.prices['7d'];
+    price = disc(it.prices['7d']);
     title = `${em('su_medal_role')} ${it.name}`;
     color = '#a855f7';
     description = [
       `${em('su_sparkle')} **Đặc quyền**: ${it.perk} ${ownedNote}`.trim(),
-      `${lt} **Bảng giá gói Role** *(Số dư: ${balance.toLocaleString('vi-VN')})*:`,
-      `• **7 Ngày**: \`${it.prices['7d'].toLocaleString('vi-VN')}\` Linh Thạch`,
-      `• **30 Ngày**: \`${it.prices['30d'].toLocaleString('vi-VN')}\` Linh Thạch`,
-      `• **Vĩnh Viễn**: \`${it.prices.permanent.toLocaleString('vi-VN')}\` Linh Thạch`,
+      `${lt} **Bảng giá gói Role**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*:`,
+      `• **7 Ngày**: \`${disc(it.prices['7d']).toLocaleString('vi-VN')}\` Linh Thạch`,
+      `• **30 Ngày**: \`${disc(it.prices['30d']).toLocaleString('vi-VN')}\` Linh Thạch`,
+      `• **Vĩnh Viễn**: \`${disc(it.prices.permanent).toLocaleString('vi-VN')}\` Linh Thạch`,
       `${em('su_wiki_scroll')} Tự động đeo vào Slot trống & cấp Role trên Discord.`,
     ].join('\n');
   } else if (resolved.category === 'consumables') {
-    price = it.price;
+    price = disc(it.price);
     title = `${it.icon} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/shop/${it.item_id}.png`;
     color = '#38bdf8';
     description = [
       `${em('su_star_stone')} **Vật Phẩm Tu Tiên** ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch** *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_sparkle')} ${it.description}`,
     ].join('\n');
   } else if (resolved.category === 'backgrounds') {
-    price = it.price;
+    price = disc(it.price);
     title = `${em('su_frame_token')} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/${it.file}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} **${it.rarity}** • Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch** *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip loai:background ma_id:${it.bg_id}\``,
     ].join('\n');
   }
@@ -335,6 +348,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     color,
     image_url: imageUrl,
     price,
+    shop_discount_pct: shopDiscountPct,
     balance,
     balance_fmt: balance.toLocaleString('vi-VN'),
     already_owned: alreadyOwned,
@@ -459,6 +473,12 @@ export async function buyShopItem(userId, payload = {}) {
     } else {
       totalCost = it.price * quantity;
       displayName = it.name;
+    }
+
+    const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level || 1));
+    const shopDiscountPct = Number(roleBuffs?.shopDiscountPct || 0);
+    if (shopDiscountPct > 0) {
+      totalCost = applyShopDiscount(totalCost, shopDiscountPct);
     }
 
     const currentBal = Number(user.linh_thach || 0);

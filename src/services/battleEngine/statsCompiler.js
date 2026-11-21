@@ -81,6 +81,15 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalSpd = Math.round(finalSpd * coupleMult);
   }
 
+  // Buff Chiến Lực Linh Thú từ Role Quyền Năng & Level Role
+  const rolePetPowerPct = Number(profile?.role_pet_power_bonus_pct) || 0;
+  if (rolePetPowerPct > 0) {
+    const roleMult = 1 + (rolePetPowerPct / 100);
+    finalAtk = Math.round(finalAtk * roleMult);
+    finalDef = Math.round(finalDef * roleMult);
+    finalSpd = Math.round(finalSpd * roleMult);
+  }
+
   // Tính HP chiến đấu chuẩn: (Level * 1000) + (FinalDef * 5) + BonusHp
   const maxHp = Math.max(500, (level * 1000) + (finalDef * 5) + bonusHp);
 
