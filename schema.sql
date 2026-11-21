@@ -316,9 +316,9 @@ INSERT INTO users (
     'Cửu Vĩ Tiên Chủ • Người sáng lập và bảo hộ SuMi Family',
     'Cửu Vĩ Tiên Chủ',
     5,
-    '511187329889861651',
-    'Ngài_Ấy 💍',
-    NOW() - INTERVAL '365 days',
+    NULL,
+    NULL,
+    NULL,
     'thien_ho_than_toc',
     100
 ) ON CONFLICT (user_id) DO UPDATE SET 
