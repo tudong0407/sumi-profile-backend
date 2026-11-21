@@ -781,7 +781,7 @@ export function attachUpdateAckBranch(gb, prefix, sourceNodeId, resVarName, {
 
   const btnId = `${prefix}_gate_btn`;
   gb.advBtn(btnId, gateMsgId, {
-    label: 'Tôi Đã Đọc & Xác Nhận Cập Nhật v1.2',
+    label: 'Tôi Đã Đọc & Xác Nhận Cập Nhật v1.3',
     style: 'SUCCESS',
     emoji: { id: '1573411649543737426', name: 'su_sparkle', animated: true },
     emoji_id: '1573411649543737426',
@@ -831,13 +831,13 @@ export function attachUpdateAckBranch(gb, prefix, sourceNodeId, resVarName, {
     message: {
       content: '',
       embeds: [{
-        title: '<a:su_sparkle:1573411649543737426> ĐÃ XÁC NHẬN CẬP NHẬT v1.2',
+        title: '<a:su_sparkle:1573411649543737426> ĐÃ XÁC NHẬN CẬP NHẬT v1.3',
         description: `{${prefix}_ack_res.response.message}`,
         color: '#10b981',
         url: '',
         thumbnail: { url: '' },
         image: { url: '' },
-        footer: { text: 'SuMi Family • Phiên bản v1.2 đã được mở khóa', icon_url: '' },
+        footer: { text: 'SuMi Family • Phiên bản v1.3 đã được mở khóa', icon_url: '' },
       }],
     },
     components: [],
