@@ -48,6 +48,12 @@ export const GIFT_MAX_ITEMS_PER_DAY = 5;
 export const GIFT_MIN_SENDER_LEVEL = 10;
 export const GIFT_ALLOWED_ITEMS = new Set(['gacha_ticket_equip', 'gacha_ticket_pet', 'pet_star_stone']);
 
+export function getDailyLtGiftLimitByLevel(level) {
+  const lvl = Math.max(0, Math.floor(Number(level) || 0));
+  if (lvl < GIFT_MIN_SENDER_LEVEL) return 0;
+  return Math.floor(lvl / 10) * GIFT_MAX_LT_PER_DAY;
+}
+
 const userLocks = new Map();
 
 async function withLock(userId, fn) {
@@ -352,14 +358,46 @@ export async function rollGacha(userId, options = {}) {
 
   return withLock(cleanId, async () => {
     if (!supabase) {
-      return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+      return {
+        success: false,
+        status: 503,
+        error: 'DB_UNAVAILABLE',
+        pool,
+        count,
+        cost: 0,
+        linh_thach: 0,
+        linh_thach_fmt: '0',
+        refund_linh_thach: 0,
+        bonus_star_stones: 0,
+        has_roles: 'false',
+        add_role_csv: '',
+        summary_results: '• Dịch vụ cơ sở dữ liệu tạm thời chưa sẵn sàng.',
+        message: 'Supabase chưa sẵn sàng.',
+      };
     }
 
     const { user } = await ensureUserInitialized(cleanId, {
       username: pickCleanDisplayValue(options.username, options.fallbackUsername),
       avatarUrl: pickCleanDisplayValue(options.avatarUrl),
     });
-    if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+    if (!user) {
+      return {
+        success: false,
+        status: 500,
+        error: 'USER_INIT_FAILED',
+        pool,
+        count,
+        cost: 0,
+        linh_thach: 0,
+        linh_thach_fmt: '0',
+        refund_linh_thach: 0,
+        bonus_star_stones: 0,
+        has_roles: 'false',
+        add_role_csv: '',
+        summary_results: '• Không thể khởi tạo hồ sơ tu sĩ.',
+        message: 'Không thể khởi tạo hồ sơ.',
+      };
+    }
 
     const ticketId = pool === 'pet' ? 'gacha_ticket_pet' : pool === 'equipment' ? 'gacha_ticket_equip' : null;
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level) || 1);
@@ -391,9 +429,22 @@ export async function rollGacha(userId, options = {}) {
           success: false,
           status: 400,
           error: 'INSUFFICIENT_LINH_THACH',
+          pool,
+          count,
+          paid_with: paidWith,
+          cost,
           required: cost,
           balance: currentBal,
-          message: `Không đủ Linh Thạch! Cần **${cost} Linh Thạch** (hiện có **${currentBal}**).`,
+          linh_thach: currentBal,
+          linh_thach_fmt: currentBal.toLocaleString('vi-VN'),
+          refund_linh_thach: 0,
+          bonus_star_stones: 0,
+          has_roles: 'false',
+          add_role_ids: [],
+          add_role_csv: '',
+          results: [],
+          summary_results: '• Chưa thể triệu hồi (không đủ Linh Thạch).',
+          message: `${em('su_linhthach')} Không đủ Linh Thạch để triệu hồi! Cần **${cost.toLocaleString('vi-VN')} Linh Thạch** (hiện có **${currentBal.toLocaleString('vi-VN')}**).\n• *Mẹo tân thủ: Dùng \`/daily\` điểm danh, chat/voice tích EXP rồi \`/doiqua\`, hoặc làm \`/nhiemvu\` để nhận Linh Thạch & Vé Gacha!*`,
         };
       }
       await supabase
@@ -661,6 +712,18 @@ export async function rollGacha(userId, options = {}) {
 
     const roleIdsList = [...addedDiscordRoleIds];
     const poolLabel = pool === 'pet' ? 'Linh Thú' : pool === 'role' ? 'Role Quyền Năng' : 'Pháp Bảo';
+    const costLabel = paidWith === 'linh_thach'
+      ? `\`${cost}\` ${em('su_linhthach')}`
+      : `\`${count}\` Vé Gacha (\`0\` ${em('su_linhthach')})`;
+    const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
+    const fullMessage = [
+      `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,
+      `${em('su_linhthach')} **Số dư còn lại**: \`${finalBalance.toLocaleString('vi-VN')}\` Linh Thạch`,
+      `${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`,
+      `${em('su_sparkle')} **Kết quả**:`,
+      summaryResults,
+      footerNote,
+    ].join('\n');
 
     return {
       success: true,
@@ -678,7 +741,7 @@ export async function rollGacha(userId, options = {}) {
       has_roles: roleIdsList.length > 0 ? 'true' : 'false',
       results,
       summary_results: summaryResults,
-      message: `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim(),
+      message: fullMessage,
     };
   });
 }
@@ -773,20 +836,22 @@ export async function sendGift(senderId, receiverId, rawGiftType, rawAmount, opt
     if (logErr) throw new Error(`Gift logs query failed: ${logErr.message}`);
 
     if (giftType === 'linh_thach') {
+      const senderLevel = Number(sender.level || 1);
+      const dailyLtLimit = getDailyLtGiftLimitByLevel(senderLevel);
       const sentLtToday = (todayLogs || [])
         .filter((l) => l.gift_type === 'linh_thach')
         .reduce((sum, l) => sum + Number(l.amount || 0), 0);
 
-      if (sentLtToday + amount > GIFT_MAX_LT_PER_DAY) {
-        const remaining = Math.max(0, GIFT_MAX_LT_PER_DAY - sentLtToday);
+      if (sentLtToday + amount > dailyLtLimit) {
+        const remaining = Math.max(0, dailyLtLimit - sentLtToday);
         return {
           success: false,
           status: 400,
           error: 'DAILY_LT_GIFT_LIMIT',
           sent_today: sentLtToday,
-          daily_limit: GIFT_MAX_LT_PER_DAY,
+          daily_limit: dailyLtLimit,
           remaining,
-          message: `Vượt hạn mức tặng Linh Thạch hôm nay! Đã gửi **${sentLtToday.toLocaleString('vi-VN')}/${GIFT_MAX_LT_PER_DAY.toLocaleString('vi-VN')}**, còn lại **${remaining.toLocaleString('vi-VN')}** ${em('su_linhthach')}.`,
+          message: `Vượt hạn mức tặng Linh Thạch hôm nay (**Lv.${senderLevel}**)! Đã gửi **${sentLtToday.toLocaleString('vi-VN')}/${dailyLtLimit.toLocaleString('vi-VN')}**, còn lại **${remaining.toLocaleString('vi-VN')}** ${em('su_linhthach')}.`,
         };
       }
 
@@ -830,8 +895,8 @@ export async function sendGift(senderId, receiverId, rawGiftType, rawAmount, opt
         sender_balance: newSenderBal,
         receiver_balance: newReceiverBal,
         sent_today: sentLtToday + amount,
-        daily_limit: GIFT_MAX_LT_PER_DAY,
-        message: `${em('su_sparkle')} **${sender.username}** đã tặng **${amount.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** cho **${receiver.username}**!\n• Thuế chuyển giao Tiên Giới (5%): **-${taxAmount.toLocaleString('vi-VN')}** • Thực nhận: **+${netReceived.toLocaleString('vi-VN')}** ${em('su_linhthach')}\n• Số dư còn lại: **${newSenderBal.toLocaleString('vi-VN')}** • Hạn mức ngày: \`${(sentLtToday + amount).toLocaleString('vi-VN')}/${GIFT_MAX_LT_PER_DAY.toLocaleString('vi-VN')}\``,
+        daily_limit: dailyLtLimit,
+        message: `${em('su_sparkle')} **${sender.username}** đã tặng **${amount.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** cho **${receiver.username}**!\n• Thuế chuyển giao Tiên Giới (5%): **-${taxAmount.toLocaleString('vi-VN')}** • Thực nhận: **+${netReceived.toLocaleString('vi-VN')}** ${em('su_linhthach')}\n• Số dư còn lại: **${newSenderBal.toLocaleString('vi-VN')}** • Hạn mức ngày (Lv.${senderLevel}): \`${(sentLtToday + amount).toLocaleString('vi-VN')}/${dailyLtLimit.toLocaleString('vi-VN')}\``,
       };
     }
 

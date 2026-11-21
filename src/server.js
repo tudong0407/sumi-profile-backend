@@ -37,6 +37,7 @@ import {
   getInventory,
   equipTarget,
   unequipTarget,
+  dismantleTarget,
   setActivePet,
   upgradePet,
 } from './services/inventoryService.js';
@@ -132,7 +133,7 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '2.4.0',
+    version: '2.4.1',
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
@@ -166,6 +167,7 @@ app.get('/', (req, res) => {
       inventory: 'GET /api/inv/:userId',
       equip: 'POST /api/equip',
       unequip: 'POST /api/unequip',
+      dismantle: 'POST /api/dismantle',
       pet_list: 'GET /api/pet/:userId',
       pet_active: 'POST /api/pet/active',
       pet_upgrade: 'POST /api/pet/upgrade',
@@ -791,6 +793,23 @@ app.post('/api/unequip', requireBackendApiKey, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/unequip error:', err);
     return res.status(500).json({ success: false, error: 'UNEQUIP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/dismantle', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await dismantleTarget(body.userId, {
+      category: body.category || body.loai,
+      targetId: body.targetId || body.maId,
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/dismantle error:', err);
+    return res.status(500).json({ success: false, error: 'DISMANTLE_FAILED', message: err.message });
   }
 });
 

@@ -278,7 +278,7 @@ export function buildNhiemVuCmd() {
 // ============================================================================
 export function buildTangQuaCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('tangqua', 'Tặng Linh Thạch (thuế 5%, max 5.000/ngày) hoặc Vé Gacha/Đá Sao (max 5/ngày) — Từ Lv.10+', { ephemeral: false });
+  gb.rootSlash('tangqua', 'Tặng Linh Thạch (+5.000/ngày mỗi 10 Cấp, thuế 5%) hoặc Vé Gacha/Đá Sao (5/ngày) — Từ Lv.10+', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('nguoi_nhan', 'user', 'Đạo hữu nhận quà', { required: true, x: 420, y: 0 });
   gb.option('loai_qua', 'string', 'Loại quà muốn tặng', {
@@ -314,7 +314,7 @@ export function buildTangQuaCmd() {
     color: '#10b981',
     target: { editId: 'tq_ack' },
     action_id: 'tq_ack',
-    footer: 'SuMi Family • Giới hạn 5.000 LT & 5 Vật Phẩm/ngày (Lv.10+)',
+    footer: 'SuMi Family • Hạn mức +5.000 LT/ngày mỗi 10 Cấp (tối đa 50.000 ở Lv.100) & 5 Vật Phẩm/ngày',
   }, { x: 0, y: 580 });
   gb.link('tq_api', 'tq_edit');
 

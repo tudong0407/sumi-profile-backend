@@ -213,8 +213,8 @@ export const WIKI_CATEGORIES = {
         content: '• Linh Thú là chiến hữu đồng hành xuất trận trực tiếp trong /battle và hiển thị trên thẻ /profile.\n• Mọi tân thủ được cấp sẵn 1 Pet Phàm Phẩm mặc định: Hóa Thạch Nham Nham Thú (Hệ Thổ • 120 ATK / 180 DEF / 100 SPD).\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị.',
       },
       {
-        heading: '2. Phân Chia 4 Bậc Phẩm Cấp',
-        content: '• Phàm Phẩm (5 loài): Linh thú sơ khai, nền tảng tân thủ.\n• Linh Phẩm (5 loài): Khai mở linh trí, có hiệu ứng khống chế/xuyên giáp.\n• Tiên Phẩm (4 loài): Sở hữu kỹ năng HAX hút máu, khóa HAX, làm mù.\n• Thần Thoại (6 loài): Nắm giữ tuyệt kỹ HAX định đoạt trận đấu.',
+        heading: '2. Phân Chia 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt',
+        content: '• Phàm Phẩm (5 loài) — Tỉ lệ rớt: 60% (hoặc 300 LT trong /shop).\n• Linh Phẩm (5 loài) — Tỉ lệ rớt: 25% (hoặc 900 LT trong /shop).\n• Tiên Phẩm (4 loài) — Tỉ lệ rớt: 14% (chỉ mở từ /roll).\n• Thần Thoại (6 loài) — Tỉ lệ rớt: 1% (chỉ mở từ /roll).',
       },
     ],
     fields: [
@@ -224,8 +224,8 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_sparkle')} 4 Bậc Phẩm Cấp`,
-        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(5 loài)* — Khởi đầu nền tảng\n• ${tierEmoji('rare')} **Linh Phẩm** *(5 loài)* — Khống chế & phá giáp\n• ${tierEmoji('epic')} **Tiên Phẩm** *(4 loài)* — Hút máu & phong ấn HAX\n• ${tierEmoji('mythic')} **Thần Thoại** *(6 loài)* — Tuyệt kỹ HAX tối thượng`,
+        name: `${em('su_gacha_dice')} 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt`,
+        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(5 loài)* — Tỉ lệ rớt: **60%** *(hoặc 300 LT trong \`/shop\`)*\n• ${tierEmoji('rare')} **Linh Phẩm** *(5 loài)* — Tỉ lệ rớt: **25%** *(hoặc 900 LT trong \`/shop\`)*\n• ${tierEmoji('epic')} **Tiên Phẩm** *(4 loài)* — Tỉ lệ rớt: **14%** *(chỉ mở từ \`/roll\`)*\n• ${tierEmoji('mythic')} **Thần Thoại** *(6 loài)* — Tỉ lệ rớt: **1%** *(chỉ mở từ \`/roll\`)*`,
         inline: false,
       },
     ],
@@ -240,8 +240,8 @@ export const WIKI_CATEGORIES = {
     image_url: '',
     sections: [
       {
-        heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop, /tangqua, /nhiemvu, /top)',
-        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc & Role).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 Linh Thạch/lượt (450/10 lượt) quay bể Pháp Bảo, Linh Thú hoặc Role Quyền Năng (40 Role + 5 mốc thời hạn).\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.\n• /tangqua: Gửi Linh Thạch (tối đa 5.000/ngày, thuế 5%) hoặc Vé Gacha/Đá Sao (tối đa 5/ngày) từ Lv.10+.\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng (5 lượt/ngày) & BXH Server.',
+        heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop, /dismantle, /tangqua, /nhiemvu, /top)',
+        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc & Role).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 LT/lượt (450/10 lượt). Tỉ lệ Gacha (Pháp Bảo / Pet / Role): Phàm 60% • Linh 25% • Tiên 14% • Thần Thoại 1%. Bể 40 Role chia 5 mốc thời hạn: 7 Ngày 40% • 30 Ngày 30% • 60 Ngày 18% • 90 Ngày 10% • Vĩnh Viễn 2%.\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.\n• /dismantle: Phá Role Quyền Năng, Pháp Bảo hoặc Linh Thú phụ để thu hồi 50% giá trị gốc bằng Linh Thạch.\n• /tangqua: Từ Lv.10+, hạn mức LT tăng +5.000 LT/ngày mỗi 10 cấp (từ 5.000 ở Lv.10 lên 50.000 ở Lv.100, thuế 5%) hoặc 5 Vé/Đá Sao/ngày (0% thuế).\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng (5 lượt/ngày) & BXH Server.',
       },
       {
         heading: '2. Tiên Lữ (/marry, /divorce)',
@@ -255,7 +255,13 @@ export const WIKI_CATEGORIES = {
     fields: [
       {
         name: `${em('su_linhthach')} Linh Thạch, Gacha & Hoạt Động (/shop)`,
-        value: '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT` bể Pháp Bảo, Pet & Role).\n• `/shop`: Nhẫn Cưới, Pet/Pháp Bảo, **21 Role Đơn** (`7d/30d/VV`), 20 Background & Vé/Đá.\n• `/tangqua` *(Lv.10+, thuế 5%)* • `/nhiemvu` *(Tháp 100 Tầng PvE)* • `/top` *(BXH Server)*.',
+        value: [
+          '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT` bể Pháp Bảo, Pet & Role).',
+          '• **Tỉ lệ Gacha `/roll` (Pháp Bảo / Pet / Role)**: `Phàm 60% • Linh 25% • Tiên 14% • Thần Thoại 1%`.',
+          '• **Tỉ lệ 5 mốc thời hạn `/roll loai:role`**: `7 Ngày: 40% • 30 Ngày: 30% • 60 Ngày: 18% • 90 Ngày: 10% • Vĩnh Viễn: 2%`.',
+          '• `/shop`: Nhẫn Cưới, Pet/Pháp Bảo, **21 Role Đơn** (`7d/30d/VV`), 20 Background & Vé/Đá.',
+          '• `/dismantle` *(Phá Role/Trang bị/Pet thu hồi 50% LT)* • `/tangqua` *(+5.000 LT/ngày mỗi 10 cấp, thuế 5%)* • `/nhiemvu` • `/top`.',
+        ].join('\n'),
         inline: false,
       },
       {
@@ -469,7 +475,7 @@ export async function getWikiPetDetail(petType) {
   if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
 
   const descriptionLines = [
-    `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
+    `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
     `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
     `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];

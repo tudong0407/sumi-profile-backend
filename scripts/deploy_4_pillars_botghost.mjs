@@ -398,7 +398,7 @@ function buildPetOptions(rarityKeys) {
     const tag = p.is_starter ? 'Khởi đầu tân thủ' : p.hax_skill;
     return {
       label: String(p.pet_name).slice(0, 95),
-      description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag}`,
+      description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag} • ${p.drop_rate}%`,
       emoji_id: emId(p.emoji_key),
       value: p.pet_type,
     };
@@ -618,7 +618,7 @@ export function buildWikiCmd() {
   gb.link(sPets, 'msg_wiki_pets');
 
   gb.advSelectMenu('sel_pet_common', 'msg_wiki_pets', {
-    placeholder: 'Phàm Phẩm (5 Linh Thú)',
+    placeholder: 'Phàm Phẩm • Tỉ lệ 60% (5 Linh Thú)',
     customVariableName: 'picked_pet_c',
     row: '1',
     weight: '1',
@@ -627,7 +627,7 @@ export function buildWikiCmd() {
   }, { x: 450, y: 1620 });
 
   gb.advSelectMenu('sel_pet_rare', 'msg_wiki_pets', {
-    placeholder: 'Linh Phẩm (5 Linh Thú)',
+    placeholder: 'Linh Phẩm • Tỉ lệ 25% (5 Linh Thú)',
     customVariableName: 'picked_pet_r',
     row: '2',
     weight: '1',
@@ -636,7 +636,7 @@ export function buildWikiCmd() {
   }, { x: 750, y: 1620 });
 
   gb.advSelectMenu('sel_pet_epic', 'msg_wiki_pets', {
-    placeholder: 'Tiên Phẩm (4 Linh Thú)',
+    placeholder: 'Tiên Phẩm • Tỉ lệ 14% (4 Linh Thú)',
     customVariableName: 'picked_pet_e',
     row: '3',
     weight: '1',
@@ -645,7 +645,7 @@ export function buildWikiCmd() {
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: 'Thần Thoại (6 Linh Thú)',
+    placeholder: 'Thần Thoại • Tỉ lệ 1% (6 Linh Thú)',
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',

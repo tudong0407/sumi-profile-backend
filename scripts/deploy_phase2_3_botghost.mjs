@@ -271,7 +271,7 @@ export function buildShopCmd() {
   gb.link('btn_home_gacha_eq', 'api_qroll_eq');
   embedMsg(gb, 'msg_qroll_eq', {
     title: `${em('su_gacha_dice')} KẾT QUẢ RÈN PHÁP BẢO (1 LƯỢT)`,
-    description: `${em('su_linhthach')} **Số dư**: \`{qr_eq_res.response.linh_thach_fmt}\` Linh Thạch\n{qr_eq_res.response.summary_results}\n{qr_eq_res.response.message}`,
+    description: '{qr_eq_res.response.message}',
     color: '#f59e0b',
   }, { x: 1320, y: 1200 });
   gb.link('api_qroll_eq', 'msg_qroll_eq');
@@ -281,7 +281,7 @@ export function buildShopCmd() {
   gb.link('btn_home_gacha_pet', 'api_qroll_pet');
   embedMsg(gb, 'msg_qroll_pet', {
     title: `${em('su_ticket_pet')} KẾT QUẢ TRIỆU HỒI LINH THÚ (1 LƯỢT)`,
-    description: `${em('su_linhthach')} **Số dư**: \`{qr_pet_res.response.linh_thach_fmt}\` Linh Thạch\n{qr_pet_res.response.summary_results}\n{qr_pet_res.response.message}`,
+    description: '{qr_pet_res.response.message}',
     color: '#ec4899',
   }, { x: 1620, y: 1200 });
   gb.link('api_qroll_pet', 'msg_qroll_pet');

@@ -158,6 +158,7 @@ export const PET_CATALOG = [
   { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc. Độc quyền Tiểu thư Fuyumi.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
+  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 1.0 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.0,
   icon: petEmoji(p.pet_type, em('su_fox_mascot')),
   emoji_key: petEmojiKey(p.pet_type),
   element_icon: elementEmoji(p.element),
@@ -327,32 +328,32 @@ export const SHOP_ROLE_BY_ID = Object.fromEntries(SHOP_ROLE_PACKAGES.map((r) => 
  */
 export const MULTI_PERK_ROLES = [
   // 8 Role Linh Phẩm (25% — 2 chức năng)
-  { role_id: '1573577773279219763', name: '« Song Tuyệt Kiếm Khách »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '⚡📌 Miễn Slowmode & Ghim Tin Nhắn' },
-  { role_id: '1573577776454434899', name: '« Huyễn Ảnh Linh Tôn »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎭✨ Đổi Nick, Emoji/Sticker Ngoại & +10% EXP' },
-  { role_id: '1573577779621138542', name: '« Lôi Vũ Hộ Pháp »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎙️📢 Di Chuyển & Ưu Tiên Nói Voice' },
-  { role_id: '1573577782380728410', name: '« Hàn Ngọc Tiên Tử »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '📺🔊 Stream HD, Soundboard Ngoại & +10% Daily LT' },
-  { role_id: '1573577786218651688', name: '« Mật Các Trưởng Lão »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '💬👁️ Thread Kín/Mở, Kênh Ẩn & +12% EXP' },
-  { role_id: '1573577788965781504', name: '« Kim Tiền Đạo Nhân »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '💎🏷️ Buff +25% Daily LT & Giảm 5% Giá Shop' },
-  { role_id: '1573577794091225108', name: '« Chiến Hồn Tiên Phong »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '⚔️⚡ Buff +8% Chiến Lực Pet & Miễn Slowmode' },
-  { role_id: '1573577796742152314', name: '« Thiên Âm Nhạc Sư »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎵📢 Ưu Tiên Voice, Âm Ngoại & +12% EXP' },
+  { role_id: '1573577773279219763', name: '« Song Tuyệt Kiếm Khách »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '⚡📌 Miễn Slowmode & Ghim Tin Nhắn', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577776454434899', name: '« Huyễn Ảnh Linh Tôn »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎭✨ Đổi Nick, Emoji/Sticker Ngoại & +10% EXP', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577779621138542', name: '« Lôi Vũ Hộ Pháp »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎙️📢 Di Chuyển & Ưu Tiên Nói Voice', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577782380728410', name: '« Hàn Ngọc Tiên Tử »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '📺🔊 Stream HD, Soundboard Ngoại & +10% Daily LT', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577786218651688', name: '« Mật Các Trưởng Lão »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '💬👁️ Thread Kín/Mở, Kênh Ẩn & +12% EXP', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577788965781504', name: '« Kim Tiền Đạo Nhân »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '💎🏷️ Buff +25% Daily LT & Giảm 5% Giá Shop', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577794091225108', name: '« Chiến Hồn Tiên Phong »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '⚔️⚡ Buff +8% Chiến Lực Pet & Miễn Slowmode', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
+  { role_id: '1573577796742152314', name: '« Thiên Âm Nhạc Sư »', rarity: 'Linh Phẩm', rarity_key: 'rare', perk: '🎵📢 Ưu Tiên Voice, Âm Ngoại & +12% EXP', prices: { '7d': 500, '30d': 1600, permanent: 5000 } },
   // 6 Role Tiên Phẩm (14% — 3–4 chức năng)
-  { role_id: '1573577799539892314', name: '« Cửu Tiêu Phong Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌬️🔇 Move/Mute Voice, Miễn Slowmode & +20% EXP' },
-  { role_id: '1573577805286080523', name: '« Thái Hư Chân Quân »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🏷️📌 Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT' },
-  { role_id: '1573577808867762186', name: '« Vạn Bảo Tài Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '💰✨ +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker' },
-  { role_id: '1573577811786993756', name: '« Bát Hoang Chiến Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🔥⚔️ +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode' },
-  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌸💫 +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji' },
-  { role_id: '1573577816690401401', name: '« Tinh Hà Pháp Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌌🛡️ Move/Mute/Deafen Voice, Ghim Tin & +25% EXP' },
+  { role_id: '1573577799539892314', name: '« Cửu Tiêu Phong Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌬️🔇 Move/Mute Voice, Miễn Slowmode & +20% EXP', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577805286080523', name: '« Thái Hư Chân Quân »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🏷️📌 Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577808867762186', name: '« Vạn Bảo Tài Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '💰✨ +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577811786993756', name: '« Bát Hoang Chiến Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🔥⚔️ +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌸💫 +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577816690401401', name: '« Tinh Hà Pháp Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: '🌌🛡️ Move/Mute/Deafen Voice, Ghim Tin & +25% EXP', prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
 ];
 
 /**
  * 5 Role Tối Thượng Thần Thoại (1% — 5+ chức năng) trong Gacha Role
  */
 export const SUPREME_ROLES = [
-  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🛡️ Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet' },
-  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '👑 Quản Trị Voice/Chat, +60% EXP/LT & +20% Pet' },
-  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🌌 Bá Chủ Voice/Thread, +50% EXP/LT & +18% Pet' },
-  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '✨ Full Voice/Thread, Buff x2.5 Daily LT & Giảm 15% Shop' },
-  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🌸 Huy Hiệu Độc Tôn, Buff +80% EXP & +15% Chiến Lực Pet' },
+  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🛡️ Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '👑 Quản Trị Voice/Chat, +60% EXP/LT & +20% Pet', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🌌 Bá Chủ Voice/Thread, +50% EXP/LT & +18% Pet', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '✨ Full Voice/Thread, Buff x2.5 Daily LT & Giảm 15% Shop', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: '🌸 Huy Hiệu Độc Tôn, Buff +80% EXP & +15% Chiến Lực Pet', prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
 ];
 
 export const GACHA_ROLE_CATALOG = [

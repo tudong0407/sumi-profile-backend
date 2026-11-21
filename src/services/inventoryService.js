@@ -8,6 +8,11 @@ import { supabase } from '../config/supabase.js';
 import {
   EQUIPMENT_BY_ID,
   PET_BY_TYPE,
+  SHOP_EQUIPMENT,
+  SHOP_PETS,
+  SHOP_ROLE_BY_ID,
+  ROLE_BY_ID,
+  LEVEL_ROLE_MILESTONES,
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   SHOP_CONSUMABLES,
@@ -503,6 +508,265 @@ export async function unequipTarget(userId, payload = {}) {
   }
 
   return { success: false, status: 400, error: 'INVALID_CATEGORY', message: 'Loại cần tháo phải là `item`, `role`, `background`, hoặc `frame`.' };
+}
+
+const SHOP_EQUIP_BY_ID = Object.fromEntries(SHOP_EQUIPMENT.map((e) => [e.item_id, e]));
+const SHOP_PET_BY_ID = Object.fromEntries(SHOP_PETS.map((p) => [p.pet_type, p]));
+const dismantleLocks = new Map();
+
+async function withDismantleLock(userId, fn) {
+  const prev = dismantleLocks.get(userId) || Promise.resolve();
+  let release;
+  const current = new Promise((res) => { release = res; });
+  const queued = prev.then(() => current);
+  dismantleLocks.set(userId, queued);
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (dismantleLocks.get(userId) === queued) dismantleLocks.delete(userId);
+  }
+}
+
+function normalizeTargetText(str) {
+  return String(str || '')
+    .replace(/[«»"'`]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function getRoleBaseValue(roleRow, now) {
+  const roleMeta = SHOP_ROLE_BY_ID[roleRow.role_id] || ROLE_BY_ID[roleRow.role_id];
+  const prices = roleMeta?.prices || { '7d': 200, '30d': 650, permanent: 2000 };
+  if (roleRow.is_permanent) {
+    return Number(prices.permanent || 2000);
+  }
+  const remMs = roleRow.expires_at ? new Date(roleRow.expires_at).getTime() - now.getTime() : 0;
+  const remDays = Math.max(1, Math.ceil(remMs / 86400000));
+  if (remDays <= 7) {
+    return Math.max(2, Math.round(Number(prices['7d'] || 200) * (remDays / 7)));
+  }
+  return Math.min(
+    Number(prices.permanent || 2000),
+    Math.max(2, Math.round(Number(prices['30d'] || 650) * (remDays / 30))),
+  );
+}
+
+/**
+ * Chủ động phân rã / hủy Role Quyền Năng, Pháp Bảo hoặc Linh Thú (/dismantle)
+ * để thu hồi đúng 50% giá trị gốc dưới dạng Linh Thạch.
+ */
+export async function dismantleTarget(userId, payload = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', remove_role_id: '', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', remove_role_id: '', message: 'Supabase chưa sẵn sàng.' };
+
+  const rawCat = String(payload.category || payload.loai || '').trim().toLowerCase();
+  const category = ['role', 'item', 'pet'].includes(rawCat) ? rawCat : '';
+  const rawTarget = String(payload.targetId || payload.maId || '').trim();
+  if (!rawTarget) {
+    return {
+      success: false,
+      status: 400,
+      error: 'MISSING_TARGET',
+      remove_role_id: '',
+      message: 'Vui lòng nhập Mã ID, tên Role/Pháp Bảo/Linh Thú hoặc số Slot #1–5 muốn phá (xem trong `/inv`).',
+    };
+  }
+
+  return withDismantleLock(cleanId, async () => {
+    const { user } = await ensureUserInitialized(cleanId, {
+      username: pickCleanDisplayValue(payload.username, payload.fallbackUsername),
+      avatarUrl: pickCleanDisplayValue(payload.avatarUrl),
+    });
+    if (!user) {
+      return { success: false, status: 500, error: 'USER_INIT_FAILED', remove_role_id: '', message: 'Không thể khởi tạo hồ sơ.' };
+    }
+
+    const now = payload.now instanceof Date ? payload.now : new Date();
+    const cleanRoleId = rawTarget.replace(/^<@&(\d+)>$/, '$1').trim();
+    const normTarget = normalizeTargetText(rawTarget);
+
+    // Chặn phá nhầm Level Role (cần dùng /doiqua để tụt cấp)
+    if (category === '' || category === 'role') {
+      const matchedMilestone = LEVEL_ROLE_MILESTONES.find((m) =>
+        m.roleId === cleanRoleId || normalizeTargetText(m.name) === normTarget);
+      if (matchedMilestone) {
+        return {
+          success: false,
+          status: 400,
+          error: 'LEVEL_ROLE_CANNOT_DISMANTLE',
+          remove_role_id: '',
+          message: `**${matchedMilestone.name}** là **Role Cấp Độ (Level Role)**, không thể phá bằng \`/dismantle\`!\n• Nếu muốn gỡ Level Role và nhận Linh Thạch, hãy dùng \`/doiqua\` để phế Tu Vi tụt cấp.`,
+        };
+      }
+
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', cleanId);
+
+      const slotNum = /^[1-5]$/.test(rawTarget) ? Number(rawTarget) : null;
+      const targetRole = (userRoles || []).find((r) =>
+        r.role_id === cleanRoleId
+        || normalizeTargetText(r.role_name) === normTarget
+        || (slotNum && r.is_equipped && Number(r.equipped_slot) === slotNum));
+
+      if (targetRole) {
+        if (!targetRole.is_permanent && targetRole.expires_at && new Date(targetRole.expires_at) <= now) {
+          await supabase.from('user_roles').delete().eq('id', targetRole.id);
+          return {
+            success: false,
+            status: 400,
+            error: 'ROLE_EXPIRED',
+            remove_role_id: targetRole.role_id,
+            message: `Role **${targetRole.role_name}** đã hết hạn sử dụng nên không còn giá trị hoàn trả (đã dọn khỏi túi).`,
+          };
+        }
+
+        const baseValue = getRoleBaseValue(targetRole, now);
+        const refundLinhThach = Math.max(1, Math.floor(baseValue * 0.5));
+        const newBalance = Number(user.linh_thach || 0) + refundLinhThach;
+
+        await Promise.all([
+          supabase.from('user_roles').delete().eq('id', targetRole.id),
+          supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+        ]);
+
+        return {
+          success: true,
+          category: 'role',
+          role_id: targetRole.role_id,
+          role_name: targetRole.role_name,
+          remove_role_id: targetRole.role_id,
+          base_value: baseValue,
+          refund_linh_thach: refundLinhThach,
+          linh_thach: newBalance,
+          linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
+          message: `${em('su_sparkle')} Đã phân rã Role **${targetRole.role_name}**!\n• Giá trị định giá gốc: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **50%**: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**${targetRole.is_equipped ? '\n• Đã giải phóng Slot trang bị & gỡ Role khỏi hồ sơ Discord.' : ''}`,
+        };
+      }
+
+      if (category === 'role') {
+        return {
+          success: false,
+          status: 404,
+          error: 'ROLE_NOT_OWNED',
+          remove_role_id: '',
+          message: `Không tìm thấy Role Quyền Năng \`${rawTarget}\` trong túi đồ \`/inv\` của bạn.`,
+        };
+      }
+    }
+
+    if (category === 'item' || category === '') {
+      const { data: userItems } = await supabase
+        .from('user_pet_items')
+        .select('*')
+        .eq('user_id', cleanId);
+
+      const matchedItem = (userItems || []).find((row) =>
+        row.item_id.toLowerCase() === normTarget
+        || normalizeTargetText(EQUIPMENT_BY_ID[row.item_id]?.item_name) === normTarget);
+
+      if (matchedItem) {
+        const itemMeta = SHOP_EQUIP_BY_ID[matchedItem.item_id] || EQUIPMENT_BY_ID[matchedItem.item_id] || {};
+        const fallbackByRarity = itemMeta.rarity_key === 'mythic' ? 6000 : itemMeta.rarity_key === 'epic' ? 2000 : itemMeta.rarity_key === 'rare' ? 750 : 250;
+        const baseValue = Number(itemMeta.price || fallbackByRarity);
+        const refundLinhThach = Math.max(1, Math.floor(baseValue * 0.5));
+        const newBalance = Number(user.linh_thach || 0) + refundLinhThach;
+
+        await Promise.all([
+          supabase.from('user_pet_items').delete().eq('id', matchedItem.id),
+          supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+        ]);
+
+        return {
+          success: true,
+          category: 'item',
+          item_id: matchedItem.item_id,
+          item_name: itemMeta.item_name || matchedItem.item_id,
+          remove_role_id: '',
+          base_value: baseValue,
+          refund_linh_thach: refundLinhThach,
+          linh_thach: newBalance,
+          linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
+          message: `${em('su_crossed_swords')} Đã phân rã Pháp Bảo **${itemMeta.item_name || matchedItem.item_id}**!\n• Giá trị gốc: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **50%**: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
+        };
+      }
+
+      if (category === 'item') {
+        return {
+          success: false,
+          status: 404,
+          error: 'ITEM_NOT_OWNED',
+          remove_role_id: '',
+          message: `Không tìm thấy Pháp Bảo \`${rawTarget}\` trong túi đồ \`/inv\` của bạn.`,
+        };
+      }
+    }
+
+    if (category === 'pet' || category === '') {
+      const { data: userPets } = await supabase
+        .from('user_pets')
+        .select('*')
+        .eq('user_id', cleanId);
+
+      const matchedPet = (userPets || []).find((p) =>
+        String(p.pet_id) === rawTarget
+        || p.pet_type.toLowerCase() === normTarget
+        || normalizeTargetText(p.pet_name) === normTarget);
+
+      if (matchedPet) {
+        if (matchedPet.pet_type === 'hoa_thach_nham_nham') {
+          return { success: false, status: 400, error: 'STARTER_PET_PROTECTED', remove_role_id: '', message: 'Không thể phân rã Linh Thú khởi đầu **Hóa Thạch Nham Nham Thú**!' };
+        }
+        if (matchedPet.pet_type === 'cuu_vi_hong_ho') {
+          return { success: false, status: 400, error: 'EXCLUSIVE_PET_PROTECTED', remove_role_id: '', message: 'Không thể phân rã Linh Thú độc tôn **Cửu Vĩ Hồng Hồ**!' };
+        }
+        if (matchedPet.is_active) {
+          return { success: false, status: 400, error: 'ACTIVE_PET_PROTECTED', remove_role_id: '', message: `Không thể phân rã **${matchedPet.pet_name}** khi đang xuất trận! Hãy đổi sang Linh Thú khác bằng \`/linhthu hanh_dong:active\` trước.` };
+        }
+        if ((userPets || []).length <= 1) {
+          return { success: false, status: 400, error: 'LAST_PET_PROTECTED', remove_role_id: '', message: 'Không thể phân rã Linh Thú cuối cùng trong kho!' };
+        }
+
+        const petMeta = SHOP_PET_BY_ID[matchedPet.pet_type] || PET_BY_TYPE[matchedPet.pet_type] || {};
+        const fallbackByRarity = petMeta.rarity_key === 'mythic' ? 7000 : petMeta.rarity_key === 'epic' ? 2400 : petMeta.rarity_key === 'rare' ? 900 : 300;
+        const baseValue = Number(petMeta.price || fallbackByRarity);
+        const refundLinhThach = Math.max(1, Math.floor(baseValue * 0.5));
+        const newBalance = Number(user.linh_thach || 0) + refundLinhThach;
+
+        await Promise.all([
+          supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).eq('equipped_to_pet', matchedPet.pet_type),
+          supabase.from('user_pets').delete().eq('pet_id', matchedPet.pet_id),
+          supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+        ]);
+
+        return {
+          success: true,
+          category: 'pet',
+          pet_type: matchedPet.pet_type,
+          pet_name: matchedPet.pet_name,
+          remove_role_id: '',
+          base_value: baseValue,
+          refund_linh_thach: refundLinhThach,
+          linh_thach: newBalance,
+          linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
+          message: `${em('su_pet_paw')} Đã giải phóng / phân rã Linh Thú **${matchedPet.pet_name}**!\n• Giá trị gốc: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **50%**: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
+        };
+      }
+    }
+
+    return {
+      success: false,
+      status: 404,
+      error: 'DISMANTLE_TARGET_NOT_FOUND',
+      remove_role_id: '',
+      message: `Không tìm thấy Role, Pháp Bảo hoặc Linh Thú nào khớp \`${rawTarget}\` trong túi đồ \`/inv\`.`,
+    };
+  });
 }
 
 export async function setActivePet(userId, petIdentifier) {

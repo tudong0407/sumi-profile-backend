@@ -804,8 +804,9 @@ export async function renderWikiPetCard(petData, options = {}) {
   // Pills Phẩm cấp • Hệ • Chiến lực gốc Lv.1
   let px = rightX;
   const py = 90;
+  const petDropRate = petData.drop_rate ?? (petData.rarity_key === 'mythic' ? 1 : petData.rarity_key === 'epic' ? 14 : petData.rarity_key === 'rare' ? 25 : 60);
   const pills = [
-    { text: petData.rarity, color: rarityStyle.primary, bg: rarityStyle.bgTint },
+    { text: `${petData.rarity} (${petDropRate}%)`, color: rarityStyle.primary, bg: rarityStyle.bgTint },
     { text: `Hệ ${petData.element}`, color: elemMeta.color, bg: 'rgba(30, 27, 75, 0.72)' },
     { text: `Chiến lực Lv.1: ${(petData.base_power || 0).toLocaleString('vi-VN')}`, color: '#fde047', bg: 'rgba(120, 53, 15, 0.45)' },
   ];

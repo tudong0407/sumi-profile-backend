@@ -182,7 +182,7 @@ export function buildRollCmd() {
 
   embedMsg(gb, 'rl_edit', {
     title: `${em('su_sparkle')} KẾT QUẢ TRIỆU HỒI GACHA`,
-    description: `${em('su_gacha_dice')} **Bể quay**: \`{option_loai}\` (\`{roll_res.response.count}\` lượt • Chi phí \`{roll_res.response.cost}\` ${em('su_linhthach')})\n${em('su_linhthach')} **Số dư còn lại**: \`{roll_res.response.linh_thach_fmt}\` Linh Thạch\n${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+{roll_res.response.refund_linh_thach}\` Linh Thạch • \`+{roll_res.response.bonus_star_stones}\` Tinh Thạch Sao\n${em('su_sparkle')} **Kết quả**:\n{roll_res.response.summary_results}\n{roll_res.response.message}`,
+    description: '{roll_res.response.message}',
     color: '#f59e0b',
     target: { editId: 'rl_ack' },
     action_id: 'rl_ack',
@@ -391,6 +391,58 @@ export function buildPetCmd() {
   return gb.elements();
 }
 
+export function buildDismantleCmd() {
+  const gb = new GraphBuilder();
+  gb.rootSlash('dismantle', 'Phá Role Quyền Năng, Pháp Bảo hoặc Linh Thú trong túi để thu hồi 50% giá trị Linh Thạch', { ephemeral: false });
+  gb.errorHandlerWait();
+  gb.option('ma_id', 'string', 'Mã ID, Tên Role/Pháp Bảo/Linh Thú hoặc số Slot #1-5 muốn phá (xem trong /inv)', { required: true, x: 420, y: 0 });
+  gb.option('loai', 'string', 'Loại muốn phá (mặc định tự nhận diện Role / Pháp Bảo / Linh Thú)', { required: false, choices: ['role', 'item', 'pet'], x: 700, y: 0 });
+
+  embedMsg(gb, 'dm_ack', {
+    title: `${em('su_sparkle')} Đang phân rã vật phẩm...`,
+    description: 'Đang định giá và kiểm tra `{option_ma_id}` trong túi đồ...',
+    color: '#f43f5e',
+    editId: 'dm_ack',
+  }, { x: 0, y: 220 });
+  gb.link('root', 'dm_ack');
+
+  apiAction(
+    gb,
+    'dm_api',
+    'dm_res',
+    'POST',
+    `${BACKEND_BASE}/api/dismantle`,
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"{option_loai}","targetId":"{option_ma_id}"}',
+    { x: 0, y: 400 },
+  );
+  gb.link('dm_ack', 'dm_api');
+
+  embedMsg(gb, 'dm_edit', {
+    title: `${em('su_linhthach')} PHÂN RÃ THU HỒI LINH THẠCH (50%)`,
+    description: '{dm_res.response.message}',
+    color: '#f59e0b',
+    target: { editId: 'dm_ack' },
+    action_id: 'dm_ack',
+  }, { x: 0, y: 580 });
+  gb.link('dm_api', 'dm_edit');
+
+  gb.act('dm_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.link('dm_edit', 'dm_wait');
+
+  const cRemRole = gb.cmp('dm_has_role', '{dm_res.response.remove_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 940 });
+  gb.link('dm_wait', cRemRole.condId);
+
+  gb.act('dm_rem_role', 'role_remove', {
+    roles: [],
+    additional_roles: '{dm_res.response.remove_role_id}',
+    success_handles: false,
+    target: { variable: '{user_id}' },
+    server_id: '',
+  }, { x: -180, y: 1140 });
+  gb.link(cRemRole.yes, 'dm_rem_role');
+  return gb.elements();
+}
+
 const TARGETS = [
   { name: 'daily', build: buildDailyCmd },
   { name: 'doiqua', build: buildDoiquaCmd },
@@ -398,6 +450,7 @@ const TARGETS = [
   { name: 'inv', build: buildInvCmd },
   { name: 'equip', build: buildEquipCmd },
   { name: 'unequip', build: buildUnequipCmd },
+  { name: 'dismantle', build: buildDismantleCmd },
   { name: 'linhthu', build: buildPetCmd },
 ];
 

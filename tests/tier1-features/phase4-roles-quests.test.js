@@ -15,6 +15,7 @@ import {
   claimDaily,
   sendGift,
   cleanupExpiredRoles,
+  getDailyLtGiftLimitByLevel,
 } from '../../src/services/economyService.js';
 import { trackQuestActivity } from '../../src/services/questService.js';
 import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
@@ -249,16 +250,22 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(cappedTower.status, 400);
   });
 
-  it('6. /tangqua enforces Lv.10+, 5% tax on Linh Thach, 5000 LT/day cap & 5 items/day cap', async () => {
+  it('6. /tangqua enforces Lv.10+, 5% tax, +5000 LT/day per 10 levels scaling & 5 items/day cap', async () => {
     if (!supabase) return;
+    assert.equal(getDailyLtGiftLimitByLevel(9), 0);
+    assert.equal(getDailyLtGiftLimitByLevel(10), 5000);
+    assert.equal(getDailyLtGiftLimitByLevel(19), 5000);
+    assert.equal(getDailyLtGiftLimitByLevel(20), 10000);
+    assert.equal(getDailyLtGiftLimitByLevel(100), 50000);
+
     // Lower USER_A below Lv.10 -> blocked!
-    await supabase.from('users').update({ level: 5, linh_thach: 10000 }).eq('user_id', USER_A);
+    await supabase.from('users').update({ level: 5, linh_thach: 20000 }).eq('user_id', USER_A);
     const lowRes = await sendGift(USER_A, USER_B, 'linh_thach', 100);
     assert.equal(lowRes.success, false);
     assert.equal(lowRes.error, 'LEVEL_TOO_LOW');
 
-    // Raise USER_A to Lv.20 -> send 1000 LT (5% tax = 50, receiver +950)
-    await supabase.from('users').update({ level: 20, linh_thach: 10000 }).eq('user_id', USER_A);
+    // Raise USER_A to Lv.10 -> daily cap 5,000 LT (send 1000 ok, another 4001 fails!)
+    await supabase.from('users').update({ level: 10, linh_thach: 20000 }).eq('user_id', USER_A);
     const { data: recBefore } = await supabase.from('users').select('linh_thach').eq('user_id', USER_B).single();
     const okRes = await testServer.fetch('/api/economy/gift', {
       method: 'POST',
@@ -269,13 +276,21 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     const gj = await okRes.json();
     assert.equal(gj.tax_amount, 50);
     assert.equal(gj.received_amount, 950);
-    assert.equal(gj.sender_balance, 9000);
+    assert.equal(gj.daily_limit, 5000);
+    assert.equal(gj.sender_balance, 19000);
     assert.equal(gj.receiver_balance, Number(recBefore.linh_thach) + 950);
 
-    // Sending another 4001 LT exceeds 5000/day -> blocked 400 DAILY_LT_GIFT_LIMIT
     const overLt = await sendGift(USER_A, USER_B, 'linh_thach', 4001);
     assert.equal(overLt.success, false);
     assert.equal(overLt.error, 'DAILY_LT_GIFT_LIMIT');
+    assert.equal(overLt.daily_limit, 5000);
+
+    // Raise USER_A to Lv.20 -> cap increases to 10,000 LT/day -> sending another 5,000 succeeds (6,000/10,000)
+    await supabase.from('users').update({ level: 20 }).eq('user_id', USER_A);
+    const lv20Ok = await sendGift(USER_A, USER_B, 'linh_thach', 5000);
+    assert.equal(lv20Ok.success, true);
+    assert.equal(lv20Ok.daily_limit, 10000);
+    assert.equal(lv20Ok.sent_today, 6000);
 
     // Item gift: give USER_A 6 star stones, send 5 succeeds, 1 more hits DAILY_ITEM_GIFT_LIMIT
     await supabase.from('user_inventory').upsert({
@@ -346,5 +361,112 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
       if (prevKey === undefined) delete process.env.BACKEND_API_KEY;
       else process.env.BACKEND_API_KEY = prevKey;
     }
+  });
+
+  it('8. /roll with 0 Linh Thạch returns safe fallback fields and beginner tip message', async () => {
+    if (!supabase) return;
+    await ensureUserInitialized(USER_A, { username: 'NewbieRollTest' });
+    await supabase.from('users').update({ linh_thach: 0 }).eq('user_id', USER_A);
+
+    const res = await testServer.fetch('/api/economy/roll', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, pool: 'pet', count: 1 }),
+    });
+    assert.equal(res.status, 400);
+    const j = await res.json();
+    assert.equal(j.error, 'INSUFFICIENT_LINH_THACH');
+    assert.equal(j.count, 1);
+    assert.equal(j.cost, 50);
+    assert.equal(j.linh_thach_fmt, '0');
+    assert.equal(j.refund_linh_thach, 0);
+    assert.equal(j.bonus_star_stones, 0);
+    assert.equal(j.has_roles, 'false');
+    assert.ok(typeof j.summary_results === 'string' && j.summary_results.length > 0);
+    assert.ok(j.message.includes('/daily') && j.message.includes('/nhiemvu'));
+  });
+
+  it('9. POST /api/dismantle refunds exactly 50% for timed Role, permanent Role & Equipment', async () => {
+    if (!supabase) return;
+    await ensureUserInitialized(USER_A, { username: 'DismantleTester' });
+    await supabase.from('users').update({ linh_thach: 100 }).eq('user_id', USER_A);
+    await supabase.from('user_roles').delete().eq('user_id', USER_A);
+
+    // Level Role cannot be dismantled via /dismantle
+    const lvlRes = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'role', targetId: '1038406122417176586' }),
+    });
+    assert.equal(lvlRes.status, 400);
+    assert.equal((await lvlRes.json()).error, 'LEVEL_ROLE_CANNOT_DISMANTLE');
+
+    // Insert 7d timed Shop Role (« Thần Hành Cốt Cách » 7d = 150 -> 50% = 75 LT) & permanent Multi-Perk Role (« Vạn Bảo Tài Thần » permanent = 10000 -> 50% = 5000 LT)
+    const exp7d = new Date(Date.now() + 7 * 86400000 - 1000).toISOString();
+    await supabase.from('user_roles').insert([
+      {
+        user_id: USER_A,
+        role_id: '1573186049289756712',
+        role_name: '« Thần Hành Cốt Cách »',
+        role_perk: 'Slowmode',
+        is_permanent: false,
+        expires_at: exp7d,
+        is_equipped: true,
+        equipped_slot: 1,
+      },
+      {
+        user_id: USER_A,
+        role_id: '1573577808867762186',
+        role_name: '« Vạn Bảo Tài Thần »',
+        role_perk: 'Multi',
+        is_permanent: true,
+        expires_at: null,
+        is_equipped: false,
+        equipped_slot: null,
+      },
+    ]);
+
+    const d7 = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'role', targetId: '1573186049289756712' }),
+    });
+    assert.equal(d7.status, 200);
+    const j7 = await d7.json();
+    assert.equal(j7.base_value, 150);
+    assert.equal(j7.refund_linh_thach, 75);
+    assert.equal(j7.remove_role_id, '1573186049289756712');
+    assert.equal(j7.linh_thach, 175);
+
+    const dPerm = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, targetId: 'Vạn Bảo Tài Thần' }),
+    });
+    assert.equal(dPerm.status, 200);
+    const jp = await dPerm.json();
+    assert.equal(jp.base_value, 10000);
+    assert.equal(jp.refund_linh_thach, 5000);
+    assert.equal(jp.linh_thach, 5175);
+
+    // Equipment dismantle: weapon_common_1 (250 -> 50% = 125 LT)
+    await supabase.from('user_pet_items').delete().eq('user_id', USER_A);
+    await supabase.from('user_pet_items').insert({
+      user_id: USER_A,
+      item_id: 'weapon_common_1',
+      equipped_to_pet: null,
+      slot: null,
+    });
+    const dItem = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'item', targetId: 'weapon_common_1' }),
+    });
+    assert.equal(dItem.status, 200);
+    const ji = await dItem.json();
+    assert.equal(ji.base_value, 250);
+    assert.equal(ji.refund_linh_thach, 125);
+    assert.equal(ji.remove_role_id, '');
+    assert.equal(ji.linh_thach, 5300);
   });
 });
