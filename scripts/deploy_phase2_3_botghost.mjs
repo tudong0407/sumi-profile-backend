@@ -223,11 +223,11 @@ export function buildShopCmd() {
       `${em('su_ring_thanthoai')} **Nhẫn Cưới (4 cấp)**: Phàm (500) • Linh (2.000) • Tiên (6.000) • Thần Thoại (18.000).`,
       `${em('su_pet_paw')} **Linh Thú (10 loài)**: Bán thẳng toàn bộ Pet Phàm Phẩm (300) & Linh Phẩm (900).`,
       `${em('su_crossed_swords')} **Pháp Bảo (24 món)**: Bán thẳng 12 món Phàm (250) & 12 món Linh (750).`,
-      `${em('su_medal_role')} **Role Quyền Năng (9 gói)**: Thuê nhanh 7 Ngày, 30 Ngày hoặc mua Vĩnh Viễn.`,
+      `${em('su_medal_role')} **Role Quyền Năng (21 gói)**: Thuê nhanh 7 Ngày, 30 Ngày hoặc mua Vĩnh Viễn.`,
       `${em('su_star_stone')} **Vật Phẩm (5 món)**: Vé Gacha (50), Tinh Thạch Sao (100), Thẻ Đổi Danh Hiệu (300), Lệnh Bài Khung (800).`,
-      `${em('su_frame_token')} **Background Hồ Sơ (20 mẫu)**: 15 Nền AI 2:1 & 5 Nền Pinterest (300–4.000 Linh Thạch).`,
+      `${em('su_frame_token')} **Background Hồ Sơ (20 mẫu)**: Bộ sưu tập nền Full HD+ (300–4.000 Linh Thạch).`,
       ``,
-      `${em('su_gacha_dice')} *Pet Tiên/Thần Thoại & 9 Pháp Bảo Độc Nhất 1% chỉ mở khóa qua Gacha \`/roll\` hoặc nút Quay Nhanh bên dưới.*`,
+      `${em('su_gacha_dice')} *Pet Tiên/Thần Thoại, Role Đa Năng & 9 Pháp Bảo Độc Nhất 1% mở khóa qua Gacha \`/roll\` hoặc nút Quay Nhanh.*`,
     ].join('\n'),
     color: '#ec4899',
     footer: 'SuMi Family • Tiên Bảo Các',
@@ -243,9 +243,9 @@ export function buildShopCmd() {
       { label: 'Nhẫn Cưới Tiên Lữ (4 cấp)', description: 'Mua nhẫn cầu hôn hoặc nâng cấp nhẫn đang đeo', emoji_id: emId('su_ring_thanthoai'), value: 'rings' },
       { label: 'Linh Thú Phàm & Linh (10 loài)', description: '300 - 900 Linh Thạch (Tiên/Thần Thoại chỉ qua /roll)', emoji_id: emId('su_pet_paw'), value: 'pets' },
       { label: 'Pháp Bảo Phàm & Linh (24 món)', description: '250 - 750 Linh Thạch (Vũ Khí, Bảo Ngọc, Chiến Hồn)', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
-      { label: 'Role Quyền Năng (9 gói)', description: 'Thuê 7 Ngày / 30 Ngày hoặc sở hữu Vĩnh Viễn', emoji_id: emId('su_medal_role'), value: 'roles' },
+      { label: 'Role Quyền Năng (21 gói)', description: 'Thuê 7 Ngày / 30 Ngày hoặc sở hữu Vĩnh Viễn', emoji_id: emId('su_medal_role'), value: 'roles' },
       { label: 'Vật Phẩm & Trang Trí (5 món)', description: 'Vé Gacha, Tinh Thạch Sao, Thẻ Danh Hiệu, Khung Avatar', emoji_id: emId('su_star_stone'), value: 'consumables' },
-      { label: 'Background Profile & Rank (20 mẫu)', description: '15 Nền AI 2:1 & 5 Nền Pinterest nghệ thuật', emoji_id: emId('su_frame_token'), value: 'backgrounds' },
+      { label: 'Background Profile & Rank (20 mẫu)', description: '20 mẫu nền trang trí thẻ /profile & /rank (300 - 4.000 LT)', emoji_id: emId('su_frame_token'), value: 'backgrounds' },
     ],
   }, { x: 1000, y: 820 });
 
@@ -372,13 +372,14 @@ export function buildShopCmd() {
     })),
   }, { x: 450, y: 1580 });
 
-  // Category 6: Backgrounds (20 paid: 15 AI + 5 Pinterest)
-  const paidBgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
-  const aiBgs = paidBgs.filter((b) => !b.bg_id.startsWith('bg_pin_'));
-  const pinBgs = paidBgs.filter((b) => b.bg_id.startsWith('bg_pin_'));
+  // Category 6: Backgrounds (20 paid sorted by price asc — unified 1 frame & 1 dropdown)
+  const paidBgs = BACKGROUND_CATALOG.filter((b) => b.price > 0).sort((a, b) => a.price - b.price);
+  const bgPriceLines = paidBgs.map((b) =>
+    `• **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${em('su_linhthach')}`
+  ).join('\n');
   embedMsg(gb, 'msg_shop_bgs', {
-    title: `${em('su_frame_token')} QUẦY BACKGROUND PROFILE & RANK (20 MẪU)`,
-    description: `• **15 Mẫu Tiên Giới AI 2:1**: \`300\` – \`4.000\` ${em('su_linhthach')}\n• **5 Mẫu Nghệ Thuật Pinterest**: \`600\` – \`1.500\` ${em('su_linhthach')}\n• Áp dụng cho cả thẻ \`/profile\` và \`/rank\` qua \`/equip\`.`,
+    title: `${em('su_frame_token')} QUẦY BACKGROUND PROFILE & RANK (${paidBgs.length} MẪU)`,
+    description: `${bgPriceLines}\n\n• Chọn mẫu nền ở menu bên dưới để xem trước & mua ngay cho \`/profile\` + \`/rank\` (\`/equip\`).`,
     color: '#a855f7',
   }, { x: 750, y: 1380 });
   gb.link(rBgs, 'msg_shop_bgs');
@@ -389,8 +390,13 @@ export function buildShopCmd() {
     emoji_id: emId('su_frame_token'),
     value: b.bg_id,
   }));
-  gb.advSelectMenu('sel_shop_bg_ai', 'msg_shop_bgs', { placeholder: '15 Background AI 2:1 (Phàm -> Thần Thoại)', customVariableName: 'picked_shop_bg_ai', row: '1', weight: '1', basic_options: bgOpts(aiBgs) }, { x: 660, y: 1580 });
-  gb.advSelectMenu('sel_shop_bg_pin', 'msg_shop_bgs', { placeholder: '5 Background Pinterest Tuyển Chọn', customVariableName: 'picked_shop_bg_pin', row: '2', weight: '1', basic_options: bgOpts(pinBgs) }, { x: 860, y: 1580 });
+  gb.advSelectMenu('sel_shop_bg', 'msg_shop_bgs', {
+    placeholder: `Chọn Background Hồ Sơ (${paidBgs.length} mẫu • 300 - 4.000 LT)`,
+    customVariableName: 'picked_shop_bg',
+    row: '1',
+    weight: '1',
+    basic_options: bgOpts(paidBgs),
+  }, { x: 750, y: 1580 });
 
   // Shared Preview -> Buy Now Flow for all non-role items
   const setters = [
@@ -400,8 +406,7 @@ export function buildShopCmd() {
     ['set_sh_eq_g', 'sel_shop_eq_g', '{picked_shop_eq_g}', -80],
     ['set_sh_eq_s', 'sel_shop_eq_s', '{picked_shop_eq_s}', 80],
     ['set_sh_cons', 'sel_shop_cons', '{picked_shop_cons}', 450],
-    ['set_sh_bg_ai', 'sel_shop_bg_ai', '{picked_shop_bg_ai}', 660],
-    ['set_sh_bg_pin', 'sel_shop_bg_pin', '{picked_shop_bg_pin}', 860],
+    ['set_sh_bg', 'sel_shop_bg', '{picked_shop_bg}', 750],
   ];
   for (const [sid, src, refVal, x] of setters) {
     gb.act(sid, 'set_unique_variable', { reference: 'shop_preview_id', value: refVal, success_handles: false }, { x, y: 1760 });
@@ -450,17 +455,17 @@ export function buildShopCmd() {
   }, { x: 0, y: 2880 });
   gb.link('shop_buy_api', 'shop_buy_msg');
 
-  // Category 4: Roles (9 Packages with 7d / 30d / Permanent Buttons + wait 1s + role_add)
+  // Category 4: Roles (21 Single-Perk Packages with 7d / 30d / Permanent Buttons + wait 1s + role_add)
   embedMsg(gb, 'msg_shop_roles', {
-    title: `${em('su_medal_role')} QUẦY ROLE QUYỀN NĂNG TIỆN ÍCH (9 GÓI)`,
-    description: SHOP_ROLE_PACKAGES.map((r) => `• **${r.name}** — ${r.perk} (\`${r.prices['7d']}\` / \`${r.prices['30d']}\` / \`${r.prices.permanent.toLocaleString('vi-VN')}\` ${em('su_linhthach')})`).join('\n'),
+    title: `${em('su_medal_role')} QUẦY ROLE QUYỀN NĂNG TIỆN ÍCH (${SHOP_ROLE_PACKAGES.length} GÓI)`,
+    description: SHOP_ROLE_PACKAGES.map((r) => `• **${r.name}** — ${r.perk} (\`${r.prices['7d']}\`/\`${r.prices['30d']}\`/\`${r.prices.permanent.toLocaleString('vi-VN')}\`)`).join('\n'),
     color: '#a855f7',
   }, { x: 150, y: 1380 });
   gb.link(rRoles, 'msg_shop_roles');
   gb.link(sRoles, 'msg_shop_roles');
 
   gb.advSelectMenu('sel_shop_role', 'msg_shop_roles', {
-    placeholder: 'Chọn Role Quyền Năng (7d / 30d / Vĩnh Viễn)',
+    placeholder: `Chọn Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói • 7d/30d/Vĩnh Viễn)`,
     customVariableName: 'picked_shop_role',
     basic_options: SHOP_ROLE_PACKAGES.map((r) => ({
       label: r.name,

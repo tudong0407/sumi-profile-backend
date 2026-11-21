@@ -155,9 +155,9 @@ export function buildDoiquaCmd() {
 
 export function buildRollCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('roll', 'Quay Gacha Pháp Bảo hoặc Linh Thú (50 Linh Thạch/lượt • 450/10 lượt)', { ephemeral: false });
+  gb.rootSlash('roll', 'Quay Gacha Pháp Bảo, Linh Thú hoặc Role Quyền Năng (50 LT/lượt • 450/10 lượt)', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('loai', 'string', 'Chọn bể quay Gacha', { required: true, choices: ['equipment', 'pet'], x: 420, y: 0 });
+  gb.option('loai', 'string', 'Chọn bể quay Gacha', { required: true, choices: ['equipment', 'pet', 'role'], x: 420, y: 0 });
   gb.option('so_luot', 'string', 'Số lượt quay (1 hoặc 10)', { required: false, choices: ['1', '10'], x: 700, y: 0 });
   gb.option('dung_ve', 'boolean', 'Ưu tiên dùng Vé Gacha trong túi nếu có?', { required: false, x: 980, y: 0 });
 
@@ -188,6 +188,21 @@ export function buildRollCmd() {
     action_id: 'rl_ack',
   }, { x: 0, y: 580 });
   gb.link('rl_api', 'rl_edit');
+
+  gb.act('rl_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.link('rl_edit', 'rl_wait');
+
+  const cHasRoles = gb.cmp('rl_has_roles', '{roll_res.response.has_roles}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 940 });
+  gb.link('rl_wait', cHasRoles.condId);
+
+  gb.act('rl_add_role', 'role_add', {
+    roles: [],
+    additional_roles: '{roll_res.response.add_role_csv}',
+    success_handles: false,
+    target: { variable: '{user_id}' },
+    server_id: '',
+  }, { x: -180, y: 1140 });
+  gb.link(cHasRoles.yes, 'rl_add_role');
   return gb.elements();
 }
 

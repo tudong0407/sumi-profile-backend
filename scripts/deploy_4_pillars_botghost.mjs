@@ -457,7 +457,7 @@ export function buildWikiCmd() {
       { label: 'Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', emoji_id: emId('su_arena'), value: 'battle' },
       { label: 'Trang Bị Loadout (45 Pháp Bảo)', description: '45 Pháp Bảo: Vũ Khí, Bảo Ngọc, Chiến Hồn & Quy tắc Độc Nhất', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
       { label: 'Linh Thú Tiên Giới (20 Chiến Pet)', description: '20 Chiến Linh Thú theo 4 bậc Phẩm Cấp & kỹ năng HAX', emoji_id: emId('su_pet_paw'), value: 'pets' },
-      { label: 'Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gia Tộc & Clan Wars 24H', emoji_id: emId('su_linhthach'), value: 'economy' },
+      { label: 'Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gacha Role, Nhiệm Vụ, Tặng Quà & Gia Tộc', emoji_id: emId('su_linhthach'), value: 'economy' },
     ],
   }, { x: 800, y: 820 });
 
@@ -882,6 +882,54 @@ export function buildRenderKeepAliveEvent() {
     success_handles: false,
   }, { x: 0, y: 240 });
   gb.link('root', 'ka_ping_api');
+
+  gb.act('ka_wait_1', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 420 });
+  gb.link('ka_ping_api', 'ka_wait_1');
+
+  gb.act('ka_cleanup_api', 'api_action', {
+    name: 'cleanup_res',
+    ephemeral: false,
+    request_options: {
+      method: 'POST',
+      url: `${BACKEND_BASE}/api/roles/cleanup-expired`,
+      headers: [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' },
+      ],
+      params: [],
+      body: [],
+      rawBody: '{}',
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        jsonSafeVariables: true,
+        bodyMode: 'raw',
+        contentType: 'application/json',
+        failOnError: false,
+      },
+    },
+    success_handles: false,
+  }, { x: 0, y: 600 });
+  gb.link('ka_wait_1', 'ka_cleanup_api');
+
+  const cExpired = gb.cmp('ka_has_expired', '{cleanup_res.response.has_expired}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 800 });
+  gb.link('ka_cleanup_api', cExpired.condId);
+
+  gb.act('ka_wait_2', 'wait_action', { seconds: '1', success_handles: false }, { x: -180, y: 980 });
+  gb.link(cExpired.yes, 'ka_wait_2');
+
+  gb.act('ka_rem_role', 'role_remove', {
+    roles: [],
+    additional_roles: '{cleanup_res.response.remove_role_csv}',
+    success_handles: false,
+    target: { variable: '{cleanup_res.response.target_user_id}' },
+    server_id: SUMI_GUILD_ID,
+  }, { x: -180, y: 1180 });
+  gb.link('ka_wait_2', 'ka_rem_role');
 
   return gb.elements();
 }
