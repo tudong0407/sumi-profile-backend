@@ -119,29 +119,126 @@ export function drawCoverBackground(ctx, img, width, height, overlayAlpha = 0.56
 }
 
 /**
- * Tải ảnh an toàn có timeout và fallback
+ * Bounded LRU cache helpers & decoded image caches (safe for 512MB Render container)
+ */
+const BG_CACHE_MAX = 12;
+const LOCAL_ASSET_CACHE_MAX = 160;
+const REMOTE_IMAGE_CACHE_MAX = 80;
+const REMOTE_IMAGE_TTL_MS = 15 * 60 * 1000;
+
+const bgImageCache = new Map();
+const localAssetImageCache = new Map();
+const remoteImageCache = new Map();
+const inFlightLoads = new Map();
+
+function lruGet(cache, key) {
+  if (!cache.has(key)) return undefined;
+  const val = cache.get(key);
+  cache.delete(key);
+  cache.set(key, val);
+  return val;
+}
+
+function lruSet(cache, key, val, maxSize) {
+  if (cache.has(key)) cache.delete(key);
+  else if (cache.size >= maxSize) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey !== undefined) cache.delete(oldestKey);
+  }
+  cache.set(key, val);
+  return val;
+}
+
+function isBackgroundAssetPath(resolvedPath) {
+  const norm = String(resolvedPath || '').replace(/\\/g, '/').toLowerCase();
+  return norm.includes('/backgrounds/') || norm.includes('celestial_palace') || norm.includes('default_background');
+}
+
+async function loadLocalAssetCached(resolvedPath) {
+  const isBg = isBackgroundAssetPath(resolvedPath);
+  const cache = isBg ? bgImageCache : localAssetImageCache;
+  const max = isBg ? BG_CACHE_MAX : LOCAL_ASSET_CACHE_MAX;
+
+  const hit = lruGet(cache, resolvedPath);
+  if (hit) return hit;
+
+  const flightKey = `local:${resolvedPath}`;
+  if (inFlightLoads.has(flightKey)) {
+    return inFlightLoads.get(flightKey);
+  }
+
+  const p = (async () => {
+    try {
+      const buffer = await fs.promises.readFile(resolvedPath);
+      const img = await loadImage(buffer);
+      if (img) lruSet(cache, resolvedPath, img, max);
+      return img || null;
+    } catch {
+      return null;
+    } finally {
+      inFlightLoads.delete(flightKey);
+    }
+  })();
+
+  inFlightLoads.set(flightKey, p);
+  return p;
+}
+
+async function loadRemoteImageCached(url, timeoutMs) {
+  const cached = lruGet(remoteImageCache, url);
+  if (cached) {
+    if (cached.expiresAt > Date.now()) {
+      return cached.img;
+    }
+    remoteImageCache.delete(url);
+  }
+
+  const flightKey = `remote:${url}`;
+  if (inFlightLoads.has(flightKey)) {
+    return inFlightLoads.get(flightKey);
+  }
+
+  const p = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (res.ok) {
+        const arrayBuffer = await res.arrayBuffer();
+        const img = await loadImage(Buffer.from(arrayBuffer));
+        if (img) {
+          lruSet(remoteImageCache, url, { img, expiresAt: Date.now() + REMOTE_IMAGE_TTL_MS }, REMOTE_IMAGE_CACHE_MAX);
+          return img;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timer);
+      inFlightLoads.delete(flightKey);
+    }
+  })();
+
+  inFlightLoads.set(flightKey, p);
+  return p;
+}
+
+/**
+ * Tải ảnh an toàn có bộ nhớ đệm LRU trong RAM, in-flight coalescing, timeout và fallback
  */
 export async function loadImageSafe(urlOrPath, timeoutMs = 3000, fallbackAssetName = null) {
   if (urlOrPath) {
     try {
       const resolved = resolveAssetPath(urlOrPath);
       if (resolved) {
-        const buffer = fs.readFileSync(resolved);
-        return await loadImage(buffer);
+        const localImg = await loadLocalAssetCached(resolved);
+        if (localImg) return localImg;
       }
 
       if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-          const res = await fetch(urlOrPath, { signal: controller.signal });
-          if (res.ok) {
-            const arrayBuffer = await res.arrayBuffer();
-            return await loadImage(Buffer.from(arrayBuffer));
-          }
-        } finally {
-          clearTimeout(timer);
-        }
+        const remoteImg = await loadRemoteImageCached(urlOrPath, timeoutMs);
+        if (remoteImg) return remoteImg;
       }
     } catch {
       // Bỏ qua lỗi và chuyển sang fallback
@@ -151,16 +248,22 @@ export async function loadImageSafe(urlOrPath, timeoutMs = 3000, fallbackAssetNa
   if (fallbackAssetName) {
     const fallbackPath = resolveAssetPath(fallbackAssetName);
     if (fallbackPath) {
-      try {
-        const buffer = fs.readFileSync(fallbackPath);
-        return await loadImage(buffer);
-      } catch {
-        // Fallback procedural
-      }
+      const fbImg = await loadLocalAssetCached(fallbackPath);
+      if (fbImg) return fbImg;
     }
   }
 
   return null;
+}
+
+/**
+ * Kết xuất Canvas ra Buffer chuẩn PNG hoặc WebP tốc độ cao
+ */
+export function encodeCanvas(canvas, format = 'png', webpQuality = 85) {
+  if (String(format || 'png').toLowerCase() === 'webp') {
+    return canvas.toBuffer('image/webp', webpQuality);
+  }
+  return canvas.toBuffer('image/png');
 }
 
 /**
@@ -380,11 +483,14 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   } = options;
 
   const tier = resolveAvatarBorderTier({ isOwner, level, avatarFrame });
+  // Tỷ lệ viền & hào quang chuẩn theo radius (r>=56 giữ s=1 cho /profile & /rank; r=24 thu nhỏ thanh mảnh cho /battle)
+  const s = Math.max(0.42, Math.min(1, radius / 56));
 
   // 1. Hào quang đồng tâm phía sau Avatar (phân cấp rõ ràng)
   if (showAura) {
     ctx.save();
-    const auraR = tier === 'owner' ? radius + 28 : (tier === 'high' || CUSTOM_SHOP_FRAMES.has(tier)) ? radius + 22 : radius + 16;
+    const baseAuraOffset = tier === 'owner' ? 28 : (tier === 'high' || CUSTOM_SHOP_FRAMES.has(tier)) ? 22 : 16;
+    const auraR = radius + baseAuraOffset * s;
     const auraGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.82, centerX, centerY, auraR);
     if (tier === 'owner') {
       auraGrad.addColorStop(0, 'rgba(244, 63, 94, 0.58)');
@@ -467,21 +573,21 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   // 3. Vẽ Hệ Vòng Viền Đồng Tâm (chung 1 tọa độ centerX, centerY — không bao giờ lệch 1px)
   ctx.save();
 
-  // 3a. Vòng khóa mép trong (inner seam-seal) đè nhẹ 0.4px lên rìa avatar để tuyệt đối không lộ viền đen/răng cưa
+  // 3a. Vòng khóa mép trong (inner seam-seal) đè nhẹ lên rìa avatar để tuyệt đối không lộ viền đen/răng cưa
   ctx.beginPath();
-  ctx.arc(centerX, centerY, radius - 0.3, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, radius - 0.3 * s, 0, Math.PI * 2);
   ctx.strokeStyle = tier === 'owner'
     ? 'rgba(255, 241, 180, 0.75)'
     : tier === 'high'
       ? 'rgba(233, 213, 255, 0.6)'
       : 'rgba(224, 242, 254, 0.55)';
-  ctx.lineWidth = 1.4;
+  ctx.lineWidth = Math.max(0.8, 1.4 * s);
   ctx.stroke();
 
   if (tier === 'owner') {
     // --- VIỀN ĐỘC QUYỀN TIỂU THƯ FUYUMI: CỬU VĨ HOÀNG KIM & HÀO QUANG HỒNG NGỌC ĐA TẦNG ---
     // Vòng hào quang mỏng ngoài cùng (Celestial Outer Orbit)
-    const outerR = radius + 6.2;
+    const outerR = radius + 6.2 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
     const orbitGrad = ctx.createLinearGradient(centerX - outerR, centerY - outerR, centerX + outerR, centerY + outerR);
@@ -489,11 +595,11 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     orbitGrad.addColorStop(0.5, 'rgba(244, 63, 94, 0.65)');
     orbitGrad.addColorStop(1, 'rgba(251, 191, 36, 0.72)');
     ctx.strokeStyle = orbitGrad;
-    ctx.lineWidth = 1.1;
+    ctx.lineWidth = Math.max(0.7, 1.1 * s);
     ctx.stroke();
 
     // Vòng chính Hoàng Kim - Hồng Ngọc điêu khắc
-    const mainR = radius + 1.8;
+    const mainR = radius + 1.8 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
     const mainGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
@@ -503,9 +609,9 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     mainGrad.addColorStop(0.8, '#f59e0b');
     mainGrad.addColorStop(1, '#fef08a');
     ctx.strokeStyle = mainGrad;
-    ctx.lineWidth = 4.0;
+    ctx.lineWidth = Math.max(1.8, 4.0 * s);
     ctx.shadowColor = 'rgba(244, 63, 94, 0.78)';
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 12 * s;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -523,17 +629,17 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       const gx = centerX + mainR * Math.cos(g.angle);
       const gy = centerY + mainR * Math.sin(g.angle);
       ctx.beginPath();
-      ctx.arc(gx, gy, g.r, 0, Math.PI * 2);
+      ctx.arc(gx, gy, g.r * s, 0, Math.PI * 2);
       ctx.fillStyle = g.core;
       ctx.shadowColor = g.glow;
-      ctx.shadowBlur = 7;
+      ctx.shadowBlur = 7 * s;
       ctx.fill();
       ctx.shadowBlur = 0;
       ctx.strokeStyle = g.rim;
-      ctx.lineWidth = 1.2;
+      ctx.lineWidth = Math.max(0.7, 1.2 * s);
       ctx.stroke();
       if (g.star) {
-        drawStarSparkle(ctx, gx, gy - 1.5, 4.8, '#ffffff', '#ffd700');
+        drawStarSparkle(ctx, gx, gy - 1.5 * s, 4.8 * s, '#ffffff', '#ffd700');
       }
     }
 
@@ -542,7 +648,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     for (const ang of sparkles) {
       const sx = centerX + outerR * Math.cos(ang);
       const sy = centerY + outerR * Math.sin(ang);
-      drawStarSparkle(ctx, sx, sy, 3.2, '#fef08a', '#f43f5e');
+      drawStarSparkle(ctx, sx, sy, 3.2 * s, '#fef08a', '#f43f5e');
     }
   } else if (CUSTOM_SHOP_FRAMES.has(tier)) {
     const shopThemeMap = {
@@ -552,14 +658,14 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       frost_crystal: { c1: '#ecfeff', c2: '#06b6d4', c3: '#3b82f6', orbit: 'rgba(56, 189, 248, 0.55)', glow: 'rgba(34, 211, 238, 0.72)', gemCore: '#f0f9ff', gemGlow: '#38bdf8' },
     };
     const th = shopThemeMap[tier];
-    const outerR = radius + 5.2;
+    const outerR = radius + 5.2 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
     ctx.strokeStyle = th.orbit;
-    ctx.lineWidth = 1.1;
+    ctx.lineWidth = Math.max(0.7, 1.1 * s);
     ctx.stroke();
 
-    const mainR = radius + 1.6;
+    const mainR = radius + 1.6 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
     const sGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
@@ -567,27 +673,27 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     sGrad.addColorStop(0.45, th.c2);
     sGrad.addColorStop(1, th.c3);
     ctx.strokeStyle = sGrad;
-    ctx.lineWidth = 3.6;
+    ctx.lineWidth = Math.max(1.6, 3.6 * s);
     ctx.shadowColor = th.glow;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 10 * s;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     for (const ang of [-Math.PI / 2, -Math.PI * 0.78, -Math.PI * 0.22, Math.PI, 0]) {
       const gx = centerX + mainR * Math.cos(ang);
       const gy = centerY + mainR * Math.sin(ang);
-      drawStarSparkle(ctx, gx, gy, ang === -Math.PI / 2 ? 4.4 : 3.0, th.gemCore, th.gemGlow);
+      drawStarSparkle(ctx, gx, gy, (ang === -Math.PI / 2 ? 4.4 : 3.0) * s, th.gemCore, th.gemGlow);
     }
   } else if (tier === 'high') {
     // --- VIỀN CẢNH GIỚI CAO (KIM ĐAN -> ĐẠI THỪA): TỬ KIM / HUYỀN TINH ---
-    const outerR = radius + 4.8;
+    const outerR = radius + 4.8 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
-    ctx.lineWidth = 1.0;
+    ctx.lineWidth = Math.max(0.7, 1.0 * s);
     ctx.stroke();
 
-    const mainR = radius + 1.5;
+    const mainR = radius + 1.5 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
     const highGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
@@ -596,9 +702,9 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     highGrad.addColorStop(0.7, '#fbbf24');
     highGrad.addColorStop(1, '#c084fc');
     ctx.strokeStyle = highGrad;
-    ctx.lineWidth = 3.4;
+    ctx.lineWidth = Math.max(1.6, 3.4 * s);
     ctx.shadowColor = 'rgba(168, 85, 247, 0.72)';
-    ctx.shadowBlur = 9;
+    ctx.shadowBlur = 9 * s;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -612,23 +718,23 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       const gx = centerX + mainR * Math.cos(g.angle);
       const gy = centerY + mainR * Math.sin(g.angle);
       ctx.beginPath();
-      ctx.arc(gx, gy, g.r, 0, Math.PI * 2);
+      ctx.arc(gx, gy, g.r * s, 0, Math.PI * 2);
       ctx.fillStyle = '#faf5ff';
       ctx.shadowColor = '#c084fc';
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 6 * s;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
   } else {
     // --- VIỀN TÂN THỦ (LUYỆN KHÍ – TRÚC CƠ): BẠCH NGỌC / THANH LAM GỌN ĐẸP SẮC NÉT ---
-    const outerR = radius + 4.0;
+    const outerR = radius + 4.0 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(125, 211, 252, 0.32)';
-    ctx.lineWidth = 0.9;
+    ctx.lineWidth = Math.max(0.6, 0.9 * s);
     ctx.stroke();
 
-    const mainR = radius + 1.4;
+    const mainR = radius + 1.4 * s;
     ctx.beginPath();
     ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
     const noviceGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
@@ -637,9 +743,9 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     noviceGrad.addColorStop(0.85, '#2dd4bf');
     noviceGrad.addColorStop(1, '#bae6fd');
     ctx.strokeStyle = noviceGrad;
-    ctx.lineWidth = 3.0;
+    ctx.lineWidth = Math.max(1.5, 3.0 * s);
     ctx.shadowColor = 'rgba(56, 189, 248, 0.55)';
-    ctx.shadowBlur = 7;
+    ctx.shadowBlur = 7 * s;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -647,10 +753,10 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     const topX = centerX;
     const topY = centerY - mainR;
     ctx.beginPath();
-    ctx.arc(topX, topY, 3.0, 0, Math.PI * 2);
+    ctx.arc(topX, topY, 3.0 * s, 0, Math.PI * 2);
     ctx.fillStyle = '#f0f9ff';
     ctx.shadowColor = '#38bdf8';
-    ctx.shadowBlur = 5;
+    ctx.shadowBlur = 5 * s;
     ctx.fill();
     ctx.shadowBlur = 0;
   }
@@ -658,19 +764,12 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   ctx.restore();
 }
 
-const badgeImageCache = new Map();
-
 /**
- * Tải ảnh badge/icon local trong assets/ có bộ nhớ đệm để tái sử dụng nhanh trên Canvas
+ * Tải ảnh badge/icon local trong assets/ dùng chung bộ nhớ đệm LRU trong RAM
  */
 export async function loadBadgeImage(assetRelPath) {
   if (!assetRelPath) return null;
-  if (badgeImageCache.has(assetRelPath)) {
-    return badgeImageCache.get(assetRelPath);
-  }
-  const img = await loadImageSafe(null, 1500, assetRelPath);
-  badgeImageCache.set(assetRelPath, img || null);
-  return img || null;
+  return loadImageSafe(null, 1500, assetRelPath);
 }
 
 /**
@@ -788,4 +887,103 @@ export function drawAutoFitIconText(ctx, iconImg, text, x, y, maxWidth, options 
     align: 'left',
     color,
   });
+}
+
+/**
+ * Vẽ huy hiệu lục giác vát nhọn 2 đầu ngang (vàng đào kim loại) cho nhãn ATK / DEF / SPD
+ */
+export function drawHexBadge(ctx, x, y, w, h, label, options = {}) {
+  const {
+    fontSize = 9.5,
+    textColor = '#14111f',
+    gradColors = ['#ffe1bd', '#f4b37e', '#e5955f'],
+    borderColor = 'rgba(255, 238, 214, 0.55)',
+  } = options;
+
+  const tip = Math.min(h * 0.36, w * 0.22, 7.0);
+  const midY = y + h / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + tip, y);
+  ctx.lineTo(x + w - tip, y);
+  ctx.lineTo(x + w, midY);
+  ctx.lineTo(x + w - tip, y + h);
+  ctx.lineTo(x + tip, y + h);
+  ctx.lineTo(x, midY);
+  ctx.closePath();
+
+  const grad = ctx.createLinearGradient(x, y, x, y + h);
+  grad.addColorStop(0, gradColors[0]);
+  grad.addColorStop(0.5, gradColors[1]);
+  grad.addColorStop(1, gradColors[2]);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 0.85;
+  ctx.stroke();
+
+  ctx.fillStyle = textColor;
+  ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(sanitizeText(label), x + w / 2, midY + 0.5);
+  ctx.restore();
+}
+
+/**
+ * Vẽ icon PNG + text tự động thu nhỏ cỡ chữ trên 1 dòng và CĂN GIỮA hoàn toàn quanh centerX
+ */
+export function drawCenteredAutoFitIconText(ctx, iconImg, text, centerX, centerY, maxWidth, options = {}) {
+  const {
+    iconSize = 18,
+    gap = 6,
+    maxFont = 12,
+    minFont = 8.0,
+    weight = 'bold',
+    color = '#fbcfe8',
+    textOffsetY = 0.5,
+  } = options;
+
+  const clean = sanitizeText(String(text || '')).trim();
+  const hasIcon = Boolean(iconImg && iconImg.width && iconImg.height);
+  const iconSpace = hasIcon ? iconSize + (clean ? gap : 0) : 0;
+  const availTextW = Math.max(16, maxWidth - iconSpace);
+  const makeFont = (sz) => (weight ? `${weight} ${sz}px ${FONT_FAMILY}` : `${sz}px ${FONT_FAMILY}`);
+
+  ctx.save();
+  let chosen = minFont;
+  let textW = 0;
+  for (let size = maxFont; size >= minFont; size -= 0.25) {
+    ctx.font = makeFont(size);
+    const w = ctx.measureText(clean).width;
+    if (w <= availTextW) {
+      chosen = size;
+      textW = w;
+      break;
+    }
+    textW = w;
+  }
+  ctx.font = makeFont(chosen);
+  const clampedTextW = Math.min(textW, availTextW);
+  const totalW = iconSpace + clampedTextW;
+  let curX = centerX - totalW / 2;
+
+  if (hasIcon) {
+    ctx.drawImage(iconImg, curX, centerY - iconSize / 2, iconSize, iconSize);
+    curX += iconSize + gap;
+  }
+  if (clean) {
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    if (textW > availTextW) {
+      ctx.fillText(clean, curX, centerY + textOffsetY, availTextW);
+    } else {
+      ctx.fillText(clean, curX, centerY + textOffsetY);
+    }
+  }
+  ctx.restore();
+  return chosen;
 }

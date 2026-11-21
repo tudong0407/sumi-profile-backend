@@ -382,7 +382,7 @@ export async function getWikiItemDetail(itemId) {
     return { success: false, error: 'Item not found', message: 'Thiếu mã trang bị.' };
   }
 
-  const cleanId = itemId.trim().toLowerCase().replace(/\.png$/i, '');
+  const cleanId = itemId.trim().toLowerCase().replace(/\.(png|webp)$/i, '');
   if (!Object.prototype.hasOwnProperty.call(EQUIPMENT_BY_ID, cleanId)) {
     return {
       success: false,
@@ -453,7 +453,7 @@ export async function getWikiPetDetail(petType) {
     return { success: false, error: 'Pet not found', message: 'Thiếu mã Linh Thú.' };
   }
 
-  const cleanType = petType.trim().toLowerCase().replace(/\.png$/i, '');
+  const cleanType = petType.trim().toLowerCase().replace(/\.(png|webp)$/i, '');
   if (!Object.prototype.hasOwnProperty.call(PET_BY_TYPE, cleanType) || PET_BY_TYPE[cleanType].is_exclusive_fuyumi) {
     return {
       success: false,

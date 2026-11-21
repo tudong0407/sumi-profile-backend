@@ -5,6 +5,7 @@ import { PUBLIC_BASE_URL } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
+import { renderBattleCard } from '../../canvas/battleRenderer.js';
 import {
   triggerBattleStart,
   triggerTurnStart,
@@ -14,27 +15,328 @@ import {
   hasHax,
 } from './haxEngine.js';
 
-const BATTLE_CACHE_MAX = 200;
+const BATTLE_CACHE_MAX = 120;
 const BATTLE_CACHE_TTL_MS = 30 * 60 * 1000;
 const battleReportCache = new Map();
+const latestBattleByChannel = new Map();
+const latestBattleByUser = new Map();
 
-export function cacheBattleReport(battleId, result) {
-  if (!battleId || !result) return;
-  if (battleReportCache.size >= BATTLE_CACHE_MAX) {
-    const oldestKey = battleReportCache.keys().next().value;
-    if (oldestKey) battleReportCache.delete(oldestKey);
+function trimIndexMap(map, maxSize) {
+  while (map.size > maxSize) {
+    const oldestKey = map.keys().next().value;
+    if (oldestKey === undefined) break;
+    map.delete(oldestKey);
   }
-  battleReportCache.set(battleId, { result, createdAt: Date.now() });
 }
 
-export function getCachedBattleReport(battleId) {
+export function cacheBattleReport(battleId, result, extra = {}) {
+  if (!battleId || !result) return;
+  if (battleReportCache.has(battleId)) battleReportCache.delete(battleId);
+  while (battleReportCache.size >= BATTLE_CACHE_MAX) {
+    const oldestKey = battleReportCache.keys().next().value;
+    if (!oldestKey) break;
+    battleReportCache.delete(oldestKey);
+  }
+  battleReportCache.set(battleId, {
+    result,
+    framesMeta: extra.framesMeta || result.framesMeta || [],
+    frameBuffers: extra.frameBuffers || new Map(),
+    createdAt: Date.now(),
+  });
+
+  if (extra.channelId) {
+    latestBattleByChannel.delete(extra.channelId);
+    latestBattleByChannel.set(extra.channelId, battleId);
+    trimIndexMap(latestBattleByChannel, 200);
+  }
+  for (const uid of [extra.attackerId, extra.defenderId]) {
+    if (uid && /^[0-9]{17,20}$/.test(String(uid))) {
+      const sUid = String(uid);
+      latestBattleByUser.delete(sUid);
+      latestBattleByUser.set(sUid, battleId);
+    }
+  }
+  trimIndexMap(latestBattleByUser, 300);
+}
+
+function getCacheEntry(battleId) {
   if (!battleId || !battleReportCache.has(battleId)) return null;
   const entry = battleReportCache.get(battleId);
   if (Date.now() - entry.createdAt > BATTLE_CACHE_TTL_MS) {
     battleReportCache.delete(battleId);
     return null;
   }
-  return entry.result;
+  return entry;
+}
+
+export function getCachedBattleReport(battleId) {
+  return getCacheEntry(battleId)?.result || null;
+}
+
+export function getCachedBattleFrame(battleId, frameIndex) {
+  const entry = getCacheEntry(battleId);
+  if (!entry) return null;
+  return entry.frameBuffers?.get(Number(frameIndex)) || null;
+}
+
+export function setCachedBattleFrame(battleId, frameIndex, buffer) {
+  const entry = getCacheEntry(battleId);
+  if (!entry || !buffer) return;
+  entry.frameBuffers.set(Number(frameIndex), buffer);
+}
+
+export function getBattleFrameMeta(battleId, frameIndex) {
+  const entry = getCacheEntry(battleId);
+  if (!entry) return null;
+  const idx = Number(frameIndex);
+  const meta = (entry.framesMeta || []).find((f) => f.index === idx);
+  return meta || null;
+}
+
+export function getBattleLogPayload({ battleId, channelId, userId } = {}) {
+  let targetBattleId = battleId && !/^\{/.test(String(battleId)) ? String(battleId).trim() : null;
+  let entry = targetBattleId ? getCacheEntry(targetBattleId) : null;
+
+  if (!entry && channelId && !/^\{/.test(String(channelId))) {
+    const chBid = latestBattleByChannel.get(String(channelId).trim());
+    if (chBid) {
+      targetBattleId = chBid;
+      entry = getCacheEntry(chBid);
+    }
+  }
+
+  if (!entry && userId && !/^\{/.test(String(userId))) {
+    const uBid = latestBattleByUser.get(String(userId).trim());
+    if (uBid) {
+      targetBattleId = uBid;
+      entry = getCacheEntry(uBid);
+    }
+  }
+
+  if (!entry?.result) {
+    return {
+      success: true,
+      found: false,
+      battleId: null,
+      title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU`,
+      description: 'Nhật ký trận đấu này đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại. Hãy dùng `/battle` để mở trận đấu mới!',
+      footer: 'SuMi Family • Nhật Ký Đấu Trường',
+    };
+  }
+
+  const r = entry.result;
+  return {
+    success: true,
+    found: true,
+    battleId: r.battleId || targetBattleId,
+    title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU • ${r.winner.name} VS ${r.loser.name}`,
+    description: r.fullBattleLog || r.discordReport || r.summary,
+    footer: `SuMi Family • ${r.turnCount} Hiệp • Mã trận: ${r.battleId}`,
+  };
+}
+
+/**
+ * Xây dựng lịch khung hình Adaptive Resolution (Phương án 1):
+ * - 1 hiệp: 2 khung (1000x500 Khai trận -> 2000x1000 WINNER)
+ * - 2-4 hiệp: 2 khung (1000x500 Hiệp 1 -> 2000x1000 WINNER)
+ * - 5+ hiệp: 3 khung (1000x500 Hiệp 1 -> 1000x500 Hiệp giữa -> 2000x1000 WINNER)
+ */
+function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
+  const getHpAtEndOfTurn = (tNum) => {
+    let found = null;
+    for (const t of turns) {
+      if (t.turn <= tNum) found = t;
+      else break;
+    }
+    return found
+      ? { attackerHp: found.attackerHp, defenderHp: found.defenderHp }
+      : { attackerHp: initialHp.attacker, defenderHp: initialHp.defender };
+  };
+
+  if (turnCount <= 1) {
+    return [
+      {
+        index: 1,
+        scale: 1,
+        isFinal: false,
+        currentTurn: 0,
+        totalTurns: turnCount,
+        turnLabel: 'KHAI TRẬN • CHUẨN BỊ XUẤT CHIÊU',
+        title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • KHAI TRẬN!`,
+        attackerHp: initialHp.attacker,
+        defenderHp: initialHp.defender,
+      },
+      {
+        index: 2,
+        scale: 2,
+        isFinal: true,
+        currentTurn: turnCount,
+        totalTurns: turnCount,
+        turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
+        title: headline,
+        attackerHp: finalHp.attacker,
+        defenderHp: finalHp.defender,
+      },
+    ];
+  }
+
+  if (turnCount <= 4) {
+    const hp1 = getHpAtEndOfTurn(1);
+    return [
+      {
+        index: 1,
+        scale: 1,
+        isFinal: false,
+        currentTurn: 1,
+        totalTurns: turnCount,
+        turnLabel: `ĐANG GIAO CHIẾN • HIỆP 1/${turnCount}`,
+        title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP 1/${turnCount}...`,
+        attackerHp: hp1.attacker,
+        defenderHp: hp1.defender,
+      },
+      {
+        index: 2,
+        scale: 2,
+        isFinal: true,
+        currentTurn: turnCount,
+        totalTurns: turnCount,
+        turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
+        title: headline,
+        attackerHp: finalHp.attacker,
+        defenderHp: finalHp.defender,
+      },
+    ];
+  }
+
+  const midTurn = Math.ceil(turnCount / 2);
+  const hp1 = getHpAtEndOfTurn(1);
+  const hpMid = getHpAtEndOfTurn(midTurn);
+  return [
+    {
+      index: 1,
+      scale: 1,
+      isFinal: false,
+      currentTurn: 1,
+      totalTurns: turnCount,
+      turnLabel: `ĐANG GIAO CHIẾN • HIỆP 1/${turnCount}`,
+      title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP 1/${turnCount}...`,
+      attackerHp: hp1.attacker,
+      defenderHp: hp1.defender,
+    },
+    {
+      index: 2,
+      scale: 1,
+      isFinal: false,
+      currentTurn: midTurn,
+      totalTurns: turnCount,
+      turnLabel: `ĐANG GIAO CHIẾN • HIỆP ${midTurn}/${turnCount}`,
+      title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP ${midTurn}/${turnCount}...`,
+      attackerHp: hpMid.attacker,
+      defenderHp: hpMid.defender,
+    },
+    {
+      index: 3,
+      scale: 2,
+      isFinal: true,
+      currentTurn: turnCount,
+      totalTurns: turnCount,
+      turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
+      title: headline,
+      attackerHp: finalHp.attacker,
+      defenderHp: finalHp.defender,
+    },
+  ];
+}
+
+function buildFullBattleLog({
+  attacker,
+  defender,
+  initialHp,
+  elementMatchup,
+  battleStartEvents,
+  turns,
+  turnNumber,
+  winner,
+  winnerPetEmoji,
+  loser,
+  formatEquipLine,
+  formatHaxLine,
+}) {
+  const atkIcon = attacker.petIcon || petEmoji(attacker.petType, em('su_pet_paw'));
+  const defIcon = defender.petIcon || petEmoji(defender.petType, em('su_pet_paw'));
+
+  const elemNote = (() => {
+    const a2d = elementMatchup?.attackerToDefender;
+    const d2a = elementMatchup?.defenderToAttacker;
+    if (a2d?.isTrueDamage && !d2a?.isTrueDamage) return `Hỗn Độn xuyên giáp (+20% DMG)`;
+    if (d2a?.isTrueDamage && !a2d?.isTrueDamage) return `Hỗn Độn xuyên giáp (+20% DMG)`;
+    if (a2d?.multiplier >= 1.25 && d2a?.multiplier >= 1.25) return `Ám ↔ Quang Tương Sát (+25% DMG)`;
+    if (a2d?.multiplier > 1.0) return `${attacker.element} khắc ${defender.element} (+${Math.round((a2d.multiplier - 1) * 100)}% DMG)`;
+    if (d2a?.multiplier > 1.0) return `${defender.element} khắc ${attacker.element} (+${Math.round((d2a.multiplier - 1) * 100)}% DMG)`;
+    return 'Ngũ Hành Cân Bằng';
+  })();
+
+  const headerLines = [
+    `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(Hệ ${attacker.element} • Lv.${attacker.level})*`,
+    `• \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
+    `• Trang bị: ${formatEquipLine(attacker)}`,
+    `• HAX: \`${formatHaxLine(attacker)}\``,
+    ``,
+    `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(Hệ ${defender.element} • Lv.${defender.level})*`,
+    `• \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
+    `• Trang bị: ${formatEquipLine(defender)}`,
+    `• HAX: \`${formatHaxLine(defender)}\``,
+    `• Tương khắc: **${elemNote}**`,
+  ];
+
+  const startLines = battleStartEvents.length > 0
+    ? [``, `**Khai Trận HAX:**`, ...battleStartEvents.map((ev) => {
+      const aPet = ev.actor === attacker.id ? attacker.petName : defender.petName;
+      return `• ${em('su_thunder_hax')} **${aPet}**: ${ev.skill}`;
+    })]
+    : [];
+
+  const allTurnLines = turns.map((t) => {
+    const actorObj = t.actor === 'attacker' ? attacker : defender;
+    const targetObj = t.actor === 'attacker' ? defender : attacker;
+    if (t.action === 'skip') {
+      return `• **H${t.turn}** [${actorObj.petName}]: ${em('su_shield_def')} ${t.haxTriggered || 'Mất lượt'}`;
+    }
+    const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
+    const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
+    return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+  });
+
+  const footerLines = [
+    ``,
+    `${em('su_winner_trophy')} **KẾT QUẢ:** **${winner.name}** (${winnerPetEmoji} **${winner.pet}**) thắng **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`,
+  ];
+
+  const assemble = (tLines) => [
+    ...headerLines,
+    ...startLines,
+    ``,
+    `**Diễn Biến Chi Tiết (${turnNumber} Hiệp):**`,
+    ...tLines,
+    ...footerLines,
+  ].join('\n');
+
+  let fullText = assemble(allTurnLines);
+  if (fullText.length > 3850 && allTurnLines.length > 12) {
+    const headCount = 6;
+    const tailCount = 6;
+    const omitted = allTurnLines.length - headCount - tailCount;
+    const compactTurns = [
+      ...allTurnLines.slice(0, headCount),
+      `• *... (đã rút gọn ${omitted} lượt giữa để vừa giới hạn tin nhắn Discord) ...*`,
+      ...allTurnLines.slice(-tailCount),
+    ];
+    fullText = assemble(compactTurns);
+  }
+  if (fullText.length > 3950) {
+    fullText = fullText.slice(0, 3940) + '\n…';
+  }
+  return fullText;
 }
 
 /**
@@ -53,21 +355,19 @@ function createRng(seed) {
 
 /**
  * Điều phối trận chiến Linh Thú theo lượt (Turn-based Pet Battle Simulation)
- * Hợp đồng giao diện tuân thủ tuyệt đối PROJECT.md §Pet Battle API
- *
- * @param {string|object} attackerUserOrId Người chơi/ID tấn công
- * @param {string|object} defenderUserOrId Người chơi/ID phòng thủ
- * @param {object} options Tùy chọn mô phỏng (maxTurns, seed, ...)
- * @returns {Promise<object>} Kết quả trận đấu chuẩn schema
+ * Hỗ trợ song song hóa Supabase, Adaptive Resolution WebP pre-render RAM & Full Battle Log.
  */
 export async function simulateBattle(attackerUserOrId, defenderUserOrId, options = {}) {
   const safeOptions = options || {};
   const maxTurns = Math.max(1, Math.min(100, Number(safeOptions.maxTurns) || 30));
   const rng = createRng(safeOptions.seed);
+  const channelId = safeOptions.channelId ? String(safeOptions.channelId).trim() : null;
 
-  // 1. Biên dịch chỉ số toàn diện (Base stats + 3 món trang bị loadout)
-  const attacker = await compileCombatant(attackerUserOrId, 'attacker');
-  const defender = await compileCombatant(defenderUserOrId, 'defender');
+  // 1. Song song biên dịch chỉ số 2 đấu sĩ
+  const [attacker, defender] = await Promise.all([
+    compileCombatant(attackerUserOrId, 'attacker'),
+    compileCombatant(defenderUserOrId, 'defender'),
+  ]);
 
   const initialHp = {
     attacker: attacker.maxHp,
@@ -76,11 +376,10 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   const turns = [];
 
-  // 2. Giai đoạn 1: Kích hoạt hiệu ứng đầu trận (Khiên, cướp Tốc, Tru Tiên Trận)
+  // 2. Kích hoạt hiệu ứng đầu trận
   const battleStartEvents = triggerBattleStart(attacker, defender, rng) || [];
 
-  // 3. Xác định thứ tự đánh (Initiative)
-  // Ưu tiên: Lôi Quang Tốc > So sánh SPD > Attacker ưu tiên nếu bằng nhau
+  // 3. Xác định thứ tự đánh
   let attackerFirst = true;
   const atkHasSpeedPriority = hasHax(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc');
   const defHasSpeedPriority = hasHax(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc');
@@ -99,7 +398,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   while (attacker.currentHp > 0 && defender.currentHp > 0 && turnNumber < maxTurns) {
     turnNumber++;
 
-    // Xác định thứ tự 2 lượt ra đòn trong hiệp này
     const order = attackerFirst
       ? [{ actor: attacker, target: defender, role: 'attacker' }, { actor: defender, target: attacker, role: 'defender' }]
       : [{ actor: defender, target: attacker, role: 'defender' }, { actor: attacker, target: defender, role: 'attacker' }];
@@ -109,10 +407,8 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
       const { actor, target, role } = step;
 
-      // 4.1. Giai đoạn 2: Đầu hiệp (Turn Start)
       const turnStartResult = triggerTurnStart(actor, target, rng);
 
-      // Nếu bị choáng / mất lượt
       if (turnStartResult.skipTurn) {
         turns.push({
           turn: turnNumber,
@@ -128,17 +424,10 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         continue;
       }
 
-      // Xác định mục tiêu thực sự (nếu bị Mị Hoặc hoặc Hỗn Loạn thì tự đánh mình)
       const actualTarget = turnStartResult.attackSelf ? actor : target;
-
-      // 4.2. Tính toán tương khắc Ngũ Hành & Dị Tố
       const elemData = getElementalAdvantage(actor.element, actualTarget.element);
-
-      // Sát thương cơ bản: max(50, floor((ATK * 1.5 - DEF * 0.5) * elementalMult))
       const targetDef = elemData.isTrueDamage ? 0 : actualTarget.def;
       const rawBaseDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (targetDef * 0.5)) * elemData.multiplier));
-
-      // 4.3. Giai đoạn 3: Xuất chiêu (onAttack Phase)
       const attackPhase = triggerAttackPhase(actor, actualTarget, rawBaseDmg, rng);
 
       let actualDamageDealt = 0;
@@ -148,11 +437,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       let haxEventName = attackPhase.haxTriggered || turnStartHax;
 
       if (!attackPhase.isMiss) {
-        // 4.4. Giai đoạn 4: Nhận sát thương (Damage Received & Shield Absorption)
         const damageRecv = triggerDamageReceived(actualTarget, attackPhase.damage, actor, rng);
         let dmgToApply = damageRecv.finalDamage;
 
-        // Xử lý trừ khiên trước
         if (actualTarget.shield > 0 && !actor.state.antiShieldTurns) {
           if (actualTarget.shield >= dmgToApply) {
             actualTarget.shield -= dmgToApply;
@@ -163,17 +450,14 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           }
         }
 
-        // Trừ máu hiện tại
         actualTarget.currentHp = Math.max(0, actualTarget.currentHp - dmgToApply);
         actualDamageDealt = dmgToApply;
 
-        // Xử lý sát thương phản hồi ngược lại
         if (damageRecv.reflectedDamage > 0) {
           actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
           haxEventName = haxEventName ? `${haxEventName} + Phản Đòn` : 'Phản Đòn';
         }
 
-        // 4.5. Giai đoạn 5: Kiểm tra tử vong & Can thiệp chí mạng (Lethal Interception)
         if (actualTarget.currentHp <= 0) {
           const lethalInterception = triggerLethalInterception(actualTarget, actor, rng);
           if (lethalInterception.survived) {
@@ -182,7 +466,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         }
       }
 
-      // Ghi nhận diễn biến lượt đấu
       turns.push({
         turn: turnNumber,
         actor: role,
@@ -195,7 +478,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         defenderHp: defender.currentHp,
       });
 
-      // Nếu có lượt phụ từ « Thái Sơ Thời Không Ma Thần Hồn », ưu tiên đánh thêm 1 đòn
       if (actor.state.isDoubleTurn) {
         actor.state.isDoubleTurn = false;
         if (actualTarget.currentHp > 0) {
@@ -221,23 +503,21 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   // 5. Xác định Người chiến thắng / Kẻ thất bại
   const attackerWon = attacker.currentHp > defender.currentHp;
-  const winner = attackerWon
-    ? { id: attacker.id, name: attacker.name, pet: attacker.petName }
-    : { id: defender.id, name: defender.name, pet: defender.petName };
+  const winnerCombatant = attackerWon ? attacker : defender;
+  const loserCombatant = attackerWon ? defender : attacker;
+  const winner = { id: winnerCombatant.id, name: winnerCombatant.name, pet: winnerCombatant.petName };
+  const loser = { id: loserCombatant.id, name: loserCombatant.name, pet: loserCombatant.petName };
 
-  const loser = attackerWon
-    ? { id: defender.id, name: defender.name, pet: defender.petName }
-    : { id: attacker.id, name: attacker.name, pet: attacker.petName };
-
+  const winnerPetEmoji = winnerCombatant.petIcon || petEmoji(winnerCombatant.petType, em('su_pet_paw'));
   const summary = `Trận đấu kết thúc sau ${turnNumber} hiệp. ${winner.name} cùng linh thú ${winner.pet} giành chiến thắng áp đảo!`;
-  const headline = `${em('su_winner_trophy')} ${winner.name} (${winner.pet}) chiến thắng ${loser.name} (${loser.pet}) sau ${turnNumber} hiệp!`;
+  const headline = `${em('su_winner_trophy')} ${winner.name} (${winnerPetEmoji} ${winner.pet}) chiến thắng ${loser.name} (${loser.pet}) sau ${turnNumber} hiệp!`;
 
   const elementMatchup = {
     attackerToDefender: getElementalAdvantage(attacker.element, defender.element),
     defenderToAttacker: getElementalAdvantage(defender.element, attacker.element),
   };
 
-  // Trích lọc tối đa 5 diễn biến tiêu biểu ngắn gọn cho Ảnh Chiến Báo Full HD+
+  // Trích lọc highlights giữ tương thích schema cũ
   const shortPet = (s) => (s && s.length > 12 ? s.slice(0, 11) + '…' : s);
   const highlights = [];
   for (const ev of battleStartEvents.slice(0, 2)) {
@@ -331,6 +611,30 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     `${em('su_winner_trophy')} **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
   ].join('\n');
 
+  const fullBattleLog = buildFullBattleLog({
+    attacker,
+    defender,
+    initialHp,
+    elementMatchup,
+    battleStartEvents,
+    turns,
+    turnNumber,
+    winner,
+    winnerPetEmoji,
+    loser,
+    formatEquipLine,
+    formatHaxLine,
+  });
+
+  const finalHp = {
+    attacker: attacker.currentHp,
+    defender: defender.currentHp,
+  };
+  const framesMeta = buildAdaptiveFrames(turns, turnNumber, initialHp, finalHp, headline);
+  const frame1 = framesMeta[0];
+  const frame2 = framesMeta[1] || frame1;
+  const frameLast = framesMeta[framesMeta.length - 1];
+
   const finalResult = {
     success: true,
     battleId,
@@ -340,10 +644,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     loser,
     turns,
     initialHp,
-    finalHp: {
-      attacker: attacker.currentHp,
-      defender: defender.currentHp,
-    },
+    finalHp,
     combatants: {
       attacker: snapshotCombatant(attacker, initialHp.attacker),
       defender: snapshotCombatant(defender, initialHp.defender),
@@ -354,36 +655,75 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     summary,
     reportImagePath,
     reportImageUrl,
+    frameCount: framesMeta.length,
+    hasFrame3: framesMeta.length >= 3,
+    frame1Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/1.webp`,
+    frame1Title: frame1.title,
+    frame2Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/2.webp`,
+    frame2Title: frame2.title,
+    frame3Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${frameLast.index}.webp`,
+    finalImageWebpUrl: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${frameLast.index}.webp`,
+    framesMeta,
+    fullBattleLog,
     discordReport,
   };
 
-  cacheBattleReport(battleId, finalResult);
-
-  // Cộng điểm Bang Chiến 24H nếu người thắng thuộc Gia Tộc đang tham chiến
-  if (supabase && /^[0-9]{17,20}$/.test(String(winner.id || ''))) {
-    try {
-      const ids = /^[0-9]{17,20}$/.test(String(loser.id || '')) ? [winner.id, loser.id] : [winner.id];
-      const { data: clanRows } = await supabase.from('users').select('user_id, clan_id').in('user_id', ids);
-      const wClanId = clanRows?.find((r) => r.user_id === winner.id)?.clan_id || null;
-      const lClanId = clanRows?.find((r) => r.user_id === loser.id)?.clan_id || null;
-      if (wClanId) {
-        let warPoints = 500;
-        if (lClanId && lClanId !== wClanId) {
-          const { data: directWar } = await supabase
-            .from('clan_wars')
-            .select('war_id')
-            .eq('status', 'active')
-            .or(`and(challenger_clan_id.eq.${wClanId},target_clan_id.eq.${lClanId}),and(challenger_clan_id.eq.${lClanId},target_clan_id.eq.${wClanId})`)
-            .limit(1)
-            .maybeSingle();
-          if (directWar) warPoints = 1000;
+  // Pre-render sẵn toàn bộ WebP frames vào RAM song song với cộng điểm Bang Chiến 24H
+  const frameBuffers = new Map();
+  const preRenderTask = safeOptions.preRender !== false
+    ? Promise.all(
+      framesMeta.map(async (f) => {
+        try {
+          const buf = await renderBattleCard(finalResult, {
+            scale: f.scale,
+            format: 'webp',
+            webpQuality: f.scale === 1 ? 82 : 85,
+            frame: f,
+          });
+          if (buf) frameBuffers.set(f.index, buf);
+        } catch (err) {
+          console.warn(`[BattleService] Pre-render frame ${f.index} failed:`, err.message);
         }
-        await recordClanWarScore(wClanId, warPoints);
+      })
+    )
+    : Promise.resolve();
+
+  const clanWarTask = (supabase && /^[0-9]{17,20}$/.test(String(winner.id || '')))
+    ? (async () => {
+      try {
+        const ids = /^[0-9]{17,20}$/.test(String(loser.id || '')) ? [winner.id, loser.id] : [winner.id];
+        const { data: clanRows } = await supabase.from('users').select('user_id, clan_id').in('user_id', ids);
+        const wClanId = clanRows?.find((r) => r.user_id === winner.id)?.clan_id || null;
+        const lClanId = clanRows?.find((r) => r.user_id === loser.id)?.clan_id || null;
+        if (wClanId) {
+          let warPoints = 500;
+          if (lClanId && lClanId !== wClanId) {
+            const { data: directWar } = await supabase
+              .from('clan_wars')
+              .select('war_id')
+              .eq('status', 'active')
+              .or(`and(challenger_clan_id.eq.${wClanId},target_clan_id.eq.${lClanId}),and(challenger_clan_id.eq.${lClanId},target_clan_id.eq.${wClanId})`)
+              .limit(1)
+              .maybeSingle();
+            if (directWar) warPoints = 1000;
+          }
+          await recordClanWarScore(wClanId, warPoints);
+        }
+      } catch {
+        // non-blocking
       }
-    } catch {
-      // non-blocking
-    }
-  }
+    })()
+    : Promise.resolve();
+
+  await Promise.all([preRenderTask, clanWarTask]);
+
+  cacheBattleReport(battleId, finalResult, {
+    channelId,
+    attackerId: attacker.id,
+    defenderId: defender.id,
+    framesMeta,
+    frameBuffers,
+  });
 
   return finalResult;
 }

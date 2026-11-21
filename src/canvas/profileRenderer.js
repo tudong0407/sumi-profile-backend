@@ -11,6 +11,7 @@ import {
   drawIconText,
   drawAutoFitSingleLineText,
   drawAutoFitIconText,
+  encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -19,9 +20,10 @@ const RENDER_SCALE = 2;
 /**
  * Render thẻ Profile Tiên Giới SuMi Family Full HD+ (2000 x 1000 px, 2x High-DPI)
  * @param {Object} data Dữ liệu hồ sơ người dùng
- * @returns {Promise<Buffer>} Buffer PNG của ảnh hồ sơ
+ * @param {{ format?: 'png'|'webp', webpQuality?: number }} options
+ * @returns {Promise<Buffer>} Buffer PNG hoặc WebP của ảnh hồ sơ
  */
-export async function renderProfileCard(data) {
+export async function renderProfileCard(data, options = {}) {
   const width = 1000;
   const height = 500;
   const canvas = createCanvas(width * RENDER_SCALE, height * RENDER_SCALE);
@@ -1048,8 +1050,8 @@ export async function renderProfileCard(data) {
     fillStyle: 'rgba(226, 232, 240, 0.55)',
   });
 
-  // Xuất ra PNG Buffer
-  return canvas.toBuffer('image/png');
+  // Xuất ra PNG hoặc WebP Buffer
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 
 export default renderProfileCard;

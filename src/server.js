@@ -11,7 +11,14 @@ import {
   getWikiItemDetail,
   getWikiPetDetail,
 } from './services/wikiService.js';
-import { simulateBattle, getCachedBattleReport } from './services/battleService.js';
+import {
+  simulateBattle,
+  getCachedBattleReport,
+  getCachedBattleFrame,
+  setCachedBattleFrame,
+  getBattleFrameMeta,
+  getBattleLogPayload,
+} from './services/battleService.js';
 import { grantChatExp, handleVoiceExp } from './services/expService.js';
 import { claimDaily, convertExpToLinhThach, rollGacha } from './services/economyService.js';
 import {
@@ -113,22 +120,24 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '2.2.0',
+    version: '2.3.0',
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
-      battle: '2000x1000',
+      battle: '2000x1000 (mid-turn 1000x500 WebP)',
       wiki: '2000x1000',
     },
     endpoints: {
       health: 'GET /health',
       wiki: 'GET /api/wiki[?category=overview|realms|battle|equipment|pets|economy]',
       wiki_catalog: 'GET /api/wiki/catalog',
-      wiki_chart_elements: 'GET /api/wiki/chart/elements.png',
-      wiki_item: 'GET /api/wiki/item/:itemId[.png]',
-      wiki_pet: 'GET /api/wiki/pet/:petType[.png]',
+      wiki_chart_elements: 'GET /api/wiki/chart/elements[.png|.webp]',
+      wiki_item: 'GET /api/wiki/item/:itemId[.png|.webp]',
+      wiki_pet: 'GET /api/wiki/pet/:petType[.png|.webp]',
       battle_simulate: 'POST /api/battle/simulate',
-      battle_report_png: 'GET /api/battle/report/:battleId.png',
+      battle_report_frame: 'GET /api/battle/report/:battleId/:frame[.webp|.png]',
+      battle_logs: 'POST /api/battle/logs',
+      battle_report_png: 'GET /api/battle/report/:battleId[.png|.webp]',
       battle_report_stateless_png: 'GET /api/battle/report.png?attacker=...&defender=...',
       battle_render_custom: 'POST /api/battle/render',
       exp_chat: 'POST /api/exp/chat',
@@ -163,10 +172,10 @@ app.get('/', (req, res) => {
       clan_war_declare: 'POST /api/clan/war/declare',
       clan_war_respond: 'POST /api/clan/war/respond',
       clan_war_status: 'GET /api/clan/war/status/:userId',
-      profile_png: 'GET /api/profile/:userId[.png]',
+      profile_png: 'GET /api/profile/:userId[.png|.webp]',
       profile_json: 'GET /api/profile/:userId?format=json',
       profile_render_custom: 'POST /api/profile/render',
-      rank_png: 'GET /api/rank/:userId[.png]',
+      rank_png: 'GET /api/rank/:userId[.png|.webp]',
       rank_json: 'GET /api/rank/:userId?format=json',
       rank_render_custom: 'POST /api/rank/render',
     },
@@ -221,13 +230,14 @@ app.get('/api/wiki/catalog', (req, res) => {
   return res.status(200).json(getWikiCatalogSummary());
 });
 
-app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements'], async (req, res) => {
+app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements.webp', '/api/wiki/chart/elements'], async (req, res) => {
   try {
-    const pngBuffer = await renderElementalChart();
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
+    const isWebp = req.path.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
+    const imgBuffer = await renderElementalChart({ format: isWebp ? 'webp' : 'png' });
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=3600');
-    return res.end(pngBuffer);
+    return res.end(imgBuffer);
   } catch (err) {
     console.error('[Server] Lỗi kết xuất sơ đồ Ngũ Hành:', err);
     return res.status(500).json({ success: false, error: 'Lỗi kết xuất sơ đồ Ngũ Hành', message: err.message });
@@ -237,19 +247,21 @@ app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements'], async (req
 app.get('/api/wiki/item/:itemId', async (req, res) => {
   try {
     const rawParam = String(req.params.itemId || '');
+    const wantWebp = rawParam.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
     const wantPng = rawParam.toLowerCase().endsWith('.png') || req.query.format === 'png';
+    const wantImg = wantWebp || wantPng;
     const detail = await getWikiItemDetail(rawParam);
 
     if (!detail.success) {
       return res.status(404).json(detail);
     }
 
-    if (wantPng) {
-      const pngBuffer = await renderWikiItemCard(detail.data);
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Content-Length', pngBuffer.length);
+    if (wantImg) {
+      const imgBuffer = await renderWikiItemCard(detail.data, { format: wantWebp ? 'webp' : 'png' });
+      res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
+      res.setHeader('Content-Length', imgBuffer.length);
       res.setHeader('Cache-Control', 'public, max-age=30');
-      return res.end(pngBuffer);
+      return res.end(imgBuffer);
     }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -264,19 +276,21 @@ app.get('/api/wiki/item/:itemId', async (req, res) => {
 app.get('/api/wiki/pet/:petType', async (req, res) => {
   try {
     const rawParam = String(req.params.petType || '');
+    const wantWebp = rawParam.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
     const wantPng = rawParam.toLowerCase().endsWith('.png') || req.query.format === 'png';
+    const wantImg = wantWebp || wantPng;
     const detail = await getWikiPetDetail(rawParam);
 
     if (!detail.success) {
       return res.status(404).json(detail);
     }
 
-    if (wantPng) {
-      const pngBuffer = await renderWikiPetCard(detail.data);
-      res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Content-Length', pngBuffer.length);
+    if (wantImg) {
+      const imgBuffer = await renderWikiPetCard(detail.data, { format: wantWebp ? 'webp' : 'png' });
+      res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
+      res.setHeader('Content-Length', imgBuffer.length);
       res.setHeader('Cache-Control', 'public, max-age=300');
-      return res.end(pngBuffer);
+      return res.end(imgBuffer);
     }
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -335,8 +349,13 @@ app.post('/api/battle/simulate', async (req, res) => {
 
     const cleanAttackerId = typeof actId === 'string' ? sanitizeUserId(actId) : actId;
     const cleanDefenderId = typeof defId === 'string' ? sanitizeUserId(defId) : defId;
+    const channelId = getCleanParam(req.body?.channelId || req.body?.channel_id, null);
+    const mergedOptions = {
+      ...(options && typeof options === 'object' ? options : {}),
+      ...(channelId ? { channelId } : {}),
+    };
 
-    const battleResult = await simulateBattle(cleanAttackerId, cleanDefenderId, options);
+    const battleResult = await simulateBattle(cleanAttackerId, cleanDefenderId, mergedOptions);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     return res.status(200).json(battleResult);
@@ -351,7 +370,7 @@ app.post('/api/battle/simulate', async (req, res) => {
   }
 });
 
-app.get('/api/battle/report.png', async (req, res) => {
+app.get(['/api/battle/report.png', '/api/battle/report.webp'], async (req, res) => {
   try {
     const actId = sanitizeUserId(req.query.attacker || req.query.attackerId || '');
     const defId = sanitizeUserId(req.query.defender || req.query.defenderId || '');
@@ -364,21 +383,51 @@ app.get('/api/battle/report.png', async (req, res) => {
     }
     const maxTurns = Number(req.query.maxTurns) || 20;
     const seed = req.query.seed !== undefined ? Number(req.query.seed) : undefined;
-    const battleResult = await simulateBattle(actId, defId, { maxTurns, ...(Number.isFinite(seed) ? { seed } : {}) });
-    const pngBuffer = await renderBattleCard(battleResult);
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
+    const isWebp = req.path.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
+    const battleResult = await simulateBattle(actId, defId, { maxTurns, ...(Number.isFinite(seed) ? { seed } : {}), preRender: false });
+    const imgBuffer = await renderBattleCard(battleResult, { format: isWebp ? 'webp' : 'png' });
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'no-cache');
-    return res.end(pngBuffer);
+    return res.end(imgBuffer);
   } catch (err) {
     console.error('[Server] Lỗi kết xuất ảnh chiến báo stateless:', err);
     return res.status(500).json({ success: false, error: 'Lỗi kết xuất ảnh chiến báo', message: err.message });
   }
 });
 
-app.get('/api/battle/report/:battleId', async (req, res) => {
+app.post('/api/battle/logs', async (req, res) => {
   try {
-    const cleanId = String(req.params.battleId || '').replace(/\.png$/i, '').trim();
+    const battleId = getCleanParam(req.body?.battleId || req.body?.battle_id, null);
+    const channelId = getCleanParam(req.body?.channelId || req.body?.channel_id, null);
+    const rawUser = getCleanParam(req.body?.userId || req.body?.user_id, null);
+    const userId = rawUser ? sanitizeUserId(rawUser) : null;
+    const payload = getBattleLogPayload({ battleId, channelId, userId });
+    return res.status(200).json(payload);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu nhật ký trận đấu:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi tra cứu nhật ký trận đấu', message: err.message });
+  }
+});
+
+app.get('/api/battle/logs', async (req, res) => {
+  try {
+    const battleId = getCleanParam(req.query.battleId || req.query.battle_id, null);
+    const channelId = getCleanParam(req.query.channelId || req.query.channel_id, null);
+    const rawUser = getCleanParam(req.query.userId || req.query.user_id, null);
+    const userId = rawUser ? sanitizeUserId(rawUser) : null;
+    const payload = getBattleLogPayload({ battleId, channelId, userId });
+    return res.status(200).json(payload);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu nhật ký trận đấu:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi tra cứu nhật ký trận đấu', message: err.message });
+  }
+});
+
+app.get('/api/battle/report/:battleId/:frameSpec', async (req, res) => {
+  try {
+    const cleanId = String(req.params.battleId || '').trim();
+    const rawSpec = String(req.params.frameSpec || '').trim().toLowerCase();
     const cached = getCachedBattleReport(cleanId);
     if (!cached) {
       return res.status(404).json({
@@ -388,11 +437,74 @@ app.get('/api/battle/report/:battleId', async (req, res) => {
       });
     }
 
-    const pngBuffer = await renderBattleCard(cached);
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
+    const isWebp = rawSpec.endsWith('.webp') || req.query.format === 'webp';
+    const baseSpec = rawSpec.replace(/\.(png|webp)$/i, '');
+    const frameIndex = baseSpec === 'final'
+      ? (cached.framesMeta?.[cached.framesMeta.length - 1]?.index || 1)
+      : (parseInt(baseSpec, 10) || 1);
+
+    if (isWebp) {
+      const ramBuf = getCachedBattleFrame(cleanId, frameIndex);
+      if (ramBuf) {
+        res.setHeader('Content-Type', 'image/webp');
+        res.setHeader('Content-Length', ramBuf.length);
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        return res.end(ramBuf);
+      }
+    }
+
+    const frameMeta = getBattleFrameMeta(cleanId, frameIndex);
+    const scale = frameMeta ? frameMeta.scale : 2;
+    const imgBuffer = await renderBattleCard(cached, {
+      scale,
+      format: isWebp ? 'webp' : 'png',
+      webpQuality: scale === 1 ? 82 : 85,
+      frame: frameMeta,
+    });
+    if (isWebp) {
+      setCachedBattleFrame(cleanId, frameIndex, imgBuffer);
+    }
+
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=300');
-    return res.end(pngBuffer);
+    return res.end(imgBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi kết xuất frame chiến báo:', err);
+    return res.status(500).json({ success: false, error: 'Lỗi kết xuất frame chiến báo', message: err.message });
+  }
+});
+
+app.get('/api/battle/report/:battleId', async (req, res) => {
+  try {
+    const rawParam = String(req.params.battleId || '');
+    const isWebp = rawParam.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
+    const cleanId = rawParam.replace(/\.(png|webp)$/i, '').trim();
+    const cached = getCachedBattleReport(cleanId);
+    if (!cached) {
+      return res.status(404).json({
+        success: false,
+        error: 'Battle report not found',
+        message: `Không tìm thấy chiến báo '${cleanId}' hoặc chiến báo đã hết hạn.`,
+      });
+    }
+
+    if (isWebp && cached.framesMeta?.length) {
+      const lastIdx = cached.framesMeta[cached.framesMeta.length - 1].index;
+      const ramBuf = getCachedBattleFrame(cleanId, lastIdx);
+      if (ramBuf) {
+        res.setHeader('Content-Type', 'image/webp');
+        res.setHeader('Content-Length', ramBuf.length);
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        return res.end(ramBuf);
+      }
+    }
+
+    const imgBuffer = await renderBattleCard(cached, { format: isWebp ? 'webp' : 'png' });
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.end(imgBuffer);
   } catch (err) {
     console.error('[Server] Lỗi kết xuất ảnh chiến báo theo battleId:', err);
     return res.status(500).json({ success: false, error: 'Lỗi kết xuất ảnh chiến báo', message: err.message });
@@ -443,7 +555,7 @@ app.get('/api/profile/:userId', async (req, res) => {
 
     const isExplicitJson = rawUserId.toLowerCase().endsWith('.json') ||
                            format === 'json' ||
-                           (format !== 'png' && req.headers.accept?.includes('application/json'));
+                           (format !== 'png' && format !== 'webp' && req.headers.accept?.includes('application/json'));
 
     if (isExplicitJson) {
       return res.json({
@@ -452,12 +564,13 @@ app.get('/api/profile/:userId', async (req, res) => {
       });
     }
 
-    const pngBuffer = await renderProfileCard(profileData);
+    const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
+    const imgBuffer = await renderProfileCard(profileData, { format: isWebp ? 'webp' : 'png' });
 
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=30');
-    return res.end(pngBuffer);
+    return res.end(imgBuffer);
   } catch (err) {
     console.error(`[Server] Error rendering profile for ${rawUserId}:`, err);
     return res.status(500).json({
@@ -496,7 +609,7 @@ app.get('/api/rank/:userId', async (req, res) => {
 
     const isExplicitJson = rawUserId.toLowerCase().endsWith('.json') ||
                            format === 'json' ||
-                           (format !== 'png' && req.headers.accept?.includes('application/json'));
+                           (format !== 'png' && format !== 'webp' && req.headers.accept?.includes('application/json'));
 
     if (isExplicitJson) {
       return res.json({
@@ -516,12 +629,13 @@ app.get('/api/rank/:userId', async (req, res) => {
       });
     }
 
-    const pngBuffer = await renderRankCard(profileData);
+    const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
+    const imgBuffer = await renderRankCard(profileData, { format: isWebp ? 'webp' : 'png' });
 
-    res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Length', pngBuffer.length);
+    res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
+    res.setHeader('Content-Length', imgBuffer.length);
     res.setHeader('Cache-Control', 'public, max-age=30');
-    return res.end(pngBuffer);
+    return res.end(imgBuffer);
   } catch (err) {
     console.error(`[Server] Error rendering rank for ${rawUserId}:`, err);
     return res.status(500).json({

@@ -17,6 +17,7 @@ import {
   sanitizeText,
   loadBadgeImage,
   drawIconText,
+  encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -165,7 +166,7 @@ function drawCurvedArrow(ctx, x1, y1, x2, y2, cx, cy, color = '#fbbf24') {
 /**
  * 1. Render Sơ Đồ Vòng Xoay Tương Khắc Ngũ Hành & Tứ Đại Dị Tố Đặc Thù (2000 x 1000 px)
  */
-export async function renderElementalChart() {
+export async function renderElementalChart(options = {}) {
   const canvas = createCanvas(LOGICAL_W * RENDER_SCALE, LOGICAL_H * RENDER_SCALE);
   const ctx = canvas.getContext('2d');
   ctx.scale(RENDER_SCALE, RENDER_SCALE);
@@ -419,13 +420,13 @@ export async function renderElementalChart() {
   ctx.restore();
 
   await drawFooter(ctx, 'SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố Full HD+');
-  return canvas.toBuffer('image/png');
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 
 /**
  * 2. Render Thẻ Chi Tiết Pháp Bảo Loadout Full HD+ (2000 x 1000 px)
  */
-export async function renderWikiItemCard(itemData) {
+export async function renderWikiItemCard(itemData, options = {}) {
   const canvas = createCanvas(LOGICAL_W * RENDER_SCALE, LOGICAL_H * RENDER_SCALE);
   const ctx = canvas.getContext('2d');
   ctx.scale(RENDER_SCALE, RENDER_SCALE);
@@ -680,13 +681,13 @@ export async function renderWikiItemCard(itemData) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
-  return canvas.toBuffer('image/png');
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 
 /**
  * 3. Render Thẻ Chi Tiết Linh Thú Full HD+ (2000 x 1000 px)
  */
-export async function renderWikiPetCard(petData) {
+export async function renderWikiPetCard(petData, options = {}) {
   const canvas = createCanvas(LOGICAL_W * RENDER_SCALE, LOGICAL_H * RENDER_SCALE);
   const ctx = canvas.getContext('2d');
   ctx.scale(RENDER_SCALE, RENDER_SCALE);
@@ -909,5 +910,5 @@ export async function renderWikiPetCard(petData) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
-  return canvas.toBuffer('image/png');
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }

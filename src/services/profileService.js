@@ -507,11 +507,17 @@ export async function getProfileData(userId, overrides = {}) {
   // 1. Kiểm tra nếu có Supabase client hoạt động
   if (supabase) {
     try {
-      const { data: user, error: userErr } = await supabase
-        .from('users')
-        .select('*')
-        .eq('user_id', cleanId)
-        .single();
+      const [
+        { data: user, error: userErr },
+        { data: pet },
+        { data: equippedItems, error: equipErr },
+        { data: roles },
+      ] = await Promise.all([
+        supabase.from('users').select('*').eq('user_id', cleanId).single(),
+        supabase.from('user_pets').select('*').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
+        supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
+        supabase.from('user_roles').select('*').eq('user_id', cleanId).eq('is_equipped', true).order('equipped_slot', { ascending: true }),
+      ]);
 
       if (!userErr && user) {
         // Lấy Clan nếu có
@@ -533,17 +539,7 @@ export async function getProfileData(userId, overrides = {}) {
           }
         }
 
-        // Lấy Active Pet
-        let petData = null;
-        const { data: pet } = await supabase
-          .from('user_pets')
-          .select('*')
-          .eq('user_id', cleanId)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
-
-        // Lấy Equipped Items từ view v_user_equipped_items (Weapon, Gem, Soul)
+        // Biên dịch Equipped Items từ view v_user_equipped_items (Weapon, Gem, Soul)
         const equipment = {
           weapon: null,
           gem: null,
@@ -553,11 +549,6 @@ export async function getProfileData(userId, overrides = {}) {
         let bonusDef = 0;
         let bonusSpd = 0;
         let bonusHp = 0;
-
-        const { data: equippedItems, error: equipErr } = await supabase
-          .from('v_user_equipped_items')
-          .select('*')
-          .eq('user_id', cleanId);
 
         if (!equipErr && Array.isArray(equippedItems)) {
           for (const item of equippedItems) {
@@ -609,6 +600,7 @@ export async function getProfileData(userId, overrides = {}) {
           };
         }
 
+        let petData = null;
         if (pet) {
           const catalogPet = PET_BY_TYPE[pet.pet_type] || null;
           const baseAtk = Number(pet.atk) || 0;
@@ -654,14 +646,7 @@ export async function getProfileData(userId, overrides = {}) {
           petData.equipment = equipment;
         }
 
-        // Lấy Equipped Roles (bỏ qua role thuê tạm đã hết hạn)
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', cleanId)
-          .eq('is_equipped', true)
-          .order('equipped_slot', { ascending: true });
-
+        // Lọc bỏ role thuê tạm đã hết hạn
         const nowDate = new Date();
         const validRoles = (roles || []).filter((r) => r.is_permanent || !r.expires_at || new Date(r.expires_at) > nowDate);
         const equippedRoles = validRoles.map(r => ({

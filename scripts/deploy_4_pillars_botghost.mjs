@@ -9,13 +9,40 @@ import {
 } from './ga_builder_lib.mjs';
 import { EQUIPMENT_CATALOG, PET_CATALOG } from '../src/data/catalog.js';
 import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
-import { em, emId } from '../src/config/emojiHelper.js';
+import { em, emId, getEmojiEntry } from '../src/config/emojiHelper.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
 const LEVEL_UP_NOTIFY_CHANNEL_ID = '1033227438735507488';
 
 class ExtendedGraphBuilder extends GraphBuilder {
+  styledBtn(id, parentMsgId, {
+    label,
+    style = 'PRIMARY',
+    emojiKey = null,
+    row = '1',
+    weight = '1',
+    showReplies = 'show',
+  }, pos = { x: 0, y: 0 }) {
+    const entry = emojiKey ? getEmojiEntry(emojiKey) : null;
+    return this.advBtn(id, parentMsgId, {
+      label: String(label).slice(0, 78),
+      style,
+      ...(entry ? {
+        emoji: {
+          id: entry.id,
+          name: entry.name,
+          animated: Boolean(entry.animated),
+        },
+        emoji_id: entry.id,
+      } : { emoji_id: '' }),
+      orderComponent: true,
+      row: String(row),
+      weight: String(weight),
+      showReplies,
+    }, pos);
+  }
+
   advSelectMenu(id, parentMsgId, {
     placeholder,
     customVariableName,
@@ -140,14 +167,14 @@ export function buildProfileCmd() {
   makeEmbedAction(gb, 'action_profile_opt', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
-    imageUrl: `${BACKEND_BASE}/api/profile/{option_user}.png?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/profile/{option_user}.webp?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_profile_self', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
-    imageUrl: `${BACKEND_BASE}/api/profile/{user_id}.png?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/profile/{user_id}.webp?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: 240, y: 500 });
 
@@ -157,7 +184,7 @@ export function buildProfileCmd() {
 }
 
 // ============================================================================
-// 2. /rank (Full HD+ 2000x410)
+// 2. /rank (Full HD+ 2000x410 WebP)
 // ============================================================================
 export function buildRankCmd() {
   const gb = new ExtendedGraphBuilder();
@@ -171,14 +198,14 @@ export function buildRankCmd() {
   makeEmbedAction(gb, 'action_rank_opt', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
-    imageUrl: `${BACKEND_BASE}/api/rank/{option_user}.png?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/rank/{option_user}.webp?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_rank_self', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
-    imageUrl: `${BACKEND_BASE}/api/rank/{user_id}.png?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/rank/{user_id}.webp?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
     footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
   }, { x: 240, y: 500 });
 
@@ -188,11 +215,11 @@ export function buildRankCmd() {
 }
 
 // ============================================================================
-// 3. /battle (1v1 Cơ Bản — Trả Trực Tiếp Ảnh Chiến Báo Full HD+ + 1 Dòng Tiêu Đề Kết Quả)
+// 3. /battle (Multi-Turn Adaptive WebP + Nút Xem Nhật Ký Trận Đấu Ephemeral)
 // ============================================================================
 export function buildBattleCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('battle', 'Thách đấu Linh Thú 1v1 — Xuất Ảnh Chiến Báo Full HD+', { ephemeral: false });
+  gb.rootSlash('battle', 'Thách đấu Linh Thú 1v1 — Chiến Báo Động Đa Lượt Full HD+', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('doi_thu', 'user', 'Đạo hữu muốn thách đấu (để trống để đấu thử với Hanabira Mei)', { required: false, x: 420, y: 0 });
 
@@ -212,8 +239,8 @@ export function buildBattleCmd() {
 
   // Immediate ACK to satisfy Discord 3s interaction window
   makeEmbedAction(gb, 'battle_ack', {
-    title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • ĐANG GIAO CHIẾN...`,
-    description: 'Đang mô phỏng trận đấu và kết xuất Ảnh Chiến Báo Full HD+...',
+    title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • ĐANG TRIỆU HỒI...`,
+    description: 'Đang chuẩn bị đấu trường và tổng hợp diễn biến trận chiến...',
     color: '#ff75b5',
     editId: 'battle_ack',
     footerText: 'SuMi Family • Đấu Trường Tiên Giới',
@@ -232,7 +259,7 @@ export function buildBattleCmd() {
       headers: [{ key: 'Content-Type', value: 'application/json' }],
       params: [],
       body: [],
-      rawBody: '{"attackerId":"{user_id}","defenderId":"{def_uid}","options":{"maxTurns":20}}',
+      rawBody: '{"attackerId":"{user_id}","defenderId":"{def_uid}","channelId":"{channel_id}","options":{"maxTurns":20}}',
       contentType: 'application/json',
       options: {
         excludeEmptyFields: true,
@@ -240,6 +267,7 @@ export function buildBattleCmd() {
         replaceURL: true,
         replaceHeaders: true,
         replaceBody: true,
+        jsonSafeVariables: true,
         bodyMode: 'raw',
         contentType: 'application/json',
         failOnError: false,
@@ -249,17 +277,96 @@ export function buildBattleCmd() {
   }, { x: 0, y: 940 });
   gb.link('battle_ack', 'battle_api');
 
-  // Trả trực tiếp Ảnh Chiến Báo Full HD+ (2000x1000) kèm 1 dòng tiêu đề kết quả ngắn gọn (bỏ log dài)
-  makeEmbedAction(gb, 'battle_edit', {
+  // Frame 1 (1000x500 WebP siêu nhẹ)
+  makeEmbedAction(gb, 'battle_edit_f1', {
+    title: '{battle_res.response.frame1Title}',
+    description: '',
+    color: '#f472b6',
+    imageUrl: '{battle_res.response.frame1Url}',
+    target: { editId: 'battle_ack' },
+    action_id: 'battle_ack',
+    footerText: 'SuMi Family • Đang Giao Chiến...',
+  }, { x: 0, y: 1120 });
+  gb.link('battle_api', 'battle_edit_f1');
+
+  gb.act('battle_wait_1', 'wait_action', { seconds: '2', success_handles: false }, { x: 0, y: 1300 });
+  gb.link('battle_edit_f1', 'battle_wait_1');
+
+  // Kiểm tra trận 5+ hiệp có Frame 2 giữa trận không
+  const cHasF3 = gb.cmp('b_has_f3', '{battle_res.response.hasFrame3}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 1480 });
+  gb.link('battle_wait_1', cHasF3.condId);
+
+  makeEmbedAction(gb, 'battle_edit_f2_mid', {
+    title: '{battle_res.response.frame2Title}',
+    description: '',
+    color: '#c084fc',
+    imageUrl: '{battle_res.response.frame2Url}',
+    target: { editId: 'battle_ack' },
+    action_id: 'battle_ack',
+    footerText: 'SuMi Family • Cao Trào Giao Tranh...',
+  }, { x: -240, y: 1680 });
+  gb.link(cHasF3.yes, 'battle_edit_f2_mid');
+
+  gb.act('battle_wait_2', 'wait_action', { seconds: '2', success_handles: false }, { x: -240, y: 1860 });
+  gb.link('battle_edit_f2_mid', 'battle_wait_2');
+
+  // Frame cuối chốt hạ WINNER (2000x1000 WebP sắc nét) + Nút Xem Nhật Ký Trận Đấu
+  makeEmbedAction(gb, 'battle_edit_final', {
     title: '{battle_res.response.headline}',
     description: '',
     color: '#ec4899',
-    imageUrl: '{battle_res.response.reportImageUrl}',
+    imageUrl: '{battle_res.response.finalImageWebpUrl}',
     target: { editId: 'battle_ack' },
     action_id: 'battle_ack',
-    footerText: 'SuMi Family • Ảnh Chiến Báo 1v1 Full HD+ (2000×1000)',
-  }, { x: 0, y: 1120 });
-  gb.link('battle_api', 'battle_edit');
+    footerText: 'SuMi Family • Ảnh Chiến Báo 1v1 Full HD+',
+  }, { x: 0, y: 2060 });
+  gb.link('battle_wait_2', 'battle_edit_final');
+  gb.link(cHasF3.no, 'battle_edit_final');
+
+  gb.styledBtn('btn_battle_logs', 'battle_edit_final', {
+    label: 'Xem Nhật Ký Trận Đấu',
+    style: 'SECONDARY',
+    emojiKey: 'su_wiki_scroll',
+    row: '1',
+    weight: '1',
+    showReplies: 'hide',
+  }, { x: 0, y: 2260 });
+
+  gb.act('api_battle_logs', 'api_action', {
+    name: 'battle_logs_res',
+    ephemeral: false,
+    request_options: {
+      method: 'POST',
+      url: `${BACKEND_BASE}/api/battle/logs`,
+      headers: [{ key: 'Content-Type', value: 'application/json' }],
+      params: [],
+      body: [],
+      rawBody: '{"channelId":"{channel_id}","userId":"{user_id}"}',
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        jsonSafeVariables: true,
+        bodyMode: 'raw',
+        contentType: 'application/json',
+        failOnError: false,
+      },
+    },
+    success_handles: false,
+  }, { x: 0, y: 2440 });
+  gb.link('btn_battle_logs', 'api_battle_logs');
+
+  makeEmbedAction(gb, 'msg_battle_logs', {
+    title: '{battle_logs_res.response.title}',
+    description: '{battle_logs_res.response.description}',
+    color: '#a855f7',
+    target: { reply: true },
+    footerText: '{battle_logs_res.response.footer}',
+  }, { x: 0, y: 2620 });
+  gb.link('api_battle_logs', 'msg_battle_logs');
 
   return gb.elements();
 }

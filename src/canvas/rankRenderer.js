@@ -9,6 +9,7 @@ import {
   stripLeadingEmojis,
   drawIconText,
   drawAutoFitSingleLineText,
+  encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
 
@@ -18,9 +19,10 @@ const RENDER_SCALE = 2;
  * Render thẻ Rank Mini Tiên Giới SuMi Family Full HD+ (2000 x 410 px, 2x High-DPI)
  * Chuyên dụng cho lệnh /rank: Hiển thị nhanh Cấp độ, EXP, Cảnh giới, Gia tộc & Linh thạch
  * @param {Object} data Dữ liệu hồ sơ người dùng
- * @returns {Promise<Buffer>} Buffer PNG của ảnh Rank Mini
+ * @param {{ format?: 'png'|'webp', webpQuality?: number }} options
+ * @returns {Promise<Buffer>} Buffer PNG hoặc WebP của ảnh Rank Mini
  */
-export async function renderRankCard(data) {
+export async function renderRankCard(data, options = {}) {
   const width = 1000;
   const height = 205;
   const canvas = createCanvas(width * RENDER_SCALE, height * RENDER_SCALE);
@@ -436,8 +438,8 @@ export async function renderRankCard(data) {
   ctx.fillText(expText, expBarX + expBarW / 2, expBarY + expBarH / 2);
   ctx.restore();
 
-  // Xuất ra PNG Buffer
-  return canvas.toBuffer('image/png');
+  // Xuất ra PNG hoặc WebP Buffer
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 
 export default renderRankCard;
