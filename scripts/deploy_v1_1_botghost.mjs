@@ -209,8 +209,8 @@ export function buildPhapBaoCmd() {
   gb.link('pb_ack', 'pb_api');
 
   embedMsg(gb, 'pb_edit', {
-    title: '{pb_res.response.title}',
-    description: '{pb_res.response.summary_equipment}',
+    title: `${em('su_crossed_swords')} KHO PHÁP BẢO CỦA {pb_res.response.user.username}`,
+    description: '{pb_res.response.filter_summary}\n\n{pb_res.response.summary_equipment}',
     color: '#f59e0b',
     footer: 'SuMi Family • Kho Pháp Bảo Tu Tiên (/dismantle hỗ trợ xóa hàng loạt)',
     target: { editId: 'pb_ack' },
@@ -246,8 +246,8 @@ export function buildPhapBaoCmd() {
   gb.link('sel_pb_filter', 'pb_filter_api');
 
   embedMsg(gb, 'pb_filter_msg', {
-    title: '{pb_fres.response.title}',
-    description: '{pb_fres.response.summary_equipment}',
+    title: `${em('su_crossed_swords')} KHO PHÁP BẢO CỦA {pb_fres.response.user.username}`,
+    description: '{pb_fres.response.filter_summary}\n\n{pb_fres.response.summary_equipment}',
     color: '#f59e0b',
     footer: 'SuMi Family • Kho Pháp Bảo Tu Tiên',
   }, { x: 0, y: 1180 });
