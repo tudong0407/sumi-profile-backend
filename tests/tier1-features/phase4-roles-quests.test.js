@@ -392,7 +392,7 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     await supabase.from('users').update({ linh_thach: 100 }).eq('user_id', USER_A);
     await supabase.from('user_roles').delete().eq('user_id', USER_A);
 
-    // Level Role cannot be dismantled via /dismantle
+    // Level Role cannot be dismantled via /dismantle (direct ID or via equipped slot #1)
     const lvlRes = await testServer.fetch('/api/dismantle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -400,6 +400,15 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(lvlRes.status, 400);
     assert.equal((await lvlRes.json()).error, 'LEVEL_ROLE_CANNOT_DISMANTLE');
+
+    // Anti-bypass: A user who manually self-assigns a Discord Role outside the bot (not in Supabase user_roles) CANNOT dismantle it
+    const selfAddedBypass = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'role', targetId: '1573186011478102096' }),
+    });
+    assert.equal(selfAddedBypass.status, 404);
+    assert.equal((await selfAddedBypass.json()).error, 'ROLE_NOT_OWNED');
 
     // Insert 7d timed Shop Role (« Thần Hành Cốt Cách » 7d = 150 -> 50% = 75 LT) & permanent Multi-Perk Role (« Vạn Bảo Tài Thần » permanent = 10000 -> 50% = 5000 LT)
     const exp7d = new Date(Date.now() + 7 * 86400000 - 1000).toISOString();

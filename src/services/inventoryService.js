@@ -615,6 +615,27 @@ export async function dismantleTarget(userId, payload = {}) {
         || (slotNum && r.is_equipped && Number(r.equipped_slot) === slotNum));
 
       if (targetRole) {
+        const milestoneByRow = LEVEL_ROLE_MILESTONES.find((m) => m.roleId === targetRole.role_id);
+        if (milestoneByRow) {
+          return {
+            success: false,
+            status: 400,
+            error: 'LEVEL_ROLE_CANNOT_DISMANTLE',
+            remove_role_id: '',
+            message: `**${milestoneByRow.name}** là **Role Cấp Độ (Level Role)**, không thể phá bằng \`/dismantle\`!\n• Nếu muốn gỡ Level Role và nhận Linh Thạch, hãy dùng \`/doiqua\` để phế Tu Vi tụt cấp.`,
+          };
+        }
+
+        if (!Object.prototype.hasOwnProperty.call(ROLE_BY_ID, targetRole.role_id)) {
+          return {
+            success: false,
+            status: 400,
+            error: 'NON_BOT_ROLE_CANNOT_DISMANTLE',
+            remove_role_id: '',
+            message: `Role **${targetRole.role_name}** không thuộc danh mục 40 Role Quyền Năng do Bot cấp qua \`/shop\` hoặc \`/roll\` nên không thể phân rã!`,
+          };
+        }
+
         if (!targetRole.is_permanent && targetRole.expires_at && new Date(targetRole.expires_at) <= now) {
           await supabase.from('user_roles').delete().eq('id', targetRole.id);
           return {
@@ -655,7 +676,7 @@ export async function dismantleTarget(userId, payload = {}) {
           status: 404,
           error: 'ROLE_NOT_OWNED',
           remove_role_id: '',
-          message: `Không tìm thấy Role Quyền Năng \`${rawTarget}\` trong túi đồ \`/inv\` của bạn.`,
+          message: `Không tìm thấy Role Quyền Năng \`${rawTarget}\` trong túi đồ \`/inv\` của bạn.\n• *Lưu ý chống Bypass: Hệ thống chỉ cho phép phân rã những Role do chính Bot cấp và lưu trong cơ sở dữ liệu (\`/shop\` hoặc \`/roll loai:role\`). Mọi Role tự gắn tay ngoài Discord đều không có hiệu lực!*`,
         };
       }
     }
@@ -764,7 +785,7 @@ export async function dismantleTarget(userId, payload = {}) {
       status: 404,
       error: 'DISMANTLE_TARGET_NOT_FOUND',
       remove_role_id: '',
-      message: `Không tìm thấy Role, Pháp Bảo hoặc Linh Thú nào khớp \`${rawTarget}\` trong túi đồ \`/inv\`.`,
+      message: `Không tìm thấy Role, Pháp Bảo hoặc Linh Thú nào khớp \`${rawTarget}\` trong túi đồ \`/inv\`.\n• *Lưu ý: Chỉ những Role/Vật phẩm do Bot cấp qua \`/shop\` hoặc \`/roll\` (có trong \`/inv\`) mới có thể phân rã!*`,
     };
   });
 }

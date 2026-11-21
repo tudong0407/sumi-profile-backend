@@ -125,7 +125,9 @@ function computeLevelProgression(startLevel, startExp, gainedExp) {
 }
 
 async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new Date()) {
-  const roleBuffs = await computeRoleBuffTotals(userId, Number(userRow?.level || 1), [...roleIdSet], now);
+  // Chống bypass: Khi có Supabase, chỉ tính Buff từ Role do Bot cấp trong bảng user_roles (không đọc roleIdSet tự gắn ngoài Discord)
+  const fallbackRoles = supabase ? [] : [...roleIdSet];
+  const roleBuffs = await computeRoleBuffTotals(userId, Number(userRow?.level || 1), fallbackRoles, now);
   let bonus = (roleBuffs.expBonusPct || 0) / 100;
 
   // Buff Tiên Lữ (/marry): Nhẫn Cưới + Streak + Ngày Kỷ Niệm
