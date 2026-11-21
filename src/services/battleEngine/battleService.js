@@ -463,6 +463,16 @@ function formatEquipDetailedLines(c, compact = false) {
   const w = c.equipment?.weapon;
   const g = c.equipment?.gem;
   const s = c.equipment?.soul;
+  if (compact) {
+    const shortDesc = (item, icon, label) => {
+      if (!item) return `${icon} ${label}: *Trống*`;
+      const tag = item.hax_skill ? ` *[${item.hax_skill}]*` : '';
+      return `${icon} **${item.item_name}**${tag}`;
+    };
+    return [
+      `• Pháp Bảo: ${shortDesc(w, '⚔️', 'VK')} • ${shortDesc(g, '💎', 'Ngọc')} • ${shortDesc(s, '🔥', 'Hồn')}`,
+    ];
+  }
   const desc = (item, label) => {
     if (!item) return `${label}: *Chưa trang bị*`;
     const haxTxt = item.hax_skill
@@ -470,13 +480,6 @@ function formatEquipDetailedLines(c, compact = false) {
       : (item.hax_description || 'Cộng chỉ số nền');
     return `${label}: **${item.item_name}** — *${haxTxt}*`;
   };
-  if (compact) {
-    return [
-      `• ⚔️ ${desc(w, 'Vũ Khí')}`,
-      `• 💎 ${desc(g, 'Bảo Ngọc')}`,
-      `• 🔥 ${desc(s, 'Chiến Hồn')}`,
-    ];
-  }
   return [
     `• ${em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
     `• ${em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
@@ -543,19 +546,24 @@ function buildFullBattleLog({
     })]
     : [];
 
-  const allTurnLines = turns.map((t) => {
+  const buildTurnLines = (compactEmoji = false) => turns.map((t) => {
     const actorObj = t.actor === 'attacker' ? attacker : defender;
     const targetObj = t.actor === 'attacker' ? defender : attacker;
     if (t.action === 'skip') {
-      return `• **H${t.turn}** [${actorObj.petName}]: ${em('su_shield_def')} ${t.haxTriggered || 'Mất lượt'}`;
+      const sIcon = compactEmoji ? '🛡️' : em('su_shield_def');
+      return `• **H${t.turn}** [${actorObj.petName}]: ${sIcon} ${t.haxTriggered || 'Mất lượt'}`;
     }
     if (t.action === 'miss') {
       return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
     }
-    const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
+    const cIcon = compactEmoji ? '💥' : em('su_crit_boom');
+    const critTag = t.isCrit ? ` ${cIcon} **CRIT**` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
     return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
   });
+
+  const allTurnLines = buildTurnLines(false);
+  const compactTurnLines = buildTurnLines(true);
 
   const webFooterLines = [
     '',
@@ -590,19 +598,22 @@ function buildFullBattleLog({
   if (fullText.length > 3880) {
     fullText = assembleDiscord(allTurnLines, compactHeaderLines);
   }
+  if (fullText.length > 3880) {
+    fullText = assembleDiscord(compactTurnLines, compactHeaderLines);
+  }
 
-  if (fullText.length > 3880 && allTurnLines.length > 6) {
-    for (let keep = allTurnLines.length - 1; keep >= 6; keep -= 1) {
+  if (fullText.length > 3880 && compactTurnLines.length > 6) {
+    for (let keep = compactTurnLines.length - 1; keep >= 6; keep -= 1) {
       const headCount = Math.ceil(keep / 2);
       const tailCount = Math.floor(keep / 2);
-      const omitted = allTurnLines.length - headCount - tailCount;
+      const omitted = compactTurnLines.length - headCount - tailCount;
       const omitNote = webLogUrl
         ? `• *... (đã ẩn ${omitted} lượt giữa do giới hạn 4096 ký tự Discord — [Bấm xem Full 100% trên Web](${webLogUrl})) ...*`
         : `• *... (đã rút gọn ${omitted} lượt giữa để vừa giới hạn tin nhắn Discord) ...*`;
       const candidate = assembleDiscord([
-        ...allTurnLines.slice(0, headCount),
+        ...compactTurnLines.slice(0, headCount),
         omitNote,
-        ...allTurnLines.slice(-tailCount),
+        ...compactTurnLines.slice(-tailCount),
       ], compactHeaderLines);
       if (candidate.length <= 3880 || keep === 6) {
         fullText = candidate;
