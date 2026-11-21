@@ -733,6 +733,122 @@ export async function ensureBuilderMounted() {
   })()`, 15000);
 }
 
+export const SUMI_BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
+
+/**
+ * Reusable BotGhost First-Command Update Ack Gate branch.
+ * Connects from `sourceNodeId` (after api_action storing `resVarName`), shows v1.2 changelog + button when
+ * `{resVarName.response.needs_update_ack} == "true"`, and returns the `no` branch ID for normal flow.
+ */
+export function attachUpdateAckBranch(gb, prefix, sourceNodeId, resVarName, {
+  editId = null,
+  ackUrl = `${SUMI_BACKEND_BASE}/api/update/ack`,
+  x = 0,
+  y = 0,
+} = {}) {
+  const gate = gb.cmp(`${prefix}_gate`, `{${resVarName}.response.needs_update_ack}`, 'true', 'equal_to', { ignoreCase: true }, { x, y });
+  gb.link(sourceNodeId, gate.condId);
+
+  const msgData = {
+    messageType: 'basic',
+    useComponentsV2: false,
+    target: editId ? { editId } : { reply: true },
+    success_handles: false,
+    message: {
+      content: '',
+      embeds: [{
+        title: `{${resVarName}.response.update_title}`,
+        description: `{${resVarName}.response.update_description}`,
+        color: '#ec4899',
+        url: '',
+        thumbnail: { url: '' },
+        image: { url: '' },
+        footer: { text: `{${resVarName}.response.footer}`, icon_url: '' },
+      }],
+    },
+    components: [],
+    componentsV2Data: null,
+    reactions: '',
+  };
+  if (editId) {
+    msgData.editId = editId;
+    msgData.action_id = editId;
+  }
+
+  const gateMsgId = `${prefix}_gate_msg`;
+  gb.act(gateMsgId, 'advanced_message', msgData, { x: x - 260, y: y + 180 });
+  gb.link(gate.yes, gateMsgId);
+
+  const btnId = `${prefix}_gate_btn`;
+  gb.advBtn(btnId, gateMsgId, {
+    label: 'Tôi Đã Đọc & Xác Nhận Cập Nhật v1.2',
+    style: 'SUCCESS',
+    emoji: { id: '1573411649543737426', name: 'su_sparkle', animated: true },
+    emoji_id: '1573411649543737426',
+    orderComponent: true,
+    row: '1',
+    weight: '1',
+    showReplies: 'show',
+  }, { x: x - 260, y: y + 360 });
+
+  const ackApiId = `${prefix}_gate_ack_api`;
+  gb.act(ackApiId, 'api_action', {
+    name: `${prefix}_ack_res`,
+    ephemeral: false,
+    request_options: {
+      method: 'POST',
+      url: ackUrl,
+      headers: [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' },
+      ],
+      params: [],
+      body: [],
+      rawBody: '{"userId":"{user_id}"}',
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        jsonSafeVariables: true,
+        bodyMode: 'raw',
+        contentType: 'application/json',
+        failOnError: false,
+      },
+    },
+    success_handles: false,
+  }, { x: x - 260, y: y + 540 });
+  gb.link(btnId, ackApiId);
+
+  const ackDoneId = `${prefix}_gate_done_msg`;
+  gb.act(ackDoneId, 'advanced_message', {
+    messageType: 'basic',
+    useComponentsV2: false,
+    target: { reply: true },
+    success_handles: false,
+    message: {
+      content: '',
+      embeds: [{
+        title: '<a:su_sparkle:1573411649543737426> ĐÃ XÁC NHẬN CẬP NHẬT v1.2',
+        description: `{${prefix}_ack_res.response.message}`,
+        color: '#10b981',
+        url: '',
+        thumbnail: { url: '' },
+        image: { url: '' },
+        footer: { text: 'SuMi Family • Phiên bản v1.2 đã được mở khóa', icon_url: '' },
+      }],
+    },
+    components: [],
+    componentsV2Data: null,
+    reactions: '',
+  }, { x: x - 260, y: y + 720 });
+  gb.link(ackApiId, ackDoneId);
+
+  return gate.no;
+}
+
 export async function getLiveInventory() {
   const expr = `(() => {
     const rootEl = document.getElementById('root');

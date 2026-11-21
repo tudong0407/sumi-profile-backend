@@ -67,7 +67,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Lệnh Cốt Lõi (Update v1.2)',
-        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới.\n• /battle: Thách đấu PvP 1v1 hoặc PvE Tự Do (bỏ trống đối thủ) bằng Ảnh Chiến Báo.\n• /daily, /job, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, 6 Nghề Tu Tiên, Gacha, Cửa Hàng, Phân Rã & Tặng Quà.\n• /enchant, /nhiemvu & /top: Khắc Ấn D→S, 3 Nhiệm Vụ Ngày, 3 Hợp Đồng Tuần, Tháp Thí Luyện 200 Tầng & BXH Server.\n• /inv, /phapbao, /linhthu, /roles, /equip, /unequip: Kho Emoji OwO gọn, Kho Pháp Bảo, Pet, Role & Loadout.\n• /marry, /divorce, /giatoc: Tiên Lữ (4 cấp Nhẫn) & Gia Tộc Lv.1–10.\n• /wiki, /info, /updates: Cẩm Nang, Tra Cứu UID/Emoji & Nhật Ký Phiên Bản.',
+        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới.\n• /battle: Thách đấu PvP 1v1 hoặc PvE Tự Do (bỏ trống đối thủ) bằng Ảnh Chiến Báo.\n• /daily, /job, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, 6 Nghề Tu Tiên, Gacha, Cửa Hàng, Phân Rã & Tặng Quà.\n• /enchant, /nhiemvu & /top: Khắc Ấn D→S, 3 Nhiệm Vụ Ngày, 3 Hợp Đồng Tuần, Tháp Thí Luyện 200 Tầng & BXH Server.\n• /inv, /phapbao, /linhthu, /roles, /equip, /unequip: Túi Đồ Biểu Tượng, Kho Pháp Bảo, Pet, Role & Loadout.\n• /marry, /divorce, /giatoc: Tiên Lữ (4 cấp Nhẫn) & Gia Tộc Lv.1–10.\n• /wiki, /info, /updates: Cẩm Nang, Tra Cứu UID/Emoji & Nhật Ký Phiên Bản.',
       },
     ],
     fields: [

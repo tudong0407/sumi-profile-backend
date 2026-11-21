@@ -1,0 +1,21 @@
+{
+  "dryRun": true,
+  "timestamp": "2026-11-21T06:38:44.594Z",
+  "guildId": "1026096141273661450",
+  "reportedMembersWithLevelRolesBefore": 23,
+  "uniqueMembersFetched": 22,
+  "humansChecked": 22,
+  "botsSkipped": 0,
+  "skippedFuyumi": true,
+  "noLeRolePreservedCount": 21,
+  "rolesKeptEarnedCount": 6,
+  "membersAffectedCount": 0,
+  "totalLevelRolesPlannedRevoke": 0,
+  "totalLevelRolesActuallyRevoked": 0,
+  "higherRole403Count": 0,
+  "higherRole403": [],
+  "postRevokeRemainingTotal": 23,
+  "failuresCount": 0,
+  "failures": [],
+  "affectedSample": []
+}

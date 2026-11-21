@@ -6,6 +6,7 @@ import {
   SUMI_GUILD_ID,
   deployViaCDP,
   validateGraph,
+  attachUpdateAckBranch,
 } from './ga_builder_lib.mjs';
 import { EQUIPMENT_CATALOG, PET_CATALOG } from '../src/data/catalog.js';
 import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
@@ -275,7 +276,27 @@ export function buildBattleCmd() {
   }, { x: 0, y: 940 });
   gb.link('battle_ack', 'battle_api');
 
-  // Frame 1 (1000x500 WebP siêu nhẹ)
+  const bGateNo = attachUpdateAckBranch(gb, 'bat', 'battle_api', 'battle_res', {
+    editId: 'battle_ack',
+    x: 0,
+    y: 1120,
+  });
+
+  const bOk = gb.cmp('b_is_ok', '{battle_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: 240, y: 1300 });
+  gb.link(bGateNo, bOk.condId);
+
+  makeEmbedAction(gb, 'battle_edit_err', {
+    title: `${em('su_crossed_swords')} KHÔNG THỂ GIAO ĐẤU LÚC NÀY`,
+    description: '{battle_res.response.message}',
+    color: '#ef4444',
+    imageUrl: '',
+    target: { editId: 'battle_ack' },
+    action_id: 'battle_ack',
+    footerText: 'SuMi Family • Đấu Trường Tiên Giới',
+  }, { x: 460, y: 1480 });
+  gb.link(bOk.no, 'battle_edit_err');
+
+  // Frame 1 (800x400 WebP siêu nhẹ)
   makeEmbedAction(gb, 'battle_edit_f1', {
     title: '{battle_res.response.frame1Title}',
     description: '',
@@ -284,14 +305,14 @@ export function buildBattleCmd() {
     target: { editId: 'battle_ack' },
     action_id: 'battle_ack',
     footerText: 'SuMi Family • Đang Giao Chiến...',
-  }, { x: 0, y: 1120 });
-  gb.link('battle_api', 'battle_edit_f1');
+  }, { x: 0, y: 1480 });
+  gb.link(bOk.yes, 'battle_edit_f1');
 
-  gb.act('battle_wait_1', 'wait_action', { seconds: '2', success_handles: false }, { x: 0, y: 1300 });
+  gb.act('battle_wait_1', 'wait_action', { seconds: '2', success_handles: false }, { x: 0, y: 1660 });
   gb.link('battle_edit_f1', 'battle_wait_1');
 
   // Kiểm tra trận 5+ hiệp có Frame 2 giữa trận không
-  const cHasF3 = gb.cmp('b_has_f3', '{battle_res.response.hasFrame3}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 1480 });
+  const cHasF3 = gb.cmp('b_has_f3', '{battle_res.response.hasFrame3}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 1840 });
   gb.link('battle_wait_1', cHasF3.condId);
 
   makeEmbedAction(gb, 'battle_edit_f2_mid', {
@@ -302,13 +323,13 @@ export function buildBattleCmd() {
     target: { editId: 'battle_ack' },
     action_id: 'battle_ack',
     footerText: 'SuMi Family • Cao Trào Giao Tranh...',
-  }, { x: -240, y: 1680 });
+  }, { x: -240, y: 2040 });
   gb.link(cHasF3.yes, 'battle_edit_f2_mid');
 
-  gb.act('battle_wait_2', 'wait_action', { seconds: '2', success_handles: false }, { x: -240, y: 1860 });
+  gb.act('battle_wait_2', 'wait_action', { seconds: '2', success_handles: false }, { x: -240, y: 2220 });
   gb.link('battle_edit_f2_mid', 'battle_wait_2');
 
-  // Frame cuối chốt hạ WINNER (2000x1000 WebP sắc nét) + Nút Xem Nhật Ký Trận Đấu
+  // Frame cuối chốt hạ WINNER (1400x700 WebP sắc nét) + Nút Xem Nhật Ký Trận Đấu
   makeEmbedAction(gb, 'battle_edit_final', {
     title: '{battle_res.response.headline}',
     description: '{battle_res.response.reward_summary}',
@@ -317,7 +338,7 @@ export function buildBattleCmd() {
     target: { editId: 'battle_ack' },
     action_id: 'battle_ack',
     footerText: 'SuMi Family • Chiến Báo 1v1',
-  }, { x: 0, y: 2060 });
+  }, { x: 0, y: 2420 });
   gb.link('battle_wait_2', 'battle_edit_final');
   gb.link(cHasF3.no, 'battle_edit_final');
 
@@ -381,7 +402,7 @@ function buildItemOptions(itemType) {
       i.bonus_hp ? `HP+${i.bonus_hp}` : '',
       i.bonus_crit ? `CRIT+${i.bonus_crit}%` : '',
     ].filter(Boolean).join(' • ');
-    const uniqueTag = i.is_unique ? ' • Độc Nhất 1%' : ` • ${i.drop_rate}%`;
+    const uniqueTag = i.is_unique ? ' • Độc Nhất 0.5%' : ` • ${i.drop_rate}%`;
     return {
       label: String(i.item_name).slice(0, 95),
       description: `${i.rarity} • ${statSummary}${uniqueTag}`.slice(0, 95),
@@ -495,7 +516,7 @@ export function buildWikiCmd() {
     title: bt.title,
     description: bt.content,
     color: '#f43f5e',
-    imageUrl: `${BACKEND_BASE}/api/wiki/chart/elements.png`,
+    imageUrl: `${BACKEND_BASE}/api/wiki/chart/elements.webp?v=1.2`,
     fields: bt.fields,
     footerText: 'SuMi Family • Sơ Đồ Ngũ Hành & Dị Tố',
   }, { x: -450, y: 1380 });
@@ -513,13 +534,13 @@ export function buildWikiCmd() {
   gb.link(rEcon, 'msg_wiki_economy');
   gb.link(sEcon, 'msg_wiki_economy');
 
-  // 4. Chuyên mục Trang Bị Loadout + 3 Dropdown Riêng Biệt (Vũ Khí • Bảo Ngọc • Chiến Hồn)
+  // 4. Chuyên mục Trang Bị Loadout + 3 Nút Mở Dropdown Riêng Biệt (tránh giới hạn 65 select options/1 tin nhắn)
   makeEmbedAction(gb, 'msg_wiki_equip', {
     title: eq.title,
     description: eq.content,
     color: '#f59e0b',
     fields: eq.fields,
-    footerText: 'SuMi Family • Kho Pháp Bảo Loadout',
+    footerText: 'SuMi Family • Bấm nút bên dưới để chọn Vũ Khí / Bảo Ngọc / Chiến Hồn',
   }, { x: -150, y: 1380 });
   gb.link(rEquip, 'msg_wiki_equip');
   gb.link(sEquip, 'msg_wiki_equip');
@@ -528,36 +549,87 @@ export function buildWikiCmd() {
   const wikiGOpts = buildItemOptions('gem');
   const wikiSOpts = buildItemOptions('soul');
 
-  gb.advSelectMenu('sel_eq_weapon', 'msg_wiki_equip', {
+  gb.styledBtn('btn_eq_weapon', 'msg_wiki_equip', {
+    label: `Vũ Khí (${wikiWOpts.length})`,
+    style: 'PRIMARY',
+    emojiKey: 'su_crossed_swords',
+    row: '1',
+    weight: '1',
+    showReplies: 'show',
+  }, { x: -450, y: 1520 });
+
+  gb.styledBtn('btn_eq_gem', 'msg_wiki_equip', {
+    label: `Bảo Ngọc (${wikiGOpts.length})`,
+    style: 'PRIMARY',
+    emojiKey: 'su_gem_slot',
+    row: '1',
+    weight: '2',
+    showReplies: 'show',
+  }, { x: -150, y: 1520 });
+
+  gb.styledBtn('btn_eq_soul', 'msg_wiki_equip', {
+    label: `Chiến Hồn (${wikiSOpts.length})`,
+    style: 'PRIMARY',
+    emojiKey: 'su_soul_slot',
+    row: '1',
+    weight: '3',
+    showReplies: 'show',
+  }, { x: 150, y: 1520 });
+
+  makeEmbedAction(gb, 'msg_eq_weapon', {
+    title: `${em('su_crossed_swords')} DANH MỤC VŨ KHÍ (${wikiWOpts.length} MÓN)`,
+    description: 'Chọn một **Vũ Khí** từ menu bên dưới để xem thẻ Full HD+ & kỹ năng HAX chi tiết.',
+    color: '#f59e0b',
+    footerText: 'SuMi Family • Kho Vũ Khí Tu Tiên',
+  }, { x: -450, y: 1680 });
+  gb.link('btn_eq_weapon', 'msg_eq_weapon');
+
+  makeEmbedAction(gb, 'msg_eq_gem', {
+    title: `${em('su_gem_slot')} DANH MỤC BẢO NGỌC (${wikiGOpts.length} MÓN)`,
+    description: 'Chọn một **Bảo Ngọc** từ menu bên dưới để xem thẻ Full HD+ & kỹ năng HAX chi tiết.',
+    color: '#f59e0b',
+    footerText: 'SuMi Family • Kho Bảo Ngọc Tu Tiên',
+  }, { x: -150, y: 1680 });
+  gb.link('btn_eq_gem', 'msg_eq_gem');
+
+  makeEmbedAction(gb, 'msg_eq_soul', {
+    title: `${em('su_soul_slot')} DANH MỤC CHIẾN HỒN (${wikiSOpts.length} MÓN)`,
+    description: 'Chọn một **Chiến Hồn** từ menu bên dưới để xem thẻ Full HD+ & kỹ năng HAX chi tiết.',
+    color: '#f59e0b',
+    footerText: 'SuMi Family • Kho Chiến Hồn Tu Tiên',
+  }, { x: 150, y: 1680 });
+  gb.link('btn_eq_soul', 'msg_eq_soul');
+
+  gb.advSelectMenu('sel_eq_weapon', 'msg_eq_weapon', {
     placeholder: `Vũ Khí (${wikiWOpts.length} món)`,
     customVariableName: 'picked_weapon',
     row: '1',
     weight: '1',
     showReplies: 'show',
     basic_options: wikiWOpts,
-  }, { x: -450, y: 1620 });
+  }, { x: -450, y: 1840 });
 
-  gb.advSelectMenu('sel_eq_gem', 'msg_wiki_equip', {
+  gb.advSelectMenu('sel_eq_gem', 'msg_eq_gem', {
     placeholder: `Bảo Ngọc (${wikiGOpts.length} món)`,
     customVariableName: 'picked_gem',
-    row: '2',
+    row: '1',
     weight: '1',
     showReplies: 'show',
     basic_options: wikiGOpts,
-  }, { x: -150, y: 1620 });
+  }, { x: -150, y: 1840 });
 
-  gb.advSelectMenu('sel_eq_soul', 'msg_wiki_equip', {
+  gb.advSelectMenu('sel_eq_soul', 'msg_eq_soul', {
     placeholder: `Chiến Hồn (${wikiSOpts.length} món)`,
     customVariableName: 'picked_soul',
-    row: '3',
+    row: '1',
     weight: '1',
     showReplies: 'show',
     basic_options: wikiSOpts,
-  }, { x: 150, y: 1620 });
+  }, { x: 150, y: 1840 });
 
-  gb.act('set_item_w', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_weapon}', success_handles: false }, { x: -450, y: 1800 });
-  gb.act('set_item_g', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_gem}', success_handles: false }, { x: -150, y: 1800 });
-  gb.act('set_item_s', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_soul}', success_handles: false }, { x: 150, y: 1800 });
+  gb.act('set_item_w', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_weapon}', success_handles: false }, { x: -450, y: 2000 });
+  gb.act('set_item_g', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_gem}', success_handles: false }, { x: -150, y: 2000 });
+  gb.act('set_item_s', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_soul}', success_handles: false }, { x: 150, y: 2000 });
   gb.link('sel_eq_weapon', 'set_item_w');
   gb.link('sel_eq_gem', 'set_item_g');
   gb.link('sel_eq_soul', 'set_item_s');
@@ -568,7 +640,7 @@ export function buildWikiCmd() {
     color: '#f59e0b',
     editId: 'eq_detail_ack',
     footerText: 'SuMi Family • Kho Pháp Bảo Loadout',
-  }, { x: -150, y: 1980 });
+  }, { x: -150, y: 2180 });
   gb.link('set_item_w', 'eq_detail_ack');
   gb.link('set_item_g', 'eq_detail_ack');
   gb.link('set_item_s', 'eq_detail_ack');
@@ -594,18 +666,18 @@ export function buildWikiCmd() {
       },
     },
     success_handles: false,
-  }, { x: -150, y: 2160 });
+  }, { x: -150, y: 2360 });
   gb.link('eq_detail_ack', 'eq_detail_api');
 
   makeEmbedAction(gb, 'eq_detail_edit', {
     title: '{item_res.response.embed.title}',
     description: '{item_res.response.embed.description}',
     color: '#f59e0b',
-    imageUrl: `${BACKEND_BASE}/api/wiki/item/{wiki_item_id}.png?t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/wiki/item/{wiki_item_id}.webp?v=1.2`,
     target: { editId: 'eq_detail_ack' },
     action_id: 'eq_detail_ack',
     footerText: '{item_res.response.embed.footer}',
-  }, { x: -150, y: 2340 });
+  }, { x: -150, y: 2540 });
   gb.link('eq_detail_api', 'eq_detail_edit');
 
   // 5. Chuyên mục Linh Thú + 4 Dropdown Riêng Biệt Theo Phẩm Cấp (Phàm / Linh / Tiên / Thần Thoại)
@@ -625,7 +697,7 @@ export function buildWikiCmd() {
   const wikiPMOpts = buildPetOptions(['mythic']);
 
   gb.advSelectMenu('sel_pet_common', 'msg_wiki_pets', {
-    placeholder: `Phàm Phẩm • Tỉ lệ 60% (${wikiPCOpts.length} Linh Thú)`,
+    placeholder: `Phàm Phẩm • Tỉ lệ 60.5% (${wikiPCOpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_c',
     row: '1',
     weight: '1',
@@ -652,7 +724,7 @@ export function buildWikiCmd() {
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: `Thần Thoại • Tỉ lệ 1% (${wikiPMOpts.length} Linh Thú)`,
+    placeholder: `Thần Thoại • Tỉ lệ 0.5% (${wikiPMOpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',
@@ -709,7 +781,7 @@ export function buildWikiCmd() {
     title: '{pet_res.response.embed.title}',
     description: '{pet_res.response.embed.description}',
     color: '#ec4899',
-    imageUrl: `${BACKEND_BASE}/api/wiki/pet/{wiki_pet_id}.png?t={time_now_unix}`,
+    imageUrl: `${BACKEND_BASE}/api/wiki/pet/{wiki_pet_id}.webp?v=1.2`,
     target: { editId: 'pet_detail_ack' },
     action_id: 'pet_detail_ack',
     footerText: '{pet_res.response.embed.footer}',

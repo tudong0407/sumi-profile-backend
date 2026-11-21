@@ -13,7 +13,7 @@ export const CHANGELOGS = [
     title: 'ĐẠI CẢI TỔ PHÁP ẤN & KINH TẾ TU TIÊN v1.2',
     released_at: '2026-11-22',
     color: '#a855f7',
-    summary: 'Cường hóa Phẩm Chất D→S, Tháp 200 Tầng cân bằng, Nghề Tu Tiên (/job), Kho Emoji gọn kiểu OwO, Chốt Gacha Thần Thoại 0.5% & Tăng tốc /battle.',
+    summary: 'Cường hóa Phẩm Chất D→S, Tháp 200 Tầng cân bằng, Nghề Tu Tiên (/job), Túi Đồ biểu tượng kèm số lượng, Chốt Gacha Thần Thoại 0.5% & Tăng tốc /battle.',
     sections: [
       {
         heading: `${gradeEmoji('S')} Khắc Ấn Phẩm Chất D → C → B → A → S (/enchant)`,
@@ -32,11 +32,11 @@ export const CHANGELOGS = [
         ],
       },
       {
-        heading: `${em('su_wiki_scroll')} Lệnh Mới, Kho OwO & Cân Bằng Kinh Tế`,
+        heading: `${em('su_wiki_scroll')} Lệnh Mới, Túi Đồ /inv & Cân Bằng Kinh Tế`,
         bullets: [
-          '**Kho `/inv` Emoji Kiểu OwO & Lệnh `/roles` Riêng:** Lưới icon `<Pet><Grade>⚡` gọn mắt không cắt dòng; thêm Dropdown chuyển tab và lệnh `/roles` chuyên biệt. `/info`, `/equip`, `/dismantle`, `/enchant` nhận cả Emoji!',
+          '**Túi Đồ `/inv` Biểu Tượng & Cộng Dồn Khi `/roll` Trùng:** Hiển thị `<Emoji>⁰⁰¹` thoáng mắt (đồ đang trang bị xếp đầu trước dấu **`|`**), quay trùng tự cộng số lượng (`⁰⁰¹ → ⁰⁰²`) kèm **Kế Thừa Tư Chất Cao Nhất (`max(D..S)`)**; thêm Dropdown chuyển tab và lệnh `/roles` riêng. `/info`, `/equip`, `/dismantle`, `/enchant` nhận cả Emoji!',
           '**`/updates` + Xác Nhận Lần Đầu:** Gõ `/updates` luôn mở bản mới nhất & có Dropdown chọn lại `v1.1` / `v1.2`. Lần đầu vào game sau cập nhật chỉ cần bấm Xác Nhận 1 lần.',
-          '**Cân Bằng Kinh Tế:** Chốt tỷ lệ **Thần Thoại `0.5%`** đều cả **3 Gacha (Pháp Bảo / Linh Thú / Role)**. Siết giá `/dismantle` chống farm Gacha, mở rã hàng loạt cho cả **Pet & Role**.',
+          '**Cân Bằng Kinh Tế:** Chốt tỷ lệ **Thần Thoại `0.5%`** đều cả **3 Gacha (Pháp Bảo / Linh Thú / Role)**. Siết giá `/dismantle` chống farm Gacha, mở rã hàng loạt (`all_common/rare/epic`, `all_dup`) cho cả **Pet, Pháp Bảo & Role**.',
           '**Tăng Tốc `/battle`:** Khắc phục triệt để lỗi treo `ĐANG TRIỆU HỒI...`, trả trận dưới `0.5s`, cooldown `5s/trận` mượt mà.',
         ],
       },

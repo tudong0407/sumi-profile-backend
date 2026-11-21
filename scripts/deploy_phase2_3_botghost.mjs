@@ -4,6 +4,7 @@ globalThis.WebSocket = WebSocket;
 import {
   GraphBuilder,
   SUMI_GUILD_ID,
+  attachUpdateAckBranch,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
@@ -225,7 +226,7 @@ export function buildShopCmd() {
       `${em('su_pet_paw')} **Linh Thú (20 loài)**: Bán thẳng toàn bộ Pet Phàm Phẩm (300) & Linh Phẩm (900).`,
       `${em('su_crossed_swords')} **Pháp Bảo (32 món)**: Bán thẳng 16 món Phàm (250) & 16 món Linh (750).`,
       `${em('su_medal_role')} **Role Quyền Năng (21 gói)**: Thuê nhanh 7 Ngày, 30 Ngày hoặc mua Vĩnh Viễn.`,
-      `${em('su_star_stone')} **Vật Phẩm (6 món)**: Vé Gacha (50), Đá Sao (100), Thẻ Reset Tháp (200), Thẻ Danh Hiệu (300), Khung Avatar (800).`,
+      `${em('su_star_stone')} **Vật Phẩm (7 món)**: Vé Gacha (50), Đá Sao (100), Đá Khắc Ấn (150), Thẻ Reset Tháp (200), Thẻ Danh Hiệu (300), Khung Avatar (800).`,
       `${em('su_frame_token')} **Background Hồ Sơ (20 mẫu)**: Bộ sưu tập nền Trang Trí (300–4.000 Linh Thạch).`,
       ``,
       `${em('su_gacha_dice')} *Pet Tiên/Thần Thoại, Role Đa Năng & Pháp Bảo Tiên/Thần Thoại mở khóa qua Gacha \`/roll\` hoặc nút Quay Nhanh.*`,
@@ -245,7 +246,7 @@ export function buildShopCmd() {
       { label: 'Linh Thú Phàm & Linh (20 loài)', description: '300 - 900 Linh Thạch (Tiên/Thần Thoại chỉ qua /roll)', emoji_id: emId('su_pet_paw'), value: 'pets' },
       { label: 'Pháp Bảo Phàm & Linh (32 món)', description: '250 - 750 Linh Thạch (12 Vũ Khí, 10 Bảo Ngọc, 10 Chiến Hồn)', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
       { label: 'Role Quyền Năng (21 gói)', description: 'Thuê 7 Ngày / 30 Ngày hoặc sở hữu Vĩnh Viễn', emoji_id: emId('su_medal_role'), value: 'roles' },
-      { label: 'Vật Phẩm & Trang Trí (6 món)', description: 'Vé Gacha, Đá Sao, Thẻ Reset Tháp (200 LT), Thẻ Danh Hiệu, Khung', emoji_id: emId('su_star_stone'), value: 'consumables' },
+      { label: 'Vật Phẩm & Trang Trí (7 món)', description: 'Vé Gacha, Đá Sao, Đá Khắc Ấn (150 LT), Thẻ Reset Tháp, Thẻ Danh Hiệu, Khung', emoji_id: emId('su_star_stone'), value: 'consumables' },
       { label: 'Background Profile & Rank (20 mẫu)', description: '20 mẫu nền trang trí thẻ /profile & /rank (300 - 4.000 LT)', emoji_id: emId('su_frame_token'), value: 'backgrounds' },
     ],
   }, { x: 1000, y: 820 });
@@ -270,22 +271,24 @@ export function buildShopCmd() {
   apiAction(gb, 'api_qroll_eq', 'qr_eq_res', 'POST', `${BACKEND_BASE}/api/economy/roll`,
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","pool":"equipment","count":"1","useTicket":"true"}', { x: 1320, y: 1020 });
   gb.link('btn_home_gacha_eq', 'api_qroll_eq');
+  const qrEqNoAck = attachUpdateAckBranch(gb, 'qreq', 'api_qroll_eq', 'qr_eq_res', { x: 1320, y: 1180 });
   embedMsg(gb, 'msg_qroll_eq', {
     title: `${em('su_gacha_dice')} KẾT QUẢ RÈN PHÁP BẢO (1 LƯỢT)`,
     description: '{qr_eq_res.response.message}',
     color: '#f59e0b',
-  }, { x: 1320, y: 1200 });
-  gb.link('api_qroll_eq', 'msg_qroll_eq');
+  }, { x: 1320, y: 1360 });
+  gb.link(qrEqNoAck, 'msg_qroll_eq');
 
   apiAction(gb, 'api_qroll_pet', 'qr_pet_res', 'POST', `${BACKEND_BASE}/api/economy/roll`,
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","pool":"pet","count":"1","useTicket":"true"}', { x: 1620, y: 1020 });
   gb.link('btn_home_gacha_pet', 'api_qroll_pet');
+  const qrPetNoAck = attachUpdateAckBranch(gb, 'qrpet', 'api_qroll_pet', 'qr_pet_res', { x: 1620, y: 1180 });
   embedMsg(gb, 'msg_qroll_pet', {
     title: `${em('su_ticket_pet')} KẾT QUẢ TRIỆU HỒI LINH THÚ (1 LƯỢT)`,
     description: '{qr_pet_res.response.message}',
     color: '#ec4899',
-  }, { x: 1620, y: 1200 });
-  gb.link('api_qroll_pet', 'msg_qroll_pet');
+  }, { x: 1620, y: 1360 });
+  gb.link(qrPetNoAck, 'msg_qroll_pet');
 
   // Category Select Routing
   gb.cond('sh_sel_cat', 'comparison', { base_value: '{shop_pick_cat}', target: { self: true } }, { x: 1000, y: 1000 });
@@ -375,9 +378,10 @@ export function buildShopCmd() {
         c.item_id === 'gacha_ticket_equip' ? 'su_ticket_equip'
           : c.item_id === 'gacha_ticket_pet' ? 'su_ticket_pet'
             : c.item_id === 'pet_star_stone' ? 'su_star_stone'
-              : c.item_id === 'tower_reset_card' ? 'su_tower_reset_card'
-                : c.item_id === 'title_rename_card' ? 'su_title_card'
-                  : 'su_frame_token'
+              : c.item_id === 'enchant_stone' ? 'su_enchant_stone'
+                : c.item_id === 'tower_reset_card' ? 'su_tower_reset_card'
+                  : c.item_id === 'title_rename_card' ? 'su_title_card'
+                    : 'su_frame_token'
       ),
       value: c.item_id,
     })),
@@ -436,6 +440,8 @@ export function buildShopCmd() {
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","itemId":"{shop_preview_id}"}', { x: 0, y: 2140 });
   gb.link('shop_prev_ack', 'shop_prev_api');
 
+  const shPrevNoAck = attachUpdateAckBranch(gb, 'shpr', 'shop_prev_api', 'sh_prev_res', { editId: 'shop_prev_ack', x: 0, y: 2300 });
+
   embedMsg(gb, 'shop_prev_edit', {
     title: '{sh_prev_res.response.title}',
     description: '{sh_prev_res.response.description}',
@@ -444,8 +450,8 @@ export function buildShopCmd() {
     target: { editId: 'shop_prev_ack' },
     action_id: 'shop_prev_ack',
     footer: 'SuMi Family • Nhấn Mua Ngay để xác nhận giao dịch',
-  }, { x: 0, y: 2320 });
-  gb.link('shop_prev_api', 'shop_prev_edit');
+  }, { x: 0, y: 2480 });
+  gb.link(shPrevNoAck, 'shop_prev_edit');
 
   gb.styledBtn('btn_shop_buy_now', 'shop_prev_edit', {
     label: 'Mua Ngay',
@@ -453,18 +459,20 @@ export function buildShopCmd() {
     emojiKey: 'su_linhthach',
     row: '1',
     weight: '1',
-  }, { x: 0, y: 2520 });
+  }, { x: 0, y: 2660 });
 
   apiAction(gb, 'shop_buy_api', 'sh_buy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 0, y: 2700 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 0, y: 2840 });
   gb.link('btn_shop_buy_now', 'shop_buy_api');
+
+  const shBuyNoAck = attachUpdateAckBranch(gb, 'shby', 'shop_buy_api', 'sh_buy_res', { x: 0, y: 3000 });
 
   embedMsg(gb, 'shop_buy_msg', {
     title: `${em('su_sparkle')} GIAO DỊCH TIÊN BẢO CÁC`,
     description: '{sh_buy_res.response.message}',
     color: '#10b981',
-  }, { x: 0, y: 2880 });
-  gb.link('shop_buy_api', 'shop_buy_msg');
+  }, { x: 0, y: 3180 });
+  gb.link(shBuyNoAck, 'shop_buy_msg');
 
   // Category 4: Roles (21 Single-Perk Packages with 7d / 30d / Permanent Buttons + wait 1s + role_add)
   embedMsg(gb, 'msg_shop_roles', {
@@ -498,6 +506,8 @@ export function buildShopCmd() {
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"roles","itemId":"{picked_shop_role}"}', { x: 240, y: 1960 });
   gb.link('shop_role_ack', 'shop_role_prev_api');
 
+  const shRprevNoAck = attachUpdateAckBranch(gb, 'shrp', 'shop_role_prev_api', 'sh_rprev_res', { editId: 'shop_role_ack', x: 240, y: 2120 });
+
   embedMsg(gb, 'shop_role_prev_edit', {
     title: '{sh_rprev_res.response.title}',
     description: '{sh_rprev_res.response.description}',
@@ -505,32 +515,34 @@ export function buildShopCmd() {
     target: { editId: 'shop_role_ack' },
     action_id: 'shop_role_ack',
     footer: 'SuMi Family • Chọn thời hạn thuê hoặc mua Vĩnh Viễn',
-  }, { x: 240, y: 2140 });
-  gb.link('shop_role_prev_api', 'shop_role_prev_edit');
+  }, { x: 240, y: 2300 });
+  gb.link(shRprevNoAck, 'shop_role_prev_edit');
 
-  gb.styledBtn('btn_role_7d', 'shop_role_prev_edit', { label: 'Thuê 7 Ngày', style: 'PRIMARY', emojiKey: 'su_linhthach', row: '1', weight: '1' }, { x: 40, y: 2340 });
-  gb.styledBtn('btn_role_30d', 'shop_role_prev_edit', { label: 'Thuê 30 Ngày', style: 'PRIMARY', emojiKey: 'su_linhthach', row: '1', weight: '2' }, { x: 260, y: 2340 });
-  gb.styledBtn('btn_role_perm', 'shop_role_prev_edit', { label: 'Mua Vĩnh Viễn', style: 'SUCCESS', emojiKey: 'su_winner_trophy', row: '1', weight: '3' }, { x: 480, y: 2340 });
+  gb.styledBtn('btn_role_7d', 'shop_role_prev_edit', { label: 'Thuê 7 Ngày', style: 'PRIMARY', emojiKey: 'su_linhthach', row: '1', weight: '1' }, { x: 40, y: 2480 });
+  gb.styledBtn('btn_role_30d', 'shop_role_prev_edit', { label: 'Thuê 30 Ngày', style: 'PRIMARY', emojiKey: 'su_linhthach', row: '1', weight: '2' }, { x: 260, y: 2480 });
+  gb.styledBtn('btn_role_perm', 'shop_role_prev_edit', { label: 'Mua Vĩnh Viễn', style: 'SUCCESS', emojiKey: 'su_winner_trophy', row: '1', weight: '3' }, { x: 480, y: 2480 });
 
-  gb.act('set_role_7d', 'set_unique_variable', { reference: 'shop_role_dur', value: '7d', success_handles: false }, { x: 40, y: 2520 });
-  gb.act('set_role_30d', 'set_unique_variable', { reference: 'shop_role_dur', value: '30d', success_handles: false }, { x: 260, y: 2520 });
-  gb.act('set_role_perm', 'set_unique_variable', { reference: 'shop_role_dur', value: 'permanent', success_handles: false }, { x: 480, y: 2520 });
+  gb.act('set_role_7d', 'set_unique_variable', { reference: 'shop_role_dur', value: '7d', success_handles: false }, { x: 40, y: 2660 });
+  gb.act('set_role_30d', 'set_unique_variable', { reference: 'shop_role_dur', value: '30d', success_handles: false }, { x: 260, y: 2660 });
+  gb.act('set_role_perm', 'set_unique_variable', { reference: 'shop_role_dur', value: 'permanent', success_handles: false }, { x: 480, y: 2660 });
   gb.link('btn_role_7d', 'set_role_7d');
   gb.link('btn_role_30d', 'set_role_30d');
   gb.link('btn_role_perm', 'set_role_perm');
 
   apiAction(gb, 'api_role_buy', 'sh_rbuy_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"{shop_role_dur}"}', { x: 260, y: 2700 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"{shop_role_dur}"}', { x: 260, y: 2840 });
   gb.link('set_role_7d', 'api_role_buy');
   gb.link('set_role_30d', 'api_role_buy');
   gb.link('set_role_perm', 'api_role_buy');
+
+  const shRbuyNoAck = attachUpdateAckBranch(gb, 'shrb', 'api_role_buy', 'sh_rbuy_res', { x: 260, y: 3000 });
 
   embedMsg(gb, 'shop_role_buy_msg', {
     title: `${em('su_medal_role')} MUA / THUÊ ROLE QUYỀN NĂNG`,
     description: '{sh_rbuy_res.response.message}',
     color: '#10b981',
-  }, { x: 260, y: 2880 });
-  gb.link('api_role_buy', 'shop_role_buy_msg');
+  }, { x: 260, y: 3180 });
+  gb.link(shRbuyNoAck, 'shop_role_buy_msg');
 
   gb.act('sh_role_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 260, y: 3060 });
   gb.link('shop_role_buy_msg', 'sh_role_wait');
@@ -579,8 +591,10 @@ export function buildMarryCmd() {
     { x: -350, y: 600 });
   gb.link(bProp, 'm_prop_api');
 
-  const cPropOk = gb.cmp('m_prop_ok', '{m_prop_res.response.proposal_id}', '^[0-9]+$', 'matches_pattern', {}, { x: -350, y: 800 });
-  gb.link('m_prop_api', cPropOk.condId);
+  const mPropNoAck = attachUpdateAckBranch(gb, 'mpr', 'm_prop_api', 'm_prop_res', { x: -350, y: 760 });
+
+  const cPropOk = gb.cmp('m_prop_ok', '{m_prop_res.response.proposal_id}', '^[0-9]+$', 'matches_pattern', {}, { x: -350, y: 940 });
+  gb.link(mPropNoAck, cPropOk.condId);
 
   embedMsg(gb, 'msg_marry_prop', {
     title: `${em('su_ring_thanthoai')} LỜI CẦU HÔN TIÊN LỮ`,
@@ -588,60 +602,64 @@ export function buildMarryCmd() {
     color: '#ec4899',
     imageUrl: '{m_prop_res.response.image_url}',
     footer: 'SuMi Family • Chỉ người được cầu hôn mới có thể xác nhận',
-  }, { x: -520, y: 1000 });
+  }, { x: -520, y: 1120 });
   gb.link(cPropOk.yes, 'msg_marry_prop');
 
   embedMsg(gb, 'msg_marry_prop_err', {
     title: `${em('su_ring_pham')} KHÔNG THỂ CẦU HÔN`,
     description: '{m_prop_res.response.message}',
     color: '#ef4444',
-  }, { x: -180, y: 1000 });
+  }, { x: -180, y: 1120 });
   gb.link(cPropOk.no, 'msg_marry_prop_err');
 
-  gb.styledBtn('btn_marry_accept', 'msg_marry_prop', { label: 'Đồng Ý Kết Hôn', style: 'SUCCESS', emojiKey: 'su_ring_thanthoai', row: '1', weight: '1' }, { x: -660, y: 1200 });
-  gb.styledBtn('btn_marry_reject', 'msg_marry_prop', { label: 'Từ Chối', style: 'DANGER', row: '1', weight: '2' }, { x: -380, y: 1200 });
+  gb.styledBtn('btn_marry_accept', 'msg_marry_prop', { label: 'Đồng Ý Kết Hôn', style: 'SUCCESS', emojiKey: 'su_ring_thanthoai', row: '1', weight: '1' }, { x: -660, y: 1320 });
+  gb.styledBtn('btn_marry_reject', 'msg_marry_prop', { label: 'Từ Chối', style: 'DANGER', row: '1', weight: '2' }, { x: -380, y: 1320 });
 
-  gb.act('set_m_acc', 'set_unique_variable', { reference: 'marry_decision', value: 'accept', success_handles: false }, { x: -660, y: 1380 });
-  gb.act('set_m_rej', 'set_unique_variable', { reference: 'marry_decision', value: 'reject', success_handles: false }, { x: -380, y: 1380 });
+  gb.act('set_m_acc', 'set_unique_variable', { reference: 'marry_decision', value: 'accept', success_handles: false }, { x: -660, y: 1500 });
+  gb.act('set_m_rej', 'set_unique_variable', { reference: 'marry_decision', value: 'reject', success_handles: false }, { x: -380, y: 1500 });
   gb.link('btn_marry_accept', 'set_m_acc');
   gb.link('btn_marry_reject', 'set_m_rej');
 
   apiAction(gb, 'm_resp_api', 'm_resp_res', 'POST', `${BACKEND_BASE}/api/marry/respond`,
-    '{"responderId":"{user_id}","decision":"{marry_decision}"}', { x: -520, y: 1560 });
+    '{"responderId":"{user_id}","decision":"{marry_decision}"}', { x: -520, y: 1680 });
   gb.link('set_m_acc', 'm_resp_api');
   gb.link('set_m_rej', 'm_resp_api');
+
+  const mRespNoAck = attachUpdateAckBranch(gb, 'mrs', 'm_resp_api', 'm_resp_res', { x: -520, y: 1840 });
 
   embedMsg(gb, 'msg_marry_resp', {
     title: `${em('su_sparkle')} HỒI ÂM LỜI CẦU HÔN`,
     description: '{m_resp_res.response.message}',
     color: '#f43f5e',
     imageUrl: '{m_resp_res.response.image_url}',
-  }, { x: -520, y: 1740 });
-  gb.link('m_resp_api', 'msg_marry_resp');
+  }, { x: -520, y: 2020 });
+  gb.link(mRespNoAck, 'msg_marry_resp');
 
   // Upgrade Ring
   apiAction(gb, 'm_upd_api', 'm_upd_res', 'POST', `${BACKEND_BASE}/api/marry/upgrade-ring`,
     '{"userId":"{user_id}","ringId":"{option_nhan}"}', { x: 100, y: 600 });
   gb.link(bUpd, 'm_upd_api');
+  const mUpdNoAck = attachUpdateAckBranch(gb, 'mup', 'm_upd_api', 'm_upd_res', { x: 100, y: 760 });
   embedMsg(gb, 'msg_marry_upd', {
     title: `${em('su_ring_thanthoai')} NÂNG CẤP NHẪN CƯỚI TIÊN LỮ`,
     description: '{m_upd_res.response.message}',
     color: '#fbbf24',
     imageUrl: '{m_upd_res.response.image_url}',
-  }, { x: 100, y: 800 });
-  gb.link('m_upd_api', 'msg_marry_upd');
+  }, { x: 100, y: 940 });
+  gb.link(mUpdNoAck, 'msg_marry_upd');
 
   // Status
   apiAction(gb, 'm_stat_api', 'm_stat_res', 'GET',
     `${BACKEND_BASE}/api/marry/status/{user_id}?username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`, '', { x: 500, y: 600 });
   gb.link(bStat, 'm_stat_api');
+  const mStatNoAck = attachUpdateAckBranch(gb, 'mst', 'm_stat_api', 'm_stat_res', { x: 500, y: 760 });
   embedMsg(gb, 'msg_marry_stat', {
     title: `${em('su_ring_thanthoai')} HỒ SƠ TIÊN LỮ KẾT DUYÊN`,
     description: '{m_stat_res.response.message}',
     color: '#ec4899',
     imageUrl: '{m_stat_res.response.image_url}',
-  }, { x: 500, y: 800 });
-  gb.link('m_stat_api', 'msg_marry_stat');
+  }, { x: 500, y: 940 });
+  gb.link(mStatNoAck, 'msg_marry_stat');
 
   return gb.elements();
 }
@@ -668,12 +686,14 @@ export function buildDivorceCmd() {
   apiAction(gb, 'div_api', 'div_res', 'POST', `${BACKEND_BASE}/api/marry/divorce`, '{"userId":"{user_id}"}', { x: -180, y: 600 });
   gb.link('btn_div_yes', 'div_api');
 
+  const divNoAck = attachUpdateAckBranch(gb, 'div', 'div_api', 'div_res', { x: -180, y: 760 });
+
   embedMsg(gb, 'msg_div_done', {
     title: '💔 KẾT QUẢ LY HÔN',
     description: '{div_res.response.message}',
     color: '#64748b',
-  }, { x: -180, y: 780 });
-  gb.link('div_api', 'msg_div_done');
+  }, { x: -180, y: 940 });
+  gb.link(divNoAck, 'msg_div_done');
 
   embedMsg(gb, 'msg_div_cancel', {
     title: `${em('su_sparkle')} ĐÃ HỦY BỎ`,
@@ -729,24 +749,28 @@ export function buildGiatocCmd() {
     const br = gb.branch('gt_mode', `gtb_${sp.key}`, 'comparison', { type: 'equal_to', comparison_value: sp.key, ignoreCase: true, option: '', not: false }, { x, y: 440 });
     apiAction(gb, `gta_${sp.key}`, sp.msgVar, sp.method, sp.url, sp.body, { x, y: 640 });
     gb.link(br, `gta_${sp.key}`);
+    const outSrc = sp.key === 'top'
+      ? `gta_${sp.key}`
+      : attachUpdateAckBranch(gb, `gt_${sp.key}`, `gta_${sp.key}`, sp.msgVar, { x, y: 800 });
     embedMsg(gb, `gtm_${sp.key}`, {
       title: sp.title,
       description: `{${sp.msgVar}.response.message}`,
       color: sp.color,
-    }, { x, y: 840 });
-    gb.link(`gta_${sp.key}`, `gtm_${sp.key}`);
+    }, { x, y: 1000 });
+    gb.link(outSrc, `gtm_${sp.key}`);
   });
 
   const bInfo = gb.elseBranch('gt_mode', 'gtb_info', 'comparison', { x: 2100, y: 440 });
   apiAction(gb, 'gta_info', 'gt_in_res', 'GET',
     `${BACKEND_BASE}/api/clan/info/{user_id}?clan={encode_text[{option_ten_hoac_ma}]}&username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`, '', { x: 2100, y: 640 });
   gb.link(bInfo, 'gta_info');
+  const gtInNoAck = attachUpdateAckBranch(gb, 'gt_info', 'gta_info', 'gt_in_res', { x: 2100, y: 800 });
   embedMsg(gb, 'gtm_info', {
     title: `${em('su_clan_castle')} THÔNG TIN GIA TỘC`,
     description: '{gt_in_res.response.message}',
     color: '#ec4899',
-  }, { x: 2100, y: 840 });
-  gb.link('gta_info', 'gtm_info');
+  }, { x: 2100, y: 1000 });
+  gb.link(gtInNoAck, 'gtm_info');
 
   return gb.elements();
 }

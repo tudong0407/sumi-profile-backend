@@ -598,30 +598,46 @@ export async function rollGacha(userId, options = {}) {
           }
         }
 
+        const ENCHANT_GRADE_RANK = { D: 0, C: 1, B: 2, A: 3, S: 4 };
         const picked = candidates[Math.floor(rng() * candidates.length)];
+        const rolledGrade = rollDefaultEnchantGrade(rng);
         const { data: ownItem } = await supabase
           .from('user_pet_items')
-          .select('id')
+          .select('id, quantity, enchant_grade')
           .eq('user_id', cleanId)
           .eq('item_id', picked.item_id)
           .maybeSingle();
 
         if (ownItem) {
-          const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 35 : 15;
-          const dupStone = picked.rarity_key === 'mythic' ? 3 : picked.rarity_key === 'epic' ? 2 : picked.rarity_key === 'rare' ? 1 : 0;
-          refundLinhThach += dupRefund;
-          bonusStarStones += dupStone;
+          const prevQty = Math.max(1, Number(ownItem.quantity) || 1);
+          const nextQty = prevQty + 1;
+          const prevGrade = String(ownItem.enchant_grade || 'D').toUpperCase();
+          const upgradedGrade = (ENCHANT_GRADE_RANK[rolledGrade] ?? 0) > (ENCHANT_GRADE_RANK[prevGrade] ?? 0);
+          const bestGrade = upgradedGrade ? rolledGrade : prevGrade;
+
+          await supabase
+            .from('user_pet_items')
+            .update({
+              quantity: nextQty,
+              ...(upgradedGrade ? { enchant_grade: bestGrade } : {}),
+            })
+            .eq('id', ownItem.id);
+
           results.push({
             kind: 'duplicate_item',
             emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(bestGrade),
+            enchant_grade: bestGrade,
+            rolled_grade: rolledGrade,
+            prev_grade: prevGrade,
+            grade_upgraded: upgradedGrade,
+            quantity: nextQty,
             item_id: picked.item_id,
             name: picked.item_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
-            refund_linh_thach: dupRefund,
-            bonus_star_stones: dupStone,
+            slot: picked.item_type,
           });
         } else {
-          const rolledGrade = rollDefaultEnchantGrade(rng);
           await supabase.from('user_pet_items').insert({
             user_id: cleanId,
             item_id: picked.item_id,
@@ -631,6 +647,7 @@ export async function rollGacha(userId, options = {}) {
             paid_price: 0,
             enchant_grade: rolledGrade,
             enchant_pity: 0,
+            quantity: 1,
           });
           if (picked.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(picked.item_id)) {
             invalidateUniqueItemCard(picked.item_id);
@@ -640,6 +657,7 @@ export async function rollGacha(userId, options = {}) {
             emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
             grade_emoji: gradeEmoji(rolledGrade),
             enchant_grade: rolledGrade,
+            quantity: 1,
             item_id: picked.item_id,
             name: picked.item_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -647,31 +665,47 @@ export async function rollGacha(userId, options = {}) {
           });
         }
       } else {
+        const ENCHANT_GRADE_RANK = { D: 0, C: 1, B: 2, A: 3, S: 4 };
         const candidates = standardPets.filter((p) => p.rarity_key === rarityKey);
         const picked = candidates[Math.floor(rng() * candidates.length)];
+        const rolledGrade = rollDefaultEnchantGrade(rng);
         const { data: ownPet } = await supabase
           .from('user_pets')
-          .select('pet_id')
+          .select('pet_id, quantity, enchant_grade')
           .eq('user_id', cleanId)
           .eq('pet_type', picked.pet_type)
           .maybeSingle();
 
         if (ownPet) {
-          const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 40 : 15;
-          const dupStone = picked.rarity_key === 'mythic' ? 3 : picked.rarity_key === 'epic' ? 2 : 1;
-          refundLinhThach += dupRefund;
-          bonusStarStones += dupStone;
+          const prevQty = Math.max(1, Number(ownPet.quantity) || 1);
+          const nextQty = prevQty + 1;
+          const prevGrade = String(ownPet.enchant_grade || 'D').toUpperCase();
+          const upgradedGrade = (ENCHANT_GRADE_RANK[rolledGrade] ?? 0) > (ENCHANT_GRADE_RANK[prevGrade] ?? 0);
+          const bestGrade = upgradedGrade ? rolledGrade : prevGrade;
+
+          await supabase
+            .from('user_pets')
+            .update({
+              quantity: nextQty,
+              ...(upgradedGrade ? { enchant_grade: bestGrade } : {}),
+            })
+            .eq('pet_id', ownPet.pet_id);
+
           results.push({
             kind: 'duplicate_pet',
             emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(bestGrade),
+            enchant_grade: bestGrade,
+            rolled_grade: rolledGrade,
+            prev_grade: prevGrade,
+            grade_upgraded: upgradedGrade,
+            quantity: nextQty,
             pet_type: picked.pet_type,
             name: picked.pet_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
-            refund_linh_thach: dupRefund,
-            bonus_star_stones: dupStone,
+            element: picked.element,
           });
         } else {
-          const rolledGrade = rollDefaultEnchantGrade(rng);
           await supabase.from('user_pets').insert({
             user_id: cleanId,
             pet_name: picked.pet_name,
@@ -690,12 +724,14 @@ export async function rollGacha(userId, options = {}) {
             paid_price: 0,
             enchant_grade: rolledGrade,
             enchant_pity: 0,
+            quantity: 1,
           });
           results.push({
             kind: 'new_pet',
             emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
             grade_emoji: gradeEmoji(rolledGrade),
             enchant_grade: rolledGrade,
+            quantity: 1,
             pet_type: picked.pet_type,
             name: picked.pet_name,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -723,15 +759,31 @@ export async function rollGacha(userId, options = {}) {
       new_role: 'Mới (Đeo/Lưu Túi)',
       stack_role: 'Cộng Dồn Ngày',
       upgrade_permanent: 'Thăng Hoa Vĩnh Viễn!',
-      duplicate_item: 'Trùng lặp',
-      duplicate_pet: 'Trùng lặp',
+      duplicate_item: 'Cộng Dồn Số Lượng',
+      duplicate_pet: 'Cộng Dồn Số Lượng',
       duplicate_role_refund: 'Đã Vĩnh Viễn (Hoàn Quà)',
       refund: 'Bồi thường',
     };
-    const resultLines = results.map((r) => `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${kindLabelMap[r.kind] || r.kind}`);
-    const summaryResults = resultLines.length
-      ? resultLines.join('\n').slice(0, 1500)
-      : '• Không có kết quả triệu hồi.';
+    const resultLines = results.map((r) => {
+      if (r.kind === 'duplicate_item' || r.kind === 'duplicate_pet') {
+        const gradeNote = r.grade_upgraded
+          ? ` • **Kế thừa Tư Chất ${r.prev_grade} → ${r.enchant_grade}!**`
+          : ` • Giữ Tư Chất ${r.enchant_grade}`;
+        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — Trùng +1 (Kho: **×${r.quantity}**)${gradeNote}`;
+      }
+      return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${kindLabelMap[r.kind] || r.kind}`;
+    });
+    const summaryResults = (() => {
+      if (!resultLines.length) return '• Không có kết quả triệu hồi.';
+      const safeLines = [];
+      let totalLen = 0;
+      for (const line of resultLines) {
+        if (totalLen + line.length + 1 > 3500) break;
+        safeLines.push(line);
+        totalLen += line.length + 1;
+      }
+      return safeLines.join('\n');
+    })();
 
     const roleIdsList = [...addedDiscordRoleIds];
     const poolLabel = pool === 'pet' ? 'Linh Thú' : pool === 'role' ? 'Role Quyền Năng' : 'Pháp Bảo';
@@ -739,14 +791,17 @@ export async function rollGacha(userId, options = {}) {
       ? `\`${cost}\` ${em('su_linhthach')}`
       : `\`${count}\` Vé Gacha (\`0\` ${em('su_linhthach')})`;
     const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
+    const dupHeaderLine = (pool === 'role' || refundLinhThach > 0 || bonusStarStones > 0)
+      ? `${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
+      : null;
     const fullMessage = [
       `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,
       `${em('su_linhthach')} **Số dư còn lại**: \`${finalBalance.toLocaleString('vi-VN')}\` Linh Thạch`,
-      `${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`,
+      dupHeaderLine,
       `${em('su_sparkle')} **Kết quả**:`,
       summaryResults,
       footerNote,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 
     return {
       success: true,

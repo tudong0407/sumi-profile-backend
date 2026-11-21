@@ -182,11 +182,19 @@ import {
   getMaxRoleSlotsByLevel,
 } from './profileService.js';
 
-function chunkEmojiGrid(tokens = [], perRow = 6, emptyText = '• Trống', maxChars = 1500) {
+const SUPERSCRIPT_DIGITS = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
+
+export function toSuperscriptCount(n, minDigits = 3) {
+  const val = Math.max(1, Math.floor(Number(n) || 1));
+  const str = String(val).padStart(minDigits, '0');
+  return [...str].map((ch) => SUPERSCRIPT_DIGITS[Number(ch)] || ch).join('');
+}
+
+function chunkEmojiGrid(tokens = [], perRow = 5, emptyText = '• Trống', maxChars = 1500) {
   if (!tokens.length) return emptyText;
   const rows = [];
   for (let i = 0; i < tokens.length; i += perRow) {
-    rows.push(tokens.slice(i, i + perRow).join('  '));
+    rows.push(tokens.slice(i, i + perRow).join('\u2003 '));
   }
   const joined = [];
   let len = 0;
@@ -203,6 +211,21 @@ function chunkEmojiGrid(tokens = [], perRow = 6, emptyText = '• Trống', maxC
     shownItems += Math.min(perRow, tokens.length - r * perRow);
   }
   return joined.join('\n');
+}
+
+function buildDividerEmojiGrid(equippedTokens = [], storageTokens = [], perRow = 5, emptyText = '• Trống', maxChars = 1400) {
+  if (!equippedTokens.length && !storageTokens.length) return emptyText;
+  if (!equippedTokens.length) return chunkEmojiGrid(storageTokens, perRow, emptyText, maxChars);
+  if (!storageTokens.length) return chunkEmojiGrid(equippedTokens, perRow, emptyText, maxChars);
+
+  const firstStorageSlots = Math.max(1, perRow - equippedTokens.length);
+  const firstStorageChunk = storageTokens.slice(0, firstStorageSlots);
+  const remainingStorage = storageTokens.slice(firstStorageSlots);
+
+  const firstLine = `${equippedTokens.join('\u2003 ')}\u2003 **|**\u2003 ${firstStorageChunk.join('\u2003 ')}`;
+  if (!remainingStorage.length) return firstLine;
+  const restGrid = chunkEmojiGrid(remainingStorage, perRow, '', Math.max(200, maxChars - firstLine.length - 2));
+  return `${firstLine}\n${restGrid}`;
 }
 
 function formatRoleDurationLabel(r, now) {
@@ -337,21 +360,30 @@ export async function getInventory(userId, options = {}) {
   const bgObj = BACKGROUND_BY_ID[bgRaw] || BACKGROUND_CATALOG.find((b) => b.file === bgRaw || `assets/${b.file}` === bgRaw);
   const bgName = bgObj?.name || (bgRaw.includes('celestial_palace_pink') ? 'Thiên Cung Cửu Vĩ' : 'Đạo Cảnh Mặc Định');
 
-  // OwO Emoji Grids cho tổng quan /inv (không cắt 12 dòng!)
-  const petGrid = chunkEmojiGrid(
-    pets.map((p) => `${p.icon}${p.grade_icon}${p.is_active ? '⚡' : ''}`),
-    6,
+  const activePets = pets.filter((p) => p.is_active);
+  const storagePets = pets.filter((p) => !p.is_active);
+  const slotRank = { weapon: 1, gem: 2, soul: 3 };
+  const equippedItems = items
+    .filter((it) => it.equipped_to_pet || it.slot)
+    .sort((a, b) => (slotRank[a.item_type] || 9) - (slotRank[b.item_type] || 9));
+  const storageItems = items.filter((it) => !it.equipped_to_pet && !it.slot);
+
+  const petGrid = buildDividerEmojiGrid(
+    activePets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`),
+    storagePets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`),
+    5,
     '• Chưa có Linh Thú nào.',
     1400,
   );
-  const itemGrid = chunkEmojiGrid(
-    items.map((it) => `${it.icon}${it.grade_icon}${it.equipped_to_pet ? '🔹' : ''}`),
-    6,
+  const itemGrid = buildDividerEmojiGrid(
+    equippedItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
+    storageItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
+    5,
     '• Chưa có Pháp Bảo nào.',
     1400,
   );
   const consumableGrid = chunkEmojiGrid(
-    consumables.map((c) => `${c.icon}×**${c.quantity}**`),
+    consumables.map((c) => `${c.icon}${toSuperscriptCount(c.quantity || 1)}`),
     5,
     '• Chưa có vật phẩm tiêu hao nào.',
     1400,
@@ -363,7 +395,8 @@ export async function getInventory(userId, options = {}) {
       let totalLen = 0;
       let omitted = 0;
       for (const p of pets) {
-        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}** (\`${p.pet_type}\`) — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}`;
+        const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
+        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}`;
         if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
         out.push(line);
         totalLen += line.length + 1;
@@ -379,7 +412,8 @@ export async function getInventory(userId, options = {}) {
       let totalLen = 0;
       let omitted = 0;
       for (const it of items) {
-        const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}** (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity}${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`;
+        const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
+        const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity}${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`;
         if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
         out.push(line);
         totalLen += line.length + 1;
@@ -396,14 +430,14 @@ export async function getInventory(userId, options = {}) {
   const summaryRolesCompact = buildRoleListText(roles, now, { maxChars: 950, maxItems: 10, overflowHint: 'gõ `/roles` để xem đầy đủ' });
   const summaryRolesFull = buildRoleListText(roles, now, { maxChars: 3750 });
 
-  const summaryPets = `${petGrid}\n*Ghi chú: ⚡ Đang xuất trận • Dùng \`/linhthu\` hoặc \`/info <emoji>\`*`;
-  const summaryItems = `${itemGrid}\n*Ghi chú: 🔹 Đang trang bị • Dùng \`/phapbao\` hoặc \`/info <emoji>\`*`;
+  const summaryPets = `${petGrid}\n*Ghi chú: Trước dấu **|** là Linh Thú xuất trận • Dùng \`/linhthu\` hoặc \`/info <emoji>\`*`;
+  const summaryItems = `${itemGrid}\n*Ghi chú: Trước dấu **|** là Pháp Bảo đang trang bị • Dùng \`/phapbao\` hoặc \`/info <emoji>\`*`;
   const summaryConsumables = consumableGrid;
   const summaryRoles = summaryRolesCompact;
 
   const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\` • **Ảnh Nền:** ${bgName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
 
-  let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI (DẠNG ICON GỌN)`;
+  let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI`;
   let viewDescription = '';
   if (view === 'pets') {
     viewTitle = `${em('su_pet_paw')} KHO LINH THÚ (${pets.length})`;
@@ -553,7 +587,8 @@ export async function getUserEquipment(userId, options = {}) {
   for (const it of list) {
     const slotTag = it.item_type === 'weapon' ? 'Vũ Khí' : it.item_type === 'gem' ? 'Bảo Ngọc' : 'Chiến Hồn';
     const eqTag = it.is_equipped ? ' **(Đang trang bị)**' : '';
-    const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}** (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity} *(${slotTag})*${eqTag}`;
+    const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
+    const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity} *(${slotTag})*${eqTag}`;
     if (charCount + line.length + 1 > 3750) {
       omitted += 1;
     } else {
@@ -1137,10 +1172,11 @@ export async function dismantleTarget(userId, payload = {}) {
     const cleanRoleId = resolvedSingle.replace(/^<@&(\d+)>$/, '$1').trim();
     const normTarget = normalizeTargetText(resolvedSingle);
     const batchRarityMap = { all_common: 'common', all_rare: 'rare', all_epic: 'epic' };
-    const isBatchMode = rawTarget.includes(',') || Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget);
+    const isAllDup = normTarget === 'all_dup' || normTarget === 'all_duplicates';
+    const isBatchMode = isAllDup || rawTarget.includes(',') || Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget);
 
     // Chặn phá nhầm Level Role (cần dùng /doiqua để tụt cấp)
-    if (category === '' || category === 'role') {
+    if ((category === '' || category === 'role') && !isAllDup) {
       const matchedMilestone = LEVEL_ROLE_MILESTONES.find((m) =>
         m.roleId === cleanRoleId || normalizeTargetText(m.name) === normTarget);
       if (matchedMilestone) {
@@ -1346,7 +1382,9 @@ export async function dismantleTarget(userId, payload = {}) {
 
       if (isBatchEquip && (category === 'item' || category === '')) {
         let matchedRows = [];
-        if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
+        if (isAllDup) {
+          matchedRows = allUserItems.filter((row) => (Number(row.quantity) || 1) > 1);
+        } else if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
           const rkTarget = batchRarityMap[normTarget];
           matchedRows = allUserItems.filter((row) => (EQUIPMENT_BY_ID[row.item_id]?.rarity_key || 'common') === rkTarget);
         } else {
@@ -1370,68 +1408,98 @@ export async function dismantleTarget(userId, payload = {}) {
             error: 'ITEM_NOT_OWNED',
             remove_role_id: '',
             remove_role_csv: '',
-            message: `Không tìm thấy Pháp Bảo nào khớp \`${rawTarget}\` trong túi đồ \`/phapbao\` để phân rã.`,
+            message: isAllDup
+              ? 'Hiện không có Pháp Bảo nào có bản trùng (`> 1`) trong túi đồ `/phapbao` để phân rã.'
+              : `Không tìm thấy Pháp Bảo nào khớp \`${rawTarget}\` trong túi đồ \`/phapbao\` để phân rã.`,
           };
         }
 
         if (matchedRows.length > 0) {
-          const equippedRows = matchedRows.filter((r) => r.equipped_to_pet || r.slot);
-          const unequippedRows = matchedRows.filter((r) => !r.equipped_to_pet && !r.slot);
+          const deleteEntries = [];
+          const reduceEntries = [];
+          let skippedEquippedCount = 0;
 
-          if (unequippedRows.length === 0) {
-            return {
-              success: false,
-              status: 400,
-              error: 'EQUIPPED_ITEMS_PROTECTED',
-              remove_role_id: '',
-              remove_role_csv: '',
-              skipped_equipped_count: equippedRows.length,
-              message: `Toàn bộ **${equippedRows.length}** Pháp Bảo khớp yêu cầu hiện **đang được trang bị**, hệ thống đã tự động giữ lại! Hãy dùng \`/unequip loai:item\` trước nếu muốn phá.`,
-            };
-          }
-
-          let totalRefund = 0;
-          let shopCount = 0;
-          let gachaCount = 0;
-          for (const row of unequippedRows) {
-            const meta = EQUIPMENT_BY_ID[row.item_id] || {};
-            const q = getDismantleQuote('item', row, meta, now);
-            totalRefund += q.refund;
-            if (q.isShop) shopCount += 1;
-            else gachaCount += 1;
-          }
-
-          const newBalance = Number(user.linh_thach || 0) + totalRefund;
-          await Promise.all([
-            supabase.from('user_pet_items').delete().in('id', unequippedRows.map((r) => r.id)),
-            supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
-          ]);
-          for (const row of unequippedRows) {
-            if (EQUIPMENT_BY_ID[row.item_id]?.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(row.item_id)) {
-              invalidateUniqueItemCard(row.item_id);
+          for (const row of matchedRows) {
+            const qty = Math.max(1, Number(row.quantity) || 1);
+            const isEq = Boolean(row.equipped_to_pet || row.slot);
+            if (isAllDup || isEq) {
+              const extraCopies = Math.max(0, qty - 1);
+              if (extraCopies > 0) {
+                reduceEntries.push({ row, copies: extraCopies });
+              } else if (isEq) {
+                skippedEquippedCount += 1;
+              }
+            } else {
+              deleteEntries.push({ row, copies: qty });
             }
           }
 
-          const previewNames = unequippedRows.slice(0, 6).map((r) => `**${EQUIPMENT_BY_ID[r.item_id]?.item_name || r.item_id}**`).join(', ');
-          const moreTxt = unequippedRows.length > 6 ? ` *... (+${unequippedRows.length - 6} món)*` : '';
-          return {
-            success: true,
-            category: 'item',
-            batch: true,
-            dismantled_count: unequippedRows.length,
-            skipped_equipped_count: equippedRows.length,
-            remove_role_id: '',
-            remove_role_csv: '',
-            refund_linh_thach: totalRefund,
-            linh_thach: newBalance,
-            linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
-            message: [
-              `${em('su_crossed_swords')} Đã phân rã hàng loạt **${unequippedRows.length} Pháp Bảo**: ${previewNames}${moreTxt}`,
-              `• Tổng thu hồi: **+${totalRefund.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** *(Mua Shop 20%: ${shopCount} • Gacha chuẩn: ${gachaCount})*`,
-              equippedRows.length > 0 ? `• Đã tự động **giữ lại ${equippedRows.length} món đang trang bị**.` : '',
-              `• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
-            ].filter(Boolean).join('\n'),
-          };
+          const allOps = [...deleteEntries, ...reduceEntries];
+          if (allOps.length === 0) {
+            if (category === 'item' || !isAllDup) {
+              return {
+                success: false,
+                status: 400,
+                error: 'EQUIPPED_ITEMS_PROTECTED',
+                remove_role_id: '',
+                remove_role_csv: '',
+                skipped_equipped_count: skippedEquippedCount,
+                message: `Toàn bộ **${skippedEquippedCount}** Pháp Bảo khớp yêu cầu hiện **đang được trang bị** (không có bản trùng dư), hệ thống đã tự động giữ lại! Hãy dùng \`/unequip loai:item\` trước nếu muốn phá.`,
+              };
+            }
+          } else {
+            let totalRefund = 0;
+            let totalCopies = 0;
+            let shopCount = 0;
+            let gachaCount = 0;
+            for (const { row, copies } of allOps) {
+              const meta = EQUIPMENT_BY_ID[row.item_id] || {};
+              const q = getDismantleQuote('item', row, meta, now);
+              totalRefund += q.refund * copies;
+              totalCopies += copies;
+              if (q.isShop) shopCount += copies;
+              else gachaCount += copies;
+            }
+
+            const newBalance = Number(user.linh_thach || 0) + totalRefund;
+            const dbPromises = [
+              supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+            ];
+            if (deleteEntries.length > 0) {
+              dbPromises.push(supabase.from('user_pet_items').delete().in('id', deleteEntries.map((e) => e.row.id)));
+            }
+            for (const { row } of reduceEntries) {
+              dbPromises.push(supabase.from('user_pet_items').update({ quantity: 1 }).eq('id', row.id));
+            }
+            await Promise.all(dbPromises);
+
+            for (const { row } of deleteEntries) {
+              if (EQUIPMENT_BY_ID[row.item_id]?.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(row.item_id)) {
+                invalidateUniqueItemCard(row.item_id);
+              }
+            }
+
+            const previewNames = allOps.slice(0, 6).map(({ row, copies }) => `**${EQUIPMENT_BY_ID[row.item_id]?.item_name || row.item_id}**${copies > 1 ? ` ×${copies}` : ''}`).join(', ');
+            const moreTxt = allOps.length > 6 ? ` *... (+${allOps.length - 6} món)*` : '';
+            return {
+              success: true,
+              category: 'item',
+              batch: true,
+              dismantled_count: totalCopies,
+              skipped_equipped_count: skippedEquippedCount,
+              remove_role_id: '',
+              remove_role_csv: '',
+              refund_linh_thach: totalRefund,
+              linh_thach: newBalance,
+              linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
+              message: [
+                `${em('su_crossed_swords')} Đã phân rã hàng loạt **${totalCopies} Pháp Bảo**: ${previewNames}${moreTxt}`,
+                `• Tổng thu hồi: **+${totalRefund.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** *(Mua Shop 20%: ${shopCount} • Gacha chuẩn: ${gachaCount})*`,
+                (skippedEquippedCount > 0 || reduceEntries.length > 0) ? `• Đã tự động **giữ lại 1 bản gốc** cho các món đang trang bị / sưu tầm.` : '',
+                `• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
+              ].filter(Boolean).join('\n'),
+            };
+          }
         }
       }
 
@@ -1440,7 +1508,9 @@ export async function dismantleTarget(userId, payload = {}) {
         || normalizeTargetText(EQUIPMENT_BY_ID[row.item_id]?.item_name) === normTarget);
 
       if (matchedItem) {
-        if (matchedItem.equipped_to_pet || matchedItem.slot) {
+        const qty = Math.max(1, Number(matchedItem.quantity) || 1);
+        const isEq = Boolean(matchedItem.equipped_to_pet || matchedItem.slot);
+        if (isEq && qty <= 1) {
           return {
             success: false,
             status: 400,
@@ -1450,21 +1520,24 @@ export async function dismantleTarget(userId, payload = {}) {
           };
         }
 
+        const copiesToDismantle = isEq ? (qty - 1) : qty;
         const itemMeta = EQUIPMENT_BY_ID[matchedItem.item_id] || SHOP_EQUIP_BY_ID[matchedItem.item_id] || {};
         const quote = getDismantleQuote('item', matchedItem, itemMeta, now);
         const baseValue = quote.baseValue;
-        const refundLinhThach = quote.refund;
+        const refundLinhThach = quote.refund * copiesToDismantle;
         const newBalance = Number(user.linh_thach || 0) + refundLinhThach;
 
         await Promise.all([
-          supabase.from('user_pet_items').delete().eq('id', matchedItem.id),
+          isEq
+            ? supabase.from('user_pet_items').update({ quantity: 1 }).eq('id', matchedItem.id)
+            : supabase.from('user_pet_items').delete().eq('id', matchedItem.id),
           supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
         ]);
 
         const quoteLine = quote.isShop
-          ? `• Giá trị mua Shop: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **${quote.refundPct}%**: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
-          : `• Nguồn **Gacha / Quà** *(giá phân rã chuẩn chống farm)*: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`;
-        if (itemMeta.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(matchedItem.item_id)) {
+          ? `• Giá trị mua Shop: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **${quote.refundPct}%**${copiesToDismantle > 1 ? ` (×${copiesToDismantle} bản)` : ''}: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
+          : `• Nguồn **Gacha / Quà** *(giá phân rã chuẩn chống farm${copiesToDismantle > 1 ? ` ×${copiesToDismantle} bản` : ''})*: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`;
+        if (!isEq && (itemMeta.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(matchedItem.item_id))) {
           invalidateUniqueItemCard(matchedItem.item_id);
         }
 
@@ -1474,13 +1547,14 @@ export async function dismantleTarget(userId, payload = {}) {
           source: quote.source,
           item_id: matchedItem.item_id,
           item_name: itemMeta.item_name || matchedItem.item_id,
+          dismantled_count: copiesToDismantle,
           remove_role_id: '',
           remove_role_csv: '',
           base_value: baseValue,
           refund_linh_thach: refundLinhThach,
           linh_thach: newBalance,
           linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
-          message: `${em('su_crossed_swords')} Đã phân rã Pháp Bảo **${itemMeta.item_name || matchedItem.item_id}**!\n${quoteLine}\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
+          message: `${em('su_crossed_swords')} Đã phân rã **${copiesToDismantle > 1 ? `${copiesToDismantle}× ` : ''}${itemMeta.item_name || matchedItem.item_id}**${isEq ? ' *(giữ lại 1 bản đang trang bị)*' : ''}!\n${quoteLine}\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
         };
       }
 
@@ -1506,7 +1580,9 @@ export async function dismantleTarget(userId, payload = {}) {
 
       if (isBatchMode) {
         let matchedPets = [];
-        if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
+        if (isAllDup) {
+          matchedPets = allUserPets.filter((p) => (Number(p.quantity) || 1) > 1);
+        } else if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
           const rkTarget = batchRarityMap[normTarget];
           matchedPets = allUserPets.filter((p) => (PET_BY_TYPE[p.pet_type]?.rarity_key || 'common') === rkTarget);
         } else {
@@ -1530,68 +1606,91 @@ export async function dismantleTarget(userId, payload = {}) {
             error: 'PET_NOT_OWNED',
             remove_role_id: '',
             remove_role_csv: '',
-            message: `Không tìm thấy Linh Thú nào khớp \`${rawTarget}\` trong kho \`/linhthu\` để phân rã.`,
+            message: isAllDup
+              ? 'Hiện không có Linh Thú hay Pháp Bảo nào có bản trùng (`> 1`) trong kho để phân rã.'
+              : `Không tìm thấy Linh Thú nào khớp \`${rawTarget}\` trong kho \`/linhthu\` để phân rã.`,
           };
         }
 
-        const protectedPets = matchedPets.filter((p) => p.is_active || p.pet_type === 'hoa_thach_nham_nham' || p.pet_type === 'cuu_vi_hong_ho');
-        let dismantlablePets = matchedPets.filter((p) => !p.is_active && p.pet_type !== 'hoa_thach_nham_nham' && p.pet_type !== 'cuu_vi_hong_ho');
+        const deleteEntries = [];
+        const reduceEntries = [];
+        let skippedProtectedCount = 0;
+        let remainingPetRows = allUserPets.length;
 
-        // Đảm bảo luôn giữ lại tối thiểu 1 Linh Thú trong kho
-        const maxCanDelete = Math.max(0, allUserPets.length - 1);
-        if (dismantlablePets.length > maxCanDelete) {
-          dismantlablePets = dismantlablePets.slice(0, maxCanDelete);
+        for (const p of matchedPets) {
+          const qty = Math.max(1, Number(p.quantity) || 1);
+          const isBaseProtected = Boolean(p.is_active || p.pet_type === 'hoa_thach_nham_nham' || p.pet_type === 'cuu_vi_hong_ho');
+          if (isAllDup || isBaseProtected || remainingPetRows <= 1) {
+            const extraCopies = Math.max(0, qty - 1);
+            if (extraCopies > 0) {
+              reduceEntries.push({ row: p, copies: extraCopies });
+            } else {
+              skippedProtectedCount += 1;
+            }
+          } else {
+            deleteEntries.push({ row: p, copies: qty });
+            remainingPetRows -= 1;
+          }
         }
 
-        if (dismantlablePets.length === 0) {
+        const allOps = [...deleteEntries, ...reduceEntries];
+        if (allOps.length === 0) {
           return {
             success: false,
             status: 400,
             error: 'PROTECTED_PETS_ONLY',
             remove_role_id: '',
             remove_role_csv: '',
-            skipped_equipped_count: protectedPets.length,
-            message: `Toàn bộ **${protectedPets.length}** Linh Thú khớp yêu cầu đều được bảo vệ *(đang xuất trận, Pet khởi đầu \`hoa_thach_nham_nham\`, Cửu Vĩ Hồng Hồ hoặc Pet cuối cùng)*!`,
+            skipped_equipped_count: skippedProtectedCount,
+            message: `Toàn bộ **${skippedProtectedCount}** Linh Thú khớp yêu cầu đều được bảo vệ *(đang xuất trận, Pet khởi đầu \`hoa_thach_nham_nham\`, Cửu Vĩ Hồng Hồ hoặc Pet cuối cùng và không có bản trùng dư)*!`,
           };
         }
 
         let totalRefund = 0;
+        let totalCopies = 0;
         let shopCount = 0;
         let gachaCount = 0;
-        for (const row of dismantlablePets) {
+        for (const { row, copies } of allOps) {
           const petMeta = PET_BY_TYPE[row.pet_type] || SHOP_PET_BY_ID[row.pet_type] || {};
           const q = getDismantleQuote('pet', row, petMeta, now);
-          totalRefund += q.refund;
-          if (q.isShop) shopCount += 1;
-          else gachaCount += 1;
+          totalRefund += q.refund * copies;
+          totalCopies += copies;
+          if (q.isShop) shopCount += copies;
+          else gachaCount += copies;
         }
 
         const newBalance = Number(user.linh_thach || 0) + totalRefund;
-        const delPetIds = dismantlablePets.map((p) => p.pet_id);
-        const delPetTypes = dismantlablePets.map((p) => p.pet_type);
-        await Promise.all([
-          supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).in('equipped_to_pet', delPetTypes),
-          supabase.from('user_pets').delete().in('pet_id', delPetIds),
+        const dbPromises = [
           supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
-        ]);
+        ];
+        if (deleteEntries.length > 0) {
+          const delPetIds = deleteEntries.map((e) => e.row.pet_id);
+          const delPetTypes = deleteEntries.map((e) => e.row.pet_type);
+          dbPromises.push(supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).in('equipped_to_pet', delPetTypes));
+          dbPromises.push(supabase.from('user_pets').delete().in('pet_id', delPetIds));
+        }
+        for (const { row } of reduceEntries) {
+          dbPromises.push(supabase.from('user_pets').update({ quantity: 1 }).eq('pet_id', row.pet_id));
+        }
+        await Promise.all(dbPromises);
 
-        const previewNames = dismantlablePets.slice(0, 6).map((p) => `**${p.pet_name}**`).join(', ');
-        const moreTxt = dismantlablePets.length > 6 ? ` *... (+${dismantlablePets.length - 6} pet)*` : '';
+        const previewNames = allOps.slice(0, 6).map(({ row, copies }) => `**${row.pet_name}**${copies > 1 ? ` ×${copies}` : ''}`).join(', ');
+        const moreTxt = allOps.length > 6 ? ` *... (+${allOps.length - 6} pet)*` : '';
         return {
           success: true,
           category: 'pet',
           batch: true,
-          dismantled_count: dismantlablePets.length,
-          skipped_equipped_count: protectedPets.length,
+          dismantled_count: totalCopies,
+          skipped_equipped_count: skippedProtectedCount,
           remove_role_id: '',
           remove_role_csv: '',
           refund_linh_thach: totalRefund,
           linh_thach: newBalance,
           linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
           message: [
-            `${em('su_pet_paw')} Đã giải phóng / phân rã hàng loạt **${dismantlablePets.length} Linh Thú**: ${previewNames}${moreTxt}`,
+            `${em('su_pet_paw')} Đã giải phóng / phân rã hàng loạt **${totalCopies} Linh Thú**: ${previewNames}${moreTxt}`,
             `• Tổng thu hồi: **+${totalRefund.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** *(Mua Shop 25%: ${shopCount} • Gacha chuẩn: ${gachaCount})*`,
-            protectedPets.length > 0 ? `• Đã tự động **giữ lại ${protectedPets.length} Linh Thú được bảo vệ** *(đang xuất trận / tân thủ)*.` : '',
+            (skippedProtectedCount > 0 || reduceEntries.length > 0) ? `• Đã tự động **giữ lại bản chính** cho các Linh Thú đang xuất trận / tân thủ / sưu tầm.` : '',
             `• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
           ].filter(Boolean).join('\n'),
         };
@@ -1603,34 +1702,50 @@ export async function dismantleTarget(userId, payload = {}) {
         || normalizeTargetText(p.pet_name) === normTarget);
 
       if (matchedPet) {
-        if (matchedPet.pet_type === 'hoa_thach_nham_nham') {
-          return { success: false, status: 400, error: 'STARTER_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú khởi đầu **Hóa Thạch Nham Nham Thú**!' };
-        }
-        if (matchedPet.pet_type === 'cuu_vi_hong_ho') {
-          return { success: false, status: 400, error: 'EXCLUSIVE_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú độc tôn **Cửu Vĩ Hồng Hồ**!' };
-        }
-        if (matchedPet.is_active) {
-          return { success: false, status: 400, error: 'ACTIVE_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: `Không thể phân rã **${matchedPet.pet_name}** khi đang xuất trận! Hãy đổi sang Linh Thú khác bằng \`/linhthu hanh_dong:active\` trước.` };
-        }
-        if (allUserPets.length <= 1) {
-          return { success: false, status: 400, error: 'LAST_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú cuối cùng trong kho!' };
+        const qty = Math.max(1, Number(matchedPet.quantity) || 1);
+        const isBaseProtected = Boolean(
+          matchedPet.pet_type === 'hoa_thach_nham_nham'
+          || matchedPet.pet_type === 'cuu_vi_hong_ho'
+          || matchedPet.is_active
+          || allUserPets.length <= 1
+        );
+
+        if (qty <= 1) {
+          if (matchedPet.pet_type === 'hoa_thach_nham_nham') {
+            return { success: false, status: 400, error: 'STARTER_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú khởi đầu **Hóa Thạch Nham Nham Thú**!' };
+          }
+          if (matchedPet.pet_type === 'cuu_vi_hong_ho') {
+            return { success: false, status: 400, error: 'EXCLUSIVE_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú độc tôn **Cửu Vĩ Hồng Hồ**!' };
+          }
+          if (matchedPet.is_active) {
+            return { success: false, status: 400, error: 'ACTIVE_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: `Không thể phân rã **${matchedPet.pet_name}** khi đang xuất trận! Hãy đổi sang Linh Thú khác bằng \`/linhthu hanh_dong:active\` trước.` };
+          }
+          if (allUserPets.length <= 1) {
+            return { success: false, status: 400, error: 'LAST_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú cuối cùng trong kho!' };
+          }
         }
 
+        const copiesToDismantle = isBaseProtected ? (qty - 1) : qty;
         const petMeta = PET_BY_TYPE[matchedPet.pet_type] || SHOP_PET_BY_ID[matchedPet.pet_type] || {};
         const quote = getDismantleQuote('pet', matchedPet, petMeta, now);
         const baseValue = quote.baseValue;
-        const refundLinhThach = quote.refund;
+        const refundLinhThach = quote.refund * copiesToDismantle;
         const newBalance = Number(user.linh_thach || 0) + refundLinhThach;
 
-        await Promise.all([
-          supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).eq('equipped_to_pet', matchedPet.pet_type),
-          supabase.from('user_pets').delete().eq('pet_id', matchedPet.pet_id),
+        const dbOps = [
           supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
-        ]);
+        ];
+        if (isBaseProtected) {
+          dbOps.push(supabase.from('user_pets').update({ quantity: 1 }).eq('pet_id', matchedPet.pet_id));
+        } else {
+          dbOps.push(supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).eq('equipped_to_pet', matchedPet.pet_type));
+          dbOps.push(supabase.from('user_pets').delete().eq('pet_id', matchedPet.pet_id));
+        }
+        await Promise.all(dbOps);
 
         const quoteLine = quote.isShop
-          ? `• Giá trị mua Shop: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **${quote.refundPct}%**: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
-          : `• Nguồn **Gacha / Quà** *(giá phân rã chuẩn chống farm)*: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`;
+          ? `• Giá trị mua Shop: **${baseValue.toLocaleString('vi-VN')}** ${em('su_linhthach')} → Hoàn trả **${quote.refundPct}%**${copiesToDismantle > 1 ? ` (×${copiesToDismantle} bản)` : ''}: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
+          : `• Nguồn **Gacha / Quà** *(giá phân rã chuẩn chống farm${copiesToDismantle > 1 ? ` ×${copiesToDismantle} bản` : ''})*: **+${refundLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`;
 
         return {
           success: true,
@@ -1638,13 +1753,14 @@ export async function dismantleTarget(userId, payload = {}) {
           source: quote.source,
           pet_type: matchedPet.pet_type,
           pet_name: matchedPet.pet_name,
+          dismantled_count: copiesToDismantle,
           remove_role_id: '',
           remove_role_csv: '',
           base_value: baseValue,
           refund_linh_thach: refundLinhThach,
           linh_thach: newBalance,
           linh_thach_fmt: newBalance.toLocaleString('vi-VN'),
-          message: `${em('su_pet_paw')} Đã giải phóng / phân rã Linh Thú **${matchedPet.pet_name}**!\n${quoteLine}\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
+          message: `${em('su_pet_paw')} Đã giải phóng / phân rã **${copiesToDismantle > 1 ? `${copiesToDismantle}× ` : ''}${matchedPet.pet_name}**${isBaseProtected ? ' *(giữ lại 1 bản chính đang dùng)*' : ''}!\n${quoteLine}\n• Số dư hiện tại: **${newBalance.toLocaleString('vi-VN')} Linh Thạch**`,
         };
       }
     }

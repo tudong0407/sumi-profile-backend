@@ -3,6 +3,7 @@ globalThis.WebSocket = WebSocket;
 
 import {
   GraphBuilder,
+  attachUpdateAckBranch,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
@@ -160,15 +161,15 @@ export function buildTopCmd() {
 }
 
 // ============================================================================
-// 2. /nhiemvu — 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng PvE
+// 2. /nhiemvu — 3 Nhiệm Vụ Ngày + 3 Khế Ước Tuần + Tháp Thí Luyện 200 Tầng PvE
 // ============================================================================
 export function buildNhiemVuCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('nhiemvu', 'Nhiệm Vụ Ngày (3/3 nhận thưởng) & Tháp Thí Luyện 100 Tầng PvE', { ephemeral: false });
+  gb.rootSlash('nhiemvu', 'Nhiệm Vụ Ngày (3/3), Khế Ước Tuần (3/3) & Tháp Thí Luyện 200 Tầng PvE', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('hanh_dong', 'string', 'Chọn hành động', {
     required: true,
-    choices: ['status', 'claim', 'tower', 'reset'],
+    choices: ['status', 'claim', 'claim_weekly', 'tower', 'reset'],
     x: 420,
     y: 0,
   });
@@ -176,10 +177,11 @@ export function buildNhiemVuCmd() {
   gb.cond('nv_mode', 'comparison', { base_value: '{option_hanh_dong}', target: { self: true } }, { x: 0, y: 220 });
   gb.link('root', 'nv_mode');
 
-  const bClaim = gb.branch('nv_mode', 'nv_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -450, y: 400 });
-  const bTower = gb.branch('nv_mode', 'nv_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: -150, y: 400 });
-  const bReset = gb.branch('nv_mode', 'nv_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 150, y: 400 });
-  const bStat = gb.elseBranch('nv_mode', 'nv_stat', 'comparison', { x: 450, y: 400 });
+  const bClaim = gb.branch('nv_mode', 'nv_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -600, y: 400 });
+  const bWeekly = gb.branch('nv_mode', 'nv_weekly', 'comparison', { type: 'equal_to', comparison_value: 'claim_weekly', ignoreCase: true, option: '', not: false }, { x: -300, y: 400 });
+  const bTower = gb.branch('nv_mode', 'nv_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: 0, y: 400 });
+  const bReset = gb.branch('nv_mode', 'nv_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 300, y: 400 });
+  const bStat = gb.elseBranch('nv_mode', 'nv_stat', 'comparison', { x: 600, y: 400 });
 
   // Claim 3/3 Daily Quests
   embedMsg(gb, 'nv_claim_ack', {
@@ -187,7 +189,7 @@ export function buildNhiemVuCmd() {
     description: 'Đang xác nhận điều kiện hoàn tất 3/3 nhiệm vụ...',
     color: '#10b981',
     editId: 'nv_claim_ack',
-  }, { x: -350, y: 600 });
+  }, { x: -600, y: 600 });
   gb.link(bClaim, 'nv_claim_ack');
 
   apiAction(
@@ -197,9 +199,11 @@ export function buildNhiemVuCmd() {
     'POST',
     `${BACKEND_BASE}/api/quest/claim`,
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}',
-    { x: -350, y: 780 },
+    { x: -600, y: 780 },
   );
   gb.link('nv_claim_ack', 'nv_claim_api');
+
+  const nvcNoAck = attachUpdateAckBranch(gb, 'nvc', 'nv_claim_api', 'nv_claim_res', { editId: 'nv_claim_ack', x: -600, y: 940 });
 
   embedMsg(gb, 'nv_claim_edit', {
     title: `${em('su_winner_trophy')} NHẬN THƯỞNG NHIỆM VỤ NGÀY`,
@@ -207,8 +211,39 @@ export function buildNhiemVuCmd() {
     color: '#10b981',
     target: { editId: 'nv_claim_ack' },
     action_id: 'nv_claim_ack',
-  }, { x: -350, y: 960 });
-  gb.link('nv_claim_api', 'nv_claim_edit');
+  }, { x: -600, y: 1120 });
+  gb.link(nvcNoAck, 'nv_claim_edit');
+
+  // Claim Weekly Contracts
+  embedMsg(gb, 'nv_weekly_ack', {
+    title: `${em('su_enchant_stone')} Đang kiểm tra Khế Ước Tuần...`,
+    description: 'Đang đối chiếu tiến độ 3 Khế Ước Tuần của {user_displayName}...',
+    color: '#a855f7',
+    editId: 'nv_weekly_ack',
+  }, { x: -300, y: 600 });
+  gb.link(bWeekly, 'nv_weekly_ack');
+
+  apiAction(
+    gb,
+    'nv_weekly_api',
+    'nv_weekly_res',
+    'POST',
+    `${BACKEND_BASE}/api/quest/claim-weekly`,
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}',
+    { x: -300, y: 780 },
+  );
+  gb.link('nv_weekly_ack', 'nv_weekly_api');
+
+  const nvwNoAck = attachUpdateAckBranch(gb, 'nvw', 'nv_weekly_api', 'nv_weekly_res', { editId: 'nv_weekly_ack', x: -300, y: 940 });
+
+  embedMsg(gb, 'nv_weekly_edit', {
+    title: `${em('su_winner_trophy')} NHẬN THƯỞNG KHẾ ƯỚC TUẦN`,
+    description: '{nv_weekly_res.response.message}',
+    color: '#a855f7',
+    target: { editId: 'nv_weekly_ack' },
+    action_id: 'nv_weekly_ack',
+  }, { x: -300, y: 1120 });
+  gb.link(nvwNoAck, 'nv_weekly_edit');
 
   // Tower PvE Challenge
   embedMsg(gb, 'nv_tower_ack', {
@@ -230,16 +265,32 @@ export function buildNhiemVuCmd() {
   );
   gb.link('nv_tower_ack', 'nv_tower_api');
 
+  const nvtNoAck = attachUpdateAckBranch(gb, 'nvt', 'nv_tower_api', 'nv_tower_res', { editId: 'nv_tower_ack', x: 0, y: 940 });
+
+  const cTowerHasImg = gb.cmp('nv_tower_has_img', '{nv_tower_res.response.image_url}', '^https://', 'matches_pattern', {}, { x: 0, y: 1120 });
+  gb.link(nvtNoAck, cTowerHasImg.condId);
+
   embedMsg(gb, 'nv_tower_edit', {
-    title: `${em('su_arena')} THÁP THÍ LUYỆN TIÊN GIỚI`,
+    title: `${em('su_arena')} THÁP THÍ LUYỆN TIÊN GIỚI (200 TẦNG)`,
     description: '{nv_tower_res.response.message}',
     color: '#f43f5e',
     imageUrl: '{nv_tower_res.response.image_url}',
     target: { editId: 'nv_tower_ack' },
     action_id: 'nv_tower_ack',
-    footer: 'SuMi Family • Tối đa 5 lượt khiêu chiến mỗi ngày (UTC+7)',
-  }, { x: 0, y: 960 });
-  gb.link('nv_tower_api', 'nv_tower_edit');
+    footer: 'SuMi Family • Tháp Thí Luyện 200 Tầng • 5 lượt/ngày (UTC+7)',
+  }, { x: -160, y: 1320 });
+  gb.link(cTowerHasImg.yes, 'nv_tower_edit');
+
+  embedMsg(gb, 'nv_tower_edit_noimg', {
+    title: `${em('su_arena')} THÁP THÍ LUYỆN TIÊN GIỚI (200 TẦNG)`,
+    description: '{nv_tower_res.response.message}',
+    color: '#f43f5e',
+    imageUrl: '',
+    target: { editId: 'nv_tower_ack' },
+    action_id: 'nv_tower_ack',
+    footer: 'SuMi Family • Tháp Thí Luyện 200 Tầng • 5 lượt/ngày (UTC+7)',
+  }, { x: 160, y: 1320 });
+  gb.link(cTowerHasImg.no, 'nv_tower_edit_noimg');
 
   // Tower Reset Card (+5 attempts)
   embedMsg(gb, 'nv_reset_ack', {
@@ -247,7 +298,7 @@ export function buildNhiemVuCmd() {
     description: 'Đang kiểm tra thẻ trong túi đồ của {user_displayName}...',
     color: '#a855f7',
     editId: 'nv_reset_ack',
-  }, { x: 150, y: 600 });
+  }, { x: 300, y: 600 });
   gb.link(bReset, 'nv_reset_ack');
 
   apiAction(
@@ -257,9 +308,11 @@ export function buildNhiemVuCmd() {
     'POST',
     `${BACKEND_BASE}/api/quest/tower/reset`,
     '{"userId":"{user_id}"}',
-    { x: 150, y: 780 },
+    { x: 300, y: 780 },
   );
   gb.link('nv_reset_ack', 'nv_reset_api');
+
+  const nvrNoAck = attachUpdateAckBranch(gb, 'nvr', 'nv_reset_api', 'nv_reset_res', { editId: 'nv_reset_ack', x: 300, y: 940 });
 
   embedMsg(gb, 'nv_reset_edit', {
     title: `${em('su_tower_reset_card')} HỒI PHỤC LƯỢT THÁP THÍ LUYỆN`,
@@ -268,8 +321,8 @@ export function buildNhiemVuCmd() {
     target: { editId: 'nv_reset_ack' },
     action_id: 'nv_reset_ack',
     footer: 'SuMi Family • Dùng Thẻ Reset Lượt Đi Tháp (/shop)',
-  }, { x: 150, y: 960 });
-  gb.link('nv_reset_api', 'nv_reset_edit');
+  }, { x: 300, y: 1120 });
+  gb.link(nvrNoAck, 'nv_reset_edit');
 
   // Status
   embedMsg(gb, 'nv_stat_ack', {
@@ -277,7 +330,7 @@ export function buildNhiemVuCmd() {
     description: 'Đang đồng bộ dữ liệu ngày hôm nay...',
     color: '#38bdf8',
     editId: 'nv_stat_ack',
-  }, { x: 350, y: 600 });
+  }, { x: 600, y: 600 });
   gb.link(bStat, 'nv_stat_ack');
 
   apiAction(
@@ -287,19 +340,21 @@ export function buildNhiemVuCmd() {
     'GET',
     `${BACKEND_BASE}/api/quest/status/{user_id}?username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`,
     '',
-    { x: 350, y: 780 },
+    { x: 600, y: 780 },
   );
   gb.link('nv_stat_ack', 'nv_stat_api');
 
+  const nvsNoAck = attachUpdateAckBranch(gb, 'nvs', 'nv_stat_api', 'nv_stat_res', { editId: 'nv_stat_ack', x: 600, y: 940 });
+
   embedMsg(gb, 'nv_stat_edit', {
-    title: `${em('su_wiki_scroll')} BẢNG NHIỆM VỤ & THÁP THÍ LUYỆN`,
+    title: `${em('su_wiki_scroll')} BẢNG NHIỆM VỤ & THÁP THÍ LUYỆN (200 TẦNG)`,
     description: '{nv_stat_res.response.message}',
     color: '#38bdf8',
     target: { editId: 'nv_stat_ack' },
     action_id: 'nv_stat_ack',
-    footer: 'SuMi Family • Reset 00:00 UTC+7 mỗi ngày',
-  }, { x: 350, y: 960 });
-  gb.link('nv_stat_api', 'nv_stat_edit');
+    footer: 'SuMi Family • Reset 00:00 UTC+7 mỗi ngày & Thứ Hai hàng tuần',
+  }, { x: 600, y: 1120 });
+  gb.link(nvsNoAck, 'nv_stat_edit');
 
   return gb.elements();
 }
@@ -339,6 +394,8 @@ export function buildTangQuaCmd() {
   );
   gb.link('tq_ack', 'tq_api');
 
+  const tqNoAck = attachUpdateAckBranch(gb, 'tq', 'tq_api', 'gift_res', { editId: 'tq_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'tq_edit', {
     title: `${em('su_sparkle')} TRAO TẶNG LỄ VẬT`,
     description: '{gift_res.response.message}',
@@ -346,8 +403,8 @@ export function buildTangQuaCmd() {
     target: { editId: 'tq_ack' },
     action_id: 'tq_ack',
     footer: 'SuMi Family • Hạn mức +5.000 LT/ngày mỗi 10 Cấp (tối đa 50.000 ở Lv.100) & 5 Vật Phẩm/ngày',
-  }, { x: 0, y: 580 });
-  gb.link('tq_api', 'tq_edit');
+  }, { x: 240, y: 780 });
+  gb.link(tqNoAck, 'tq_edit');
 
   return gb.elements();
 }

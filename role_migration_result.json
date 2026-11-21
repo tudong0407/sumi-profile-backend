@@ -1,0 +1,1749 @@
+{
+  "ok": true,
+  "deletedCount": 21,
+  "deleted": [
+    {
+      "id": "1543998700068544592",
+      "name": "✦ ──────・ ✨ Custom-Roles ✨ ・──── ✦",
+      "status": 204
+    },
+    {
+      "id": "1544380217223675904",
+      "name": "Người ngáo",
+      "status": 204
+    },
+    {
+      "id": "1544382189913899120",
+      "name": "ca sĩ",
+      "status": 204
+    },
+    {
+      "id": "1544386565273288716",
+      "name": "<@1035807938331291738>",
+      "status": 204
+    },
+    {
+      "id": "1544386608080494752",
+      "name": "Người",
+      "status": 204
+    },
+    {
+      "id": "1544386903787442256",
+      "name": "TA Global",
+      "status": 204
+    },
+    {
+      "id": "1544392356156145714",
+      "name": "Người Yêu Mèo",
+      "status": 204
+    },
+    {
+      "id": "1544400526379061399",
+      "name": "Người Yêu Tiền!",
+      "status": 204
+    },
+    {
+      "id": "1544553221698093116",
+      "name": "Blue cream",
+      "status": 204
+    },
+    {
+      "id": "1544688622739914782",
+      "name": "em út",
+      "status": 204
+    },
+    {
+      "id": "1544689559286190220",
+      "name": "--28157--",
+      "status": 204
+    },
+    {
+      "id": "1544956247483097169",
+      "name": "꧁Báo Chúa꧂",
+      "status": 204
+    },
+    {
+      "id": "1545091626362478712",
+      "name": "lonely",
+      "status": 204
+    },
+    {
+      "id": "1545110406102519808",
+      "name": "Fate",
+      "status": 204
+    },
+    {
+      "id": "1545360400038498418",
+      "name": "Suntory",
+      "status": 204
+    },
+    {
+      "id": "1567719591063584868",
+      "name": "Aha",
+      "status": 204
+    },
+    {
+      "id": "1545432742227873843",
+      "name": "Yêu Xa Mệt Lắm Ai Ơi",
+      "status": 204
+    },
+    {
+      "id": "1568323508994445585",
+      "name": "Rudi",
+      "status": 204
+    },
+    {
+      "id": "1568652579976781975",
+      "name": "RanZ",
+      "status": 204
+    },
+    {
+      "id": "1570987037132193843",
+      "name": "!VAMOS!",
+      "status": 204
+    },
+    {
+      "id": "1544386902348529774",
+      "name": "Người Yêu Mèo",
+      "status": 204
+    }
+  ],
+  "createdCount": 27,
+  "createdRoles": [
+    {
+      "key": "divider_perk_roles",
+      "name": "✦ ──────・ 𓆩 Role Quyền Năng 𓆪 ・────── ✦",
+      "id": "1573185994692239460",
+      "status": 200,
+      "action": "created",
+      "perk": null
+    },
+    {
+      "key": "cuu_vi_toi_thuong",
+      "name": "« Cửu Vĩ Tối Thượng Thần Hồ »",
+      "id": "1573185998857183253",
+      "status": 200,
+      "action": "created",
+      "perk": "🛡️ Kháng Timeout & Hộ Thể"
+    },
+    {
+      "key": "sumi_de_nhat_khach_ton",
+      "name": "« SuMi Đệ Nhất Khách Tôn »",
+      "id": "1573186003101941830",
+      "status": 200,
+      "action": "created",
+      "perk": "👑 Quản Trị Voice & Chat Danh Dự"
+    },
+    {
+      "key": "van_co_chi_ton",
+      "name": "« Vạn Cổ Chí Tôn »",
+      "id": "1573186007262695644",
+      "status": 200,
+      "action": "created",
+      "perk": "🌌 Bá Chủ Voice & Thread"
+    },
+    {
+      "key": "sang_the_than_quan",
+      "name": "« Sáng Thế Thần Quân »",
+      "id": "1573186011478102096",
+      "status": 200,
+      "action": "created",
+      "perk": "✨ Sáng Thế & Buff x2.5 Linh Thạch"
+    },
+    {
+      "key": "cuu_vi_yeu_hau",
+      "name": "« Cửu Vĩ Yêu Hậu »",
+      "id": "1573186015785521265",
+      "status": 200,
+      "action": "created",
+      "perk": "🌸 Huy Hiệu Độc Tôn & Buff +80% EXP"
+    },
+    {
+      "key": "linh_am_ho_ca",
+      "name": "« Linh Âm Hồ Ca »",
+      "id": "1573186019858317422",
+      "status": 200,
+      "action": "created",
+      "perk": "🎵 Triệu Hồi Hát Live & Tâm Sự"
+    },
+    {
+      "key": "phong_thanh_ho_phap",
+      "name": "« Phong Thanh Hộ Pháp »",
+      "id": "1573186024048173076",
+      "status": 200,
+      "action": "created",
+      "perk": "🎙️ Quyền Di Chuyển Voice"
+    },
+    {
+      "key": "loi_am_ton_gia",
+      "name": "« Lôi Âm Tôn Giả »",
+      "id": "1573186028196462613",
+      "status": 200,
+      "action": "created",
+      "perk": "📢 Quyền Ưu Tiên Nói Voice"
+    },
+    {
+      "key": "tich_tinh_tan_nhan",
+      "name": "« Tịch Tĩnh Tán Nhân »",
+      "id": "1573186032289980416",
+      "status": 200,
+      "action": "created",
+      "perk": "🔇 Quyền Tắt Tiếng Voice"
+    },
+    {
+      "key": "be_tuc_chan_nhan",
+      "name": "« Bế Tức Chân Nhân »",
+      "id": "1573186036585201726",
+      "status": 200,
+      "action": "created",
+      "perk": "🎧 Quyền Tắt Tai Nghe Voice"
+    },
+    {
+      "key": "huyen_dien_dao_quan",
+      "name": "« Huyễn Diện Đạo Quân »",
+      "id": "1573186040716468316",
+      "status": 200,
+      "action": "created",
+      "perk": "🎭 Tự Do Đổi Biệt Danh"
+    },
+    {
+      "key": "dinh_danh_su_gia",
+      "name": "« Định Danh Sứ Giả »",
+      "id": "1573186045468614687",
+      "status": 200,
+      "action": "created",
+      "perk": "🏷️ Quản Lý Biệt Danh"
+    },
+    {
+      "key": "than_hanh_cot_cach",
+      "name": "« Thần Hành Cốt Cách »",
+      "id": "1573186049289756712",
+      "status": 200,
+      "action": "created",
+      "perk": "⚡ Miễn Chờ Chat Chậm"
+    },
+    {
+      "key": "hoa_do_linh_su",
+      "name": "« Họa Đồ Linh Sư »",
+      "id": "1573186053500833802",
+      "status": 200,
+      "action": "created",
+      "perk": "🖼️ Đăng Ảnh Kênh Giới Hạn"
+    },
+    {
+      "key": "van_tuong_linh_ho",
+      "name": "« Vạn Tượng Linh Hồ »",
+      "id": "1573186057778888745",
+      "status": 200,
+      "action": "created",
+      "perk": "✨ Dùng Emoji Ngoại Server"
+    },
+    {
+      "key": "than_phu_thuong_quan",
+      "name": "« Thần Phù Thượng Quan »",
+      "id": "1573186061860077568",
+      "status": 200,
+      "action": "created",
+      "perk": "🌟 Dùng Sticker Ngoại"
+    },
+    {
+      "key": "khai_son_tien_phong",
+      "name": "« Khai Sơn Tiên Phong »",
+      "id": "1573186066134073394",
+      "status": 200,
+      "action": "created",
+      "perk": "💬 Tạo Chủ Đề Công Khai"
+    },
+    {
+      "key": "mat_tang_ho_ve",
+      "name": "« Mật Tàng Hộ Vệ »",
+      "id": "1573186070206742578",
+      "status": 200,
+      "action": "created",
+      "perk": "🔒 Tạo Chủ Đề Kín"
+    },
+    {
+      "key": "tran_thu_phap_vuong",
+      "name": "« Trấn Thư Pháp Vương »",
+      "id": "1573186074153324608",
+      "status": 200,
+      "action": "created",
+      "perk": "📌 Quyền Ghim Tin Nhắn"
+    },
+    {
+      "key": "huyen_am_tien_co",
+      "name": "« Huyễn Âm Tiên Cô »",
+      "id": "1573186078402158776",
+      "status": 200,
+      "action": "created",
+      "perk": "🔊 Dùng Bảng Âm Thanh"
+    },
+    {
+      "key": "cuu_chau_dien_am",
+      "name": "« Cửu Châu Diễn Âm »",
+      "id": "1573186082768560198",
+      "status": 200,
+      "action": "created",
+      "perk": "🎶 Dùng Âm Ngoại Server"
+    },
+    {
+      "key": "linh_hon_tu_luyen",
+      "name": "« Linh Hồn Tu Luyện »",
+      "id": "1573186087088554085",
+      "status": 200,
+      "action": "created",
+      "perk": "📈 Buff +15% EXP Solo"
+    },
+    {
+      "key": "tai_van_hanh_thong",
+      "name": "« Tài Vận Hanh Thông »",
+      "id": "1573186091094245416",
+      "status": 200,
+      "action": "created",
+      "perk": "💎 Buff +20% Linh Thạch"
+    },
+    {
+      "key": "tieu_dao_khach",
+      "name": "« Tiêu Dao Khách »",
+      "id": "1573186095120908329",
+      "status": 200,
+      "action": "created",
+      "perk": "📺 Phát Trực Tiếp HD 1080p"
+    },
+    {
+      "key": "tram_phong_kiem_khach",
+      "name": "« Trảm Phong Kiếm Khách »",
+      "id": "1573186099663343747",
+      "status": 200,
+      "action": "created",
+      "perk": "🗣️ Gửi Tin Nhắn Giọng Nói TTS"
+    },
+    {
+      "key": "than_thong_thau_thi",
+      "name": "« Thần Thông Thấu Thị »",
+      "id": "1573186103664574524",
+      "status": 200,
+      "action": "created",
+      "perk": "👁️ Đọc Lịch Sử Kênh Lưu Trữ"
+    }
+  ],
+  "updatedExisting": [
+    {
+      "id": "1026096141273661450",
+      "name": "@everyone",
+      "status": 200
+    },
+    {
+      "id": "1467026294201127023",
+      "name": "Đã đọc RULES✅",
+      "status": 200
+    },
+    {
+      "id": "1038406122417176586",
+      "name": "« 5・U Linh Chớm Nở »",
+      "status": 200
+    },
+    {
+      "id": "1038405196662976562",
+      "name": "« 15・Linh Cáo Học Giả »",
+      "status": 200
+    },
+    {
+      "id": "1032988544874061836",
+      "name": "« 20・ Linh Cáo Tinh Anh »",
+      "status": 200
+    },
+    {
+      "id": "1375446293119369331",
+      "name": "« 35・Yêu Hồ Nguyệt Ảnh »",
+      "status": 200
+    },
+    {
+      "id": "1375451249952161903",
+      "name": "« 45・Huyễn Linh Thú »",
+      "status": 200
+    },
+    {
+      "id": "1375446809408962620",
+      "name": "« 60・Thiên Hồ Viễn Cổ »",
+      "status": 200
+    },
+    {
+      "id": "1473419954379554967",
+      "name": "« 80・Chi Linh Thánh Đế »",
+      "status": 200
+    },
+    {
+      "id": "1473419957655175169",
+      "name": "« 100・Hỗn Độn Chúa Tể »",
+      "status": 200
+    }
+  ],
+  "posStatus": 200,
+  "addedToFuyumi": [
+    {
+      "roleId": "1473419957655175169",
+      "status": 204
+    },
+    {
+      "roleId": "1573185998857183253",
+      "status": 204
+    },
+    {
+      "roleId": "1573186024048173076",
+      "status": 204
+    },
+    {
+      "roleId": "1573186049289756712",
+      "status": 204
+    },
+    {
+      "roleId": "1573186074153324608",
+      "status": 204
+    }
+  ],
+  "finalTotalRoles": 149,
+  "finalRoles": [
+    {
+      "position": 148,
+      "id": "1487172968105640069",
+      "name": ".",
+      "permissions": "8",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 147,
+      "id": "1468649836856344689",
+      "name": "« Huyễn Chủ »",
+      "permissions": "8864262743130111",
+      "color": 54527,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 146,
+      "id": "1519354498412314785",
+      "name": "« Tuyết Nguyệt Yêu Hồ »",
+      "permissions": "8863163231502335",
+      "color": 11134975,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 145,
+      "id": "1521913861660344320",
+      "name": "Sêu sêu đẹp",
+      "permissions": "0",
+      "color": 394758,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 144,
+      "id": "1477314328104276170",
+      "name": "« Columbina »",
+      "permissions": "8864262743130111",
+      "color": 16711769,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 143,
+      "id": "1027173664069795921",
+      "name": "« Huyền Thiên Hồ Sứ »",
+      "permissions": "8864262730547191",
+      "color": 77190,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 142,
+      "id": "1473354131732168847",
+      "name": "✦ ──────・ 𓆩 Staff Bot Roles 𓆪 ・────── ✦",
+      "permissions": "8",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 141,
+      "id": "1261172113889300493",
+      "name": "Dyno",
+      "permissions": "412555234313",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 140,
+      "id": "1528347599432712315",
+      "name": "Make",
+      "permissions": "805315609",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 139,
+      "id": "1468632899971584234",
+      "name": "« Huyết Nguyệt Yêu Hồ »",
+      "permissions": "0",
+      "color": 16777215,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 138,
+      "id": "1471121770512777349",
+      "name": "Arcane-chan ✨",
+      "permissions": "378024345672",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 137,
+      "id": "1516352430848348170",
+      "name": "Honeypot",
+      "permissions": "3102",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 136,
+      "id": "1382983050387783714",
+      "name": "Sapphire",
+      "permissions": "9311697092673",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 135,
+      "id": "1484986521952977029",
+      "name": "Bloxlink",
+      "permissions": "1007018072",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 134,
+      "id": "1474723236351709280",
+      "name": "Wick",
+      "permissions": "8",
+      "color": 11127295,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 133,
+      "id": "1474776271883079681",
+      "name": "Cách Ly",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 132,
+      "id": "1473351406147866835",
+      "name": "✦ ──────・ 𓆩 Mod Roles 𓆪 ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 131,
+      "id": "1487136488331153589",
+      "name": "« Eternal Sovereign »",
+      "permissions": "4503599828697120",
+      "color": 851994,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 130,
+      "id": "1264915703438381099",
+      "name": "« Chấp Pháp Linh Hồ »",
+      "permissions": "2337545823187655",
+      "color": 1211633,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 129,
+      "id": "1467018309059870812",
+      "name": "« Tiểu Băng Hồ »",
+      "permissions": "6841147593847491",
+      "color": 1038038,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 128,
+      "id": "1496697237978349720",
+      "name": "✦ ──────・ 𓆩 Extra Role 𓆪 ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 127,
+      "id": "1473574460656193616",
+      "name": "« Top 1・Bạch Hồ Thánh Linh »",
+      "permissions": "119263896400832",
+      "color": 16118783,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 126,
+      "id": "1519352393228222555",
+      "name": "« Bạch Nguyệt Quang »",
+      "permissions": "0",
+      "color": 16777215,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 125,
+      "id": "1473333612404539513",
+      "name": "« Dạ Hồ Ma Ảnh »",
+      "permissions": "75284538585536",
+      "color": 0,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 124,
+      "id": "1473372858657804441",
+      "name": "« Thiên Hồ Hắc Dạ »",
+      "permissions": "75249977512128",
+      "color": 0,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 123,
+      "id": "1487133030261719222",
+      "name": "✦ ──────・ 𓆩 Pet Level 𓆪 ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 122,
+      "id": "1573185994692239460",
+      "name": "✦ ──────・ 𓆩 Role Quyền Năng 𓆪 ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 121,
+      "id": "1487134136547279088",
+      "name": "« Omniscient Existence »",
+      "permissions": "4503599828697216",
+      "color": 8324357,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 120,
+      "id": "1573185998857183253",
+      "name": "« Cửu Vĩ Tối Thượng Thần Hồ »",
+      "permissions": "6795514666668800",
+      "color": 16007006,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 119,
+      "id": "1487134131522506783",
+      "name": "« Transcendent Being »",
+      "permissions": "4503599828697216",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 118,
+      "id": "1573186003101941830",
+      "name": "« SuMi Đệ Nhất Khách Tôn »",
+      "permissions": "6795514666668800",
+      "color": 16498468,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 117,
+      "id": "1487151959457923102",
+      "name": "« Boundless Singularity »",
+      "permissions": "2251800015020160",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 116,
+      "id": "1573186007262695644",
+      "name": "« Vạn Cổ Chí Tôn »",
+      "permissions": "6755932247999232",
+      "color": 11032055,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 115,
+      "id": "1487134121242394875",
+      "name": "« Singularity Manifest »",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 114,
+      "id": "1573186011478102096",
+      "name": "« Sáng Thế Thần Quân »",
+      "permissions": "6755915055547136",
+      "color": 3718648,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 113,
+      "id": "1487071105486291145",
+      "name": "« Singularity Pet »",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 112,
+      "id": "1573186015785521265",
+      "name": "« Cửu Vĩ Yêu Hậu »",
+      "permissions": "6795497344123392",
+      "color": 15485081,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 111,
+      "id": "1573186019858317422",
+      "name": "« Linh Âm Hồ Ca »",
+      "permissions": "39582455300352",
+      "color": 16020150,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 110,
+      "id": "1573186024048173076",
+      "name": "« Phong Thanh Hộ Pháp »",
+      "permissions": "53477376",
+      "color": 3718648,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 109,
+      "id": "1573186028196462613",
+      "name": "« Lôi Âm Tôn Giả »",
+      "permissions": "36700416",
+      "color": 16436245,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 108,
+      "id": "1573186032289980416",
+      "name": "« Tịch Tĩnh Tán Nhân »",
+      "permissions": "40894464",
+      "color": 9741240,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 107,
+      "id": "1573186036585201726",
+      "name": "« Bế Tức Chân Nhân »",
+      "permissions": "45088768",
+      "color": 6583435,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 106,
+      "id": "1573186040716468316",
+      "name": "« Huyễn Diện Đạo Quân »",
+      "permissions": "67108864",
+      "color": 12616956,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 105,
+      "id": "1573186045468614687",
+      "name": "« Định Danh Sứ Giả »",
+      "permissions": "201326592",
+      "color": 10980346,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 104,
+      "id": "1573186049289756712",
+      "name": "« Thần Hành Cốt Cách »",
+      "permissions": "4503599627370496",
+      "color": 16486972,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 103,
+      "id": "1573186053500833802",
+      "name": "« Họa Đồ Linh Sư »",
+      "permissions": "49152",
+      "color": 4906624,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 102,
+      "id": "1573186057778888745",
+      "name": "« Vạn Tượng Linh Hồ »",
+      "permissions": "262208",
+      "color": 16361684,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 101,
+      "id": "1573186061860077568",
+      "name": "« Thần Phù Thượng Quan »",
+      "permissions": "137438953472",
+      "color": 16498468,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 100,
+      "id": "1573186066134073394",
+      "name": "« Khai Sơn Tiên Phong »",
+      "permissions": "309237645312",
+      "color": 3003583,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 99,
+      "id": "1573186070206742578",
+      "name": "« Mật Tàng Hộ Vệ »",
+      "permissions": "343597383680",
+      "color": 8490232,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 98,
+      "id": "1573186074153324608",
+      "name": "« Trấn Thư Pháp Vương »",
+      "permissions": "2251799813685248",
+      "color": 16281969,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 97,
+      "id": "1573186078402158776",
+      "name": "« Huyễn Âm Tiên Cô »",
+      "permissions": "4398083211264",
+      "color": 15235577,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 96,
+      "id": "1573186082768560198",
+      "name": "« Cửu Châu Diễn Âm »",
+      "permissions": "39582455300096",
+      "color": 14239471,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 95,
+      "id": "1573186087088554085",
+      "name": "« Linh Hồn Tu Luyện »",
+      "permissions": "0",
+      "color": 3462041,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 94,
+      "id": "1573186091094245416",
+      "name": "« Tài Vận Hanh Thông »",
+      "permissions": "0",
+      "color": 16569165,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 93,
+      "id": "1573186095120908329",
+      "name": "« Tiêu Dao Khách »",
+      "permissions": "36700672",
+      "color": 6333946,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 92,
+      "id": "1573186099663343747",
+      "name": "« Trảm Phong Kiếm Khách »",
+      "permissions": "4096",
+      "color": 16478597,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 91,
+      "id": "1573186103664574524",
+      "name": "« Thần Thông Thấu Thị »",
+      "permissions": "66560",
+      "color": 10859772,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 90,
+      "id": "1473298013542813777",
+      "name": "✦ ──────・ 🫧 Color Roles🫧 ・──── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 89,
+      "id": "1520752319552159887",
+      "name": "Sêu đẹp",
+      "permissions": "0",
+      "color": 8606988,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 88,
+      "id": "1520656914386653264",
+      "name": "Strawberry Milk 🧋",
+      "permissions": "0",
+      "color": 16574207,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 87,
+      "id": "1520656918589472788",
+      "name": "Blush 🎀",
+      "permissions": "0",
+      "color": 16701417,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 86,
+      "id": "1520656921932337222",
+      "name": "Peach 🍑",
+      "permissions": "0",
+      "color": 16707292,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 85,
+      "id": "1520657533163798529",
+      "name": "Cream 🍨",
+      "permissions": "0",
+      "color": 16776925,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 84,
+      "id": "1520658097541087352",
+      "name": "Blueberry 🫐",
+      "permissions": "0",
+      "color": 10794480,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 83,
+      "id": "1520657508169941053",
+      "name": "Mint 🍀",
+      "permissions": "0",
+      "color": 13631436,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 82,
+      "id": "1520656899408658453",
+      "name": "Kiwi 🥝",
+      "permissions": "0",
+      "color": 15072190,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 81,
+      "id": "1520658103547465898",
+      "name": "Cloud 🌨️",
+      "permissions": "0",
+      "color": 15791354,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 80,
+      "id": "1520658090888925194",
+      "name": "Bubble 🫧",
+      "permissions": "0",
+      "color": 9364974,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 79,
+      "id": "1520658100590350417",
+      "name": "Sky 🌈",
+      "permissions": "0",
+      "color": 10539004,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 78,
+      "id": "1520658106898579697",
+      "name": "Lollipop 🍭",
+      "permissions": "0",
+      "color": 13944059,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 77,
+      "id": "1520658094307410030",
+      "name": "Lavender 🪻",
+      "permissions": "0",
+      "color": 15044856,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 76,
+      "id": "1473352137466577107",
+      "name": "✦ ──────・ 𓆩 Special Roles 𓆪 ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 75,
+      "id": "1038261276817768458",
+      "name": "« Thiên Linh Cáo »",
+      "permissions": "36256203788865",
+      "color": 11127295,
+      "hoist": true,
+      "managed": true
+    },
+    {
+      "position": 74,
+      "id": "1480903611134246973",
+      "name": "« Linh Sử Ký Giả »",
+      "permissions": "119820161900993",
+      "color": 16726843,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 73,
+      "id": "1480926995477958728",
+      "name": "« Pet Of Fuyumi »",
+      "permissions": "111022793675328",
+      "color": 16159709,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 72,
+      "id": "1473350297442189493",
+      "name": "✦ ──────・ ⚙️Bot Roles ⚙️ ・────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 71,
+      "id": "1466391979205333176",
+      "name": "TempVoice",
+      "permissions": "377976307721",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 70,
+      "id": "1469877254552293520",
+      "name": "Music Bot 🎶",
+      "permissions": "40138950312728",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 69,
+      "id": "1465938056057192561",
+      "name": "Discohook Utils",
+      "permissions": "9073051918463",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 68,
+      "id": "1249850686666182679",
+      "name": "Quản Anime Champion 🥊",
+      "permissions": "138538464048119",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 67,
+      "id": "1261167020117065772",
+      "name": "ProBot ✨",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 66,
+      "id": "1039825046228717590",
+      "name": "GiveawayBot",
+      "permissions": "347208",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 65,
+      "id": "1511036025047355475",
+      "name": "Emoji.gg Bot",
+      "permissions": "8936753581056",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 64,
+      "id": "1509184988648570923",
+      "name": "Coinflip Bot",
+      "permissions": "103079562304",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 63,
+      "id": "1517785153085112405",
+      "name": "Discadia",
+      "permissions": "8796093022208",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 62,
+      "id": "1506611719529562163",
+      "name": "ZeroTwo",
+      "permissions": "10431565914305",
+      "color": 0,
+      "hoist": false,
+      "managed": true
+    },
+    {
+      "position": 61,
+      "id": "1473297416928235611",
+      "name": "✦ ─────・ 🌸 Level Roles 🌸 ・───── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 60,
+      "id": "1473419957655175169",
+      "name": "« 100・Hỗn Độn Chúa Tể »",
+      "permissions": "6795514666668800",
+      "color": 1509415,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 59,
+      "id": "1473419954379554967",
+      "name": "« 80・Chi Linh Thánh Đế »",
+      "permissions": "6866439644762944",
+      "color": 4118718,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 58,
+      "id": "1375446809408962620",
+      "name": "« 60・Thiên Hồ Viễn Cổ »",
+      "permissions": "6866422464889664",
+      "color": 13799203,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 57,
+      "id": "1375451249952161903",
+      "name": "« 45・Huyễn Linh Thú »",
+      "permissions": "6866422464889408",
+      "color": 10373359,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 56,
+      "id": "1375446293119369331",
+      "name": "« 35・Yêu Hồ Nguyệt Ảnh »",
+      "permissions": "6866422330671680",
+      "color": 2388880,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 55,
+      "id": "1032988544874061836",
+      "name": "« 20・ Linh Cáo Tinh Anh »",
+      "permissions": "111022881227584",
+      "color": 1675427,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 54,
+      "id": "1038405196662976562",
+      "name": "« 15・Linh Cáo Học Giả »",
+      "permissions": "2362822673941056",
+      "color": 10382335,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 53,
+      "id": "1038406122417176586",
+      "name": "« 5・U Linh Chớm Nở »",
+      "permissions": "111022860255808",
+      "color": 13369195,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 52,
+      "id": "1026099349689741322",
+      "name": "⛓️ Nô lệ ⛓️",
+      "permissions": "1166554023956032",
+      "color": 11250859,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 51,
+      "id": "1517780321804881920",
+      "name": "✦ ──────・ 𓆩 Shop Roles 𓆪 ・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 50,
+      "id": "1487300505603407942",
+      "name": "« Shop »",
+      "permissions": "0",
+      "color": 14880907,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 49,
+      "id": "1495111239125438526",
+      "name": "« Supporter »",
+      "permissions": "0",
+      "color": 16735702,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 48,
+      "id": "1517780267996152029",
+      "name": "« TOS - Shop »",
+      "permissions": "0",
+      "color": 65280,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 47,
+      "id": "1520763460357722183",
+      "name": "✦ ───────・ 𓆩 Zodiac 𓆪 ・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 46,
+      "id": "1520763463457308833",
+      "name": "« Aries »",
+      "permissions": "0",
+      "color": 16738893,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 45,
+      "id": "1520763468553392168",
+      "name": "« Taurus »",
+      "permissions": "0",
+      "color": 5156686,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 44,
+      "id": "1520763469295784117",
+      "name": "« Gemini »",
+      "permissions": "0",
+      "color": 16769869,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 43,
+      "id": "1520763483598098582",
+      "name": "« Cancer »",
+      "permissions": "0",
+      "color": 15527148,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 42,
+      "id": "1520763464488845392",
+      "name": "« Leo »",
+      "permissions": "0",
+      "color": 16753459,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 41,
+      "id": "1520763480267817072",
+      "name": "« Virgo »",
+      "permissions": "0",
+      "color": 10648408,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 40,
+      "id": "1520764417636307015",
+      "name": "« Libra »",
+      "permissions": "0",
+      "color": 16762320,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 39,
+      "id": "1520763469748633601",
+      "name": "« Scorpio »",
+      "permissions": "0",
+      "color": 10040141,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 38,
+      "id": "1520763467102162954",
+      "name": "« Sagittarius »",
+      "permissions": "0",
+      "color": 11111645,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 37,
+      "id": "1520763477743108212",
+      "name": "« Capricorn »",
+      "permissions": "0",
+      "color": 7241329,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 36,
+      "id": "1520763467961864214",
+      "name": "« Aquarius »",
+      "permissions": "0",
+      "color": 3407871,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 35,
+      "id": "1520763462836420628",
+      "name": "« Pisces »",
+      "permissions": "0",
+      "color": 6743769,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 34,
+      "id": "1473354694356369478",
+      "name": "✦ ──────・ 𓆩 Game Roles 𓆪 ・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 33,
+      "id": "1263328069977112717",
+      "name": "Roblox",
+      "permissions": "0",
+      "color": 14796498,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 32,
+      "id": "1520702124076568606",
+      "name": "Genshin Impact",
+      "permissions": "0",
+      "color": 16109012,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 31,
+      "id": "1520702159157461123",
+      "name": "Honkai Star Rail",
+      "permissions": "0",
+      "color": 12699384,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 30,
+      "id": "1520702162894852126",
+      "name": "Minecraft",
+      "permissions": "0",
+      "color": 13166281,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 29,
+      "id": "1520702165969141786",
+      "name": "League of Legends",
+      "permissions": "0",
+      "color": 15984822,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 28,
+      "id": "1520702168489791630",
+      "name": "Valorant",
+      "permissions": "0",
+      "color": 2854371,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 27,
+      "id": "1520702171148976249",
+      "name": "Counter-Strike 2",
+      "permissions": "0",
+      "color": 12379103,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 26,
+      "id": "1520712186710851675",
+      "name": "Teamfight Tactics",
+      "permissions": "0",
+      "color": 16048077,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 25,
+      "id": "1520712180700282920",
+      "name": "AOV",
+      "permissions": "0",
+      "color": 11916773,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 24,
+      "id": "1520712183833559181",
+      "name": "Pokemon",
+      "permissions": "0",
+      "color": 15259076,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 23,
+      "id": "1473355357341487196",
+      "name": "✦ ──────・ 𓆩 Announcements  𓆪 ・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 22,
+      "id": "1465959727505604608",
+      "name": "New Video",
+      "permissions": "0",
+      "color": 10915172,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 21,
+      "id": "1466818494149427396",
+      "name": "Discord Update",
+      "permissions": "0",
+      "color": 3447003,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 20,
+      "id": "1465959742534062190",
+      "name": "Livestream",
+      "permissions": "0",
+      "color": 10181046,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 19,
+      "id": "1473354966415573012",
+      "name": "✦ ──────・ 𓆩 Misc Roles 𓆪 ・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 18,
+      "id": "1529344605105950760",
+      "name": "« Trưởng Hạm Đội »",
+      "permissions": "0",
+      "color": 13675084,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 17,
+      "id": "1380380911618490378",
+      "name": "Fox Uy Tín",
+      "permissions": "0",
+      "color": 6815490,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 16,
+      "id": "1383036559304949830",
+      "name": "Nam 🙍‍♂️",
+      "permissions": "0",
+      "color": 3447003,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 15,
+      "id": "1383036974910148723",
+      "name": "Nữ 🙍‍♀️",
+      "permissions": "0",
+      "color": 11342935,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 14,
+      "id": "1466049264244494438",
+      "name": "Gay🏳️‍🌈",
+      "permissions": "49152",
+      "color": 15946960,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 13,
+      "id": "1466049275594014720",
+      "name": "Lét✂️",
+      "permissions": "0",
+      "color": 14035318,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 12,
+      "id": "1467026294201127023",
+      "name": "Đã đọc RULES✅",
+      "permissions": "67158016",
+      "color": 1752220,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 11,
+      "id": "1476472631807967315",
+      "name": "Bienthai-san",
+      "permissions": "0",
+      "color": 14725119,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 10,
+      "id": "1506521066313486497",
+      "name": "UTD - SuMi",
+      "permissions": "0",
+      "color": 8834793,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 9,
+      "id": "1488903485914091612",
+      "name": "CC-Inviter",
+      "permissions": "0",
+      "color": 8886702,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 8,
+      "id": "1473354458212864125",
+      "name": "✦ ──────・ Punish Roles・─────── ✦",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 7,
+      "id": "1511043534805930015",
+      "name": "Block-Shopping",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 6,
+      "id": "1470822857566064856",
+      "name": "Unbanned accounts",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 5,
+      "id": "1471111216423370792",
+      "name": "Locked XP",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 4,
+      "id": "1472831839600381974",
+      "name": "warn 1",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 3,
+      "id": "1472831888162033758",
+      "name": "warn 2",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 2,
+      "id": "1472831911020728446",
+      "name": "warn 3",
+      "permissions": "0",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    },
+    {
+      "position": 1,
+      "id": "1162777123333886072",
+      "name": "BOT",
+      "permissions": "138538464048119",
+      "color": 0,
+      "hoist": true,
+      "managed": false
+    },
+    {
+      "position": 0,
+      "id": "1026096141273661450",
+      "name": "@everyone",
+      "permissions": "111022860255808",
+      "color": 0,
+      "hoist": false,
+      "managed": false
+    }
+  ]
+}

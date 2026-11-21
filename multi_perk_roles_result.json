@@ -1,0 +1,603 @@
+{
+  "ok": true,
+  "posStatus": 200,
+  "totalRoles": 163,
+  "createdOrUpdated": [
+    {
+      "key": "song_tuyet_kiem_khach",
+      "name": "« Song Tuyệt Kiếm Khách »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 6333946,
+      "permissions": "6755399441055744",
+      "perk": "⚡📌 Miễn Slowmode & Ghim Tin Nhắn",
+      "id": "1573577773279219763",
+      "status": 200
+    },
+    {
+      "key": "huyen_anh_linh_ton",
+      "name": "« Huyễn Ảnh Linh Tôn »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 8490232,
+      "permissions": "137506324480",
+      "perk": "🎭✨ Đổi Nickname, Emoji/Sticker Ngoại & +10% EXP",
+      "id": "1573577776454434899",
+      "status": 200
+    },
+    {
+      "key": "loi_vu_ho_phap",
+      "name": "« Lôi Vũ Hộ Pháp »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 3718648,
+      "permissions": "53477632",
+      "perk": "🎙️📢 Di Chuyển & Ưu Tiên Nói Voice",
+      "id": "1573577779621138542",
+      "status": 200
+    },
+    {
+      "key": "han_ngoc_tien_tu",
+      "name": "« Hàn Ngọc Tiên Tử »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 2282478,
+      "permissions": "39582455300608",
+      "perk": "📺🔊 Stream HD, Soundboard Ngoại & +10% Daily LT",
+      "id": "1573577782380728410",
+      "status": 200
+    },
+    {
+      "key": "mat_cac_truong_lao",
+      "name": "« Mật Các Trưởng Lão »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 3003583,
+      "permissions": "377957187584",
+      "perk": "💬👁️ Tạo Thread Kín/Mở, Đọc Kênh Ẩn & +12% EXP",
+      "id": "1573577786218651688",
+      "status": 200
+    },
+    {
+      "key": "kim_tien_dao_nhan",
+      "name": "« Kim Tiền Đạo Nhân »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 16498468,
+      "permissions": "262208",
+      "perk": "💎🏷️ Buff +25% Daily LT & Giảm 5% Giá Shop",
+      "id": "1573577788965781504",
+      "status": 200
+    },
+    {
+      "key": "chien_hon_tien_phong",
+      "name": "« Chiến Hồn Tiên Phong »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 16478597,
+      "permissions": "4503599627419648",
+      "perk": "⚔️⚡ Buff +8% Chiến Lực Pet & Miễn Slowmode",
+      "id": "1573577794091225108",
+      "status": 200
+    },
+    {
+      "key": "thien_am_nhac_su",
+      "name": "« Thiên Âm Nhạc Sư »",
+      "rarity": "Linh Phẩm",
+      "rarity_key": "rare",
+      "color": 15235577,
+      "permissions": "39582455300352",
+      "perk": "🎵📢 Ưu Tiên Voice, Âm Ngoại & +12% EXP Voice",
+      "id": "1573577796742152314",
+      "status": 200
+    },
+    {
+      "key": "cuu_tieu_phong_vuong",
+      "name": "« Cửu Tiêu Phong Vương »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 11032055,
+      "permissions": "4503599685042176",
+      "perk": "🌬️🔇 Move & Mute Voice, Miễn Slowmode & +20% EXP",
+      "id": "1573577799539892314",
+      "status": 200
+    },
+    {
+      "key": "thai_hu_chan_quan",
+      "name": "« Thái Hư Chân Quân »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 12616956,
+      "permissions": "2252143612395520",
+      "perk": "🏷️📌 Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT",
+      "id": "1573577805286080523",
+      "status": 200
+    },
+    {
+      "key": "van_bao_tai_than",
+      "name": "« Vạn Bảo Tài Thần »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 16096779,
+      "permissions": "137439264768",
+      "perk": "💰✨ Buff +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker",
+      "id": "1573577808867762186",
+      "status": 200
+    },
+    {
+      "key": "bat_hoang_chien_than",
+      "name": "« Bát Hoang Chiến Thần »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 16007006,
+      "permissions": "6755399444201984",
+      "perk": "🔥⚔️ Buff +15% Chiến Lực Pet, +20% EXP, Ghim & Bypass Slowmode",
+      "id": "1573577811786993756",
+      "status": 200
+    },
+    {
+      "key": "hong_tran_tien_lu",
+      "name": "« Hồng Trần Tiên Lữ »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 15485081,
+      "permissions": "39719860961792",
+      "perk": "🌸💫 Buff +25% EXP, +10% Chiến Lực Pet, Stream HD & Sound/Emoji",
+      "id": "1573577814437789797",
+      "status": 200
+    },
+    {
+      "key": "tinh_ha_phap_vuong",
+      "name": "« Tinh Hà Pháp Vương »",
+      "rarity": "Tiên Phẩm",
+      "rarity_key": "epic",
+      "color": 6514417,
+      "permissions": "2251799879745536",
+      "perk": "🌌🛡️ Move/Mute/Deafen Voice, Ghim Tin & +25% EXP",
+      "id": "1573577816690401401",
+      "status": 200
+    }
+  ],
+  "band": [
+    {
+      "position": 162,
+      "id": "1487172968105640069",
+      "name": "."
+    },
+    {
+      "position": 161,
+      "id": "1468649836856344689",
+      "name": "« Huyễn Chủ »"
+    },
+    {
+      "position": 160,
+      "id": "1519354498412314785",
+      "name": "« Tuyết Nguyệt Yêu Hồ »"
+    },
+    {
+      "position": 159,
+      "id": "1521913861660344320",
+      "name": "Sêu sêu đẹp"
+    },
+    {
+      "position": 158,
+      "id": "1477314328104276170",
+      "name": "« Columbina »"
+    },
+    {
+      "position": 157,
+      "id": "1027173664069795921",
+      "name": "« Huyền Thiên Hồ Sứ »"
+    },
+    {
+      "position": 156,
+      "id": "1473354131732168847",
+      "name": "✦ ──────・ 𓆩 Staff Bot Roles 𓆪 ・────── ✦"
+    },
+    {
+      "position": 155,
+      "id": "1261172113889300493",
+      "name": "Dyno"
+    },
+    {
+      "position": 154,
+      "id": "1528347599432712315",
+      "name": "Make"
+    },
+    {
+      "position": 153,
+      "id": "1468632899971584234",
+      "name": "« Huyết Nguyệt Yêu Hồ »"
+    },
+    {
+      "position": 152,
+      "id": "1471121770512777349",
+      "name": "Arcane-chan ✨"
+    },
+    {
+      "position": 151,
+      "id": "1516352430848348170",
+      "name": "Honeypot"
+    },
+    {
+      "position": 150,
+      "id": "1382983050387783714",
+      "name": "Sapphire"
+    },
+    {
+      "position": 149,
+      "id": "1484986521952977029",
+      "name": "Bloxlink"
+    },
+    {
+      "position": 148,
+      "id": "1474723236351709280",
+      "name": "Wick"
+    },
+    {
+      "position": 147,
+      "id": "1474776271883079681",
+      "name": "Cách Ly"
+    },
+    {
+      "position": 146,
+      "id": "1473351406147866835",
+      "name": "✦ ──────・ 𓆩 Mod Roles 𓆪 ・────── ✦"
+    },
+    {
+      "position": 145,
+      "id": "1487136488331153589",
+      "name": "« Eternal Sovereign »"
+    },
+    {
+      "position": 144,
+      "id": "1264915703438381099",
+      "name": "« Chấp Pháp Linh Hồ »"
+    },
+    {
+      "position": 143,
+      "id": "1467018309059870812",
+      "name": "« Tiểu Băng Hồ »"
+    },
+    {
+      "position": 142,
+      "id": "1496697237978349720",
+      "name": "✦ ──────・ 𓆩 Extra Role 𓆪 ・────── ✦"
+    },
+    {
+      "position": 141,
+      "id": "1473574460656193616",
+      "name": "« Top 1・Bạch Hồ Thánh Linh »"
+    },
+    {
+      "position": 140,
+      "id": "1519352393228222555",
+      "name": "« Bạch Nguyệt Quang »"
+    },
+    {
+      "position": 139,
+      "id": "1473333612404539513",
+      "name": "« Dạ Hồ Ma Ảnh »"
+    },
+    {
+      "position": 138,
+      "id": "1473372858657804441",
+      "name": "« Thiên Hồ Hắc Dạ »"
+    },
+    {
+      "position": 137,
+      "id": "1487133030261719222",
+      "name": "✦ ──────・ 𓆩 Pet Level 𓆪 ・────── ✦"
+    },
+    {
+      "position": 136,
+      "id": "1487134136547279088",
+      "name": "« Omniscient Existence »"
+    },
+    {
+      "position": 135,
+      "id": "1487134131522506783",
+      "name": "« Transcendent Being »"
+    },
+    {
+      "position": 134,
+      "id": "1487151959457923102",
+      "name": "« Boundless Singularity »"
+    },
+    {
+      "position": 133,
+      "id": "1487134121242394875",
+      "name": "« Singularity Manifest »"
+    },
+    {
+      "position": 132,
+      "id": "1487071105486291145",
+      "name": "« Singularity Pet »"
+    },
+    {
+      "position": 131,
+      "id": "1573185994692239460",
+      "name": "✦ ──────・ 𓆩 Role Quyền Năng 𓆪 ・────── ✦"
+    },
+    {
+      "position": 130,
+      "id": "1573185998857183253",
+      "name": "« Cửu Vĩ Tối Thượng Thần Hồ »"
+    },
+    {
+      "position": 129,
+      "id": "1573186003101941830",
+      "name": "« SuMi Đệ Nhất Khách Tôn »"
+    },
+    {
+      "position": 128,
+      "id": "1573186007262695644",
+      "name": "« Vạn Cổ Chí Tôn »"
+    },
+    {
+      "position": 127,
+      "id": "1573186011478102096",
+      "name": "« Sáng Thế Thần Quân »"
+    },
+    {
+      "position": 126,
+      "id": "1573186015785521265",
+      "name": "« Cửu Vĩ Yêu Hậu »"
+    },
+    {
+      "position": 125,
+      "id": "1573577773279219763",
+      "name": "« Song Tuyệt Kiếm Khách »"
+    },
+    {
+      "position": 124,
+      "id": "1573577776454434899",
+      "name": "« Huyễn Ảnh Linh Tôn »"
+    },
+    {
+      "position": 123,
+      "id": "1573577779621138542",
+      "name": "« Lôi Vũ Hộ Pháp »"
+    },
+    {
+      "position": 122,
+      "id": "1573577782380728410",
+      "name": "« Hàn Ngọc Tiên Tử »"
+    },
+    {
+      "position": 121,
+      "id": "1573577786218651688",
+      "name": "« Mật Các Trưởng Lão »"
+    },
+    {
+      "position": 120,
+      "id": "1573577788965781504",
+      "name": "« Kim Tiền Đạo Nhân »"
+    },
+    {
+      "position": 119,
+      "id": "1573577794091225108",
+      "name": "« Chiến Hồn Tiên Phong »"
+    },
+    {
+      "position": 118,
+      "id": "1573577796742152314",
+      "name": "« Thiên Âm Nhạc Sư »"
+    },
+    {
+      "position": 117,
+      "id": "1573577799539892314",
+      "name": "« Cửu Tiêu Phong Vương »"
+    },
+    {
+      "position": 116,
+      "id": "1573577805286080523",
+      "name": "« Thái Hư Chân Quân »"
+    },
+    {
+      "position": 115,
+      "id": "1573577808867762186",
+      "name": "« Vạn Bảo Tài Thần »"
+    },
+    {
+      "position": 114,
+      "id": "1573577811786993756",
+      "name": "« Bát Hoang Chiến Thần »"
+    },
+    {
+      "position": 113,
+      "id": "1573577814437789797",
+      "name": "« Hồng Trần Tiên Lữ »"
+    },
+    {
+      "position": 112,
+      "id": "1573577816690401401",
+      "name": "« Tinh Hà Pháp Vương »"
+    },
+    {
+      "position": 111,
+      "id": "1573186019858317422",
+      "name": "« Linh Âm Hồ Ca »"
+    },
+    {
+      "position": 110,
+      "id": "1573186024048173076",
+      "name": "« Phong Thanh Hộ Pháp »"
+    },
+    {
+      "position": 109,
+      "id": "1573186028196462613",
+      "name": "« Lôi Âm Tôn Giả »"
+    },
+    {
+      "position": 108,
+      "id": "1573186032289980416",
+      "name": "« Tịch Tĩnh Tán Nhân »"
+    },
+    {
+      "position": 107,
+      "id": "1573186036585201726",
+      "name": "« Bế Tức Chân Nhân »"
+    },
+    {
+      "position": 106,
+      "id": "1573186040716468316",
+      "name": "« Huyễn Diện Đạo Quân »"
+    },
+    {
+      "position": 105,
+      "id": "1573186045468614687",
+      "name": "« Định Danh Sứ Giả »"
+    },
+    {
+      "position": 104,
+      "id": "1573186049289756712",
+      "name": "« Thần Hành Cốt Cách »"
+    },
+    {
+      "position": 103,
+      "id": "1573186053500833802",
+      "name": "« Họa Đồ Linh Sư »"
+    },
+    {
+      "position": 102,
+      "id": "1573186057778888745",
+      "name": "« Vạn Tượng Linh Hồ »"
+    },
+    {
+      "position": 101,
+      "id": "1573186061860077568",
+      "name": "« Thần Phù Thượng Quan »"
+    },
+    {
+      "position": 100,
+      "id": "1573186066134073394",
+      "name": "« Khai Sơn Tiên Phong »"
+    },
+    {
+      "position": 99,
+      "id": "1573186070206742578",
+      "name": "« Mật Tàng Hộ Vệ »"
+    },
+    {
+      "position": 98,
+      "id": "1573186074153324608",
+      "name": "« Trấn Thư Pháp Vương »"
+    },
+    {
+      "position": 97,
+      "id": "1573186078402158776",
+      "name": "« Huyễn Âm Tiên Cô »"
+    },
+    {
+      "position": 96,
+      "id": "1573186082768560198",
+      "name": "« Cửu Châu Diễn Âm »"
+    },
+    {
+      "position": 95,
+      "id": "1573186087088554085",
+      "name": "« Linh Hồn Tu Luyện »"
+    },
+    {
+      "position": 94,
+      "id": "1573186091094245416",
+      "name": "« Tài Vận Hanh Thông »"
+    },
+    {
+      "position": 93,
+      "id": "1573186095120908329",
+      "name": "« Tiêu Dao Khách »"
+    },
+    {
+      "position": 92,
+      "id": "1573186099663343747",
+      "name": "« Trảm Phong Kiếm Khách »"
+    },
+    {
+      "position": 91,
+      "id": "1573186103664574524",
+      "name": "« Thần Thông Thấu Thị »"
+    },
+    {
+      "position": 90,
+      "id": "1473298013542813777",
+      "name": "✦ ──────・ 🫧 Color Roles🫧 ・──── ✦"
+    },
+    {
+      "position": 89,
+      "id": "1520752319552159887",
+      "name": "Sêu đẹp"
+    },
+    {
+      "position": 88,
+      "id": "1520656914386653264",
+      "name": "Strawberry Milk 🧋"
+    },
+    {
+      "position": 87,
+      "id": "1520656918589472788",
+      "name": "Blush 🎀"
+    },
+    {
+      "position": 86,
+      "id": "1520656921932337222",
+      "name": "Peach 🍑"
+    },
+    {
+      "position": 85,
+      "id": "1520657533163798529",
+      "name": "Cream 🍨"
+    },
+    {
+      "position": 84,
+      "id": "1520658097541087352",
+      "name": "Blueberry 🫐"
+    },
+    {
+      "position": 83,
+      "id": "1520657508169941053",
+      "name": "Mint 🍀"
+    },
+    {
+      "position": 82,
+      "id": "1520656899408658453",
+      "name": "Kiwi 🥝"
+    },
+    {
+      "position": 81,
+      "id": "1520658103547465898",
+      "name": "Cloud 🌨️"
+    },
+    {
+      "position": 80,
+      "id": "1520658090888925194",
+      "name": "Bubble 🫧"
+    },
+    {
+      "position": 79,
+      "id": "1520658100590350417",
+      "name": "Sky 🌈"
+    },
+    {
+      "position": 78,
+      "id": "1520658106898579697",
+      "name": "Lollipop 🍭"
+    },
+    {
+      "position": 77,
+      "id": "1520658094307410030",
+      "name": "Lavender 🪻"
+    },
+    {
+      "position": 76,
+      "id": "1473352137466577107",
+      "name": "✦ ──────・ 𓆩 Special Roles 𓆪 ・────── ✦"
+    },
+    {
+      "position": 75,
+      "id": "1038261276817768458",
+      "name": "« Thiên Linh Cáo »"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ globalThis.WebSocket = WebSocket;
 import {
   GraphBuilder,
   SUMI_GUILD_ID,
+  attachUpdateAckBranch,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
@@ -11,6 +12,41 @@ import { em, emId } from '../src/config/emojiHelper.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
+
+function assertAcyclicDAG(elements, label) {
+  const adj = new Map();
+  const nodes = new Set();
+  for (const el of elements) {
+    if (el.source && el.target) {
+      if (!adj.has(el.source)) adj.set(el.source, []);
+      adj.get(el.source).push(el.target);
+    } else {
+      nodes.add(el.id);
+    }
+  }
+  const state = new Map();
+  const dfs = (u, stack) => {
+    state.set(u, 1);
+    for (const v of adj.get(u) || []) {
+      if (state.get(v) === 1) throw new Error(`Cycle detected in ${label}: ${[...stack, v].join(' -> ')}`);
+      if (!state.get(v)) dfs(v, [...stack, v]);
+    }
+    state.set(u, 2);
+  };
+  for (const n of nodes) if (!state.get(n)) dfs(n, [n]);
+}
+
+function assertUniqueApiActionNames(elements, label) {
+  const seen = new Map();
+  for (const el of elements) {
+    if (el.type === 'api_action' || el.data?.data?.type === 'api_action' || (el.data?.data?.request_options && el.data?.data?.name)) {
+      const name = String(el.data?.data?.name || '').trim();
+      if (!name) throw new Error(`Empty api_action variable name in ${label} (${el.id})`);
+      if (seen.has(name)) throw new Error(`Duplicate api_action variable name "${name}" in ${label}: ${seen.get(name)} and ${el.id}`);
+      seen.set(name, el.id);
+    }
+  }
+}
 
 class Phase1GraphBuilder extends GraphBuilder {
   advSelectMenu(id, parentMsgId, {
@@ -147,14 +183,16 @@ export function buildDailyCmd() {
   );
   gb.link('d_ack', 'd_api');
 
+  const dNoAck = attachUpdateAckBranch(gb, 'd', 'd_api', 'daily_res', { editId: 'd_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'd_edit', {
     title: `${em('su_sparkle')} ĐIỂM DANH HÀNG NGÀY`,
     description: '{daily_res.response.message}',
     color: '#fbbf24',
     target: { editId: 'd_ack' },
     action_id: 'd_ack',
-  }, { x: 0, y: 580 });
-  gb.link('d_api', 'd_edit');
+  }, { x: 240, y: 780 });
+  gb.link(dNoAck, 'd_edit');
   return gb.elements();
 }
 
@@ -183,19 +221,21 @@ export function buildDoiquaCmd() {
   );
   gb.link('dq_ack', 'dq_api');
 
+  const dqNoAck = attachUpdateAckBranch(gb, 'dq', 'dq_api', 'dq_res', { editId: 'dq_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'dq_edit', {
     title: `${em('su_linhthach')} PHẾ TU VI ĐỔI LINH BẢO`,
     description: '{dq_res.response.message}',
     color: '#ec4899',
     target: { editId: 'dq_ack' },
     action_id: 'dq_ack',
-  }, { x: 0, y: 580 });
-  gb.link('dq_api', 'dq_edit');
+  }, { x: 240, y: 780 });
+  gb.link(dqNoAck, 'dq_edit');
 
-  gb.act('dq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.act('dq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 240, y: 960 });
   gb.link('dq_edit', 'dq_wait');
 
-  const cRevoke = gb.cmp('dq_has_revoke', '{dq_res.response.revoked_level_role_csv}', '^[0-9,]+$', 'matches_pattern', {}, { x: 0, y: 940 });
+  const cRevoke = gb.cmp('dq_has_revoke', '{dq_res.response.revoked_level_role_csv}', '^[0-9,]+$', 'matches_pattern', {}, { x: 240, y: 1140 });
   gb.link('dq_wait', cRevoke.condId);
 
   gb.act('dq_rem_roles', 'role_remove', {
@@ -204,7 +244,7 @@ export function buildDoiquaCmd() {
     success_handles: false,
     target: { self: true },
     server_id: SUMI_GUILD_ID,
-  }, { x: -180, y: 1140 });
+  }, { x: 60, y: 1340 });
   gb.link(cRevoke.yes, 'dq_rem_roles');
   return gb.elements();
 }
@@ -236,19 +276,21 @@ export function buildRollCmd() {
   );
   gb.link('rl_ack', 'rl_api');
 
+  const rlNoAck = attachUpdateAckBranch(gb, 'rl', 'rl_api', 'roll_res', { editId: 'rl_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'rl_edit', {
     title: `${em('su_sparkle')} KẾT QUẢ TRIỆU HỒI GACHA`,
     description: '{roll_res.response.message}',
     color: '#f59e0b',
     target: { editId: 'rl_ack' },
     action_id: 'rl_ack',
-  }, { x: 0, y: 580 });
-  gb.link('rl_api', 'rl_edit');
+  }, { x: 240, y: 780 });
+  gb.link(rlNoAck, 'rl_edit');
 
-  gb.act('rl_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.act('rl_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 240, y: 960 });
   gb.link('rl_edit', 'rl_wait');
 
-  const cHasRoles = gb.cmp('rl_has_roles', '{roll_res.response.has_roles}', 'true', 'equal_to', { ignoreCase: true }, { x: 0, y: 940 });
+  const cHasRoles = gb.cmp('rl_has_roles', '{roll_res.response.has_roles}', 'true', 'equal_to', { ignoreCase: true }, { x: 240, y: 1140 });
   gb.link('rl_wait', cHasRoles.condId);
 
   gb.act('rl_add_role', 'role_add', {
@@ -257,14 +299,14 @@ export function buildRollCmd() {
     success_handles: false,
     target: { self: true },
     server_id: SUMI_GUILD_ID,
-  }, { x: -180, y: 1140 });
+  }, { x: 60, y: 1340 });
   gb.link(cHasRoles.yes, 'rl_add_role');
   return gb.elements();
 }
 
 export function buildInvCmd() {
-  const gb = new GraphBuilder();
-  gb.rootSlash('inv', 'Xem túi đồ tu tiên (Linh Thú, Pháp Bảo, Role Quyền Năng, Vật Phẩm & Background)', { ephemeral: false });
+  const gb = new Phase1GraphBuilder();
+  gb.rootSlash('inv', 'Xem túi đồ tu tiên (Tổng quan biểu tượng hoặc chuyển tab chi tiết Linh Thú, Pháp Bảo, Role, Vật Phẩm)', { ephemeral: false });
   gb.errorHandlerWait();
 
   embedMsg(gb, 'inv_ack', {
@@ -280,20 +322,58 @@ export function buildInvCmd() {
     'inv_api',
     'inv_res',
     'GET',
-    `${BACKEND_BASE}/api/inv/{user_id}?username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`,
+    `${BACKEND_BASE}/api/inv/{user_id}?view=overview&username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`,
     '',
     { x: 0, y: 400 },
   );
   gb.link('inv_ack', 'inv_api');
 
+  const invNoAck = attachUpdateAckBranch(gb, 'inv', 'inv_api', 'inv_res', { editId: 'inv_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'inv_edit', {
-    title: `${em('su_sparkle')} TÚI TRỮ VẬT CỦA {inv_res.response.user.username}`,
-    description: `${em('su_linhthach')} **Linh Thạch**: \`{inv_res.response.user.linh_thach_fmt}\` • ${em('su_frame_token')} **Nền hiện tại**: \`{inv_res.response.user.background_name}\`\n\n${em('su_pet_paw')} **Linh Thú sở hữu**:\n{inv_res.response.summary_pets}\n\n${em('su_crossed_swords')} **Pháp Bảo Loadout**:\n{inv_res.response.summary_items}\n\n${em('su_realm_star')} **Role Quyền Năng**:\n{inv_res.response.summary_roles}\n\n${em('su_star_stone')} **Vật Phẩm & Mở Khóa**:\n{inv_res.response.summary_consumables}`,
+    title: '{inv_res.response.view_title}',
+    description: '{inv_res.response.view_description}',
     color: '#a855f7',
     target: { editId: 'inv_ack' },
     action_id: 'inv_ack',
-  }, { x: 0, y: 580 });
-  gb.link('inv_api', 'inv_edit');
+  }, { x: 240, y: 780 });
+  gb.link(invNoAck, 'inv_edit');
+
+  gb.advSelectMenu('sel_inv_view', 'inv_edit', {
+    placeholder: 'Chuyển góc nhìn Túi Đồ (Tổng quan / Chi tiết)...',
+    customVariableName: 'picked_inv_view',
+    row: '1',
+    weight: '1',
+    showReplies: 'show',
+    basic_options: [
+      { label: 'Tổng Quan Túi Đồ', description: 'Hiển thị nhanh toàn bộ kho bằng biểu tượng & số lượng', emoji_id: emId('su_wiki_scroll'), value: 'overview' },
+      { label: 'Kho Linh Thú (Chi tiết)', description: 'Tên, mã ID, phẩm cấp, cấp độ, sao & Khắc Ấn', emoji_id: emId('su_pet_paw'), value: 'pets' },
+      { label: 'Kho Pháp Bảo (Chi tiết)', description: 'Vũ Khí, Bảo Ngọc, Chiến Hồn & bậc Khắc Ấn', emoji_id: emId('su_crossed_swords'), value: 'items' },
+      { label: 'Kho Role Quyền Năng (Đầy đủ)', description: 'Tất cả Role đang giữ, trạng thái & hạn dùng', emoji_id: emId('su_medal_role'), value: 'roles' },
+      { label: 'Vật Phẩm Tiêu Hao & Mở Khóa', description: 'Đá Khắc Ấn, Vé Gacha, Đá Đột Phá & Khung Viền', emoji_id: emId('su_enchant_stone'), value: 'consumables' },
+    ],
+  }, { x: 240, y: 980 });
+
+  apiAction(
+    gb,
+    'inv_view_api',
+    'inv_view_res',
+    'GET',
+    `${BACKEND_BASE}/api/inv/{user_id}?view={picked_inv_view}&username={encode_text[{user_displayName}]}&avatar={encode_text[{user_icon}]}`,
+    '',
+    { x: 240, y: 1180 },
+  );
+  gb.link('sel_inv_view', 'inv_view_api');
+
+  const invVNoAck = attachUpdateAckBranch(gb, 'invv', 'inv_view_api', 'inv_view_res', { x: 240, y: 1360 });
+
+  embedMsg(gb, 'inv_view_msg', {
+    title: '{inv_view_res.response.view_title}',
+    description: '{inv_view_res.response.view_description}',
+    color: '#a855f7',
+  }, { x: 480, y: 1560 });
+  gb.link(invVNoAck, 'inv_view_msg');
+
   return gb.elements();
 }
 
@@ -323,19 +403,21 @@ export function buildEquipCmd() {
   );
   gb.link('eq_ack', 'eq_api');
 
+  const eqNoAck = attachUpdateAckBranch(gb, 'eq', 'eq_api', 'eq_res', { editId: 'eq_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'eq_edit', {
     title: `${em('su_crossed_swords')} TRANG BỊ HỒ SƠ`,
     description: '{eq_res.response.message}',
     color: '#10b981',
     target: { editId: 'eq_ack' },
     action_id: 'eq_ack',
-  }, { x: 0, y: 580 });
-  gb.link('eq_api', 'eq_edit');
+  }, { x: 240, y: 780 });
+  gb.link(eqNoAck, 'eq_edit');
 
-  gb.act('eq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.act('eq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 240, y: 960 });
   gb.link('eq_edit', 'eq_wait');
 
-  const cAddRole = gb.cmp('eq_has_role', '{eq_res.response.add_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 940 });
+  const cAddRole = gb.cmp('eq_has_role', '{eq_res.response.add_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 240, y: 1140 });
   gb.link('eq_wait', cAddRole.condId);
 
   gb.act('eq_add_role', 'role_add', {
@@ -344,7 +426,7 @@ export function buildEquipCmd() {
     success_handles: false,
     target: { self: true },
     server_id: SUMI_GUILD_ID,
-  }, { x: -180, y: 1140 });
+  }, { x: 60, y: 1340 });
   gb.link(cAddRole.yes, 'eq_add_role');
   return gb.elements();
 }
@@ -375,19 +457,21 @@ export function buildUnequipCmd() {
   );
   gb.link('uq_ack', 'uq_api');
 
+  const uqNoAck = attachUpdateAckBranch(gb, 'uq', 'uq_api', 'uq_res', { editId: 'uq_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'uq_edit', {
     title: `${em('su_crossed_swords')} THÁO TRANG BỊ`,
     description: '{uq_res.response.message}',
     color: '#f43f5e',
     target: { editId: 'uq_ack' },
     action_id: 'uq_ack',
-  }, { x: 0, y: 580 });
-  gb.link('uq_api', 'uq_edit');
+  }, { x: 240, y: 780 });
+  gb.link(uqNoAck, 'uq_edit');
 
-  gb.act('uq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.act('uq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 240, y: 960 });
   gb.link('uq_edit', 'uq_wait');
 
-  const cRemRole = gb.cmp('uq_has_role', '{uq_res.response.remove_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 940 });
+  const cRemRole = gb.cmp('uq_has_role', '{uq_res.response.remove_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 240, y: 1140 });
   gb.link('uq_wait', cRemRole.condId);
 
   gb.act('uq_rem_role', 'role_remove', {
@@ -396,7 +480,7 @@ export function buildUnequipCmd() {
     success_handles: false,
     target: { self: true },
     server_id: SUMI_GUILD_ID,
-  }, { x: -180, y: 1140 });
+  }, { x: 60, y: 1340 });
   gb.link(cRemRole.yes, 'uq_rem_role');
   return gb.elements();
 }
@@ -411,38 +495,42 @@ export function buildPetCmd() {
   gb.cond('pet_mode', 'comparison', { base_value: '{option_hanh_dong}', target: { self: true } }, { x: 0, y: 220 });
   gb.link('root', 'pet_mode');
 
-  const bActive = gb.branch('pet_mode', 'pm_active', 'comparison', { type: 'equal_to', comparison_value: 'active', ignoreCase: true, option: '', not: false }, { x: -300, y: 400 });
-  const bUpLvl = gb.branch('pet_mode', 'pm_uplvl', 'comparison', { type: 'equal_to', comparison_value: 'upgrade_level', ignoreCase: true, option: '', not: false }, { x: 0, y: 400 });
-  const bUpStar = gb.branch('pet_mode', 'pm_upstar', 'comparison', { type: 'equal_to', comparison_value: 'upgrade_star', ignoreCase: true, option: '', not: false }, { x: 300, y: 400 });
-  const bList = gb.elseBranch('pet_mode', 'pm_list', 'comparison', { x: 600, y: 400 });
+  const bActive = gb.branch('pet_mode', 'pm_active', 'comparison', { type: 'equal_to', comparison_value: 'active', ignoreCase: true, option: '', not: false }, { x: -450, y: 400 });
+  const bUpLvl = gb.branch('pet_mode', 'pm_uplvl', 'comparison', { type: 'equal_to', comparison_value: 'upgrade_level', ignoreCase: true, option: '', not: false }, { x: -120, y: 400 });
+  const bUpStar = gb.branch('pet_mode', 'pm_upstar', 'comparison', { type: 'equal_to', comparison_value: 'upgrade_star', ignoreCase: true, option: '', not: false }, { x: 220, y: 400 });
+  const bList = gb.elseBranch('pet_mode', 'pm_list', 'comparison', { x: 620, y: 400 });
 
   // Active
-  apiAction(gb, 'p_act_api', 'pet_act_res', 'POST', `${BACKEND_BASE}/api/pet/active`, '{"userId":"{user_id}","petType":"{option_linh_thu}"}', { x: -300, y: 600 });
+  apiAction(gb, 'p_act_api', 'pet_act_res', 'POST', `${BACKEND_BASE}/api/pet/active`, '{"userId":"{user_id}","petType":"{option_linh_thu}"}', { x: -450, y: 600 });
   gb.link(bActive, 'p_act_api');
-  embedMsg(gb, 'p_act_msg', { title: `${em('su_pet_paw')} XUẤT TRẬN LINH THÚ`, description: '{pet_act_res.response.message}', color: '#10b981' }, { x: -300, y: 800 });
-  gb.link('p_act_api', 'p_act_msg');
+  const paNoAck = attachUpdateAckBranch(gb, 'pa', 'p_act_api', 'pet_act_res', { x: -450, y: 780 });
+  embedMsg(gb, 'p_act_msg', { title: `${em('su_pet_paw')} XUẤT TRẬN LINH THÚ`, description: '{pet_act_res.response.message}', color: '#10b981' }, { x: -300, y: 980 });
+  gb.link(paNoAck, 'p_act_msg');
 
   // Upgrade Level
-  apiAction(gb, 'p_lvl_api', 'pet_lvl_res', 'POST', `${BACKEND_BASE}/api/pet/upgrade`, '{"userId":"{user_id}","petType":"{option_linh_thu}","mode":"level"}', { x: 0, y: 600 });
+  apiAction(gb, 'p_lvl_api', 'pet_lvl_res', 'POST', `${BACKEND_BASE}/api/pet/upgrade`, '{"userId":"{user_id}","petType":"{option_linh_thu}","mode":"level"}', { x: -120, y: 600 });
   gb.link(bUpLvl, 'p_lvl_api');
-  embedMsg(gb, 'p_lvl_msg', { title: `${em('su_level_up')} THĂNG CẤP LINH THÚ`, description: '{pet_lvl_res.response.message}', color: '#3b82f6' }, { x: 0, y: 800 });
-  gb.link('p_lvl_api', 'p_lvl_msg');
+  const plNoAck = attachUpdateAckBranch(gb, 'pl', 'p_lvl_api', 'pet_lvl_res', { x: -120, y: 780 });
+  embedMsg(gb, 'p_lvl_msg', { title: `${em('su_level_up')} THĂNG CẤP LINH THÚ`, description: '{pet_lvl_res.response.message}', color: '#3b82f6' }, { x: 30, y: 980 });
+  gb.link(plNoAck, 'p_lvl_msg');
 
   // Upgrade Star
-  apiAction(gb, 'p_star_api', 'pet_star_res', 'POST', `${BACKEND_BASE}/api/pet/upgrade`, '{"userId":"{user_id}","petType":"{option_linh_thu}","mode":"star"}', { x: 300, y: 600 });
+  apiAction(gb, 'p_star_api', 'pet_star_res', 'POST', `${BACKEND_BASE}/api/pet/upgrade`, '{"userId":"{user_id}","petType":"{option_linh_thu}","mode":"star"}', { x: 220, y: 600 });
   gb.link(bUpStar, 'p_star_api');
-  embedMsg(gb, 'p_star_msg', { title: `${em('su_star_stone')} ĐỘT PHÁ SAO LINH THÚ`, description: '{pet_star_res.response.message}', color: '#f59e0b' }, { x: 300, y: 800 });
-  gb.link('p_star_api', 'p_star_msg');
+  const psNoAck = attachUpdateAckBranch(gb, 'ps', 'p_star_api', 'pet_star_res', { x: 220, y: 780 });
+  embedMsg(gb, 'p_star_msg', { title: `${em('su_star_stone')} ĐỘT PHÁ SAO LINH THÚ`, description: '{pet_star_res.response.message}', color: '#f59e0b' }, { x: 370, y: 980 });
+  gb.link(psNoAck, 'p_star_msg');
 
   // List + Interactive Row-1 Sort Dropdown
-  apiAction(gb, 'p_list_api', 'pet_list_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}`, '', { x: 600, y: 600 });
+  apiAction(gb, 'p_list_api', 'pet_list_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}`, '', { x: 620, y: 600 });
   gb.link(bList, 'p_list_api');
+  const plsNoAck = attachUpdateAckBranch(gb, 'pls', 'p_list_api', 'pet_list_res', { x: 620, y: 780 });
   embedMsg(gb, 'p_list_msg', {
     title: `${em('su_pet_paw')} KHO LINH THÚ CỦA {pet_list_res.response.user.username}`,
     description: '{pet_list_res.response.summary_pets}',
     color: '#ec4899',
-  }, { x: 600, y: 800 });
-  gb.link('p_list_api', 'p_list_msg');
+  }, { x: 770, y: 980 });
+  gb.link(plsNoAck, 'p_list_msg');
 
   gb.advSelectMenu('sel_pet_sort', 'p_list_msg', {
     placeholder: 'Sắp xếp Linh Thú (Cao -> Thấp / Sao / Nguyên Tố)',
@@ -458,26 +546,28 @@ export function buildPetCmd() {
       { label: 'Số Sao (★) Cao → Thấp', description: 'Sắp theo bậc đột phá sao cao nhất', emoji_id: emId('su_star_stone'), value: 'star_desc' },
       { label: 'Theo Nguyên Tố (Ngũ Hành)', description: 'Nhóm theo Kim • Mộc • Thủy • Hỏa • Thổ • Dị Tố', emoji_id: emId('su_wiki_scroll'), value: 'element_asc' },
     ],
-  }, { x: 600, y: 1000 });
+  }, { x: 770, y: 1180 });
 
-  apiAction(gb, 'p_sort_api', 'pet_sort_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}?sort={picked_pet_sort}`, '', { x: 600, y: 1180 });
+  apiAction(gb, 'p_sort_api', 'pet_sort_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}?sort={picked_pet_sort}`, '', { x: 770, y: 1360 });
   gb.link('sel_pet_sort', 'p_sort_api');
+
+  const psoNoAck = attachUpdateAckBranch(gb, 'pso', 'p_sort_api', 'pet_sort_res', { x: 770, y: 1540 });
 
   embedMsg(gb, 'p_sort_msg', {
     title: `${em('su_pet_paw')} KHO LINH THÚ CỦA {pet_sort_res.response.user.username}`,
     description: '{pet_sort_res.response.summary_pets}',
     color: '#ec4899',
-  }, { x: 600, y: 1360 });
-  gb.link('p_sort_api', 'p_sort_msg');
+  }, { x: 920, y: 1740 });
+  gb.link(psoNoAck, 'p_sort_msg');
 
   return gb.elements();
 }
 
 export function buildDismantleCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('dismantle', 'Phân rã Role, Pháp Bảo hoặc Linh Thú (hỗ trợ nhiều ID, all_common/rare/epic; hoàn 50% Shop / Gacha)', { ephemeral: false });
+  gb.rootSlash('dismantle', 'Phân rã Role, Pháp Bảo hoặc Linh Thú (nhiều ID, all_dup, all_common/rare/epic; hoàn 20%–25% Shop / Mức A)', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('ma_id', 'string', 'Mã ID, nhiều mã cách dấu phẩy (id1,id2), all_common/all_rare/all_epic hoặc Slot #1-5', { required: true, x: 420, y: 0 });
+  gb.option('ma_id', 'string', 'Mã ID, Emoji, id1,id2, all_dup (chỉ phá bản trùng), all_common/all_rare/all_epic hoặc Slot #1-5', { required: true, x: 420, y: 0 });
   gb.option('loai', 'string', 'Loại muốn phá (mặc định tự nhận diện Role / Pháp Bảo / Linh Thú)', { required: false, choices: ['role', 'item', 'pet'], x: 700, y: 0 });
 
   embedMsg(gb, 'dm_ack', {
@@ -499,28 +589,30 @@ export function buildDismantleCmd() {
   );
   gb.link('dm_ack', 'dm_api');
 
+  const dmNoAck = attachUpdateAckBranch(gb, 'dm', 'dm_api', 'dm_res', { editId: 'dm_ack', x: 0, y: 580 });
+
   embedMsg(gb, 'dm_edit', {
     title: `${em('su_linhthach')} PHÂN RÃ THU HỒI LINH THẠCH`,
     description: '{dm_res.response.message}',
     color: '#f59e0b',
     target: { editId: 'dm_ack' },
     action_id: 'dm_ack',
-  }, { x: 0, y: 580 });
-  gb.link('dm_api', 'dm_edit');
+  }, { x: 240, y: 780 });
+  gb.link(dmNoAck, 'dm_edit');
 
-  gb.act('dm_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 760 });
+  gb.act('dm_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 240, y: 960 });
   gb.link('dm_edit', 'dm_wait');
 
-  const cRemRole = gb.cmp('dm_has_role', '{dm_res.response.remove_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 940 });
+  const cRemRole = gb.cmp('dm_has_role', '{dm_res.response.remove_role_csv}', '^[0-9,]+$', 'matches_pattern', {}, { x: 240, y: 1140 });
   gb.link('dm_wait', cRemRole.condId);
 
   gb.act('dm_rem_role', 'role_remove', {
     roles: [],
-    additional_roles: '{dm_res.response.remove_role_id}',
+    additional_roles: '{dm_res.response.remove_role_csv}',
     success_handles: false,
     target: { self: true },
     server_id: SUMI_GUILD_ID,
-  }, { x: -180, y: 1140 });
+  }, { x: 60, y: 1340 });
   gb.link(cRemRole.yes, 'dm_rem_role');
   return gb.elements();
 }
@@ -544,9 +636,11 @@ async function main() {
   for (const t of TARGETS) {
     if (onlyNames && !onlyNames.has(t.name)) continue;
     const els = t.build();
+    assertAcyclicDAG(els, t.name);
+    assertUniqueApiActionNames(els, t.name);
     const errs = validateGraph(els);
     if (errs.length) throw new Error(`Validation failed for ${t.name}: ${errs.join(', ')}`);
-    console.log(`[Offline OK] command "${t.name}": ${els.length} elements`);
+    console.log(`[Offline OK] command "${t.name}": ${els.length} elements (DAG acyclic + unique api_action + schema valid)`);
     if (!dryRun) {
       const res = await deployViaCDP({
         groupId: PROFILE_GROUP_ID,

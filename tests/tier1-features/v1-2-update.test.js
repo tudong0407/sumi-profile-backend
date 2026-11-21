@@ -17,7 +17,9 @@ import {
   getDismantleQuote,
   normalizeEmojiAwareQuery,
   enchantTarget,
+  dismantleTarget,
 } from '../../src/services/inventoryService.js';
+import { rollGacha } from '../../src/services/economyService.js';
 import { lookupInfo } from '../../src/services/infoService.js';
 import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
 import { TOWER_MAX_FLOOR, buildTowerGuardian, challengeTower, getQuestStatus } from '../../src/services/questService.js';
@@ -257,7 +259,11 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
     const invJson = await invRes.json();
     assert.equal(invJson.success, true);
-    assert.ok(invJson.summary_pets.includes('⚡'));
+    assert.ok(invJson.summary_pets.includes('⁰⁰¹'));
+    assert.ok(!invJson.view_title.includes('OwO'));
+    assert.ok(!invJson.view_title.includes('DẠNG ICON GỌN'));
+    assert.ok(!invJson.summary_pets.includes('⚡'));
+    assert.ok(!invJson.summary_items.includes('🔹'));
 
     const rolesJson = await rolesRes.json();
     assert.equal(rolesJson.success, true);
@@ -406,5 +412,81 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     const fakeUnique = await getCachedUniqueItemCard({ item_id: 'weapon_mythic_1', item_name: 'Test', item_type: 'weapon', rarity: 'Than Thoai', rarity_key: 'mythic', element: 'Kim', drop_rate: 0.5, is_unique: true }, 'webp');
     await assertWebpDimensions(fakeUnique, 2000, 1000);
     invalidateUniqueItemCard('weapon_mythic_1');
+  });
+
+  it('7. Duplicate /roll stacking (⁰⁰¹ -> ⁰⁰² -> ⁰⁰³), Auto-Best Grade (max(D..S)), 10-roll zero emoji truncation, /inv | divider & /dismantle all_dup', async () => {
+    if (!supabase) return;
+    await ensureUserInitialized(USER_V12_B, { username: 'V12StackTester' });
+    await supabase.from('users').update({ linh_thach: 5000 }).eq('user_id', USER_V12_B);
+    await supabase.from('user_pet_items').delete().eq('user_id', USER_V12_B);
+
+    // 10-pull equipment roll: must output all 10 bullet lines without cutting any <a:...:id> tag
+    const roll10 = await rollGacha(USER_V12_B, { pool: 'equipment', count: 10, useTicket: false });
+    assert.equal(roll10.success, true);
+    assert.equal(roll10.results.length, 10);
+    const bulletLines = roll10.message.split('\n').filter((l) => l.trim().startsWith('• '));
+    assert.equal(bulletLines.length, 10, 'All 10 roll result lines must be preserved without 1500-char cutoff');
+    for (const line of bulletLines) {
+      assert.doesNotMatch(line, /<a?:[a-z0-9_]+:[0-9]*$/i, `Line must not end with truncated emoji tag: ${line}`);
+    }
+
+    // Deterministic duplicate pet stacking + Auto-Best Grade inheritance (D -> A upgrades, A -> C keeps A)
+    // rng sequence per 1-pull pet: [rarityRoll, candidateIndexRoll, gradeRoll]
+    // Grade thresholds: <0.40 -> D, <0.72 -> C, <0.92 -> B, >=0.92 -> A
+    await supabase.from('user_pets').delete().eq('user_id', USER_V12_B).neq('pet_type', 'hoa_thach_nham_nham');
+
+    const seq1 = [0.10, 0.15, 0.10]; // common pet #1 (non-starter), grade D
+    let idx1 = 0;
+    const r1 = await rollGacha(USER_V12_B, { pool: 'pet', count: 1, rng: () => seq1[idx1++] ?? 0.1 });
+    assert.equal(r1.success, true);
+    const rolledPetType = r1.results[0].pet_type;
+
+    // Force level 35, 4★, grade D, quantity 1 to test Auto-Best Grade preservation on upgraded pet
+    await supabase.from('user_pets').update({ level: 35, star: 4, enchant_grade: 'D', quantity: 1 }).eq('user_id', USER_V12_B).eq('pet_type', rolledPetType);
+
+    // Roll #2: same pet, grade A (0.95) -> upgrades D -> A and quantity becomes 2
+    const seq2 = [0.10, 0.15, 0.95];
+    let idx2 = 0;
+    const r2 = await rollGacha(USER_V12_B, { pool: 'pet', count: 1, rng: () => seq2[idx2++] ?? 0.1 });
+    assert.equal(r2.success, true);
+    assert.equal(r2.results[0].kind, 'duplicate_pet');
+    assert.equal(r2.results[0].quantity, 2);
+    assert.equal(r2.results[0].enchant_grade, 'A');
+    assert.equal(r2.results[0].grade_upgraded, true);
+
+    // Roll #3: same pet, grade C (0.50) -> keeps A and quantity becomes 3
+    const seq3 = [0.10, 0.15, 0.50];
+    let idx3 = 0;
+    const r3 = await rollGacha(USER_V12_B, { pool: 'pet', count: 1, rng: () => seq3[idx3++] ?? 0.1 });
+    assert.equal(r3.success, true);
+    assert.equal(r3.results[0].kind, 'duplicate_pet');
+    assert.equal(r3.results[0].quantity, 3);
+    assert.equal(r3.results[0].enchant_grade, 'A');
+    assert.equal(r3.results[0].grade_upgraded, false);
+
+    // Verify /inv shows active pet before | divider and storage pet with ⁰⁰³
+    const invRes = await testServer.fetch(`/api/inv/${USER_V12_B}?view=overview`);
+    const invJson = await invRes.json();
+    assert.equal(invJson.success, true);
+    if (rolledPetType !== 'hoa_thach_nham_nham') {
+      assert.ok(invJson.summary_pets.includes('**|**'), 'Must show | divider between active pet and storage pets');
+    }
+    assert.ok(invJson.summary_pets.includes('⁰⁰³'), 'Must show superscript ⁰⁰³ for quantity 3');
+
+    // Dismantle all_dup on pet -> dismantles 2 extra copies and leaves quantity = 1 with Lv.35, 4★, Grade A intact
+    const dmDup = await dismantleTarget(USER_V12_B, { category: 'pet', targetId: 'all_dup' });
+    assert.equal(dmDup.success, true);
+    assert.ok(dmDup.dismantled_count >= 2);
+
+    const { data: keptPet } = await supabase
+      .from('user_pets')
+      .select('level, star, enchant_grade, quantity')
+      .eq('user_id', USER_V12_B)
+      .eq('pet_type', rolledPetType)
+      .maybeSingle();
+    assert.equal(keptPet.quantity, 1);
+    assert.equal(keptPet.level, 35);
+    assert.equal(keptPet.star, 4);
+    assert.equal(keptPet.enchant_grade, 'A');
   });
 });
