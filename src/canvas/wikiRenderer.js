@@ -419,7 +419,7 @@ export async function renderElementalChart(options = {}) {
   });
   ctx.restore();
 
-  await drawFooter(ctx, 'SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố Full HD+');
+  await drawFooter(ctx, 'SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố');
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 

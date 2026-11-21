@@ -20,6 +20,8 @@ export const DAILY_QUEST_BATTLE_TARGET = 1;
 export const DAILY_QUEST_REWARD_LT = 100;
 export const TOWER_MAX_FLOOR = 100;
 export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
+export const TOWER_WIN_BONUS_LT = 10;
+export const TOWER_LOSS_PENALTY_LT = 5;
 
 const TOWER_ELEMENTS = ['Kim', 'Mộc', 'Thổ', 'Thủy', 'Hỏa', 'Lôi', 'Quang', 'Ám'];
 const TOWER_BOSS_NAMES = [
@@ -146,7 +148,11 @@ export async function getQuestStatus(userId, options = {}) {
   });
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
-  const state = await loadNormalizedQuestRow(cleanId, now);
+  const [state, resetCardRes] = await Promise.all([
+    loadNormalizedQuestRow(cleanId, now),
+    supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'tower_reset_card').maybeSingle(),
+  ]);
+  const ownedResetCards = Number(resetCardRes?.data?.quantity || 0);
   const dailyDone = Boolean(user.last_daily && getVnDateKey(new Date(user.last_daily)) === state.quest_date);
   const expDone = state.chat_exp_today >= DAILY_QUEST_EXP_TARGET;
   const battleDone = state.battles_today >= DAILY_QUEST_BATTLE_TARGET;
@@ -171,9 +177,10 @@ export async function getQuestStatus(userId, options = {}) {
         : `• *Hoàn thành đủ 3 nhiệm vụ rồi dùng \`/nhiemvu hanh_dong:claim\`.*`,
     ``,
     `**2. Tháp Thí Luyện & Săn Boss PvE**`,
-    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
-    `• Dùng \`/nhiemvu hanh_dong:tower\` để khiêu chiến **Tầng ${Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1)}**!`,
-  ];
+    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset Tháp:** \`${ownedResetCards}/10\` ${em('su_tower_reset_card', '🗼')}`,
+    `• Dùng \`/nhiemvu hanh_dong:tower\` để khiêu chiến **Tầng ${Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1)}** *(Thắng +${TOWER_WIN_BONUS_LT} LT thưởng thêm / Thua -${TOWER_LOSS_PENALTY_LT} LT)*!`,
+    state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
+  ].filter(Boolean);
 
   return {
     success: true,
@@ -187,6 +194,7 @@ export async function getQuestStatus(userId, options = {}) {
     tower_floor: state.tower_floor,
     tower_attempts_used: state.tower_attempts_today,
     tower_attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
+    tower_reset_cards: ownedResetCards,
     message: lines.join('\n'),
   };
 }
@@ -358,13 +366,16 @@ export async function challengeTower(userId, options = {}) {
     let rewardTickets = 0;
 
     if (won) {
-      rewardLt = (40 + targetFloor * 8) * (isBoss ? 2 : 1);
+      rewardLt = (40 + targetFloor * 8) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
       if (isBoss) rewardStarStones = 1;
       if (targetFloor % 10 === 0) rewardTickets = 1;
     }
 
     const nowIso = now.toISOString();
-    const newBal = Number(user.linh_thach || 0) + rewardLt;
+    const currentBal = Number(user.linh_thach || 0);
+    const newBal = won ? currentBal + rewardLt : Math.max(0, currentBal - TOWER_LOSS_PENALTY_LT);
+    const actualLtDelta = newBal - currentBal;
+
     const dbTasks = [
       supabase.from('user_quests').upsert({
         user_id: cleanId,
@@ -379,7 +390,7 @@ export async function challengeTower(userId, options = {}) {
       }, { onConflict: 'user_id' }),
     ];
 
-    if (rewardLt > 0) {
+    if (actualLtDelta !== 0) {
       dbTasks.push(supabase.from('users').update({ linh_thach: newBal, updated_at: nowIso }).eq('user_id', cleanId));
     }
     if (rewardStarStones > 0) {
@@ -391,7 +402,7 @@ export async function challengeTower(userId, options = {}) {
     await Promise.all(dbTasks);
 
     const rewardSummary = [
-      rewardLt > 0 ? `+${rewardLt.toLocaleString('vi-VN')} ${em('su_linhthach')}` : '',
+      rewardLt > 0 ? `+${rewardLt.toLocaleString('vi-VN')} ${em('su_linhthach')} *(gồm +${TOWER_WIN_BONUS_LT} LT thắng trận)*` : '',
       rewardStarStones > 0 ? `+${rewardStarStones} ${em('su_star_stone')}` : '',
       rewardTickets > 0 ? `+${rewardTickets} ${em('su_ticket_pet')}` : '',
     ].filter(Boolean).join(' • ');
@@ -404,7 +415,7 @@ export async function challengeTower(userId, options = {}) {
       new_tower_floor: nextFloor,
       attempts_used: nextAttempts,
       attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
-      reward_linh_thach: rewardLt,
+      reward_linh_thach: won ? rewardLt : actualLtDelta,
       reward_star_stones: rewardStarStones,
       reward_tickets: rewardTickets,
       linh_thach: newBal,
@@ -412,7 +423,73 @@ export async function challengeTower(userId, options = {}) {
       image_url: battleRes.finalImageWebpUrl || battleRes.reportImageUrl,
       message: won
         ? `${em('su_winner_trophy')} **VƯỢT THÁP TẦNG ${targetFloor} THÀNH CÔNG!**${isBoss ? ' *(Hạ gục Yêu Vương Boss!)*' : ''}\n• Giao chiến với **${guardian.petName}** (Hệ ${guardian.element}) thắng sau **${battleRes.turnCount} hiệp**.\n• Phần thưởng: **${rewardSummary}**\n• Tiến độ Tháp: \`Tầng ${nextFloor}/${TOWER_MAX_FLOOR}\` • Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``
-        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardian.petName}** quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardian.petName}** quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Phạt thất bại: **${actualLtDelta} ${em('su_linhthach')} Linh Thạch** *(Ví còn: ${newBal.toLocaleString('vi-VN')} LT)*.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+    };
+  });
+}
+
+export async function resetTowerAttempts(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  return withQuestLock(cleanId, async () => {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const { user } = await ensureUserInitialized(cleanId, {
+      username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+      avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+    });
+    if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+    const state = await loadNormalizedQuestRow(cleanId, now);
+    if (state.tower_attempts_today <= 0) {
+      return {
+        success: false,
+        status: 400,
+        error: 'TOWER_ATTEMPTS_FULL',
+        message: `${em('su_tower_reset_card', '🗼')} Lượt đi Tháp hôm nay của bạn đang đầy **${TOWER_DAILY_ATTEMPTS_LIMIT}/${TOWER_DAILY_ATTEMPTS_LIMIT}**, không cần reset *(chưa tiêu hao thẻ)*!`,
+      };
+    }
+
+    const { data: cardRow } = await supabase
+      .from('user_inventory')
+      .select('quantity')
+      .eq('user_id', cleanId)
+      .eq('item_id', 'tower_reset_card')
+      .maybeSingle();
+
+    const ownedCards = Number(cardRow?.quantity || 0);
+    if (ownedCards < 1) {
+      return {
+        success: false,
+        status: 400,
+        error: 'NO_TOWER_RESET_CARD',
+        message: `${em('su_tower_reset_card', '🗼')} Bạn chưa có **Thẻ Reset Lượt Đi Tháp** trong túi đồ! Hãy mua trong \`/shop\` với giá **200 Linh Thạch** *(giới hạn 3 thẻ/ngày)*.`,
+      };
+    }
+
+    const nowIso = now.toISOString();
+    const [remainingCards] = await Promise.all([
+      addInventoryItem(cleanId, 'tower_reset_card', 'consumable', -1),
+      supabase.from('user_quests').upsert({
+        user_id: cleanId,
+        quest_date: state.quest_date,
+        daily_claimed_at: state.daily_claimed_at,
+        chat_exp_today: state.chat_exp_today,
+        battles_today: state.battles_today,
+        tower_floor: state.tower_floor,
+        tower_attempts_date: state.tower_attempts_date,
+        tower_attempts_today: 0,
+        updated_at: nowIso,
+      }, { onConflict: 'user_id' }),
+    ]);
+
+    return {
+      success: true,
+      attempts_used: 0,
+      attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
+      remaining_cards: remainingCards,
+      message: `${em('su_tower_reset_card', '🗼')} Đã tiêu **1 Thẻ Reset Lượt Đi Tháp**!\n• Lượt khiêu chiến Tháp hôm nay đã hồi đầy **0/${TOWER_DAILY_ATTEMPTS_LIMIT}** *(sẵn sàng đánh tiếp 5 lượt)*.\n• Thẻ còn lại trong túi: **${remainingCards}/10**`,
     };
   });
 }

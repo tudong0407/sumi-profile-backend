@@ -1,20 +1,41 @@
 import crypto from 'crypto';
 import { compileCombatant } from './statsCompiler.js';
 import { getElementalAdvantage } from './elementalMatrix.js';
-import { PUBLIC_BASE_URL } from '../../data/catalog.js';
+import {
+  PUBLIC_BASE_URL,
+  PET_CATALOG,
+  EQUIPMENT_CATALOG,
+  PET_BY_TYPE,
+  EQUIPMENT_BY_ID,
+} from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
 import { trackQuestActivity } from '../questService.js';
+
+function getVietnamDateKey(date = new Date()) {
+  const vnTime = new Date(date.getTime() + 7 * 3600 * 1000);
+  return vnTime.toISOString().slice(0, 10);
+}
+import { ensureUserInitialized } from '../profileService.js';
 import { renderBattleCard } from '../../canvas/battleRenderer.js';
 import {
   triggerBattleStart,
   triggerTurnStart,
   triggerAttackPhase,
   triggerDamageReceived,
+  triggerPostDamage,
   triggerLethalInterception,
   hasHax,
+  hasPet,
+  hasItem,
+  applyHeal,
 } from './haxEngine.js';
+
+export const PVP_DAILY_LT_LIMIT = 15;
+export const PVE_FREE_DAILY_LT_LIMIT = 25;
+export const BATTLE_WIN_LT = 10;
+export const BATTLE_LOSS_LT = 5;
 
 const BATTLE_CACHE_MAX = 120;
 const BATTLE_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -136,12 +157,6 @@ export function getBattleLogPayload({ battleId, channelId, userId } = {}) {
   };
 }
 
-/**
- * Xây dựng lịch khung hình Adaptive Resolution (Phương án 1):
- * - 1 hiệp: 2 khung (1000x500 Khai trận -> 2000x1000 WINNER)
- * - 2-4 hiệp: 2 khung (1000x500 Hiệp 1 -> 2000x1000 WINNER)
- * - 5+ hiệp: 3 khung (1000x500 Hiệp 1 -> 1000x500 Hiệp giữa -> 2000x1000 WINNER)
- */
 function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
   const getHpAtEndOfTurn = (tNum) => {
     let found = null;
@@ -249,6 +264,24 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
   ];
 }
 
+function formatEquipDetailedLines(c) {
+  const w = c.equipment?.weapon;
+  const g = c.equipment?.gem;
+  const s = c.equipment?.soul;
+  const desc = (item, label) => {
+    if (!item) return `${label}: *Chưa trang bị*`;
+    const haxTxt = item.hax_skill
+      ? `[${item.hax_skill}] ${item.hax_description || ''}`
+      : (item.hax_description || 'Cộng chỉ số nền');
+    return `${label}: **${item.item_name}** — *${haxTxt}*`;
+  };
+  return [
+    `• ${em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
+    `• ${em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
+    `• ${em('su_fox_mascot')} ${desc(s, 'Chiến Hồn')}`,
+  ];
+}
+
 function buildFullBattleLog({
   attacker,
   defender,
@@ -260,8 +293,7 @@ function buildFullBattleLog({
   winner,
   winnerPetEmoji,
   loser,
-  formatEquipLine,
-  formatHaxLine,
+  rewardSummary,
 }) {
   const atkIcon = attacker.petIcon || petEmoji(attacker.petType, em('su_pet_paw'));
   const defIcon = defender.petIcon || petEmoji(defender.petType, em('su_pet_paw'));
@@ -269,29 +301,36 @@ function buildFullBattleLog({
   const elemNote = (() => {
     const a2d = elementMatchup?.attackerToDefender;
     const d2a = elementMatchup?.defenderToAttacker;
-    if (a2d?.isTrueDamage && !d2a?.isTrueDamage) return `Hỗn Độn xuyên giáp (+20% DMG)`;
-    if (d2a?.isTrueDamage && !a2d?.isTrueDamage) return `Hỗn Độn xuyên giáp (+20% DMG)`;
-    if (a2d?.multiplier >= 1.25 && d2a?.multiplier >= 1.25) return `Ám ↔ Quang Tương Sát (+25% DMG)`;
+    if (a2d?.isTrueDamage && !d2a?.isTrueDamage) return 'Hỗn Độn xuyên giáp (+20% DMG)';
+    if (d2a?.isTrueDamage && !a2d?.isTrueDamage) return 'Hỗn Độn xuyên giáp (+20% DMG)';
+    if (a2d?.multiplier >= 1.25 && d2a?.multiplier >= 1.25) return 'Ám ↔ Quang Tương Sát (+25% DMG)';
     if (a2d?.multiplier > 1.0) return `${attacker.element} khắc ${defender.element} (+${Math.round((a2d.multiplier - 1) * 100)}% DMG)`;
     if (d2a?.multiplier > 1.0) return `${defender.element} khắc ${attacker.element} (+${Math.round((d2a.multiplier - 1) * 100)}% DMG)`;
     return 'Ngũ Hành Cân Bằng';
   })();
 
+  const petHaxTxt = (c) => {
+    const cat = PET_BY_TYPE[c.petType];
+    const name = c.petHaxName || c.hax?.pet || cat?.hax_skill || 'Không có';
+    const d = c.petHaxDesc || c.hax?.petDesc || cat?.hax_description || '';
+    return d ? `**${name}** — *${d}*` : `**${name}**`;
+  };
+
   const headerLines = [
-    `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(Hệ ${attacker.element} • Lv.${attacker.level})*`,
+    `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(${attacker.petRarity || 'Phàm'} • Hệ ${attacker.element} • Lv.${attacker.level} • ${attacker.star || 1}★)*`,
     `• \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
-    `• Trang bị: ${formatEquipLine(attacker)}`,
-    `• HAX: \`${formatHaxLine(attacker)}\``,
-    ``,
-    `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(Hệ ${defender.element} • Lv.${defender.level})*`,
+    `• HAX Pet: ${petHaxTxt(attacker)}`,
+    ...formatEquipDetailedLines(attacker),
+    '',
+    `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(${defender.petRarity || 'Phàm'} • Hệ ${defender.element} • Lv.${defender.level} • ${defender.star || 1}★)*`,
     `• \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
-    `• Trang bị: ${formatEquipLine(defender)}`,
-    `• HAX: \`${formatHaxLine(defender)}\``,
+    `• HAX Pet: ${petHaxTxt(defender)}`,
+    ...formatEquipDetailedLines(defender),
     `• Tương khắc: **${elemNote}**`,
   ];
 
   const startLines = battleStartEvents.length > 0
-    ? [``, `**Khai Trận HAX:**`, ...battleStartEvents.map((ev) => {
+    ? ['', '**Khai Trận HAX:**', ...battleStartEvents.map((ev) => {
       const aPet = ev.actor === attacker.id ? attacker.petName : defender.petName;
       return `• ${em('su_thunder_hax')} **${aPet}**: ${ev.skill}`;
     })]
@@ -303,29 +342,33 @@ function buildFullBattleLog({
     if (t.action === 'skip') {
       return `• **H${t.turn}** [${actorObj.petName}]: ${em('su_shield_def')} ${t.haxTriggered || 'Mất lượt'}`;
     }
+    if (t.action === 'miss') {
+      return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
+    }
     const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
     return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
   });
 
   const footerLines = [
-    ``,
+    '',
     `${em('su_winner_trophy')} **KẾT QUẢ:** **${winner.name}** (${winnerPetEmoji} **${winner.pet}**) thắng **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`,
+    ...(rewardSummary ? [`• ${rewardSummary}`] : []),
   ];
 
   const assemble = (tLines) => [
     ...headerLines,
     ...startLines,
-    ``,
+    '',
     `**Diễn Biến Chi Tiết (${turnNumber} Hiệp):**`,
     ...tLines,
     ...footerLines,
   ].join('\n');
 
   let fullText = assemble(allTurnLines);
-  if (fullText.length > 3850 && allTurnLines.length > 12) {
-    const headCount = 6;
-    const tailCount = 6;
+  if (fullText.length > 3850 && allTurnLines.length > 10) {
+    const headCount = 5;
+    const tailCount = 5;
     const omitted = allTurnLines.length - headCount - tailCount;
     const compactTurns = [
       ...allTurnLines.slice(0, headCount),
@@ -340,9 +383,6 @@ function buildFullBattleLog({
   return fullText;
 }
 
-/**
- * Trình tạo số giả ngẫu nhiên có hỗ trợ Seed cho kiểm thử tất định (Deterministic testing)
- */
 function createRng(seed) {
   if (typeof seed === 'number') {
     let s = seed;
@@ -355,8 +395,354 @@ function createRng(seed) {
 }
 
 /**
+ * Chọn đối thủ PvE Tự Do theo đúng tỉ lệ 50% Ngang Cấp / 10% Dưới Cấp / 40% Trên Cấp
+ * (60% Huyễn Ảnh người chơi thật read-only, 40% Yêu Linh hoang dã).
+ */
+export async function resolveFreePveOpponent(attackerCombatant, rng = Math.random) {
+  const rDiff = rng();
+  const band = rDiff < 0.50
+    ? { key: 'even', label: 'Ngang Cấp', minRatio: 0.92, maxRatio: 1.08 }
+    : rDiff < 0.60
+      ? { key: 'weaker', label: 'Dưới Cấp', minRatio: 0.72, maxRatio: 0.88 }
+      : { key: 'stronger', label: 'Trên Cấp', minRatio: 1.12, maxRatio: 1.32 };
+
+  const targetRatio = band.minRatio + rng() * (band.maxRatio - band.minRatio);
+  const attackerPower = Math.max(
+    1500,
+    attackerCombatant.atk * 3 + attackerCombatant.def * 2 + attackerCombatant.spd * 2 + attackerCombatant.level * 50,
+  );
+  const targetPower = Math.round(attackerPower * targetRatio);
+
+  const scaleCombatantToRatio = (c) => {
+    const curPow = Math.max(1000, c.atk * 3 + c.def * 2 + c.spd * 2 + c.level * 50);
+    const ratio = curPow / attackerPower;
+    if (ratio >= band.minRatio && ratio <= band.maxRatio) return c;
+    const factor = Math.max(0.25, Math.min(3.0, targetPower / curPow));
+    c.atk = Math.max(100, Math.round(c.atk * factor));
+    c.def = Math.max(80, Math.round(c.def * factor));
+    c.spd = Math.max(80, Math.round(c.spd * factor));
+    c.baseAtk = c.atk;
+    c.baseDef = c.def;
+    c.baseSpd = c.spd;
+    c.maxHp = Math.max(800, Math.round(c.maxHp * factor));
+    c.currentHp = c.maxHp;
+    return c;
+  };
+
+  const tryShadow = rng() < 0.60 && Boolean(supabase);
+  if (tryShadow) {
+    try {
+      const { data: candidates } = await supabase
+        .from('users')
+        .select('user_id, username, avatar_url, level, avatar_frame')
+        .neq('user_id', attackerCombatant.id)
+        .limit(25);
+
+      if (candidates && candidates.length > 0) {
+        const pickedUser = candidates[Math.floor(rng() * candidates.length)];
+        const shadowCombatant = await compileCombatant(pickedUser.user_id, 'defender');
+        shadowCombatant.id = `pve_shadow_${pickedUser.user_id}`;
+        shadowCombatant.name = `${shadowCombatant.name} (Huyễn Ảnh • ${band.label})`;
+        shadowCombatant.isShadow = true;
+        shadowCombatant.isNpc = true;
+        return { combatant: scaleCombatantToRatio(shadowCombatant), band, sourceType: 'shadow' };
+      }
+    } catch {
+      // fallback to wild spirit
+    }
+  }
+
+  const publicPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+  const preferredRarity = band.key === 'weaker'
+    ? ['common', 'rare']
+    : band.key === 'even'
+      ? ['rare', 'epic']
+      : ['epic', 'mythic'];
+  const poolPets = publicPets.filter((p) => preferredRarity.includes(p.rarity_key));
+  const pickedPet = (poolPets.length ? poolPets : publicPets)[Math.floor(rng() * (poolPets.length || publicPets.length))];
+
+  const pickItem = (slot, rKeys) => {
+    const items = EQUIPMENT_CATALOG.filter((i) => i.item_type === slot && rKeys.includes(i.rarity_key) && !i.is_unique);
+    return items.length ? items[Math.floor(rng() * items.length)] : null;
+  };
+  const equipTiers = band.key === 'weaker' ? ['common'] : band.key === 'even' ? ['rare', 'epic'] : ['epic'];
+  const weapon = pickItem('weapon', equipTiers);
+  const gem = pickItem('gem', equipTiers);
+  const soul = pickItem('soul', equipTiers);
+
+  const botLevel = Math.max(1, Math.round(attackerCombatant.level * targetRatio));
+  const botProfile = {
+    user_id: 'pve_wild_spirit',
+    username: `Yêu Linh • ${pickedPet.pet_name} (${band.label})`,
+    level: botLevel,
+    avatar_frame: 'default',
+    pet: {
+      name: pickedPet.pet_name,
+      pet_type: pickedPet.pet_type,
+      rarity: pickedPet.rarity,
+      element: pickedPet.element,
+      hax_skill: pickedPet.hax_skill,
+      hax_desc: pickedPet.hax_description,
+      level: botLevel,
+      star: Math.max(1, Math.min(10, Math.round((attackerCombatant.star || 1) * targetRatio))),
+      atk: pickedPet.base_atk,
+      def: pickedPet.base_def,
+      spd: pickedPet.base_spd,
+      base_atk: pickedPet.base_atk,
+      base_def: pickedPet.base_def,
+      base_spd: pickedPet.base_spd,
+      bonus_atk: 0,
+      bonus_def: 0,
+      bonus_spd: 0,
+      bonus_hp: 0,
+      equipment: { weapon, gem, soul },
+    },
+  };
+
+  const botCombatant = await compileCombatant(botProfile, 'defender');
+  botCombatant.isNpc = true;
+  return { combatant: scaleCombatantToRatio(botCombatant), band, sourceType: 'wild_spirit' };
+}
+
+async function adjustUserLinhThach(userId, delta) {
+  if (!supabase || !/^[0-9]{17,20}$/.test(String(userId || ''))) return null;
+  const { user } = await ensureUserInitialized(userId);
+  if (!user) return null;
+  const before = Number(user.linh_thach || 0);
+  const after = Math.max(0, before + delta);
+  await supabase
+    .from('users')
+    .update({ linh_thach: after, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
+  return { before, after, delta: after - before };
+}
+
+export async function applyBattleLinhThachReward({
+  mode,
+  attackerId,
+  defenderId,
+  attackerWon,
+  isMirror = false,
+  now = new Date(),
+} = {}) {
+  if (!supabase || !/^[0-9]{17,20}$/.test(String(attackerId || ''))) {
+    return { applied: false, delta: 0, reward_summary: '' };
+  }
+
+  const today = getVietnamDateKey(now);
+  await ensureUserInitialized(attackerId);
+
+  const { data: existingQ } = await supabase
+    .from('user_quests')
+    .select('*')
+    .eq('user_id', attackerId)
+    .maybeSingle();
+
+  const qRow = existingQ || { user_id: attackerId };
+
+  if (mode === 'pve_free') {
+    const usedToday = qRow.pve_free_date === today ? Number(qRow.pve_free_rewards_today || 0) : 0;
+    if (usedToday >= PVE_FREE_DAILY_LT_LIMIT) {
+      return {
+        applied: false,
+        delta: 0,
+        used_today: usedToday,
+        daily_limit: PVE_FREE_DAILY_LT_LIMIT,
+        reward_summary: `${em('su_linhthach')} Đã hết **${PVE_FREE_DAILY_LT_LIMIT}/${PVE_FREE_DAILY_LT_LIMIT}** lượt nhận thưởng PvE Tự Do hôm nay (vẫn giao đấu tự do 0 LT).`,
+      };
+    }
+
+    const nextCount = usedToday + 1;
+    await supabase.from('user_quests').upsert({
+      user_id: attackerId,
+      pve_free_date: today,
+      pve_free_rewards_today: nextCount,
+      updated_at: now.toISOString(),
+    }, { onConflict: 'user_id' });
+
+    const rawDelta = attackerWon ? BATTLE_WIN_LT : -BATTLE_LOSS_LT;
+    const bal = await adjustUserLinhThach(attackerId, rawDelta);
+    const actualDelta = bal ? bal.delta : rawDelta;
+    const signStr = actualDelta >= 0 ? `+${actualDelta}` : `${actualDelta}`;
+    return {
+      applied: true,
+      delta: actualDelta,
+      used_today: nextCount,
+      daily_limit: PVE_FREE_DAILY_LT_LIMIT,
+      linh_thach: bal?.after,
+      reward_summary: `${em('su_linhthach')} PvE Tự Do: **${signStr} Linh Thạch** *(Lượt thưởng hôm nay: ${nextCount}/${PVE_FREE_DAILY_LT_LIMIT} • Ví: ${(bal?.after ?? 0).toLocaleString('vi-VN')} LT)*`,
+    };
+  }
+
+  if (mode === 'pvp' && !isMirror) {
+    const usedToday = qRow.pvp_reward_date === today ? Number(qRow.pvp_rewards_today || 0) : 0;
+    if (usedToday >= PVP_DAILY_LT_LIMIT) {
+      return {
+        applied: false,
+        delta: 0,
+        used_today: usedToday,
+        daily_limit: PVP_DAILY_LT_LIMIT,
+        reward_summary: `${em('su_linhthach')} Đã đạt giới hạn **${PVP_DAILY_LT_LIMIT}/${PVP_DAILY_LT_LIMIT}** trận PvP tính LT hôm nay (giao đấu danh dự 0 LT).`,
+      };
+    }
+
+    const nextCount = usedToday + 1;
+    await supabase.from('user_quests').upsert({
+      user_id: attackerId,
+      pvp_reward_date: today,
+      pvp_rewards_today: nextCount,
+      updated_at: now.toISOString(),
+    }, { onConflict: 'user_id' });
+
+    const atkDeltaRaw = attackerWon ? BATTLE_WIN_LT : -BATTLE_LOSS_LT;
+    const defDeltaRaw = attackerWon ? -BATTLE_LOSS_LT : BATTLE_WIN_LT;
+
+    const atkBal = await adjustUserLinhThach(attackerId, atkDeltaRaw);
+    const defBal = /^[0-9]{17,20}$/.test(String(defenderId || '')) && defenderId !== attackerId
+      ? await adjustUserLinhThach(defenderId, defDeltaRaw)
+      : null;
+
+    const aSign = (atkBal?.delta ?? atkDeltaRaw) >= 0 ? `+${atkBal?.delta ?? atkDeltaRaw}` : `${atkBal?.delta ?? atkDeltaRaw}`;
+    const dSign = (defBal?.delta ?? defDeltaRaw) >= 0 ? `+${defBal?.delta ?? defDeltaRaw}` : `${defBal?.delta ?? defDeltaRaw}`;
+    return {
+      applied: true,
+      delta: atkBal?.delta ?? atkDeltaRaw,
+      defender_delta: defBal?.delta ?? 0,
+      used_today: nextCount,
+      daily_limit: PVP_DAILY_LT_LIMIT,
+      reward_summary: `${em('su_linhthach')} Thưởng/Phạt PvP: Bên Công **${aSign} LT** • Bên Thủ **${dSign} LT** *(${nextCount}/${PVP_DAILY_LT_LIMIT} trận hôm nay)*`,
+    };
+  }
+
+  return { applied: false, delta: 0, reward_summary: '' };
+}
+
+/**
+ * Thống nhất thực thi 1 đòn đánh (chính & phụ) đi qua đầy đủ Né, Giảm ST, Khiên, Nổ Khiên, Phản Đòn, PostDamage & Bất Tử (Bug #5 fixed!)
+ */
+function executeHit({
+  actor,
+  target,
+  rawBaseDamage,
+  elemData,
+  rng,
+  attacker,
+  defender,
+  turnNumber,
+  role,
+  turns,
+  label = null,
+  forcedDamage = null,
+  forcedDefPiercePct = 0,
+  extraEvents = [],
+}) {
+  let attackPhase;
+  if (forcedDamage !== null) {
+    const baseDefTarget = elemData.isTrueDamage ? 0 : Math.max(0, Math.round(target.def * (1 - (target.state.defDebuffPct || 0))));
+    const effDef = Math.floor(baseDefTarget * Math.max(0, 1 - forcedDefPiercePct));
+    const calc = Math.max(50, Math.floor((forcedDamage - effDef * 0.4) * (elemData.multiplier || 1)));
+    attackPhase = {
+      damage: calc,
+      isCrit: false,
+      isMiss: false,
+      isDodged: false,
+      triggerCounter: false,
+      shieldPiercePct: 0,
+      lifestealPct: 0,
+      instantExecute: false,
+      haxTriggered: label,
+    };
+  } else {
+    attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, elemData);
+  }
+
+  const notes = [...extraEvents];
+  if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
+  let actualDamageDealt = 0;
+
+  if (!attackPhase.isMiss) {
+    const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng);
+    for (const ev of damageRecv.events || []) {
+      if (ev?.skill) notes.push(ev.skill);
+    }
+
+    let dmgToApply = damageRecv.finalDamage;
+    const hadShield = target.shield || 0;
+
+    if (hadShield > 0) {
+      const piercePct = Math.min(1, Math.max(0, Number(attackPhase.shieldPiercePct) || 0));
+      const bypassDmg = Math.floor(dmgToApply * piercePct);
+      let shieldableDmg = dmgToApply - bypassDmg;
+
+      if (target.shield >= shieldableDmg) {
+        target.shield -= shieldableDmg;
+        shieldableDmg = 0;
+      } else {
+        shieldableDmg -= target.shield;
+        target.shield = 0;
+      }
+      dmgToApply = bypassDmg + shieldableDmg;
+
+      if (target.shield === 0 && target.state.shieldExplodePct > 0) {
+        const pct = target.state.shieldExplodePct;
+        target.state.shieldExplodePct = 0;
+        const explodeDmg = Math.floor(target.maxHp * pct);
+        actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
+        notes.push(`Vỡ Khiên Bất Động Sơn Hà (-${explodeDmg.toLocaleString('vi-VN')} ST Chuẩn)`);
+        if (actor.currentHp <= 0) {
+          const li = triggerLethalInterception(actor, target, rng);
+          if (li.survived && li.skill) notes.push(li.skill);
+        }
+      }
+    }
+
+    target.currentHp = Math.max(0, target.currentHp - dmgToApply);
+    actualDamageDealt = dmgToApply;
+
+    if (attackPhase.lifestealPct > 0 && actualDamageDealt > 0 && actor.currentHp > 0) {
+      const healed = applyHeal(actor, actualDamageDealt * attackPhase.lifestealPct);
+      if (healed > 0) notes.push(`Hút Máu +${healed.toLocaleString('vi-VN')}`);
+    }
+
+    if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
+      actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
+      notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')}`);
+      if (actor.currentHp <= 0) {
+        const li = triggerLethalInterception(actor, target, rng);
+        if (li.survived && li.skill) notes.push(li.skill);
+      }
+    }
+
+    if (target.currentHp > 0) {
+      const postEvents = triggerPostDamage(target, actor);
+      for (const pev of postEvents) {
+        if (pev?.skill) notes.push(pev.skill);
+      }
+    } else {
+      const lethalInterception = triggerLethalInterception(target, actor, rng);
+      if (lethalInterception.survived && lethalInterception.skill) {
+        notes.push(lethalInterception.skill);
+      }
+    }
+  }
+
+  turns.push({
+    turn: turnNumber,
+    actor: role,
+    action: attackPhase.isMiss ? 'miss' : 'attack',
+    damage: actualDamageDealt,
+    isCrit: attackPhase.isCrit,
+    elementAdvantage: elemData.elementAdvantage,
+    haxTriggered: notes.length > 0 ? notes.join(' • ') : null,
+    attackerHp: attacker.currentHp,
+    defenderHp: defender.currentHp,
+  });
+
+  return { attackPhase, actualDamageDealt };
+}
+
+/**
  * Điều phối trận chiến Linh Thú theo lượt (Turn-based Pet Battle Simulation)
- * Hỗ trợ song song hóa Supabase, Adaptive Resolution WebP pre-render RAM & Full Battle Log.
  */
 export async function simulateBattle(attackerUserOrId, defenderUserOrId, options = {}) {
   const safeOptions = options || {};
@@ -364,11 +750,20 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const rng = createRng(safeOptions.seed);
   const channelId = safeOptions.channelId ? String(safeOptions.channelId).trim() : null;
 
-  // 1. Song song biên dịch chỉ số 2 đấu sĩ
-  const [attacker, defender] = await Promise.all([
-    compileCombatant(attackerUserOrId, 'attacker'),
-    compileCombatant(defenderUserOrId, 'defender'),
-  ]);
+  const isFreePve = safeOptions.mode === 'pve_free' || defenderUserOrId === 'pve_free' || !defenderUserOrId;
+  const mode = safeOptions.mode || (isFreePve ? 'pve_free' : 'pvp');
+
+  const attacker = await compileCombatant(attackerUserOrId, 'attacker');
+  let defender = null;
+  let opponentBand = null;
+
+  if (mode === 'pve_free') {
+    const pve = await resolveFreePveOpponent(attacker, rng);
+    defender = pve.combatant;
+    opponentBand = pve.band;
+  } else {
+    defender = await compileCombatant(defenderUserOrId, 'defender');
+  }
 
   const initialHp = {
     attacker: attacker.maxHp,
@@ -376,28 +771,30 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   };
 
   const turns = [];
-
-  // 2. Kích hoạt hiệu ứng đầu trận
   const battleStartEvents = triggerBattleStart(attacker, defender, rng) || [];
 
-  // 3. Xác định thứ tự đánh
+  const getEffSpd = (c) => {
+    let base = Math.round(c.spd * (1 - (c.state.spdDebuffPct || 0)));
+    if (hasItem(c, 'soul_rare_1')) base = Math.round(base * 1.15);
+    return base;
+  };
+
   let attackerFirst = true;
-  const atkHasSpeedPriority = hasHax(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc');
-  const defHasSpeedPriority = hasHax(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc');
+  const atkHasSpeedPriority = hasPet(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc');
+  const defHasSpeedPriority = hasPet(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc');
 
   if (atkHasSpeedPriority && !defHasSpeedPriority) {
     attackerFirst = true;
   } else if (!atkHasSpeedPriority && defHasSpeedPriority) {
     attackerFirst = false;
   } else {
-    attackerFirst = attacker.spd >= defender.spd;
+    attackerFirst = getEffSpd(attacker) >= getEffSpd(defender);
   }
 
   let turnNumber = 0;
 
-  // 4. Vòng lặp chiến đấu theo lượt
   while (attacker.currentHp > 0 && defender.currentHp > 0 && turnNumber < maxTurns) {
-    turnNumber++;
+    turnNumber += 1;
 
     const order = attackerFirst
       ? [{ actor: attacker, target: defender, role: 'attacker' }, { actor: defender, target: attacker, role: 'defender' }]
@@ -407,8 +804,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       if (attacker.currentHp <= 0 || defender.currentHp <= 0) break;
 
       const { actor, target, role } = step;
-
-      const turnStartResult = triggerTurnStart(actor, target, rng);
+      const oppRole = role === 'attacker' ? 'defender' : 'attacker';
+      const turnStartResult = triggerTurnStart(actor, target, rng, turnNumber);
+      const startTags = (turnStartResult.events || []).map((e) => (typeof e === 'object' ? e.skill : e)).filter(Boolean);
 
       if (turnStartResult.skipTurn) {
         turns.push({
@@ -418,96 +816,131 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           damage: 0,
           isCrit: false,
           elementAdvantage: null,
-          haxTriggered: 'Mất lượt do khống chế',
+          haxTriggered: startTags[0] || 'Mất lượt do khống chế',
           attackerHp: attacker.currentHp,
           defenderHp: defender.currentHp,
         });
         continue;
       }
 
+      if (actor.currentHp <= 0 || defender.currentHp <= 0) break;
+
       const actualTarget = turnStartResult.attackSelf ? actor : target;
       const elemData = getElementalAdvantage(actor.element, actualTarget.element);
-      const targetDef = elemData.isTrueDamage ? 0 : actualTarget.def;
-      const rawBaseDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (targetDef * 0.5)) * elemData.multiplier));
-      const attackPhase = triggerAttackPhase(actor, actualTarget, rawBaseDmg, rng);
+      const rawBaseDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (actualTarget.def * 0.5)) * elemData.multiplier));
 
-      let actualDamageDealt = 0;
-      const turnStartHax = turnStartResult?.events?.length > 0
-        ? (typeof turnStartResult.events[0] === 'object' ? turnStartResult.events[0]?.skill : turnStartResult.events[0])
-        : null;
-      let haxEventName = attackPhase.haxTriggered || turnStartHax;
-
-      if (!attackPhase.isMiss) {
-        const damageRecv = triggerDamageReceived(actualTarget, attackPhase.damage, actor, rng);
-        let dmgToApply = damageRecv.finalDamage;
-
-        if (actualTarget.shield > 0 && !actor.state.antiShieldTurns) {
-          if (actualTarget.shield >= dmgToApply) {
-            actualTarget.shield -= dmgToApply;
-            dmgToApply = 0;
-          } else {
-            dmgToApply -= actualTarget.shield;
-            actualTarget.shield = 0;
-          }
-        }
-
-        actualTarget.currentHp = Math.max(0, actualTarget.currentHp - dmgToApply);
-        actualDamageDealt = dmgToApply;
-
-        if (damageRecv.reflectedDamage > 0) {
-          actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
-          haxEventName = haxEventName ? `${haxEventName} + Phản Đòn` : 'Phản Đòn';
-        }
-
-        if (actualTarget.currentHp <= 0) {
-          const lethalInterception = triggerLethalInterception(actualTarget, actor, rng);
-          if (lethalInterception.survived) {
-            haxEventName = lethalInterception.skill;
-          }
-        }
-      }
-
-      turns.push({
-        turn: turnNumber,
-        actor: role,
-        action: 'attack',
-        damage: actualDamageDealt,
-        isCrit: attackPhase.isCrit,
-        elementAdvantage: elemData.elementAdvantage,
-        haxTriggered: haxEventName || null,
-        attackerHp: attacker.currentHp,
-        defenderHp: defender.currentHp,
+      const mainRes = executeHit({
+        actor,
+        target: actualTarget,
+        rawBaseDamage: rawBaseDmg,
+        elemData,
+        rng,
+        attacker,
+        defender,
+        turnNumber,
+        role,
+        turns,
+        extraEvents: startTags,
       });
 
+      // Phản công tức thì nếu Thái Âm Ngọc Thỏ né đòn thành công
+      if (mainRes.attackPhase.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0) {
+        const counterElem = getElementalAdvantage(actualTarget.element, actor.element);
+        executeHit({
+          actor: actualTarget,
+          target: actor,
+          rawBaseDamage: 0,
+          elemData: counterElem,
+          rng,
+          attacker,
+          defender,
+          turnNumber,
+          role: oppRole,
+          turns,
+          label: 'Nguyệt Hoa Phản Công (80% ATK)',
+          forcedDamage: Math.floor(actualTarget.atk * 0.80),
+          forcedDefPiercePct: 0,
+        });
+      }
+
+      // Cửu Thiên Lôi Phượng: 30% đánh thêm đòn sét 60% ATK xuyên 30% DEF
+      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && hasPet(actor, 'cuu_thien_loi_phuong') && rng() < 0.30) {
+        executeHit({
+          actor,
+          target: actualTarget,
+          rawBaseDamage: 0,
+          elemData,
+          rng,
+          attacker,
+          defender,
+          turnNumber,
+          role,
+          turns,
+          label: 'Lôi Kiếp Liên Hoàn (60% ATK • Xuyên 30% Giáp)',
+          forcedDamage: Math.floor(actor.atk * 0.60),
+          forcedDefPiercePct: 0.30,
+        });
+      }
+
+      // « Thái Bạch Kiếm Tiên Hồn » (soul_mythic_4): Mỗi 2 hiệp tung kiếm khí 70% ATK xuyên 50% DEF
+      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && turnNumber % 2 === 0 && hasItem(actor, 'soul_mythic_4')) {
+        executeHit({
+          actor,
+          target: actualTarget,
+          rawBaseDamage: 0,
+          elemData,
+          rng,
+          attacker,
+          defender,
+          turnNumber,
+          role,
+          turns,
+          label: 'Vạn Kiếm Quy Tông (70% ATK • Xuyên 50% Giáp)',
+          forcedDamage: Math.floor(actor.atk * 0.70),
+          forcedDefPiercePct: 0.50,
+        });
+      }
+
+      // Thời Không Đình Chỉ / Nguyệt Thần Bạch Vĩ Hồ: Đánh thêm 1 lượt qua cùng pipeline chuẩn!
       if (actor.state.isDoubleTurn) {
         actor.state.isDoubleTurn = false;
-        if (actualTarget.currentHp > 0) {
-          const extraRawDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (targetDef * 0.5)) * elemData.multiplier));
-          const extraAttack = triggerAttackPhase(actor, actualTarget, extraRawDmg, rng);
-          actualTarget.currentHp = Math.max(0, actualTarget.currentHp - extraAttack.damage);
-
-          turns.push({
-            turn: turnNumber,
-            actor: role,
-            action: 'attack',
-            damage: extraAttack.damage,
-            isCrit: extraAttack.isCrit,
-            elementAdvantage: elemData.elementAdvantage,
-            haxTriggered: 'Thời Không Đình Chỉ (Liên Hoàn Đòn)',
-            attackerHp: attacker.currentHp,
-            defenderHp: defender.currentHp,
+        if (actor.currentHp > 0 && target.currentHp > 0) {
+          executeHit({
+            actor,
+            target,
+            rawBaseDamage: rawBaseDmg,
+            elemData: getElementalAdvantage(actor.element, target.element),
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns,
+            extraEvents: ['Liên Hoàn Đòn (Thêm Lượt)'],
           });
         }
       }
     }
   }
 
-  // 5. Xác định Người chiến thắng / Kẻ thất bại
   const attackerWon = attacker.currentHp > defender.currentHp;
   const winnerCombatant = attackerWon ? attacker : defender;
   const loserCombatant = attackerWon ? defender : attacker;
   const winner = { id: winnerCombatant.id, name: winnerCombatant.name, pet: winnerCombatant.petName };
   const loser = { id: loserCombatant.id, name: loserCombatant.name, pet: loserCombatant.petName };
+
+  // Tính thưởng/phạt Linh Thạch nếu được kích hoạt từ endpoint đấu trường
+  let rewardInfo = { applied: false, delta: 0, reward_summary: '' };
+  if (safeOptions.applyRewards) {
+    rewardInfo = await applyBattleLinhThachReward({
+      mode,
+      attackerId: attacker.id,
+      defenderId: defender.id,
+      attackerWon,
+      isMirror: attacker.id === defender.id,
+      now: new Date(),
+    });
+  }
 
   const winnerPetEmoji = winnerCombatant.petIcon || petEmoji(winnerCombatant.petType, em('su_pet_paw'));
   const summary = `Trận đấu kết thúc sau ${turnNumber} hiệp. ${winner.name} cùng linh thú ${winner.pet} giành chiến thắng áp đảo!`;
@@ -518,7 +951,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     defenderToAttacker: getElementalAdvantage(defender.element, attacker.element),
   };
 
-  // Trích lọc highlights giữ tương thích schema cũ
   const shortPet = (s) => (s && s.length > 12 ? s.slice(0, 11) + '…' : s);
   const highlights = [];
   for (const ev of battleStartEvents.slice(0, 2)) {
@@ -534,7 +966,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       highlights.push(`H${t.turn} • ${aName}: ${t.haxTriggered || 'Mất lượt'}`);
     } else if (t.haxTriggered || t.isCrit || t.turn === 1 || t.turn === turnNumber) {
       const critTxt = t.isCrit ? ' CRIT' : '';
-      const haxTxt = t.haxTriggered ? ` (${t.haxTriggered.split('(')[0].trim()})` : '';
+      const haxTxt = t.haxTriggered ? ` (${t.haxTriggered.split('(')[0].trim().slice(0, 26)})` : '';
       highlights.push(`H${t.turn} • ${aName} → ${dName}: -${t.damage.toLocaleString('vi-VN')} HP${critTxt}${haxTxt}`);
     }
   }
@@ -572,46 +1004,6 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const reportImagePath = `/api/battle/report/${battleId}.png`;
   const reportImageUrl = `${PUBLIC_BASE_URL}${reportImagePath}`;
 
-  const formatEquipLine = (c) => {
-    const w = c.equipment?.weapon?.item_name || 'Không có';
-    const g = c.equipment?.gem?.item_name || 'Không có';
-    const s = c.equipment?.soul?.item_name || 'Không có';
-    return `${em('su_crossed_swords')} ${w} • ${em('su_linhthach')} ${g} • ${em('su_fox_mascot')} ${s}`;
-  };
-  const formatHaxLine = (c) => {
-    const list = [c.hax?.pet, c.hax?.weapon, c.hax?.gem, c.hax?.soul].filter(Boolean);
-    return list.length > 0 ? list.join(' • ') : 'Không có';
-  };
-  const turnLines = turns.slice(0, 8).map((t) => {
-    const actorObj = t.actor === 'attacker' ? attacker : defender;
-    const targetObj = t.actor === 'attacker' ? defender : attacker;
-    if (t.action === 'skip') {
-      return `• **Hiệp ${t.turn}** [${actorObj.petName}]: ${em('su_shield_def')} ${t.haxTriggered || 'Mất lượt'}`;
-    }
-    const critTag = t.isCrit ? ` ${em('su_crit_boom')} **BẠO KÍCH!**` : '';
-    const elemTag = t.elementAdvantage ? ` *(${t.elementAdvantage})*` : '';
-    const haxTag = t.haxTriggered ? `\n  -> ${em('su_thunder_hax')} *HAX: ${t.haxTriggered}*` : '';
-    return `• **Hiệp ${t.turn}** — **${actorObj.petName}** (${actorObj.name}) công kích **${targetObj.petName}** gây **${t.damage.toLocaleString('vi-VN')}** sát thương!${critTag}${elemTag}${haxTag}\n  -> ${em('su_sparkle')} HP còn lại: ${attacker.petName} **${t.attackerHp.toLocaleString('vi-VN')}** | ${defender.petName} **${t.defenderHp.toLocaleString('vi-VN')}**`;
-  });
-
-  const discordReport = [
-    `### ${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ NGŨ HÀNH & HAX`,
-    `**1. Phe Công Kích:** **${attacker.name}** — **${attacker.petName}** *(Hệ ${attacker.element} • Cấp ${attacker.level})*`,
-    `• Chỉ số: \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
-    `• Trang bị Loadout: ${formatEquipLine(attacker)}`,
-    `• Tuyệt kỹ HAX: \`${formatHaxLine(attacker)}\``,
-    ``,
-    `**2. Phe Phòng Thủ:** **${defender.name}** — **${defender.petName}** *(Hệ ${defender.element} • Cấp ${defender.level})*`,
-    `• Chỉ số: \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
-    `• Trang bị Loadout: ${formatEquipLine(defender)}`,
-    `• Tuyệt kỹ HAX: \`${formatHaxLine(defender)}\``,
-    ``,
-    `### ${em('su_wiki_scroll')} DIỄN BIẾN TRẬN CHIẾN (${turnNumber} HIỆP)`,
-    ...turnLines,
-    ``,
-    `${em('su_winner_trophy')} **KẾT QUẢ CHUNG CUỘC:** **${winner.name}** cùng linh thú **${winner.pet}** đã đánh bại **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`
-  ].join('\n');
-
   const fullBattleLog = buildFullBattleLog({
     attacker,
     defender,
@@ -623,8 +1015,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     winner,
     winnerPetEmoji,
     loser,
-    formatEquipLine,
-    formatHaxLine,
+    rewardSummary: rewardInfo.reward_summary,
   });
 
   const finalHp = {
@@ -638,6 +1029,10 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   const finalResult = {
     success: true,
+    mode,
+    opponent_tier_label: opponentBand?.label || (mode === 'pvp' ? 'PvP 1v1' : 'PvE'),
+    linh_thach_delta: rewardInfo.delta || 0,
+    reward_summary: rewardInfo.reward_summary || '',
     battleId,
     turnCount: turnNumber,
     winnerRole: attackerWon ? 'attacker' : 'defender',
@@ -666,10 +1061,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     finalImageWebpUrl: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${frameLast.index}.webp`,
     framesMeta,
     fullBattleLog,
-    discordReport,
+    discordReport: fullBattleLog,
   };
 
-  // Pre-render sẵn toàn bộ WebP frames vào RAM song song với cộng điểm Bang Chiến 24H
   const frameBuffers = new Map();
   const preRenderTask = safeOptions.preRender !== false
     ? Promise.all(
@@ -685,7 +1079,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         } catch (err) {
           console.warn(`[BattleService] Pre-render frame ${f.index} failed:`, err.message);
         }
-      })
+      }),
     )
     : Promise.resolve();
 

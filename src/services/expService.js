@@ -29,9 +29,32 @@ export const CHAT_COOLDOWN_MS = 45 * 1000;
 export const CHAT_EXP_MIN = 20;
 export const CHAT_EXP_MAX = 30;
 export const VOICE_BLOCK_MINUTES = 5;
-export const VOICE_EXP_MIN = 70;
-export const VOICE_EXP_MAX = 110;
+export const VOICE_EXP_MIN = 85;
+export const VOICE_EXP_MAX = 135;
 export const MAX_VOICE_SESSION_MINUTES = 240;
+
+export function computeLevelUpLinhThachReward(highestClaimed, newLevel) {
+  const prevClaimed = Math.max(1, Number(highestClaimed) || 1);
+  const targetLvl = Math.min(100, Math.max(1, Number(newLevel) || 1));
+  if (targetLvl <= prevClaimed) {
+    return { totalReward: 0, newHighestClaimed: prevClaimed, newlyClaimedLevels: [] };
+  }
+
+  let totalReward = 0;
+  const newlyClaimedLevels = [];
+  for (let lvl = prevClaimed + 1; lvl <= targetLvl; lvl += 1) {
+    const baseLt = lvl <= 19 ? 50 : lvl <= 39 ? 100 : lvl <= 59 ? 150 : lvl <= 79 ? 250 : 400;
+    const milestoneBonus = lvl % 10 === 0 ? lvl * 20 : 0;
+    totalReward += baseLt + milestoneBonus;
+    newlyClaimedLevels.push({ level: lvl, reward: baseLt + milestoneBonus });
+  }
+
+  return {
+    totalReward,
+    newHighestClaimed: targetLvl,
+    newlyClaimedLevels,
+  };
+}
 
 const LOCKED_XP_ROLES = new Set([
   '1471111216423370792', // Locked XP
@@ -289,17 +312,24 @@ export async function grantChatExp(params = {}, opts = {}) {
 
     const prog = computeLevelProgression(currentLevel, currentExp, expGained);
     const newMaxSlots = Math.max(Number(user.max_role_slots) || 1, getMaxRoleSlotsByLevel(prog.level));
+    const currentHighestClaimed = Math.max(currentLevel, Number(user.highest_level_claimed) || 1);
+    const ltReward = computeLevelUpLinhThachReward(currentHighestClaimed, prog.level);
+    const newBalance = Number(user.linh_thach || 0) + ltReward.totalReward;
 
-    await persistUserExpUpdate(
-      cleanId,
-      {
-        level: prog.level,
-        exp: prog.exp,
-        max_role_slots: newMaxSlots,
-        last_chat_exp_at: nowIso,
-      },
-      persisted
-    );
+    const patch = {
+      level: prog.level,
+      exp: prog.exp,
+      max_role_slots: newMaxSlots,
+      last_chat_exp_at: nowIso,
+    };
+    if (ltReward.totalReward > 0) {
+      patch.linh_thach = newBalance;
+    }
+    if (ltReward.newHighestClaimed > (Number(user.highest_level_claimed) || 1) && persisted) {
+      patch.highest_level_claimed = ltReward.newHighestClaimed;
+    }
+
+    await persistUserExpUpdate(cleanId, patch, persisted);
 
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
@@ -307,6 +337,10 @@ export async function grantChatExp(params = {}, opts = {}) {
     if (persisted && expGained > 0) {
       await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
     }
+
+    const ltNote = ltReward.totalReward > 0
+      ? ` Nhận **+${ltReward.totalReward.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** vượt cấp!`
+      : '';
 
     return {
       success: true,
@@ -323,11 +357,14 @@ export async function grantChatExp(params = {}, opts = {}) {
       realm: prog.realm,
       max_role_slots: newMaxSlots,
       leveled_up: prog.leveledUp,
+      level_up_linh_thach: ltReward.totalReward,
+      highest_level_claimed: ltReward.newHighestClaimed,
+      linh_thach: newBalance,
       unlocked_level_role_id: prog.unlockedRole?.roleId || '',
       unlocked_level_role_name: prog.unlockedRole?.name || '',
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `${em('su_level_up', '✨')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up', '✨')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });
@@ -437,6 +474,10 @@ export async function handleVoiceExp(params = {}, opts = {}) {
 
     const prog = computeLevelProgression(currentLevel, currentExp, expGained);
     const newMaxSlots = Math.max(Number(user.max_role_slots) || 1, getMaxRoleSlotsByLevel(prog.level));
+    const currentHighestClaimed = Math.max(currentLevel, Number(user.highest_level_claimed) || 1);
+    const ltReward = computeLevelUpLinhThachReward(currentHighestClaimed, prog.level);
+    const newBalance = Number(user.linh_thach || 0) + ltReward.totalReward;
+
     const rewardedMinutes = blocks * VOICE_BLOCK_MINUTES;
     const newTotalVoiceMinutes = (Number(user.total_voice_minutes) || 0) + (action === 'leave' ? elapsedMinutes : rewardedMinutes);
 
@@ -445,7 +486,10 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       nextVoiceJoinedAt = null;
     } else if (action === 'switch' || action === 'heartbeat') {
       if (!Number.isNaN(joinedMs) && rewardedMinutes > 0) {
-        nextVoiceJoinedAt = new Date(joinedMs + rewardedMinutes * 60000).toISOString();
+        const advancedMs = joinedMs + rewardedMinutes * 60000;
+        nextVoiceJoinedAt = advancedMs < nowMs - MAX_VOICE_SESSION_MINUTES * 60000
+          ? nowIso
+          : new Date(advancedMs).toISOString();
       } else if (!Number.isNaN(joinedMs)) {
         nextVoiceJoinedAt = user.voice_joined_at;
       } else {
@@ -453,17 +497,21 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       }
     }
 
-    await persistUserExpUpdate(
-      cleanId,
-      {
-        level: prog.level,
-        exp: prog.exp,
-        max_role_slots: newMaxSlots,
-        voice_joined_at: nextVoiceJoinedAt,
-        total_voice_minutes: newTotalVoiceMinutes,
-      },
-      persisted
-    );
+    const patch = {
+      level: prog.level,
+      exp: prog.exp,
+      max_role_slots: newMaxSlots,
+      voice_joined_at: nextVoiceJoinedAt,
+      total_voice_minutes: newTotalVoiceMinutes,
+    };
+    if (ltReward.totalReward > 0) {
+      patch.linh_thach = newBalance;
+    }
+    if (ltReward.newHighestClaimed > (Number(user.highest_level_claimed) || 1) && persisted) {
+      patch.highest_level_claimed = ltReward.newHighestClaimed;
+    }
+
+    await persistUserExpUpdate(cleanId, patch, persisted);
 
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
@@ -471,6 +519,10 @@ export async function handleVoiceExp(params = {}, opts = {}) {
     if (persisted && expGained > 0) {
       await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
     }
+
+    const ltNote = ltReward.totalReward > 0
+      ? ` Nhận **+${ltReward.totalReward.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** vượt cấp!`
+      : '';
 
     return {
       success: true,
@@ -491,12 +543,70 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       realm: prog.realm,
       max_role_slots: newMaxSlots,
       leveled_up: prog.leveledUp,
+      level_up_linh_thach: ltReward.totalReward,
+      highest_level_claimed: ltReward.newHighestClaimed,
+      linh_thach: newBalance,
       unlocked_level_role_id: prog.unlockedRole?.roleId || '',
       unlocked_level_role_name: prog.unlockedRole?.name || '',
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `${em('su_level_up', '✨')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up', '✨')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });
+}
+
+/**
+ * Quét toàn bộ tu sĩ đang treo trong phòng thoại (voice_joined_at != null) để cộng EXP định kỳ mỗi 12 phút
+ */
+export async function processVoiceHeartbeat(opts = {}) {
+  if (!supabase) {
+    return { success: true, scanned: 0, awarded_count: 0, total_exp_awarded: 0, total_lt_awarded: 0, leveled_up_users: [] };
+  }
+
+  const { data: rows, error } = await supabase
+    .from('users')
+    .select('user_id')
+    .not('voice_joined_at', 'is', null);
+
+  if (error) {
+    throw new Error(`Voice heartbeat scan failed: ${error.message}`);
+  }
+
+  let awardedCount = 0;
+  let totalExp = 0;
+  let totalLt = 0;
+  const leveledUpUsers = [];
+
+  for (const row of (rows || [])) {
+    try {
+      const r = await handleVoiceExp({ userId: row.user_id, action: 'heartbeat' }, opts);
+      if (r.awarded) {
+        awardedCount += 1;
+        totalExp += Number(r.exp_gained || 0);
+      }
+      if (Number(r.level_up_linh_thach || 0) > 0) {
+        totalLt += Number(r.level_up_linh_thach || 0);
+      }
+      if (r.leveled_up) {
+        leveledUpUsers.push({
+          user_id: r.user_id,
+          level: r.level,
+          level_up_message: r.level_up_message,
+          unlocked_level_role_id: r.unlocked_level_role_id,
+        });
+      }
+    } catch {
+      // keep scanning other voice users
+    }
+  }
+
+  return {
+    success: true,
+    scanned: (rows || []).length,
+    awarded_count: awardedCount,
+    total_exp_awarded: totalExp,
+    total_lt_awarded: totalLt,
+    leveled_up_users: leveledUpUsers,
+  };
 }

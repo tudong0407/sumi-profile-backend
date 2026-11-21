@@ -389,14 +389,14 @@ export async function renderBattleCard(battleResult, options = {}) {
     }
 
     // Tag Hệ + Lv & Rarity trên khung Pet
-    ctx.font = `bold 9.5px ${FONT_FAMILY}`;
-    const elTag = `Hệ ${fighter.element} • Lv.${fighter.level}`;
-    const elW = ctx.measureText(elTag).width + 14;
+    ctx.font = `bold 9.0px ${FONT_FAMILY}`;
+    const elTag = `Hệ ${fighter.element} • Lv.${fighter.level} • ${fighter.star || 1}★`;
+    const elW = ctx.measureText(elTag).width + 12;
     let rarTag = sanitizeText(fighter.petRarity || 'Phàm Phẩm');
-    let rarW = ctx.measureText(rarTag).width + 14;
-    if (elW + rarW > petBoxW - 22 && rarTag.length > 14) {
+    let rarW = ctx.measureText(rarTag).width + 12;
+    if (elW + rarW > petBoxW - 18 && rarTag.length > 14) {
       rarTag = rarTag.replace(/Thần Thoại/i, '').trim() || rarTag;
-      rarW = ctx.measureText(rarTag).width + 14;
+      rarW = ctx.measureText(rarTag).width + 12;
     }
 
     drawRoundRect(ctx, petBoxX + 8, petBoxY + 8, elW, 20, 5);

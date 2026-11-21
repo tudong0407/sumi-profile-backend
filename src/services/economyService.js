@@ -21,6 +21,7 @@ import {
 import {
   em,
   tierEmoji,
+  roleTierEmoji,
   itemEmoji,
   petEmoji,
   realmEmoji,
@@ -477,13 +478,13 @@ export async function rollGacha(userId, options = {}) {
         const existing = (userRoles || []).find((r) => r.role_id === picked.role_id);
 
         if (existing?.is_permanent) {
-          const dupRefund = picked.rarity_key === 'mythic' ? 600 : picked.rarity_key === 'epic' ? 250 : picked.rarity_key === 'rare' ? 80 : 35;
-          const dupStone = picked.rarity_key === 'mythic' ? 5 : picked.rarity_key === 'epic' ? 2 : picked.rarity_key === 'rare' ? 1 : 0;
+          const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 35 : 15;
+          const dupStone = picked.rarity_key === 'mythic' ? 3 : picked.rarity_key === 'epic' ? 2 : picked.rarity_key === 'rare' ? 1 : 0;
           refundLinhThach += dupRefund;
           bonusStarStones += dupStone;
           results.push({
             kind: 'duplicate_role_refund',
-            emoji: em('su_medal_role', tierEmoji(picked.rarity_key)),
+            emoji: roleTierEmoji(picked.rarity_key, tierEmoji(picked.rarity_key)),
             role_id: picked.role_id,
             name: `${picked.name} (${durTier.label})`,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -541,6 +542,8 @@ export async function rollGacha(userId, options = {}) {
               expires_at: expiresAt,
               is_equipped: isEquipped,
               equipped_slot: equippedSlot,
+              source: 'gacha',
+              paid_price: 0,
             });
           }
 
@@ -556,7 +559,7 @@ export async function rollGacha(userId, options = {}) {
 
           results.push({
             kind,
-            emoji: em('su_medal_role', tierEmoji(picked.rarity_key)),
+            emoji: roleTierEmoji(picked.rarity_key, tierEmoji(picked.rarity_key)),
             role_id: picked.role_id,
             name: `${picked.name} (${durTier.label})`,
             rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
@@ -577,16 +580,16 @@ export async function rollGacha(userId, options = {}) {
             .select('item_id')
             .in('item_id', [...MYTHIC_UNIQUE_ITEM_IDS]);
           const takenSet = new Set((ownedMythics || []).map((r) => r.item_id));
-          candidates = candidates.filter((c) => !takenSet.has(c.item_id));
+          candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.item_id)));
           if (candidates.length === 0) {
-            refundLinhThach += 500;
+            refundLinhThach += 300;
             bonusStarStones += 5;
             results.push({
               kind: 'refund',
               emoji: tierEmoji('mythic'),
               rarity: 'Thần Thoại',
               name: 'Thần Thoại Độc Nhất Đã Hết — Hoàn Quà Bồi Thường',
-              compensation: '+500 Linh Thạch & +5 Tinh Thạch Nâng Sao',
+              compensation: '+300 Linh Thạch & +5 Tinh Thạch Nâng Sao',
             });
             continue;
           }
@@ -601,8 +604,8 @@ export async function rollGacha(userId, options = {}) {
           .maybeSingle();
 
         if (ownItem) {
-          const dupRefund = picked.rarity_key === 'epic' ? 120 : picked.rarity_key === 'rare' ? 40 : 15;
-          const dupStone = picked.rarity_key === 'epic' ? 2 : picked.rarity_key === 'rare' ? 1 : 0;
+          const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 35 : 15;
+          const dupStone = picked.rarity_key === 'mythic' ? 3 : picked.rarity_key === 'epic' ? 2 : picked.rarity_key === 'rare' ? 1 : 0;
           refundLinhThach += dupRefund;
           bonusStarStones += dupStone;
           results.push({
@@ -620,6 +623,8 @@ export async function rollGacha(userId, options = {}) {
             item_id: picked.item_id,
             equipped_to_pet: null,
             slot: null,
+            source: 'gacha',
+            paid_price: 0,
           });
           results.push({
             kind: 'new_item',
@@ -641,7 +646,7 @@ export async function rollGacha(userId, options = {}) {
           .maybeSingle();
 
         if (ownPet) {
-          const dupRefund = picked.rarity_key === 'mythic' ? 300 : picked.rarity_key === 'epic' ? 120 : picked.rarity_key === 'rare' ? 45 : 15;
+          const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 40 : 15;
           const dupStone = picked.rarity_key === 'mythic' ? 3 : picked.rarity_key === 'epic' ? 2 : 1;
           refundLinhThach += dupRefund;
           bonusStarStones += dupStone;
@@ -669,6 +674,8 @@ export async function rollGacha(userId, options = {}) {
             def: picked.base_def,
             spd: picked.base_spd,
             is_active: false,
+            source: 'gacha',
+            paid_price: 0,
           });
           results.push({
             kind: 'new_pet',

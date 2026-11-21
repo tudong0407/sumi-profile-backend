@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS users (
     last_chat_exp_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     voice_joined_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     total_voice_minutes INT DEFAULT 0 CHECK (total_voice_minutes >= 0),
+    highest_level_claimed INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -87,6 +88,8 @@ CREATE TABLE IF NOT EXISTS user_roles (
     expires_at TIMESTAMP WITH TIME ZONE NULL,
     is_equipped BOOLEAN DEFAULT FALSE,
     equipped_slot INT NULL CHECK (equipped_slot BETWEEN 1 AND 5),
+    source VARCHAR(20) NOT NULL DEFAULT 'gacha',
+    paid_price INT NOT NULL DEFAULT 0,
     obtained_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -115,6 +118,8 @@ CREATE TABLE IF NOT EXISTS user_pets (
     power_score BIGINT DEFAULT 100 CHECK (power_score >= 0),
     is_active BOOLEAN DEFAULT TRUE,
     image_url TEXT DEFAULT NULL,
+    source VARCHAR(20) NOT NULL DEFAULT 'gacha',
+    paid_price INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

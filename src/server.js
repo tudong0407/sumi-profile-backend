@@ -19,7 +19,7 @@ import {
   getBattleFrameMeta,
   getBattleLogPayload,
 } from './services/battleService.js';
-import { grantChatExp, handleVoiceExp } from './services/expService.js';
+import { grantChatExp, handleVoiceExp, processVoiceHeartbeat } from './services/expService.js';
 import {
   claimDaily,
   convertExpToLinhThach,
@@ -32,15 +32,19 @@ import {
   getQuestStatus,
   claimDailyQuests,
   challengeTower,
+  resetTowerAttempts,
 } from './services/questService.js';
 import {
   getInventory,
+  getUserEquipment,
   equipTarget,
   unequipTarget,
   dismantleTarget,
   setActivePet,
   upgradePet,
 } from './services/inventoryService.js';
+import { lookupInfo } from './services/infoService.js';
+import { getChangelogPayload, LATEST_VERSION } from './data/changelogs.js';
 import {
   getShopCatalog,
   previewShopItem,
@@ -133,7 +137,7 @@ app.get('/', (req, res) => {
     service: '🦊 SuMi Family Profile & Canvas Backend',
     bot: 'Nhiễm Nhiễm (916469360401453067)',
     owner: 'Fuyumi (757091869183311872)',
-    version: '2.4.1',
+    version: `2.5.0-v${LATEST_VERSION}`,
     resolution: {
       profile: '2000x1000',
       rank: '2000x410',
@@ -142,6 +146,8 @@ app.get('/', (req, res) => {
     },
     endpoints: {
       health: 'GET /health',
+      update: 'GET /api/update[/:version]',
+      info: 'GET /api/info/:query',
       wiki: 'GET /api/wiki[?category=overview|realms|battle|equipment|pets|economy]',
       wiki_catalog: 'GET /api/wiki/catalog',
       wiki_chart_elements: 'GET /api/wiki/chart/elements[.png|.webp]',
@@ -155,6 +161,7 @@ app.get('/', (req, res) => {
       battle_render_custom: 'POST /api/battle/render',
       exp_chat: 'POST /api/exp/chat',
       exp_voice: 'POST /api/exp/voice',
+      exp_voice_heartbeat: 'POST /api/exp/voice-heartbeat',
       economy_daily: 'POST /api/economy/daily',
       economy_doiqua: 'POST /api/economy/doiqua',
       economy_roll: 'POST /api/economy/roll',
@@ -164,11 +171,13 @@ app.get('/', (req, res) => {
       quest_status: 'GET /api/quest/status/:userId',
       quest_claim: 'POST /api/quest/claim',
       quest_tower: 'POST /api/quest/tower',
+      quest_tower_reset: 'POST /api/quest/tower/reset',
       inventory: 'GET /api/inv/:userId',
+      equipment_list: 'GET /api/equipment/:userId[?sort=rarity_desc|rarity_asc|equipped&slot=all|weapon|gem|soul|equipped]',
       equip: 'POST /api/equip',
       unequip: 'POST /api/unequip',
       dismantle: 'POST /api/dismantle',
-      pet_list: 'GET /api/pet/:userId',
+      pet_list: 'GET /api/pet/:userId[?sort=power_desc|rarity_desc|rarity_asc|level_desc|star_desc]',
       pet_active: 'POST /api/pet/active',
       pet_upgrade: 'POST /api/pet/upgrade',
       shop_catalog: 'GET /api/shop/catalog[?category=...]',
@@ -210,6 +219,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     service: 'sumi-profile-backend',
     version: '1.0.0',
+    update_version: LATEST_VERSION,
     uptime: process.uptime(),
     supabase_connected: !!supabase,
     timestamp: new Date().toISOString(),
@@ -217,8 +227,26 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================================================
-// TRỤ CỘT 1: HỆ THỐNG /WIKI (6 CHUYÊN MỤC + CHI TIẾT TRANG BỊ / LINH THÚ + ẢNH FULL HD+)
+// TRỤ CỘT 1: HỆ THỐNG /WIKI, /INFO & /UPDATE
 // ============================================================================
+
+app.get(['/api/update', '/api/update/:version'], (req, res) => {
+  const ver = getCleanParam(req.params.version || req.query.version, '');
+  const result = getChangelogPayload(ver || LATEST_VERSION);
+  return res.status(result.status || 200).json(result);
+});
+
+app.get('/api/info/:query', (req, res) => {
+  try {
+    const q = getCleanParam(req.params.query, '');
+    const requesterId = sanitizeUserId(req.query.requesterId || req.query.userId || '');
+    const result = lookupInfo(q || '', { requesterId });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/info error:', err);
+    return res.status(500).json({ success: false, error: 'INFO_FAILED', message: err.message });
+  }
+});
 
 app.get('/api/wiki', (req, res) => {
   try {
@@ -348,8 +376,18 @@ app.post('/api/exp/voice', requireBackendApiKey, async (req, res) => {
   }
 });
 
+app.post('/api/exp/voice-heartbeat', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await processVoiceHeartbeat();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] Lỗi xử lý /api/exp/voice-heartbeat:', err);
+    return res.status(500).json({ success: false, error: 'VOICE_HEARTBEAT_FAILED', message: err.message });
+  }
+});
+
 // ============================================================================
-// TRỤ CỘT 3: ĐẤU TRƯỜNG /BATTLE 1V1 & ẢNH CHIẾN BÁO FULL HD+ (2000x1000)
+// TRỤ CỘT 3: ĐẤU TRƯỜNG /BATTLE 1V1 & PvE TỰ DO
 // ============================================================================
 
 app.post('/api/battle/simulate', async (req, res) => {
@@ -358,8 +396,10 @@ app.post('/api/battle/simulate', async (req, res) => {
 
     const actId = attackerId || req.body?.attacker_id || attacker;
     const defId = defenderId || req.body?.defender_id || defender;
+    const reqMode = getCleanParam(req.body?.mode, '')?.toLowerCase() || '';
+    const isFreePve = reqMode === 'pve_free' || String(defId || '').trim().toLowerCase() === 'pve_free';
 
-    if (!actId || !defId) {
+    if (!actId || (!defId && !isFreePve)) {
       return res.status(400).json({
         success: false,
         error: 'Bad Request',
@@ -368,11 +408,20 @@ app.post('/api/battle/simulate', async (req, res) => {
     }
 
     const cleanAttackerId = typeof actId === 'string' ? sanitizeUserId(actId) : actId;
-    const cleanDefenderId = typeof defId === 'string' ? sanitizeUserId(defId) : defId;
+    const cleanDefenderId = isFreePve
+      ? 'pve_free'
+      : (typeof defId === 'string' ? sanitizeUserId(defId) : defId);
     const channelId = getCleanParam(req.body?.channelId || req.body?.channel_id, null);
+    const resolvedMode = isFreePve ? 'pve_free' : (reqMode || 'pvp');
+    const applyRewards = req.body?.applyRewards !== undefined
+      ? Boolean(req.body.applyRewards)
+      : (isFreePve || reqMode === 'pvp');
+
     const mergedOptions = {
       ...(options && typeof options === 'object' ? options : {}),
       ...(channelId ? { channelId } : {}),
+      mode: resolvedMode,
+      applyRewards,
     };
 
     const battleResult = await simulateBattle(cleanAttackerId, cleanDefenderId, mergedOptions);
@@ -813,11 +862,36 @@ app.post('/api/dismantle', requireBackendApiKey, async (req, res) => {
   }
 });
 
+app.get('/api/equipment/:userId', async (req, res) => {
+  try {
+    const filter = getCleanParam(req.query.filter, '');
+    let sort = getCleanParam(req.query.sort, '') || 'rarity_desc';
+    let slot = getCleanParam(req.query.slot, '') || 'all';
+    if (['weapon', 'gem', 'soul', 'equipped', 'all'].includes(filter)) {
+      slot = filter;
+    } else if (['rarity_desc', 'rarity_asc', 'power_desc', 'slot', 'equipped'].includes(filter)) {
+      sort = filter;
+    }
+    const result = await getUserEquipment(req.params.userId, {
+      sort,
+      slot,
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/equipment error:', err);
+    return res.status(500).json({ success: false, error: 'EQUIPMENT_LIST_FAILED', message: err.message });
+  }
+});
+
 app.get('/api/pet/:userId', async (req, res) => {
   try {
-    const inv = await getInventory(req.params.userId);
+    const sort = getCleanParam(req.query.sort, 'power_desc') || 'power_desc';
+    const inv = await getInventory(req.params.userId, { petSort: sort });
     if (!inv.success) return res.status(inv.status || 400).json(inv);
-    return res.json({ success: true, user: inv.user, pets: inv.pets, summary_pets: inv.summary_pets });
+    return res.json({ success: true, sort, user: inv.user, pets: inv.pets, summary_pets: inv.summary_pets });
   } catch (err) {
     console.error('[Server] /api/pet error:', err);
     return res.status(500).json({ success: false, error: 'PET_LIST_FAILED', message: err.message });
@@ -1175,6 +1249,21 @@ app.post('/api/quest/tower', requireBackendApiKey, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/quest/tower error:', err);
     return res.status(500).json({ success: false, error: 'QUEST_TOWER_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/quest/tower/reset', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await resetTowerAttempts(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/quest/tower/reset error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_TOWER_RESET_FAILED', message: err.message });
   }
 });
 

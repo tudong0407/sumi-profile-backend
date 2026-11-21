@@ -65,6 +65,20 @@ export function tierEmoji(rarityKey, fallback = '') {
   return em(tierEmojiKey(rarityKey), fallback);
 }
 
+export function roleTierEmojiKey(rarityKey) {
+  switch (String(rarityKey || '').toLowerCase()) {
+    case 'mythic':
+    case 'supreme': return 'su_role_tier_mythic';
+    case 'epic': return 'su_role_tier_epic';
+    case 'rare': return 'su_role_tier_rare';
+    default: return 'su_role_tier_common';
+  }
+}
+
+export function roleTierEmoji(rarityKey, fallback = '') {
+  return em(roleTierEmojiKey(rarityKey), fallback || em('su_realm_star'));
+}
+
 export function elementEmojiKey(element) {
   const raw = String(element || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
   if (raw.includes('kim')) return 'su_el_kim';

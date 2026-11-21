@@ -25,10 +25,16 @@ import {
   em,
   ringEmoji,
   tierEmoji,
+  roleTierEmoji,
   petEmoji,
   itemEmoji,
   elementEmoji,
 } from '../config/emojiHelper.js';
+
+function getVnDateKey(date = new Date()) {
+  const vnTime = new Date(date.getTime() + 7 * 3600 * 1000);
+  return vnTime.toISOString().slice(0, 10);
+}
 import {
   ROLE_PERKS_MAP,
   sanitizeUserId,
@@ -116,7 +122,7 @@ function buildCategorySummary(cat) {
   }
   if (cat === 'roles') {
     return SHOP_ROLE_PACKAGES.map((r) =>
-      `• ${em('su_medal_role')} **${r.name}** — ${r.perk} • \`7d: ${r.prices['7d']}\` | \`30d: ${r.prices['30d']}\` | \`Vĩnh viễn: ${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}`
+      `• ${roleTierEmoji(r.rarity_key)} **${r.name}** — ${r.perk} • \`7d: ${r.prices['7d']}\` | \`30d: ${r.prices['30d']}\` | \`Vĩnh viễn: ${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}`
     ).join('\n');
   }
   if (cat === 'consumables') {
@@ -128,7 +134,7 @@ function buildCategorySummary(cat) {
     const bgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
     return bgs.slice(0, 10).map((b) =>
       `• ${em('su_frame_token')} **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n• *... tổng cộng ${bgs.length} mẫu Background Hồ Sơ Full HD+ (300 - 4.000 LT)*`;
+    ).join('\n') + `\n• *... tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
   }
   return '';
 }
@@ -168,10 +174,10 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `${em('su_linhthach')} **CHÀO MỪNG ĐẾN VỚI TIÊN BẢO CÁC (SHOP SUMI FAMILY)**`,
         balance !== null ? `• Số dư hiện tại: **${balance.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**` : '',
         `• **Nhẫn Cưới (4 cấp)**: Kết duyên Tiên Lữ, tăng EXP & Chiến Lực đôi.`,
-        `• **Linh Thú (10 loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
-        `• **Pháp Bảo (24 món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
+        `• **Linh Thú (${SHOP_PETS.length} loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
+        `• **Pháp Bảo (${SHOP_EQUIPMENT.length} món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
         `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
-        `• **Vật Phẩm Tiêu Hao (5 món)**: Vé Gacha, Tinh Thạch Nâng Sao, Thẻ Đổi Danh Hiệu, Khung Viền.`,
+        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, Tinh Thạch Nâng Sao, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
       ].filter(Boolean).join('\n')
     : buildCategorySummary(cat);
@@ -307,10 +313,10 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     ].join('\n');
   } else if (resolved.category === 'roles') {
     price = disc(it.prices['7d']);
-    title = `${em('su_medal_role')} ${it.name}`;
+    title = `${roleTierEmoji(it.rarity_key)} ${it.name}`;
     color = '#a855f7';
     description = [
-      `${em('su_sparkle')} **Đặc quyền**: ${it.perk} ${ownedNote}`.trim(),
+      `${roleTierEmoji(it.rarity_key)} **${it.rarity}** • **Đặc quyền**: ${it.perk} ${ownedNote}`.trim(),
       `${lt} **Bảng giá gói Role**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*:`,
       `• **7 Ngày**: \`${disc(it.prices['7d']).toLocaleString('vi-VN')}\` Linh Thạch`,
       `• **30 Ngày**: \`${disc(it.prices['30d']).toLocaleString('vi-VN')}\` Linh Thạch`,
@@ -475,6 +481,40 @@ export async function buyShopItem(userId, payload = {}) {
       displayName = it.name;
     }
 
+    const now = new Date();
+    const todayKey = getVnDateKey(now);
+    let towerResetBoughtToday = 0;
+
+    if (resolved.category === 'consumables' && resolved.item_id === 'tower_reset_card') {
+      const dailyLimit = Number(it.daily_limit || 3);
+      const maxStack = Number(it.max_stack || 10);
+
+      const [{ data: qRow }, { data: invRow }] = await Promise.all([
+        supabase.from('user_quests').select('tower_reset_buy_date, tower_reset_buys_today').eq('user_id', cleanId).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'tower_reset_card').maybeSingle(),
+      ]);
+
+      towerResetBoughtToday = qRow?.tower_reset_buy_date === todayKey ? Number(qRow?.tower_reset_buys_today || 0) : 0;
+      const ownedQty = Number(invRow?.quantity || 0);
+
+      if (ownedQty + quantity > maxStack) {
+        return {
+          success: false,
+          status: 400,
+          error: 'INVENTORY_STACK_LIMIT',
+          message: `Bạn chỉ có thể giữ tối đa **${maxStack}** **${it.name}** trong túi đồ (hiện có \`${ownedQty}/${maxStack}\`)!`,
+        };
+      }
+      if (towerResetBoughtToday + quantity > dailyLimit) {
+        return {
+          success: false,
+          status: 400,
+          error: 'DAILY_BUY_LIMIT',
+          message: `Hôm nay chỉ được mua tối đa **${dailyLimit}** **${it.name}** mỗi ngày (đã mua \`${towerResetBoughtToday}/${dailyLimit}\` — reset 00:00 UTC+7)!`,
+        };
+      }
+    }
+
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level || 1));
     const shopDiscountPct = Number(roleBuffs?.shopDiscountPct || 0);
     if (shopDiscountPct > 0) {
@@ -493,7 +533,6 @@ export async function buyShopItem(userId, payload = {}) {
       };
     }
 
-    const now = new Date();
     const nowIso = now.toISOString();
     const nextBalance = currentBal - totalCost;
 
@@ -530,7 +569,16 @@ export async function buyShopItem(userId, payload = {}) {
           quantity: nextQty,
         });
       }
-      if (resolved.category === 'backgrounds') {
+      if (resolved.item_id === 'tower_reset_card') {
+        const nextBuyCount = towerResetBoughtToday + quantity;
+        await supabase.from('user_quests').upsert({
+          user_id: cleanId,
+          tower_reset_buy_date: todayKey,
+          tower_reset_buys_today: nextBuyCount,
+          updated_at: nowIso,
+        }, { onConflict: 'user_id' });
+        extraNote = `\n• Dùng \`/nhiemvu hanh_dong:reset\` để hồi \`5/5\` lượt Tháp! *(Đã mua hôm nay: ${nextBuyCount}/3 • Túi: ${nextQty}/10)*`;
+      } else if (resolved.category === 'backgrounds') {
         extraNote = `\n• Dùng \`/equip loai:background ma_id:${resolved.item_id}\` để áp dụng ngay lên \`/profile\` & \`/rank\`!`;
       } else if (resolved.category === 'rings') {
         extraNote = `\n• Dùng \`/marry hanh_dong:propose nhan:${resolved.item_id}\` để cầu hôn hoặc \`/marry hanh_dong:upgrade_ring\` để nâng nhẫn!`;
@@ -551,6 +599,8 @@ export async function buyShopItem(userId, payload = {}) {
         spd: it.base_spd,
         power_score: it.base_power,
         is_active: false,
+        source: 'shop',
+        paid_price: totalCost,
       });
       extraNote = `\n• Dùng \`/linhthu hanh_dong:active linh_thu:${it.pet_type}\` để cho Linh Thú xuất trận!`;
     } else if (resolved.category === 'equipment') {
@@ -559,6 +609,8 @@ export async function buyShopItem(userId, payload = {}) {
         item_id: it.item_id,
         equipped_to_pet: null,
         slot: null,
+        source: 'shop',
+        paid_price: totalCost,
       });
       extraNote = `\n• Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị cho Linh Thú đang xuất trận!`;
     } else if (resolved.category === 'roles') {
@@ -590,6 +642,10 @@ export async function buyShopItem(userId, payload = {}) {
         }
       }
 
+      const nextPaidPrice = existing?.source === 'shop'
+        ? Number(existing.paid_price || 0) + totalCost
+        : totalCost;
+
       if (existing) {
         await supabase
           .from('user_roles')
@@ -600,6 +656,8 @@ export async function buyShopItem(userId, payload = {}) {
             expires_at: expiresAt,
             is_equipped: isEquipped,
             equipped_slot: equippedSlot,
+            source: 'shop',
+            paid_price: nextPaidPrice,
           })
           .eq('id', existing.id);
       } else {
@@ -612,6 +670,8 @@ export async function buyShopItem(userId, payload = {}) {
           expires_at: expiresAt,
           is_equipped: isEquipped,
           equipped_slot: equippedSlot,
+          source: 'shop',
+          paid_price: totalCost,
         });
       }
 

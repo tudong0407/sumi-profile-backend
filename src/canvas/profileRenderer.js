@@ -665,6 +665,24 @@ export async function renderProfileCard(data, options = {}) {
     ctx.fillStyle = '#e9d5ff';
     ctx.textAlign = 'center';
     ctx.fillText(levelStr, lvlPillX + lvlPillW / 2, lvlPillY + 9);
+
+    // 3. Pill Số Sao gọn (10★ — Vàng Hổ Phách)
+    const petStars = Math.max(1, Number(profile.pet.star) || 1);
+    const starStr = `${petStars}★`;
+    const starMetrics = ctx.measureText(starStr);
+    const starPillW = starMetrics.width + 12;
+    const starPillX = lvlPillX + lvlPillW + 6;
+    const starPillY = elemPillY;
+
+    drawRoundRect(ctx, starPillX, starPillY, starPillW, 18, 5);
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#fde68a';
+    ctx.fillText(starStr, starPillX + starPillW / 2, starPillY + 9);
     ctx.textAlign = 'left';
 
     // Kỹ năng HAX Lật Kèo (HAX Skill Badge — tự co cỡ chữ, không cắt cụt)

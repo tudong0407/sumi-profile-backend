@@ -40,7 +40,7 @@ const CATEGORY_ALIASES = {
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
   subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Đấu Trường',
-  version: '2.0.0',
+  version: '1.1.0',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -49,7 +49,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-21T02:00:00.000Z',
+  updated_at: '2026-11-21T18:00:00.000Z',
   total_categories: 6,
 };
 
@@ -63,26 +63,26 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Khởi Đầu Tân Thủ',
-        content: '• Trạng thái mặc định: Cấp 1 • 0 EXP • 0 Linh Thạch • 1 Slot Role.\n• Linh Thú khởi đầu: Hóa Thạch Nham Nham Thú (Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD) cấp sẵn để tham chiến ngay.\n• Tích lũy EXP tự động khi nhắn tin và hoạt động trong kênh thoại.',
+        content: '• Trạng thái mặc định: Cấp 1 • 0 EXP • 0 Linh Thạch • 1 Slot Role.\n• Linh Thú khởi đầu: Hóa Thạch Nham Nham Thú (Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD) cấp sẵn để tham chiến ngay.\n• Tích lũy EXP tự động khi nhắn tin và treo phòng thoại (Voice EXP +20% chấm công mỗi 12 phút).',
       },
       {
-        heading: '2. Lệnh Cốt Lõi',
-        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới Full HD+.\n• /battle: Thách đấu Linh Thú 1v1 bằng Ảnh Chiến Báo.\n• /daily, /doiqua, /roll, /shop, /tangqua: Linh Thạch, Gacha (Pháp Bảo/Pet/Role), Cửa Hàng & Tặng Quà.\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày, Tháp Thí Luyện 100 Tầng & BXH Server.\n• /inv, /equip, /unequip, /linhthu: Túi trữ vật, Pháp Bảo, Role, Ảnh Nền, Khung & Pet.\n• /marry & /divorce: Hệ thống Tiên Lữ (4 cấp Nhẫn + Streak kỷ niệm).\n• /giatoc: Thành lập, nâng cấp Gia Tộc Lv.1–10 & Bang Chiến 24H.\n• /wiki: Toàn thư tra cứu hệ thống tu tiên SuMi Family.',
+        heading: '2. Lệnh Cốt Lõi (Update v1.1)',
+        content: '• /profile & /rank: Thẻ hồ sơ & cảnh giới.\n• /battle: Thách đấu PvP 1v1 hoặc PvE Tự Do (bỏ trống đối thủ) bằng Ảnh Chiến Báo.\n• /daily, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, Gacha, Cửa Hàng, Phân Rã & Tặng Quà.\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày, Tháp Thí Luyện 100 Tầng (có Thẻ Reset) & BXH Server.\n• /inv, /phapbao, /linhthu, /equip, /unequip: Túi đồ, Kho Pháp Bảo lọc phẩm, Linh Thú & Loadout.\n• /marry, /divorce, /giatoc: Tiên Lữ (4 cấp Nhẫn) & Gia Tộc Lv.1–10.\n• /wiki, /info, /update: Cẩm Nang, Tra Cứu UID trực tiếp & Nhật Ký Phiên Bản.',
       },
     ],
     fields: [
       {
         name: `${em('su_sprout')} Khởi Đầu Tân Thủ`,
-        value: '• Mặc định: **Lv.1 • 0 EXP • 0 Linh Thạch • 1 Slot Role**.\n• Pet khởi đầu: **Hóa Thạch Nham Nham Thú** *(Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD)*.\n• Tự động khởi tạo hồ sơ khi tương tác Chat / Voice.',
+        value: '• Mặc định: **Lv.1 • 0 EXP • 0 Linh Thạch • 1 Slot Role**.\n• Pet khởi đầu: **Hóa Thạch Nham Nham Thú** *(Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD)*.\n• Tự động khởi tạo hồ sơ khi tương tác Chat / Voice (treo Voice tự cộng EXP định kỳ).',
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Hệ Thống Lệnh`,
-        value: '• `/profile` • `/rank` • `/battle` • `/top` — Hồ sơ Full HD+, Đấu Trường 1v1 & BXH.\n• `/daily` • `/doiqua` • `/roll` • `/shop` • `/tangqua` — Linh Thạch, Gacha (Pet/Trang Bị/Role), Shop & Chuyển Quà.\n• `/nhiemvu` • `/inv` • `/equip` • `/unequip` • `/linhthu` — Nhiệm Vụ/Tháp PvE, Túi Đồ & Loadout.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
+        name: `${em('su_pin_sigil')} Hệ Thống Lệnh (v1.1)`,
+        value: '• `/profile` • `/rank` • `/battle` • `/top` — Hồ sơ, Đấu Trường PvP/PvE Tự Do & BXH.\n• `/daily` • `/doiqua` • `/roll` • `/shop` • `/dismantle` • `/tangqua` — Linh Thạch, Gacha, Shop & Phân Rã.\n• `/nhiemvu` • `/inv` • `/phapbao` • `/linhthu` • `/equip` • `/unequip` — Nhiệm Vụ/Tháp PvE, Pháp Bảo & Pet.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` • `/info` • `/update` — Tiên Lữ, Gia Tộc, Tra UID & Update Log.',
         inline: false,
       },
     ],
-    content: 'Hệ thống tu tiên SuMi Family vận hành theo 4 trụ cột: Cày EXP đột phá cảnh giới, bồi dưỡng Linh Thú, săn 45 Pháp Bảo Loadout và tranh tài tại Đấu Trường 1v1.',
+    content: 'Hệ thống tu tiên SuMi Family v1.1 vận hành theo 4 trụ cột: Cày EXP đột phá cảnh giới, bồi dưỡng 40 Linh Thú, săn 65 Pháp Bảo Loadout và tranh tài tại Đấu Trường 1v1 & PvE Tự Do.',
   },
 
   realms: {
@@ -157,64 +157,64 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_crossed_swords')} Luật Đấu Trường 1v1`,
-        value: '• Thứ tự đánh: `Lôi Quang Tốc` > `Final SPD` cao hơn.\n• `HP = (Lv × 1.000) + (DEF × 5) + Bonus HP` • Tối đa **20 hiệp**.',
+        name: `${em('su_crossed_swords')} Luật Đấu Trường 1v1 & PvE Tự Do`,
+        value: '• `/battle @doi_thu`: PvP (`15` trận tính LT/ngày) • `/battle` (bỏ trống): **PvE Tự Do** (`25` trận tính LT/ngày — 50% Ngang / 10% Yếu / 40% Mạnh).\n• Thắng **`+10 LT`** / Thua **`-5 LT`** (tối thiểu `0 LT`) • Thứ tự đánh: `Lôi Quang Tốc` > `SPD` cao hơn • Tối đa **30 hiệp**.',
         inline: false,
       },
     ],
-    content: 'Đấu Trường 1v1 (`/battle [doi_thu]`) vận hành theo quy tắc khắc chế Ngũ Hành, Tứ Đại Dị Tố và kỹ năng HAX, xuất trực tiếp Ảnh Chiến Báo Full HD+.',
+    content: 'Đấu Trường 1v1 (`/battle [doi_thu]`) vận hành theo quy tắc khắc chế Ngũ Hành, Tứ Đại Dị Tố và kỹ năng HAX, xuất trực tiếp Ảnh Chiến Báo đa lượt.',
   },
 
   equipment: {
     id: 'equipment',
-    title: `${em('su_crossed_swords')} Trang Bị Loadout (45 Pháp Bảo)`,
+    title: `${em('su_crossed_swords')} Trang Bị Loadout (65 Pháp Bảo)`,
     icon: em('su_crossed_swords'),
-    description: '3 Slot trang bị (15 Vũ Khí, 15 Bảo Ngọc, 15 Chiến Hồn), tỉ lệ rớt và quy tắc 9 Pháp Bảo Thần Thoại Độc Nhất.',
+    description: '3 Slot trang bị (23 Vũ Khí, 21 Bảo Ngọc, 21 Chiến Hồn), tỉ lệ rớt và quy tắc 9 Pháp Bảo Thần Thoại Độc Nhất.',
     image_url: '',
     sections: [
       {
         heading: '1. Cấu Trúc 3 Slot Loadout',
-        content: '• Vũ Khí (15 món): Tăng ATK, SPD và tỉ lệ bạo kích CRIT.\n• Bảo Ngọc (15 món): Tăng DEF, HP tối đa và khiên hộ mệnh.\n• Chiến Hồn (15 món): Tăng chỉ số tổng hợp và kích hoạt thiên phú HAX.',
+        content: '• Vũ Khí (23 món): Tăng ATK, SPD và tỉ lệ bạo kích CRIT.\n• Bảo Ngọc (21 món): Tăng DEF, HP tối đa và khiên hộ mệnh.\n• Chiến Hồn (21 món): Tăng chỉ số tổng hợp và kích hoạt thiên phú HAX.',
       },
       {
         heading: '2. Tỉ Lệ Rớt & Quy Tắc Độc Nhất Toàn Server',
-        content: '• Phàm Phẩm: 60% • Linh Phẩm: 25% • Tiên Phẩm: 14% • Thần Thoại: 1%.\n• 9 Pháp Bảo Thần Thoại (1%) là Độc Nhất Toàn Server: mỗi món chỉ có duy nhất 1 chủ sở hữu tại một thời điểm.',
+        content: '• Phàm Phẩm: 60% • Linh Phẩm: 25% • Tiên Phẩm: 14% • Thần Thoại: 1%.\n• 9 Pháp Bảo Thần Thoại gốc là Độc Nhất Toàn Server (1 chủ sở hữu); 6 Thần Thoại mới không khóa Unique để mọi người cùng săn.',
       },
     ],
     fields: [
       {
-        name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo`,
-        value: `• ${em('su_crossed_swords')} **Vũ Khí** (15 món): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (15 món): \`DEF • HP • Khiên\`\n• ${em('su_fox_mascot')} **Chiến Hồn** (15 món): \`ATK • DEF • SPD • HAX\``,
+        name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo (65 Món)`,
+        value: `• ${em('su_crossed_swords')} **Vũ Khí** (23 món): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (21 món): \`DEF • HP • Khiên\`\n• ${em('su_fox_mascot')} **Chiến Hồn** (21 món): \`ATK • DEF • SPD • HAX\``,
         inline: true,
       },
       {
         name: `${em('su_gacha_dice')} Tỉ Lệ Rớt`,
-        value: `• ${tierEmoji('common')} Phàm Phẩm: **60%**\n• ${tierEmoji('rare')} Linh Phẩm: **25%**\n• ${tierEmoji('epic')} Tiên Phẩm: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **1%** *(Độc Nhất)*`,
+        value: `• ${tierEmoji('common')} Phàm Phẩm: **60%**\n• ${tierEmoji('rare')} Linh Phẩm: **25%**\n• ${tierEmoji('epic')} Tiên Phẩm: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **1%** *(9 Độc Nhất + 6 Thường)*`,
         inline: true,
       },
       {
-        name: `${tierEmoji('supreme')} Quy Tắc Độc Nhất (9 Món Thần Thoại)`,
-        value: 'Mỗi pháp bảo Thần Thoại chỉ tồn tại **duy nhất 1 bản trên toàn server** tại một thời điểm (tỉ lệ rớt **1%**), gắn liền danh tính chủ sở hữu hiện tại.',
+        name: `${tierEmoji('supreme')} Quy Tắc Độc Nhất (9 Món Gốc) & /phapbao`,
+        value: '9 pháp bảo Thần Thoại gốc chỉ tồn tại **1 bản trên toàn server**; 6 Thần Thoại mới rơi tự do ở mốc 1%. Dùng `/phapbao` để xem trọn kho & lọc phẩm chất.',
         inline: false,
       },
     ],
-    content: 'Hệ thống trang bị gồm **45 Pháp Bảo** chia đều 3 Slot **Vũ Khí • Bảo Ngọc • Chiến Hồn** (15 món/nhóm), gia tăng chỉ số trực tiếp và kích hoạt kỹ năng HAX trong Đấu Trường.',
+    content: 'Hệ thống trang bị gồm **65 Pháp Bảo** chia đều 3 Slot **Vũ Khí • Bảo Ngọc • Chiến Hồn** (kèm nội tại/HAX thực chiến cho cả 65 món).',
   },
 
   pets: {
     id: 'pets',
-    title: `${em('su_pet_paw')} Linh Thú Tiên Giới (20 Chiến Pet)`,
+    title: `${em('su_pet_paw')} Linh Thú Tiên Giới (40 Chiến Pet)`,
     icon: em('su_pet_paw'),
-    description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (Phàm / Linh / Tiên / Thần Thoại).',
+    description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (10 Phàm / 10 Linh / 10 Tiên / 10 Thần Thoại).',
     image_url: '',
     sections: [
       {
         heading: '1. Linh Thú Là Gì?',
-        content: '• Linh Thú là chiến hữu đồng hành xuất trận trực tiếp trong /battle và hiển thị trên thẻ /profile.\n• Mọi tân thủ được cấp sẵn 1 Pet Phàm Phẩm mặc định: Hóa Thạch Nham Nham Thú (Hệ Thổ • 120 ATK / 180 DEF / 100 SPD).\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị.',
+        content: '• Linh Thú là chiến hữu đồng hành xuất trận trực tiếp trong /battle và hiển thị trên thẻ /profile (kèm cấp Sao 1★–10★).\n• Mọi tân thủ được cấp sẵn 1 Pet Phàm Phẩm mặc định: Hóa Thạch Nham Nham Thú (Hệ Thổ • 120 ATK / 180 DEF / 100 SPD).\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị.',
       },
       {
         heading: '2. Phân Chia 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt',
-        content: '• Phàm Phẩm (5 loài) — Tỉ lệ rớt: 60% (hoặc 300 LT trong /shop).\n• Linh Phẩm (5 loài) — Tỉ lệ rớt: 25% (hoặc 900 LT trong /shop).\n• Tiên Phẩm (4 loài) — Tỉ lệ rớt: 14% (chỉ mở từ /roll).\n• Thần Thoại (6 loài) — Tỉ lệ rớt: 1% (chỉ mở từ /roll).',
+        content: '• Phàm Phẩm (10 loài) — Tỉ lệ rớt: 60% (hoặc 300 LT trong /shop).\n• Linh Phẩm (10 loài) — Tỉ lệ rớt: 25% (hoặc 900 LT trong /shop).\n• Tiên Phẩm (10 loài) — Tỉ lệ rớt: 14% (chỉ mở từ /roll).\n• Thần Thoại (10 loài) — Tỉ lệ rớt: 1% (chỉ mở từ /roll).',
       },
     ],
     fields: [
@@ -225,23 +225,23 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_gacha_dice')} 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt`,
-        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(5 loài)* — Tỉ lệ rớt: **60%** *(hoặc 300 LT trong \`/shop\`)*\n• ${tierEmoji('rare')} **Linh Phẩm** *(5 loài)* — Tỉ lệ rớt: **25%** *(hoặc 900 LT trong \`/shop\`)*\n• ${tierEmoji('epic')} **Tiên Phẩm** *(4 loài)* — Tỉ lệ rớt: **14%** *(chỉ mở từ \`/roll\`)*\n• ${tierEmoji('mythic')} **Thần Thoại** *(6 loài)* — Tỉ lệ rớt: **1%** *(chỉ mở từ \`/roll\`)*`,
+        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(10 loài)* — Tỉ lệ rớt: **60%** *(hoặc 300 LT trong \`/shop\`)*\n• ${tierEmoji('rare')} **Linh Phẩm** *(10 loài)* — Tỉ lệ rớt: **25%** *(hoặc 900 LT trong \`/shop\`)*\n• ${tierEmoji('epic')} **Tiên Phẩm** *(10 loài)* — Tỉ lệ rớt: **14%** *(chỉ mở từ \`/roll\`)*\n• ${tierEmoji('mythic')} **Thần Thoại** *(10 loài)* — Tỉ lệ rớt: **1%** *(chỉ mở từ \`/roll\`)*`,
         inline: false,
       },
     ],
-    content: 'Bách khoa **20 Chiến Linh Thú** phân chia theo 4 bậc Phẩm Cấp (**Phàm Phẩm • Linh Phẩm • Tiên Phẩm • Thần Thoại**), mỗi loài sở hữu Hệ Ngũ Hành, bộ chỉ số nền và tuyệt kỹ HAX riêng biệt.',
+    content: 'Bách khoa **40 Chiến Linh Thú** phân chia đồng đều 4 bậc Phẩm Cấp (**10 Phàm • 10 Linh • 10 Tiên • 10 Thần Thoại**), cân bằng chặt chẽ theo ma trận khắc chế HAX.',
   },
 
   economy: {
     id: 'economy',
     title: `${em('su_linhthach')} Kinh Tế, Tiên Lữ & Gia Tộc`,
     icon: em('su_linhthach'),
-    description: 'Kinh tế Linh Thạch, Cửa Hàng /shop, Tiên Lữ /marry và Hệ thống Gia Tộc /giatoc.',
+    description: 'Kinh tế Linh Thạch, Cửa Hàng /shop, Phân Rã, Tiên Lữ /marry và Hệ thống Gia Tộc /giatoc.',
     image_url: '',
     sections: [
       {
         heading: '1. Linh Thạch & Cửa Hàng (/daily, /doiqua, /roll, /shop, /dismantle, /tangqua, /nhiemvu, /top)',
-        content: '• /daily: Nhận 40–60 Linh Thạch + Streak 7 ngày (+Buff Gia Tộc & Role).\n• /doiqua: Phế 1.000 EXP -> 10 Linh Thạch (cho phép tụt cấp).\n• /roll: 50 LT/lượt (450/10 lượt). Tỉ lệ Gacha (Pháp Bảo / Pet / Role): Phàm 60% • Linh 25% • Tiên 14% • Thần Thoại 1%. Bể 40 Role chia 5 mốc thời hạn: 7 Ngày 40% • 30 Ngày 30% • 60 Ngày 18% • 90 Ngày 10% • Vĩnh Viễn 2%.\n• /shop: Mua thẳng Nhẫn Cưới 4 cấp, 10 Pet & 24 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/Vĩnh Viễn), 20 Background & Vật Phẩm.\n• /dismantle: Phá Role Quyền Năng, Pháp Bảo hoặc Linh Thú phụ để thu hồi 50% giá trị gốc bằng Linh Thạch.\n• /tangqua: Từ Lv.10+, hạn mức LT tăng +5.000 LT/ngày mỗi 10 cấp (từ 5.000 ở Lv.10 lên 50.000 ở Lv.100, thuế 5%) hoặc 5 Vé/Đá Sao/ngày (0% thuế).\n• /nhiemvu & /top: 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng (5 lượt/ngày) & BXH Server.',
+        content: '• /daily: 40–60 LT + Streak 7 ngày • Lên cấp mới (1 lần/cấp): +50..+400 LT/cấp + thưởng mốc 10 cấp • Voice EXP: 85–135/5p chấm công mỗi 12 phút.\n• /doiqua: Phế 1.000 EXP -> 10 LT (không nhận lại thưởng level đã qua).\n• /roll: 50 LT/lượt (450/10 lượt). Tỉ lệ: Phàm 60% • Linh 25% • Tiên 14% • Thần Thoại 1%.\n• /shop: Nhẫn Cưới 4 cấp, 20 Pet & 32 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/VV), Thẻ Reset Tháp (200 LT, 3/ngày, max 10 túi), 20 Background.\n• /dismantle: Mua Shop hoàn 50% giá thực trả; đồ từ Gacha tính theo bảng giá phân rã chuẩn chống farm. Hỗ trợ phá hàng loạt all_common/all_rare/all_epic (giữ lại đồ đang đeo).\n• /nhiemvu: 3 Nhiệm Vụ Ngày + Tháp Thí Luyện 100 Tầng (Win +10 LT bonus, Lose -5 LT) + dùng Thẻ Reset Tháp.',
       },
       {
         heading: '2. Tiên Lữ (/marry, /divorce)',
@@ -256,11 +256,11 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_linhthach')} Linh Thạch, Gacha & Hoạt Động (/shop)`,
         value: [
-          '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT` bể Pháp Bảo, Pet & Role).',
+          '• `/daily` • `/doiqua` (`1.000 EXP → 10 LT`) • `/roll` (`50/450 LT`) • Lên cấp mới nhận thưởng `+50..+400 LT`/cấp (1 lần duy nhất).',
           '• **Tỉ lệ Gacha `/roll` (Pháp Bảo / Pet / Role)**: `Phàm 60% • Linh 25% • Tiên 14% • Thần Thoại 1%`.',
-          '• **Tỉ lệ 5 mốc thời hạn `/roll loai:role`**: `7 Ngày: 40% • 30 Ngày: 30% • 60 Ngày: 18% • 90 Ngày: 10% • Vĩnh Viễn: 2%`.',
-          '• `/shop`: Nhẫn Cưới, Pet/Pháp Bảo, **21 Role Đơn** (`7d/30d/VV`), 20 Background & Vé/Đá.',
-          '• `/dismantle` *(Phá Role/Trang bị/Pet thu hồi 50% LT)* • `/tangqua` *(+5.000 LT/ngày mỗi 10 cấp, thuế 5%)* • `/nhiemvu` • `/top`.',
+          '• `/shop`: Nhẫn Cưới, **20 Pet / 32 Pháp Bảo** Phàm & Linh, **21 Role Đơn**, **Thẻ Reset Tháp (200 LT)**, 20 Background.',
+          '• `/dismantle`: Shop hoàn `50%` giá thực trả • Gacha tính giá phân rã chuẩn chống farm • Phá hàng loạt `all_common/rare/epic`.',
+          '• `/tangqua` *(+5.000 LT/ngày mỗi 10 cấp, thuế 5%)* • `/nhiemvu` *(Win Tháp +10 LT / Thua -5 LT)* • `/top`.',
         ].join('\n'),
         inline: false,
       },

@@ -422,6 +422,8 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
         expires_at: exp7d,
         is_equipped: true,
         equipped_slot: 1,
+        source: 'shop',
+        paid_price: 150,
       },
       {
         user_id: USER_A,
@@ -432,6 +434,20 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
         expires_at: null,
         is_equipped: false,
         equipped_slot: null,
+        source: 'shop',
+        paid_price: 10000,
+      },
+      {
+        user_id: USER_A,
+        role_id: '1573186053500833802',
+        role_name: '« Họa Đồ Linh Sư »',
+        role_perk: 'Image',
+        is_permanent: false,
+        expires_at: exp7d,
+        is_equipped: false,
+        equipped_slot: null,
+        source: 'gacha',
+        paid_price: 0,
       },
     ]);
 
@@ -458,14 +474,37 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(jp.refund_linh_thach, 5000);
     assert.equal(jp.linh_thach, 5175);
 
-    // Equipment dismantle: weapon_common_1 (250 -> 50% = 125 LT)
-    await supabase.from('user_pet_items').delete().eq('user_id', USER_A);
-    await supabase.from('user_pet_items').insert({
-      user_id: USER_A,
-      item_id: 'weapon_common_1',
-      equipped_to_pet: null,
-      slot: null,
+    // Gacha-sourced role refunds anti-exploit fixed value (10 LT for common 7d, NOT 50% of shop price)
+    const dGachaRole = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'role', targetId: '1573186053500833802' }),
     });
+    assert.equal(dGachaRole.status, 200);
+    const jgRole = await dGachaRole.json();
+    assert.equal(jgRole.refund_linh_thach, 10);
+    assert.equal(jgRole.linh_thach, 5185);
+
+    // Shop Equipment dismantle: weapon_common_1 (paid 250 -> 50% = 125 LT); Gacha Item -> 15 LT
+    await supabase.from('user_pet_items').delete().eq('user_id', USER_A);
+    await supabase.from('user_pet_items').insert([
+      {
+        user_id: USER_A,
+        item_id: 'weapon_common_1',
+        equipped_to_pet: null,
+        slot: null,
+        source: 'shop',
+        paid_price: 250,
+      },
+      {
+        user_id: USER_A,
+        item_id: 'soul_rare_1',
+        equipped_to_pet: null,
+        slot: null,
+        source: 'gacha',
+        paid_price: 0,
+      },
+    ]);
     const dItem = await testServer.fetch('/api/dismantle', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -476,6 +515,16 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(ji.base_value, 250);
     assert.equal(ji.refund_linh_thach, 125);
     assert.equal(ji.remove_role_id, '');
-    assert.equal(ji.linh_thach, 5300);
+    assert.equal(ji.linh_thach, 5310);
+
+    const dGachaItem = await testServer.fetch('/api/dismantle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: USER_A, category: 'item', targetId: 'soul_rare_1' }),
+    });
+    assert.equal(dGachaItem.status, 200);
+    const jgi = await dGachaItem.json();
+    assert.equal(jgi.refund_linh_thach, 35);
+    assert.equal(jgi.linh_thach, 5345);
   });
 });

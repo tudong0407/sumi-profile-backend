@@ -748,5 +748,281 @@
     "name": "su_wiki_scroll",
     "animated": false,
     "tag": "<:su_wiki_scroll:1573412689303314533>"
+  },
+  "su_tower_reset": {
+    "id": "1573612128068313148",
+    "name": "su_tower_reset",
+    "animated": true,
+    "tag": "<a:su_tower_reset:1573612128068313148>"
+  },
+  "su_role_tier_common": {
+    "id": "1573659191464431616",
+    "name": "su_role_tier_common",
+    "animated": true,
+    "tag": "<a:su_role_tier_common:1573659191464431616>"
+  },
+  "su_role_tier_epic": {
+    "id": "1573659207566106807",
+    "name": "su_role_tier_epic",
+    "animated": true,
+    "tag": "<a:su_role_tier_epic:1573659207566106807>"
+  },
+  "su_role_tier_mythic": {
+    "id": "1573659225459003405",
+    "name": "su_role_tier_mythic",
+    "animated": true,
+    "tag": "<a:su_role_tier_mythic:1573659225459003405>"
+  },
+  "su_role_tier_rare": {
+    "id": "1573659242437550121",
+    "name": "su_role_tier_rare",
+    "animated": true,
+    "tag": "<a:su_role_tier_rare:1573659242437550121>"
+  },
+  "su_gem_common_5": {
+    "id": "1573659345802231939",
+    "name": "su_gem_common_5",
+    "animated": true,
+    "tag": "<a:su_gem_common_5:1573659345802231939>"
+  },
+  "su_gem_epic_5": {
+    "id": "1573659359324537004",
+    "name": "su_gem_epic_5",
+    "animated": true,
+    "tag": "<a:su_gem_epic_5:1573659359324537004>"
+  },
+  "su_gem_epic_6": {
+    "id": "1573659377288749068",
+    "name": "su_gem_epic_6",
+    "animated": true,
+    "tag": "<a:su_gem_epic_6:1573659377288749068>"
+  },
+  "su_gem_mythic_4": {
+    "id": "1573659395697418320",
+    "name": "su_gem_mythic_4",
+    "animated": true,
+    "tag": "<a:su_gem_mythic_4:1573659395697418320>"
+  },
+  "su_gem_mythic_5": {
+    "id": "1573659414806794282",
+    "name": "su_gem_mythic_5",
+    "animated": true,
+    "tag": "<a:su_gem_mythic_5:1573659414806794282>"
+  },
+  "su_gem_rare_5": {
+    "id": "1573659474533810357",
+    "name": "su_gem_rare_5",
+    "animated": true,
+    "tag": "<a:su_gem_rare_5:1573659474533810357>"
+  },
+  "su_soul_common_5": {
+    "id": "1573659492032450740",
+    "name": "su_soul_common_5",
+    "animated": true,
+    "tag": "<a:su_soul_common_5:1573659492032450740>"
+  },
+  "su_soul_epic_5": {
+    "id": "1573659516908863588",
+    "name": "su_soul_epic_5",
+    "animated": true,
+    "tag": "<a:su_soul_epic_5:1573659516908863588>"
+  },
+  "su_soul_epic_6": {
+    "id": "1573659564891709540",
+    "name": "su_soul_epic_6",
+    "animated": true,
+    "tag": "<a:su_soul_epic_6:1573659564891709540>"
+  },
+  "su_soul_mythic_4": {
+    "id": "1573659579735081043",
+    "name": "su_soul_mythic_4",
+    "animated": true,
+    "tag": "<a:su_soul_mythic_4:1573659579735081043>"
+  },
+  "su_soul_mythic_5": {
+    "id": "1573659654842622072",
+    "name": "su_soul_mythic_5",
+    "animated": true,
+    "tag": "<a:su_soul_mythic_5:1573659654842622072>"
+  },
+  "su_soul_rare_5": {
+    "id": "1573659671565181029",
+    "name": "su_soul_rare_5",
+    "animated": true,
+    "tag": "<a:su_soul_rare_5:1573659671565181029>"
+  },
+  "su_weapon_common_5": {
+    "id": "1573659686811475999",
+    "name": "su_weapon_common_5",
+    "animated": true,
+    "tag": "<a:su_weapon_common_5:1573659686811475999>"
+  },
+  "su_weapon_common_6": {
+    "id": "1573659700044632126",
+    "name": "su_weapon_common_6",
+    "animated": true,
+    "tag": "<a:su_weapon_common_6:1573659700044632126>"
+  },
+  "su_weapon_epic_5": {
+    "id": "1573659717924823092",
+    "name": "su_weapon_epic_5",
+    "animated": true,
+    "tag": "<a:su_weapon_epic_5:1573659717924823092>"
+  },
+  "su_weapon_epic_6": {
+    "id": "1573659733376635040",
+    "name": "su_weapon_epic_6",
+    "animated": true,
+    "tag": "<a:su_weapon_epic_6:1573659733376635040>"
+  },
+  "su_weapon_mythic_4": {
+    "id": "1573659747616423936",
+    "name": "su_weapon_mythic_4",
+    "animated": true,
+    "tag": "<a:su_weapon_mythic_4:1573659747616423936>"
+  },
+  "su_weapon_mythic_5": {
+    "id": "1573659767174467604",
+    "name": "su_weapon_mythic_5",
+    "animated": true,
+    "tag": "<a:su_weapon_mythic_5:1573659767174467604>"
+  },
+  "su_weapon_rare_5": {
+    "id": "1573659780873195640",
+    "name": "su_weapon_rare_5",
+    "animated": true,
+    "tag": "<a:su_weapon_rare_5:1573659780873195640>"
+  },
+  "su_weapon_rare_6": {
+    "id": "1573659812158505062",
+    "name": "su_weapon_rare_6",
+    "animated": true,
+    "tag": "<a:su_weapon_rare_6:1573659812158505062>"
+  },
+  "su_pet_bach_ngoc_thien_nga": {
+    "id": "1573659859562266784",
+    "name": "su_pet_bach_ngoc_thien_nga",
+    "animated": true,
+    "tag": "<a:su_pet_bach_ngoc_thien_nga:1573659859562266784>"
+  },
+  "su_pet_cuu_thien_loi_phuong": {
+    "id": "1573659880009764864",
+    "name": "su_pet_cuu_thien_loi_phuong",
+    "animated": true,
+    "tag": "<a:su_pet_cuu_thien_loi_phuong:1573659880009764864>"
+  },
+  "su_pet_dia_long_nham_vuong": {
+    "id": "1573659896325472356",
+    "name": "su_pet_dia_long_nham_vuong",
+    "animated": true,
+    "tag": "<a:su_pet_dia_long_nham_vuong:1573659896325472356>"
+  },
+  "su_pet_hoa_linh_tieu_ho": {
+    "id": "1573659920438665246",
+    "name": "su_pet_hoa_linh_tieu_ho",
+    "animated": true,
+    "tag": "<a:su_pet_hoa_linh_tieu_ho:1573659920438665246>"
+  },
+  "su_pet_hoang_thien_ky_lan": {
+    "id": "1573659937937293425",
+    "name": "su_pet_hoang_thien_ky_lan",
+    "animated": true,
+    "tag": "<a:su_pet_hoang_thien_ky_lan:1573659937937293425>"
+  },
+  "su_pet_hoang_tho_thach_su": {
+    "id": "1573659952902311936",
+    "name": "su_pet_hoang_tho_thach_su",
+    "animated": true,
+    "tag": "<a:su_pet_hoang_tho_thach_su:1573659952902311936>"
+  },
+  "su_pet_huyen_vu_linh_quy": {
+    "id": "1573659972078800906",
+    "name": "su_pet_huyen_vu_linh_quy",
+    "animated": true,
+    "tag": "<a:su_pet_huyen_vu_linh_quy:1573659972078800906>"
+  },
+  "su_pet_huyet_nguyet_linh_dieu": {
+    "id": "1573660071739658277",
+    "name": "su_pet_huyet_nguyet_linh_dieu",
+    "animated": true,
+    "tag": "<a:su_pet_huyet_nguyet_linh_dieu:1573660071739658277>"
+  },
+  "su_pet_kim_giap_tue_lan": {
+    "id": "1573660095202459878",
+    "name": "su_pet_kim_giap_tue_lan",
+    "animated": true,
+    "tag": "<a:su_pet_kim_giap_tue_lan:1573660095202459878>"
+  },
+  "su_pet_minh_gioi_u_ho": {
+    "id": "1573660110268399740",
+    "name": "su_pet_minh_gioi_u_ho",
+    "animated": true,
+    "tag": "<a:su_pet_minh_gioi_u_ho:1573660110268399740>"
+  },
+  "su_pet_nguyet_anh_thao_tho": {
+    "id": "1573660128077414410",
+    "name": "su_pet_nguyet_anh_thao_tho",
+    "animated": true,
+    "tag": "<a:su_pet_nguyet_anh_thao_tho:1573660128077414410>"
+  },
+  "su_pet_nguyet_than_cuu_vy_bach": {
+    "id": "1573660143676293170",
+    "name": "su_pet_nguyet_than_cuu_vy_bach",
+    "animated": true,
+    "tag": "<a:su_pet_nguyet_than_cuu_vy_bach:1573660143676293170>"
+  },
+  "su_pet_phong_vu_tieu_tuoc": {
+    "id": "1573660157571895467",
+    "name": "su_pet_phong_vu_tieu_tuoc",
+    "animated": true,
+    "tag": "<a:su_pet_phong_vu_tieu_tuoc:1573660157571895467>"
+  },
+  "su_pet_thai_am_ngoc_tho": {
+    "id": "1573660174932254792",
+    "name": "su_pet_thai_am_ngoc_tho",
+    "animated": true,
+    "tag": "<a:su_pet_thai_am_ngoc_tho:1573660174932254792>"
+  },
+  "su_pet_thai_duong_kim_o": {
+    "id": "1573660190501249025",
+    "name": "su_pet_thai_duong_kim_o",
+    "animated": true,
+    "tag": "<a:su_pet_thai_duong_kim_o:1573660190501249025>"
+  },
+  "su_pet_thanh_de_moc_long": {
+    "id": "1573660200882282536",
+    "name": "su_pet_thanh_de_moc_long",
+    "animated": true,
+    "tag": "<a:su_pet_thanh_de_moc_long:1573660200882282536>"
+  },
+  "su_pet_thanh_long_au_xa": {
+    "id": "1573660216820498543",
+    "name": "su_pet_thanh_long_au_xa",
+    "animated": true,
+    "tag": "<a:su_pet_thanh_long_au_xa:1573660216820498543>"
+  },
+  "su_pet_tu_dien_linh_ung": {
+    "id": "1573660231362420862",
+    "name": "su_pet_tu_dien_linh_ung",
+    "animated": true,
+    "tag": "<a:su_pet_tu_dien_linh_ung:1573660231362420862>"
+  },
+  "su_pet_tu_kim_bach_trach": {
+    "id": "1573660251993940069",
+    "name": "su_pet_tu_kim_bach_trach",
+    "animated": true,
+    "tag": "<a:su_pet_tu_kim_bach_trach:1573660251993940069>"
+  },
+  "su_pet_u_linh_tieu_mieu": {
+    "id": "1573660266619478026",
+    "name": "su_pet_u_linh_tieu_mieu",
+    "animated": true,
+    "tag": "<a:su_pet_u_linh_tieu_mieu:1573660266619478026>"
+  },
+  "su_tower_reset_card": {
+    "id": "1573660276778078208",
+    "name": "su_tower_reset_card",
+    "animated": false,
+    "tag": "<:su_tower_reset_card:1573660276778078208>"
   }
 }

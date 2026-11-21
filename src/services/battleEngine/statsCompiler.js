@@ -1,15 +1,32 @@
 import { getProfileData } from '../profileService.js';
+import { PET_BY_TYPE, EQUIPMENT_BY_ID } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
+
+function enrichEquipItem(rawItem, slot) {
+  if (!rawItem) return null;
+  const cat = rawItem.item_id ? EQUIPMENT_BY_ID[rawItem.item_id] : null;
+  return {
+    ...(cat || {}),
+    ...rawItem,
+    slot: rawItem.slot || cat?.item_type || slot,
+    rarity_key: rawItem.rarity_key || cat?.rarity_key || 'common',
+    hax_skill: rawItem.hax_skill ?? cat?.hax_skill ?? null,
+    hax_description: rawItem.hax_description || cat?.hax_description || null,
+  };
+}
 
 /**
  * Trình biên dịch chỉ số chiến đấu (Stats Compiler)
  * Hợp nhất chỉ số gốc của Pet và 3 món trang bị loadout (Vũ khí, Bảo ngọc, Linh hồn)
- * - Vũ khí: bonus_atk, bonus_spd, bonus_crit, weapon HAX
- * - Bảo ngọc: bonus_def, bonus_spd, bonus_hp, gem HAX
- * - Linh hồn: bonus_atk, bonus_def, bonus_spd, soul HAX
  */
 export async function compileCombatant(userOrId, role = 'attacker') {
-  if (userOrId?.currentHp !== undefined && userOrId?.maxHp !== undefined && userOrId?.petName !== undefined) return userOrId;
+  if (userOrId?.currentHp !== undefined && userOrId?.maxHp !== undefined && userOrId?.petName !== undefined) {
+    userOrId.state = { ...createInitialCombatState(), ...(userOrId.state || {}) };
+    if (userOrId.baseAtk === undefined) userOrId.baseAtk = userOrId.atk;
+    if (userOrId.baseDef === undefined) userOrId.baseDef = userOrId.def;
+    if (userOrId.baseSpd === undefined) userOrId.baseSpd = userOrId.spd;
+    return userOrId;
+  }
   let profile = null;
 
   if (typeof userOrId === 'string') {
@@ -30,41 +47,39 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const avatarFrame = profile?.avatar_frame || 'default';
   const pet = profile?.pet || {};
 
-  const petName = pet.name || pet.pet_name || 'Hóa Thạch Nham Nham Thú';
   const petType = pet.type || pet.pet_type || 'hoa_thach_nham_nham';
-  const petRarity = pet.rarity || pet.pet_rarity || 'Phàm Phẩm';
+  const catalogPet = PET_BY_TYPE[petType] || null;
+  const petName = pet.name || pet.pet_name || catalogPet?.pet_name || 'Hóa Thạch Nham Nham Thú';
+  const petRarity = pet.rarity || pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm';
+  const petRarityKey = catalogPet?.rarity_key || pet.rarity_key || 'common';
   const petIcon = pet.icon || petEmoji(petType, em('su_pet_paw'));
-  const element = pet.element || 'Thổ';
+  const element = pet.element || catalogPet?.element || 'Thổ';
   const level = Math.max(1, Number(pet.level) || 1);
   const star = Math.max(1, Number(pet.star) || 1);
 
-  // Trích xuất 3 món trang bị loadout
   const equip = pet.equipment || profile?.equipment || {};
-  const weapon = equip.weapon || null;
-  const gem = equip.gem || null;
-  const soul = equip.soul || null;
+  const weapon = enrichEquipItem(equip.weapon, 'weapon');
+  const gem = enrichEquipItem(equip.gem, 'gem');
+  const soul = enrichEquipItem(equip.soul, 'soul');
 
-  const weaponAtk = Number(weapon?.bonus_atk) || 0;
-  const weaponSpd = Number(weapon?.bonus_spd) || 0;
-  const weaponCrit = Number(weapon?.bonus_crit) || 0;
+  let bonusAtk = 0;
+  let bonusDef = 0;
+  let bonusSpd = 0;
+  let bonusHp = 0;
+  let bonusCrit = 0;
 
-  const gemDef = Number(gem?.bonus_def) || 0;
-  const gemSpd = Number(gem?.bonus_spd) || 0;
-  const gemHp = Number(gem?.bonus_hp) || 0;
+  for (const piece of [weapon, gem, soul]) {
+    if (!piece) continue;
+    bonusAtk += Number(piece.bonus_atk) || 0;
+    bonusDef += Number(piece.bonus_def) || 0;
+    bonusSpd += Number(piece.bonus_spd) || 0;
+    bonusHp += Number(piece.bonus_hp) || 0;
+    bonusCrit += Number(piece.bonus_crit) || 0;
+  }
 
-  const soulAtk = Number(soul?.bonus_atk) || 0;
-  const soulDef = Number(soul?.bonus_def) || 0;
-  const soulSpd = Number(soul?.bonus_spd) || 0;
-
-  const bonusAtk = weaponAtk + soulAtk;
-  const bonusDef = gemDef + soulDef;
-  const bonusSpd = weaponSpd + gemSpd + soulSpd;
-  const bonusHp = gemHp;
-  const bonusCrit = weaponCrit;
-
-  let finalAtk = Number(pet.atk) || 200;
-  let finalDef = Number(pet.def) || 100;
-  let finalSpd = Number(pet.spd) || 150;
+  let finalAtk = Number(pet.atk) || (catalogPet ? catalogPet.base_atk : 200);
+  let finalDef = Number(pet.def) || (catalogPet ? catalogPet.base_def : 100);
+  let finalSpd = Number(pet.spd) || (catalogPet ? catalogPet.base_spd : 150);
 
   if (pet.base_atk !== undefined && pet.bonus_atk !== undefined) {
     finalAtk = Number(pet.base_atk) + bonusAtk;
@@ -72,7 +87,6 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalSpd = Number(pet.base_spd) + bonusSpd;
   }
 
-  // Buff Chiến Lực đôi từ Tiên Lữ (/marry)
   const couplePowerPct = Number(profile?.married?.power_bonus_pct) || 0;
   if (couplePowerPct > 0) {
     const coupleMult = 1 + (couplePowerPct / 100);
@@ -81,7 +95,6 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalSpd = Math.round(finalSpd * coupleMult);
   }
 
-  // Buff Chiến Lực Linh Thú từ Role Quyền Năng & Level Role
   const rolePetPowerPct = Number(profile?.role_pet_power_bonus_pct) || 0;
   if (rolePetPowerPct > 0) {
     const roleMult = 1 + (rolePetPowerPct / 100);
@@ -90,11 +103,13 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalSpd = Math.round(finalSpd * roleMult);
   }
 
-  // Tính HP chiến đấu chuẩn: (Level * 1000) + (FinalDef * 5) + BonusHp
   const maxHp = Math.max(500, (level * 1000) + (finalDef * 5) + bonusHp);
+  const petCritBonus = petType === 'loi_dinh_kim_ho' ? 0.15 : petType === 'nguyet_anh_thao_tho' ? 0.08 : petType === 'tu_kim_bach_trach' ? 0.20 : 0;
+  const itemCritBonus = (bonusCrit / 100) + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
+  const critRate = Math.min(1.0, Math.max(0.05, 0.05 + itemCritBonus + petCritBonus));
 
-  // Tỷ lệ bạo kích cơ bản 5% + bonus từ vũ khí
-  const critRate = Math.min(1.0, Math.max(0.05, 0.05 + (bonusCrit / 100)));
+  const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
+  const petHaxDesc = catalogPet?.hax_description || pet.hax_desc || pet.hax_description || null;
 
   return {
     id,
@@ -105,10 +120,16 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     petName,
     petType,
     petRarity,
+    petRarityKey,
     petIcon,
+    petHaxName,
+    petHaxDesc,
     element,
     level,
     star,
+    baseAtk: finalAtk,
+    baseDef: finalDef,
+    baseSpd: finalSpd,
     atk: finalAtk,
     def: finalDef,
     spd: finalSpd,
@@ -119,25 +140,58 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     shield: 0,
     equipment: { weapon, gem, soul },
     hax: {
-      pet: pet.hax_skill || pet.hax_desc || null,
-      weapon: weapon?.hax_skill || null,
-      gem: gem?.hax_skill || null,
-      soul: soul?.hax_skill || null,
+      pet: petHaxName || petHaxDesc || null,
+      petDesc: petHaxDesc,
+      weapon: weapon?.hax_skill || weapon?.hax_description || null,
+      gem: gem?.hax_skill || gem?.hax_description || null,
+      soul: soul?.hax_skill || soul?.hax_description || null,
     },
-    state: {
-      isImmortalTurns: 0,
-      antiImmortalityTurns: 0,
-      antiShieldTurns: 0,
-      isStunned: false,
-      isCharmed: false,
-      isDoubleTurn: false,
-      reviveUsed: false,
-      cheatDeathUsed: false,
-      hpSwapUsed: false,
-      doubleTurnUsed: false,
-      missChanceTurns: 0,
-      pierceDefNext: false,
-      haxLockedTurns: 0,
-    },
+    state: createInitialCombatState(),
+  };
+}
+
+export function createInitialCombatState() {
+  return {
+    turnCount: 0,
+    isImmortalTurns: 0,
+    antiImmortalityTurns: 0,
+    antiShieldTurns: 0,
+    haxLockedTurns: 0,
+    blindTurns: 0,
+    missChanceTurns: 0,
+    isStunned: false,
+    isCharmed: false,
+    isDoubleTurn: false,
+    reviveUsed: false,
+    cheatDeathUsed: false,
+    hpSwapUsed: false,
+    doubleTurnUsed: false,
+    phaseShiftUsed: false,
+    executeBlockUsed: false,
+    phoenixGemHealUsed: false,
+    firstStrikeDone: false,
+    pierceDefNext: false,
+    enrageActive: false,
+    defStacks: 0,
+    atkStacks: 0,
+    atkDebuffTurns: 0,
+    atkDebuffPct: 0,
+    defDebuffTurns: 0,
+    defDebuffPct: 0,
+    spdDebuffTurns: 0,
+    spdDebuffPct: 0,
+    healReductionTurns: 0,
+    healReductionPct: 0,
+    burnTurns: 0,
+    burnPct: 0,
+    burnIgnoresShield: false,
+    poisonActive: false,
+    poisonPct: 0,
+    nextHitBonusPct: 0,
+    damageReductionTurns: 0,
+    damageReductionPct: 0,
+    enemyDmgDebuffTurns: 0,
+    enemyDmgDebuffPct: 0,
+    shieldExplodePct: 0,
   };
 }
