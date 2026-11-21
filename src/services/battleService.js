@@ -10,6 +10,7 @@ export {
   setCachedBattleFrame,
   getBattleFrameMeta,
   getBattleLogPayload,
+  renderBattleLogHtml,
 } from './battleEngine/battleService.js';
 export { compileCombatant } from './battleEngine/statsCompiler.js';
 export { getElementalAdvantage, normalizeElement, NGU_HANH_CYCLE } from './battleEngine/elementalMatrix.js';

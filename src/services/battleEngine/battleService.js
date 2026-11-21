@@ -147,14 +147,209 @@ export function getBattleLogPayload({ battleId, channelId, userId } = {}) {
   }
 
   const r = entry.result;
+  const bid = r.battleId || targetBattleId;
   return {
     success: true,
     found: true,
-    battleId: r.battleId || targetBattleId,
+    battleId: bid,
+    webLogUrl: r.webLogUrl || `${PUBLIC_BASE_URL}/api/battle/logs/${bid}/view`,
     title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU • ${r.winner.name} VS ${r.loser.name}`,
     description: r.fullBattleLog || r.discordReport || r.summary,
-    footer: `SuMi Family • ${r.turnCount} Hiệp • Mã trận: ${r.battleId}`,
+    footer: `SuMi Family • ${r.turnCount} Hiệp • Mã trận: ${bid}`,
   };
+}
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function stripDiscordTagsToHtml(text) {
+  let s = escapeHtml(text);
+  // Convert Discord custom emoji <a:name:id> or <:name:id> to inline <img>
+  s = s.replace(/&lt;(a?):([a-zA-Z0-9_]+):([0-9]{15,22})&gt;/g, (_, anim, name, id) => {
+    const ext = anim === 'a' ? 'gif' : 'png';
+    return `<img class="d-emoji" src="https://cdn.discordapp.com/emojis/${id}.${ext}?size=48&quality=lossless" alt=":${name}:" title=":${name}:">`;
+  });
+  // Markdown links [label](url)
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Bold **...**
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Italic *...*
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  // Inline code `...`
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  return s;
+}
+
+export function renderBattleLogHtml(battleId) {
+  const cleanId = String(battleId || '').trim();
+  const entry = getCacheEntry(cleanId);
+  if (!entry?.result) {
+    return {
+      found: false,
+      html: `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nhật Ký Trận Đấu Đã Hết Hạn • SuMi Family</title>
+<style>body{background:#0f0a1c;color:#f5e9ff;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}.card{max-width:560px;background:#1a1230;border:1px solid #ec489955;border-radius:16px;padding:28px;text-align:center;box-shadow:0 12px 40px #0008}h1{color:#f472b6;font-size:1.35rem;margin-top:0}</style></head>
+<body><div class="card"><h1>📜 Nhật Ký Trận Đấu Không Còn Trong Bộ Nhớ Tạm</h1><p>Mã trận <code>${escapeHtml(cleanId)}</code> đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại.</p><p>Hãy gõ <code>/battle</code> hoặc <code>/nhiemvu hanh_dong:tower</code> trên Discord SuMi Family để mở trận mới nhé!</p></div></body></html>`,
+    };
+  }
+
+  const r = entry.result;
+  const rawLines = r.untruncatedLogLines || (r.fullBattleLog || '').split('\n');
+  const linesHtml = rawLines
+    .map((line) => {
+      if (!line.trim()) return '<div class="spacer"></div>';
+      const isTurn = line.startsWith('• **H');
+      const isHeader = line.startsWith('**1.') || line.startsWith('**2.') || line.startsWith('**Diễn Biến') || line.startsWith('**Khai Trận');
+      const isResult = line.includes('**KẾT QUẢ:**');
+      const cls = isResult ? 'log-line result-line' : isHeader ? 'log-line section-title' : isTurn ? 'log-line turn-line' : 'log-line';
+      return `<div class="${cls}">${stripDiscordTagsToHtml(line)}</div>`;
+    })
+    .join('\n');
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nhật Ký Trận Đấu #${escapeHtml(cleanId)} • ${escapeHtml(r.winner?.name)} vs ${escapeHtml(r.loser?.name)}</title>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      background: radial-gradient(circle at top, #23133d 0%, #0d0818 70%);
+      color: #f3e8ff;
+      font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 24px 14px 48px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: rgba(23, 15, 42, 0.92);
+      border: 1px solid rgba(236, 72, 153, 0.4);
+      border-radius: 18px;
+      padding: 24px 26px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+    }
+    .header-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(236, 72, 153, 0.28);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: 1.3rem;
+      margin: 0;
+      color: #f9a8d4;
+      letter-spacing: 0.3px;
+    }
+    .badge {
+      background: rgba(236, 72, 153, 0.18);
+      border: 1px solid rgba(244, 114, 182, 0.45);
+      color: #fbcfe8;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .banner-wrap {
+      margin: 14px 0 22px;
+      text-align: center;
+    }
+    .banner-wrap img {
+      max-width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(251, 191, 36, 0.35);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+    }
+    .log-line {
+      padding: 4px 0;
+      font-size: 0.96rem;
+      word-break: break-word;
+    }
+    .section-title {
+      margin-top: 12px;
+      padding: 6px 10px;
+      background: rgba(168, 85, 247, 0.14);
+      border-left: 3px solid #ec4899;
+      border-radius: 6px;
+      color: #fde047;
+      font-size: 1.02rem;
+    }
+    .turn-line {
+      padding: 6px 10px;
+      margin: 4px 0;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border-left: 2px solid rgba(244, 114, 182, 0.35);
+    }
+    .result-line {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: linear-gradient(90deg, rgba(236,72,153,0.22), rgba(234,179,8,0.16));
+      border: 1px solid rgba(250, 204, 21, 0.45);
+      border-radius: 10px;
+      font-size: 1.05rem;
+    }
+    .spacer { height: 8px; }
+    code {
+      background: rgba(15, 23, 42, 0.75);
+      color: #67e8f9;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.9em;
+    }
+    strong { color: #fff; }
+    em { color: #cbd5e1; }
+    a { color: #38bdf8; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img.d-emoji {
+      width: 20px;
+      height: 20px;
+      vertical-align: -4px;
+      margin: 0 2px;
+    }
+    .footer-meta {
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      font-size: 0.84rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-bar">
+      <h1>📜 NHẬT KÝ TRẬN ĐẤU CHI TIẾT (FULL 100% HIỆP)</h1>
+      <span class="badge">${escapeHtml(r.turnCount)} Hiệp • Mã trận: ${escapeHtml(cleanId)}</span>
+    </div>
+    <div class="banner-wrap">
+      <img src="/api/battle/report/${encodeURIComponent(cleanId)}.png" alt="Battle Report Card" loading="lazy">
+    </div>
+    <div class="log-body">
+      ${linesHtml}
+    </div>
+    <div class="footer-meta">
+      <span>🦊 SuMi Family • Tu Tiên Giới Đấu Trường HAX v1.1</span>
+      <span>Chế độ: ${escapeHtml(r.opponent_tier_label || r.mode || '1v1')}</span>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  return { found: true, html };
 }
 
 function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
@@ -264,7 +459,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
   ];
 }
 
-function formatEquipDetailedLines(c) {
+function formatEquipDetailedLines(c, compact = false) {
   const w = c.equipment?.weapon;
   const g = c.equipment?.gem;
   const s = c.equipment?.soul;
@@ -275,6 +470,13 @@ function formatEquipDetailedLines(c) {
       : (item.hax_description || 'Cộng chỉ số nền');
     return `${label}: **${item.item_name}** — *${haxTxt}*`;
   };
+  if (compact) {
+    return [
+      `• ⚔️ ${desc(w, 'Vũ Khí')}`,
+      `• 💎 ${desc(g, 'Bảo Ngọc')}`,
+      `• 🔥 ${desc(s, 'Chiến Hồn')}`,
+    ];
+  }
   return [
     `• ${em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
     `• ${em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
@@ -283,6 +485,7 @@ function formatEquipDetailedLines(c) {
 }
 
 function buildFullBattleLog({
+  battleId,
   attacker,
   defender,
   initialHp,
@@ -297,6 +500,7 @@ function buildFullBattleLog({
 }) {
   const atkIcon = attacker.petIcon || petEmoji(attacker.petType, em('su_pet_paw'));
   const defIcon = defender.petIcon || petEmoji(defender.petType, em('su_pet_paw'));
+  const webLogUrl = battleId ? `${PUBLIC_BASE_URL}/api/battle/logs/${battleId}/view` : null;
 
   const elemNote = (() => {
     const a2d = elementMatchup?.attackerToDefender;
@@ -316,18 +520,21 @@ function buildFullBattleLog({
     return d ? `**${name}** — *${d}*` : `**${name}**`;
   };
 
-  const headerLines = [
+  const makeHeaderLines = (compact = false) => [
     `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(${attacker.petRarity || 'Phàm'} • Hệ ${attacker.element} • Lv.${attacker.level} • ${attacker.star || 1}★)*`,
     `• \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(attacker)}`,
-    ...formatEquipDetailedLines(attacker),
+    ...formatEquipDetailedLines(attacker, compact),
     '',
     `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(${defender.petRarity || 'Phàm'} • Hệ ${defender.element} • Lv.${defender.level} • ${defender.star || 1}★)*`,
     `• \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(defender)}`,
-    ...formatEquipDetailedLines(defender),
+    ...formatEquipDetailedLines(defender, compact),
     `• Tương khắc: **${elemNote}**`,
   ];
+
+  const headerLines = makeHeaderLines(false);
+  const compactHeaderLines = makeHeaderLines(true);
 
   const startLines = battleStartEvents.length > 0
     ? ['', '**Khai Trận HAX:**', ...battleStartEvents.map((ev) => {
@@ -350,37 +557,68 @@ function buildFullBattleLog({
     return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
   });
 
-  const footerLines = [
+  const webFooterLines = [
     '',
     `${em('su_winner_trophy')} **KẾT QUẢ:** **${winner.name}** (${winnerPetEmoji} **${winner.pet}**) thắng **${loser.name}** (${loser.pet}) sau **${turnNumber} hiệp**!`,
     ...(rewardSummary ? [`• ${rewardSummary}`] : []),
   ];
 
-  const assemble = (tLines) => [
+  const discordFooterLines = [
+    ...webFooterLines,
+    ...(webLogUrl ? [`• 🌐 **Bản Web đầy đủ 100% hiệp:** [Mở Xem Chi Tiết Trên Web](${webLogUrl})`] : []),
+  ];
+
+  const untruncatedLogLines = [
     ...headerLines,
     ...startLines,
     '',
     `**Diễn Biến Chi Tiết (${turnNumber} Hiệp):**`,
+    ...allTurnLines,
+    ...webFooterLines,
+  ];
+
+  const assembleDiscord = (tLines, hLines = headerLines) => [
+    ...hLines,
+    ...startLines,
+    '',
+    `**Diễn Biến Chi Tiết (${turnNumber} Hiệp):**`,
     ...tLines,
-    ...footerLines,
+    ...discordFooterLines,
   ].join('\n');
 
-  let fullText = assemble(allTurnLines);
-  if (fullText.length > 3850 && allTurnLines.length > 10) {
-    const headCount = 5;
-    const tailCount = 5;
-    const omitted = allTurnLines.length - headCount - tailCount;
-    const compactTurns = [
-      ...allTurnLines.slice(0, headCount),
-      `• *... (đã rút gọn ${omitted} lượt giữa để vừa giới hạn tin nhắn Discord) ...*`,
-      ...allTurnLines.slice(-tailCount),
-    ];
-    fullText = assemble(compactTurns);
+  let fullText = assembleDiscord(allTurnLines, headerLines);
+  if (fullText.length > 3880) {
+    fullText = assembleDiscord(allTurnLines, compactHeaderLines);
   }
+
+  if (fullText.length > 3880 && allTurnLines.length > 6) {
+    for (let keep = allTurnLines.length - 1; keep >= 6; keep -= 1) {
+      const headCount = Math.ceil(keep / 2);
+      const tailCount = Math.floor(keep / 2);
+      const omitted = allTurnLines.length - headCount - tailCount;
+      const omitNote = webLogUrl
+        ? `• *... (đã ẩn ${omitted} lượt giữa do giới hạn 4096 ký tự Discord — [Bấm xem Full 100% trên Web](${webLogUrl})) ...*`
+        : `• *... (đã rút gọn ${omitted} lượt giữa để vừa giới hạn tin nhắn Discord) ...*`;
+      const candidate = assembleDiscord([
+        ...allTurnLines.slice(0, headCount),
+        omitNote,
+        ...allTurnLines.slice(-tailCount),
+      ], compactHeaderLines);
+      if (candidate.length <= 3880 || keep === 6) {
+        fullText = candidate;
+        break;
+      }
+    }
+  }
+
   if (fullText.length > 3950) {
     fullText = fullText.slice(0, 3940) + '\n…';
   }
-  return fullText;
+  return {
+    fullText,
+    untruncatedLogLines,
+    webLogUrl,
+  };
 }
 
 function createRng(seed) {
@@ -429,6 +667,12 @@ export async function resolveFreePveOpponent(attackerCombatant, rng = Math.rando
     return c;
   };
 
+  const pickItem = (slot, rKeys) => {
+    const items = EQUIPMENT_CATALOG.filter((i) => i.item_type === slot && rKeys.includes(i.rarity_key) && !i.is_unique);
+    return items.length ? items[Math.floor(rng() * items.length)] : null;
+  };
+  const equipTiers = band.key === 'weaker' ? ['common', 'rare'] : band.key === 'even' ? ['rare', 'epic'] : ['epic', 'mythic'];
+
   const tryShadow = rng() < 0.60 && Boolean(supabase);
   if (tryShadow) {
     try {
@@ -445,6 +689,22 @@ export async function resolveFreePveOpponent(attackerCombatant, rng = Math.rando
         shadowCombatant.name = `${shadowCombatant.name} (Huyễn Ảnh • ${band.label})`;
         shadowCombatant.isShadow = true;
         shadowCombatant.isNpc = true;
+        if (!shadowCombatant.equipment) shadowCombatant.equipment = { weapon: null, gem: null, soul: null };
+        if (!shadowCombatant.hax) shadowCombatant.hax = { pet: shadowCombatant.petHaxName || null, weapon: null, gem: null, soul: null };
+        for (const slot of ['weapon', 'gem', 'soul']) {
+          if (!shadowCombatant.equipment[slot]) {
+            const filler = pickItem(slot, equipTiers);
+            if (filler) {
+              shadowCombatant.equipment[slot] = { ...filler, slot };
+              shadowCombatant.hax[slot] = filler.hax_skill || filler.hax_description || null;
+              shadowCombatant.atk += Number(filler.bonus_atk || 0);
+              shadowCombatant.def += Number(filler.bonus_def || 0);
+              shadowCombatant.spd += Number(filler.bonus_spd || 0);
+              shadowCombatant.maxHp += Number(filler.bonus_hp || 0);
+              shadowCombatant.currentHp = shadowCombatant.maxHp;
+            }
+          }
+        }
         return { combatant: scaleCombatantToRatio(shadowCombatant), band, sourceType: 'shadow' };
       }
     } catch {
@@ -461,11 +721,6 @@ export async function resolveFreePveOpponent(attackerCombatant, rng = Math.rando
   const poolPets = publicPets.filter((p) => preferredRarity.includes(p.rarity_key));
   const pickedPet = (poolPets.length ? poolPets : publicPets)[Math.floor(rng() * (poolPets.length || publicPets.length))];
 
-  const pickItem = (slot, rKeys) => {
-    const items = EQUIPMENT_CATALOG.filter((i) => i.item_type === slot && rKeys.includes(i.rarity_key) && !i.is_unique);
-    return items.length ? items[Math.floor(rng() * items.length)] : null;
-  };
-  const equipTiers = band.key === 'weaker' ? ['common'] : band.key === 'even' ? ['rare', 'epic'] : ['epic'];
   const weapon = pickItem('weapon', equipTiers);
   const gem = pickItem('gem', equipTiers);
   const soul = pickItem('soul', equipTiers);
@@ -1004,7 +1259,8 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const reportImagePath = `/api/battle/report/${battleId}.png`;
   const reportImageUrl = `${PUBLIC_BASE_URL}${reportImagePath}`;
 
-  const fullBattleLog = buildFullBattleLog({
+  const logBundle = buildFullBattleLog({
+    battleId,
     attacker,
     defender,
     initialHp,
@@ -1017,6 +1273,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     loser,
     rewardSummary: rewardInfo.reward_summary,
   });
+  const fullBattleLog = logBundle.fullText;
 
   const finalHp = {
     attacker: attacker.currentHp,
@@ -1062,6 +1319,8 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     framesMeta,
     fullBattleLog,
     discordReport: fullBattleLog,
+    untruncatedLogLines: logBundle.untruncatedLogLines,
+    webLogUrl: logBundle.webLogUrl,
   };
 
   const frameBuffers = new Map();

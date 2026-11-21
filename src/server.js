@@ -18,6 +18,7 @@ import {
   setCachedBattleFrame,
   getBattleFrameMeta,
   getBattleLogPayload,
+  renderBattleLogHtml,
 } from './services/battleService.js';
 import { grantChatExp, handleVoiceExp, processVoiceHeartbeat } from './services/expService.js';
 import {
@@ -485,11 +486,33 @@ app.get('/api/battle/logs', async (req, res) => {
     const channelId = getCleanParam(req.query.channelId || req.query.channel_id, null);
     const rawUser = getCleanParam(req.query.userId || req.query.user_id, null);
     const userId = rawUser ? sanitizeUserId(rawUser) : null;
+    if (String(req.query.format || '').toLowerCase() === 'html' && battleId) {
+      const rendered = renderBattleLogHtml(battleId);
+      res.set('Content-Type', 'text/html; charset=utf-8');
+      return res.status(200).send(rendered.html);
+    }
     const payload = getBattleLogPayload({ battleId, channelId, userId });
     return res.status(200).json(payload);
   } catch (err) {
     console.error('[Server] Lỗi tra cứu nhật ký trận đấu:', err);
     return res.status(500).json({ success: false, error: 'Lỗi tra cứu nhật ký trận đấu', message: err.message });
+  }
+});
+
+app.get(['/api/battle/logs/:battleId/view', '/api/battle/logs/:battleId', '/battle/logs/:battleId'], async (req, res) => {
+  try {
+    const battleId = String(req.params.battleId || '').trim();
+    if (String(req.query.format || '').toLowerCase() === 'json') {
+      const payload = getBattleLogPayload({ battleId });
+      return res.status(200).json(payload);
+    }
+    const rendered = renderBattleLogHtml(battleId);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=300');
+    return res.status(200).send(rendered.html);
+  } catch (err) {
+    console.error('[Server] Lỗi render HTML nhật ký trận đấu:', err);
+    return res.status(500).send('Lỗi hiển thị nhật ký trận đấu.');
   }
 });
 
