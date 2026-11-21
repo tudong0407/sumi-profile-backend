@@ -3,13 +3,69 @@ globalThis.WebSocket = WebSocket;
 
 import {
   GraphBuilder,
+  SUMI_GUILD_ID,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
-import { em } from '../src/config/emojiHelper.js';
+import { em, emId } from '../src/config/emojiHelper.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
+
+class Phase1GraphBuilder extends GraphBuilder {
+  advSelectMenu(id, parentMsgId, {
+    placeholder,
+    customVariableName,
+    basic_options,
+    row = '1',
+    weight = '1',
+    showReplies = 'show',
+  }, { x = 0, y = 0 } = {}) {
+    this._addNode({
+      id,
+      type: 'advMessageSelectMenu',
+      draggable: true,
+      position: { x, y },
+      width: 280,
+      height: 90,
+      data: {
+        node_options: {},
+        data: {
+          type: 'adv_select_menu',
+          menu_type: 'basic',
+          placeholder: String(placeholder || 'Chọn một mục...').slice(0, 140),
+          multiselect: false,
+          minOptions: '1',
+          maxOptions: '1',
+          basic_options: basic_options.map((opt) => ({
+            label: String(opt.label).slice(0, 95),
+            description: String(opt.description || '').slice(0, 95),
+            emoji_id: opt.emoji_id ? String(opt.emoji_id) : '',
+            value: String(opt.value).slice(0, 95),
+          })),
+          type_options: {},
+          options: [],
+          orderComponent: true,
+          row: String(row),
+          weight: String(weight),
+          showReplies,
+          validated: true,
+          customVariableName,
+        },
+      },
+    });
+    this._addEdge({
+      source: parentMsgId,
+      sourceHandle: 'components_source',
+      target: id,
+      type: 'step',
+      animated: false,
+      arrowHeadType: 'arrowclosed',
+      id: `reactflow__edge-${parentMsgId}components_source-${id}`,
+    });
+    return id;
+  }
+}
 
 function apiAction(gb, id, name, method, url, rawBody = '', pos = { x: 0, y: 0 }) {
   const isPost = method === 'POST';
@@ -146,8 +202,8 @@ export function buildDoiquaCmd() {
     roles: [],
     additional_roles: '{dq_res.response.revoked_level_role_csv}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1140 });
   gb.link(cRevoke.yes, 'dq_rem_roles');
   return gb.elements();
@@ -199,8 +255,8 @@ export function buildRollCmd() {
     roles: [],
     additional_roles: '{roll_res.response.add_role_csv}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1140 });
   gb.link(cHasRoles.yes, 'rl_add_role');
   return gb.elements();
@@ -286,8 +342,8 @@ export function buildEquipCmd() {
     roles: [],
     additional_roles: '{eq_res.response.add_role_id}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1140 });
   gb.link(cAddRole.yes, 'eq_add_role');
   return gb.elements();
@@ -338,16 +394,16 @@ export function buildUnequipCmd() {
     roles: [],
     additional_roles: '{uq_res.response.remove_role_id}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1140 });
   gb.link(cRemRole.yes, 'uq_rem_role');
   return gb.elements();
 }
 
 export function buildPetCmd() {
-  const gb = new GraphBuilder();
-  gb.rootSlash('linhthu', 'Quản lý kho Linh Thú: xem danh sách, đổi Pet xuất trận, nâng cấp Lv & nâng Sao', { ephemeral: false });
+  const gb = new Phase1GraphBuilder();
+  gb.rootSlash('linhthu', 'Quản lý kho Linh Thú: xem & sắp xếp, đổi Pet xuất trận, nâng cấp Lv & nâng Sao', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('hanh_dong', 'string', 'Chọn thao tác', { required: true, choices: ['list', 'active', 'upgrade_level', 'upgrade_star'], x: 420, y: 0 });
   gb.option('linh_thu', 'string', 'Mã hoặc tên Linh Thú (vd: hoa_thach_nham_nham)', { required: false, x: 700, y: 0 });
@@ -378,7 +434,7 @@ export function buildPetCmd() {
   embedMsg(gb, 'p_star_msg', { title: `${em('su_star_stone')} ĐỘT PHÁ SAO LINH THÚ`, description: '{pet_star_res.response.message}', color: '#f59e0b' }, { x: 300, y: 800 });
   gb.link('p_star_api', 'p_star_msg');
 
-  // List
+  // List + Interactive Row-1 Sort Dropdown
   apiAction(gb, 'p_list_api', 'pet_list_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}`, '', { x: 600, y: 600 });
   gb.link(bList, 'p_list_api');
   embedMsg(gb, 'p_list_msg', {
@@ -388,14 +444,40 @@ export function buildPetCmd() {
   }, { x: 600, y: 800 });
   gb.link('p_list_api', 'p_list_msg');
 
+  gb.advSelectMenu('sel_pet_sort', 'p_list_msg', {
+    placeholder: 'Sắp xếp Linh Thú (Cao -> Thấp / Sao / Nguyên Tố)',
+    customVariableName: 'picked_pet_sort',
+    row: '1',
+    weight: '1',
+    showReplies: 'show',
+    basic_options: [
+      { label: 'Phẩm Cao → Thấp (Mặc định)', description: 'Thần Thoại → Tiên → Linh → Phàm', emoji_id: emId('su_tier_mythic'), value: 'rarity_desc' },
+      { label: 'Phẩm Thấp → Cao', description: 'Phàm → Linh → Tiên → Thần Thoại', emoji_id: emId('su_tier_common'), value: 'rarity_asc' },
+      { label: 'Chiến Lực Cao → Thấp', description: 'Ưu tiên Pet chiến lực mạnh nhất lên đầu', emoji_id: emId('su_crossed_swords'), value: 'power_desc' },
+      { label: 'Cấp Độ (Lv) Cao → Thấp', description: 'Sắp theo cấp độ đã nâng', emoji_id: emId('su_level_up'), value: 'level_desc' },
+      { label: 'Số Sao (★) Cao → Thấp', description: 'Sắp theo bậc đột phá sao cao nhất', emoji_id: emId('su_star_stone'), value: 'star_desc' },
+      { label: 'Theo Nguyên Tố (Ngũ Hành)', description: 'Nhóm theo Kim • Mộc • Thủy • Hỏa • Thổ • Dị Tố', emoji_id: emId('su_wiki_scroll'), value: 'element_asc' },
+    ],
+  }, { x: 600, y: 1000 });
+
+  apiAction(gb, 'p_sort_api', 'pet_sort_res', 'GET', `${BACKEND_BASE}/api/pet/{user_id}?sort={picked_pet_sort}`, '', { x: 600, y: 1180 });
+  gb.link('sel_pet_sort', 'p_sort_api');
+
+  embedMsg(gb, 'p_sort_msg', {
+    title: `${em('su_pet_paw')} KHO LINH THÚ CỦA {pet_sort_res.response.user.username}`,
+    description: '{pet_sort_res.response.summary_pets}',
+    color: '#ec4899',
+  }, { x: 600, y: 1360 });
+  gb.link('p_sort_api', 'p_sort_msg');
+
   return gb.elements();
 }
 
 export function buildDismantleCmd() {
   const gb = new GraphBuilder();
-  gb.rootSlash('dismantle', 'Phá Role Quyền Năng, Pháp Bảo hoặc Linh Thú trong túi để thu hồi 50% giá trị Linh Thạch', { ephemeral: false });
+  gb.rootSlash('dismantle', 'Phân rã Role, Pháp Bảo hoặc Linh Thú (hỗ trợ nhiều ID, all_common/rare/epic; hoàn 50% Shop / Gacha)', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('ma_id', 'string', 'Mã ID, Tên Role/Pháp Bảo/Linh Thú hoặc số Slot #1-5 muốn phá (xem trong /inv)', { required: true, x: 420, y: 0 });
+  gb.option('ma_id', 'string', 'Mã ID, nhiều mã cách dấu phẩy (id1,id2), all_common/all_rare/all_epic hoặc Slot #1-5', { required: true, x: 420, y: 0 });
   gb.option('loai', 'string', 'Loại muốn phá (mặc định tự nhận diện Role / Pháp Bảo / Linh Thú)', { required: false, choices: ['role', 'item', 'pet'], x: 700, y: 0 });
 
   embedMsg(gb, 'dm_ack', {
@@ -418,7 +500,7 @@ export function buildDismantleCmd() {
   gb.link('dm_ack', 'dm_api');
 
   embedMsg(gb, 'dm_edit', {
-    title: `${em('su_linhthach')} PHÂN RÃ THU HỒI LINH THẠCH (50%)`,
+    title: `${em('su_linhthach')} PHÂN RÃ THU HỒI LINH THẠCH`,
     description: '{dm_res.response.message}',
     color: '#f59e0b',
     target: { editId: 'dm_ack' },
@@ -436,8 +518,8 @@ export function buildDismantleCmd() {
     roles: [],
     additional_roles: '{dm_res.response.remove_role_id}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1140 });
   gb.link(cRemRole.yes, 'dm_rem_role');
   return gb.elements();

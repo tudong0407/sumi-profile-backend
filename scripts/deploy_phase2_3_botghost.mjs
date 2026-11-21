@@ -3,6 +3,7 @@ globalThis.WebSocket = WebSocket;
 
 import {
   GraphBuilder,
+  SUMI_GUILD_ID,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
@@ -14,7 +15,7 @@ import {
   SHOP_ROLE_PACKAGES,
   BACKGROUND_CATALOG,
 } from '../src/data/catalog.js';
-import { em, emId, getEmojiEntry } from '../src/config/emojiHelper.js';
+import { em, emId, getEmojiEntry, roleTierEmojiKey } from '../src/config/emojiHelper.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
@@ -221,13 +222,13 @@ export function buildShopCmd() {
     title: `${em('su_linhthach')} TIÊN BẢO CÁC • CỬA HÀNG SUMI FAMILY`,
     description: [
       `${em('su_ring_thanthoai')} **Nhẫn Cưới (4 cấp)**: Phàm (500) • Linh (2.000) • Tiên (6.000) • Thần Thoại (18.000).`,
-      `${em('su_pet_paw')} **Linh Thú (10 loài)**: Bán thẳng toàn bộ Pet Phàm Phẩm (300) & Linh Phẩm (900).`,
-      `${em('su_crossed_swords')} **Pháp Bảo (24 món)**: Bán thẳng 12 món Phàm (250) & 12 món Linh (750).`,
+      `${em('su_pet_paw')} **Linh Thú (20 loài)**: Bán thẳng toàn bộ Pet Phàm Phẩm (300) & Linh Phẩm (900).`,
+      `${em('su_crossed_swords')} **Pháp Bảo (32 món)**: Bán thẳng 16 món Phàm (250) & 16 món Linh (750).`,
       `${em('su_medal_role')} **Role Quyền Năng (21 gói)**: Thuê nhanh 7 Ngày, 30 Ngày hoặc mua Vĩnh Viễn.`,
-      `${em('su_star_stone')} **Vật Phẩm (5 món)**: Vé Gacha (50), Tinh Thạch Sao (100), Thẻ Đổi Danh Hiệu (300), Lệnh Bài Khung (800).`,
-      `${em('su_frame_token')} **Background Hồ Sơ (20 mẫu)**: Bộ sưu tập nền Full HD+ (300–4.000 Linh Thạch).`,
+      `${em('su_star_stone')} **Vật Phẩm (6 món)**: Vé Gacha (50), Đá Sao (100), Thẻ Reset Tháp (200), Thẻ Danh Hiệu (300), Khung Avatar (800).`,
+      `${em('su_frame_token')} **Background Hồ Sơ (20 mẫu)**: Bộ sưu tập nền Trang Trí (300–4.000 Linh Thạch).`,
       ``,
-      `${em('su_gacha_dice')} *Pet Tiên/Thần Thoại, Role Đa Năng & 9 Pháp Bảo Độc Nhất 1% mở khóa qua Gacha \`/roll\` hoặc nút Quay Nhanh.*`,
+      `${em('su_gacha_dice')} *Pet Tiên/Thần Thoại, Role Đa Năng & Pháp Bảo Tiên/Thần Thoại mở khóa qua Gacha \`/roll\` hoặc nút Quay Nhanh.*`,
     ].join('\n'),
     color: '#ec4899',
     footer: 'SuMi Family • Tiên Bảo Các',
@@ -241,10 +242,10 @@ export function buildShopCmd() {
     weight: '1',
     basic_options: [
       { label: 'Nhẫn Cưới Tiên Lữ (4 cấp)', description: 'Mua nhẫn cầu hôn hoặc nâng cấp nhẫn đang đeo', emoji_id: emId('su_ring_thanthoai'), value: 'rings' },
-      { label: 'Linh Thú Phàm & Linh (10 loài)', description: '300 - 900 Linh Thạch (Tiên/Thần Thoại chỉ qua /roll)', emoji_id: emId('su_pet_paw'), value: 'pets' },
-      { label: 'Pháp Bảo Phàm & Linh (24 món)', description: '250 - 750 Linh Thạch (Vũ Khí, Bảo Ngọc, Chiến Hồn)', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
+      { label: 'Linh Thú Phàm & Linh (20 loài)', description: '300 - 900 Linh Thạch (Tiên/Thần Thoại chỉ qua /roll)', emoji_id: emId('su_pet_paw'), value: 'pets' },
+      { label: 'Pháp Bảo Phàm & Linh (32 món)', description: '250 - 750 Linh Thạch (12 Vũ Khí, 10 Bảo Ngọc, 10 Chiến Hồn)', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
       { label: 'Role Quyền Năng (21 gói)', description: 'Thuê 7 Ngày / 30 Ngày hoặc sở hữu Vĩnh Viễn', emoji_id: emId('su_medal_role'), value: 'roles' },
-      { label: 'Vật Phẩm & Trang Trí (5 món)', description: 'Vé Gacha, Tinh Thạch Sao, Thẻ Danh Hiệu, Khung Avatar', emoji_id: emId('su_star_stone'), value: 'consumables' },
+      { label: 'Vật Phẩm & Trang Trí (6 món)', description: 'Vé Gacha, Đá Sao, Thẻ Reset Tháp (200 LT), Thẻ Danh Hiệu, Khung', emoji_id: emId('su_star_stone'), value: 'consumables' },
       { label: 'Background Profile & Rank (20 mẫu)', description: '20 mẫu nền trang trí thẻ /profile & /rank (300 - 4.000 LT)', emoji_id: emId('su_frame_token'), value: 'backgrounds' },
     ],
   }, { x: 1000, y: 820 });
@@ -316,58 +317,68 @@ export function buildShopCmd() {
     })),
   }, { x: -750, y: 1580 });
 
-  // Category 2: Pets (10 Phàm & Linh)
+  // Category 2: Pets (20 Phàm & Linh)
   embedMsg(gb, 'msg_shop_pets', {
-    title: `${em('su_pet_paw')} QUẦY LINH THÚ PHÀM & LINH (10 LOÀI)`,
-    description: `• **Phàm Phẩm (5 loài)**: \`300\` ${em('su_linhthach')}\n• **Linh Phẩm (5 loài)**: \`900\` ${em('su_linhthach')}\n• *Linh Thú Tiên Phẩm & Thần Thoại chỉ mở từ \`/roll\`.*`,
+    title: `${em('su_pet_paw')} QUẦY LINH THÚ PHÀM & LINH (${SHOP_PETS.length} LOÀI)`,
+    description: `• **Phàm Phẩm (10 loài)**: \`300\` ${em('su_linhthach')}\n• **Linh Phẩm (10 loài)**: \`900\` ${em('su_linhthach')}\n• *Linh Thú Tiên Phẩm & Thần Thoại chỉ mở từ \`/roll\`.*`,
     color: '#ec4899',
   }, { x: -450, y: 1380 });
   gb.link(rPets, 'msg_shop_pets');
   gb.link(sPets, 'msg_shop_pets');
   gb.advSelectMenu('sel_shop_pet', 'msg_shop_pets', {
-    placeholder: 'Chọn Linh Thú Phàm / Linh Phẩm (10 loài)',
+    placeholder: `Chọn Linh Thú Phàm / Linh Phẩm (${SHOP_PETS.length} loài)`,
     customVariableName: 'picked_shop_pet',
     basic_options: SHOP_PETS.map((p) => ({
-      label: p.pet_name,
-      description: `${p.rarity} • Hệ ${p.element} • ${p.price} LT • ${p.hax_skill}`,
+      label: String(p.pet_name).slice(0, 95),
+      description: `${p.rarity} • Hệ ${p.element} • ${p.price} LT • ${p.hax_skill}`.slice(0, 95),
       emoji_id: emId(p.emoji_key),
       value: p.pet_type,
     })),
   }, { x: -450, y: 1580 });
 
-  // Category 3: Equipment (24 items in 3 dropdowns: 8 weapons, 8 gems, 8 souls)
+  // Category 3: Equipment (32 items in 3 dropdowns: 12 weapons, 10 gems, 10 souls)
   embedMsg(gb, 'msg_shop_equip', {
-    title: `${em('su_crossed_swords')} QUẦY PHÁP BẢO PHÀM & LINH (24 MÓN)`,
-    description: `• **Phàm Phẩm (12 món)**: \`250\` ${em('su_linhthach')}\n• **Linh Phẩm (12 món)**: \`750\` ${em('su_linhthach')}\n• *Pháp Bảo Tiên Phẩm & 9 món Thần Thoại Độc Nhất chỉ mở từ \`/roll\`.*`,
+    title: `${em('su_crossed_swords')} QUẦY PHÁP BẢO PHÀM & LINH (${SHOP_EQUIPMENT.length} MÓN)`,
+    description: `• **Phàm Phẩm (16 món)**: \`250\` ${em('su_linhthach')}\n• **Linh Phẩm (16 món)**: \`750\` ${em('su_linhthach')}\n• *Pháp Bảo Tiên Phẩm & Thần Thoại chỉ mở từ \`/roll\`.*`,
     color: '#f59e0b',
   }, { x: -150, y: 1380 });
   gb.link(rEquip, 'msg_shop_equip');
   gb.link(sEquip, 'msg_shop_equip');
   const eqOpts = (type) => SHOP_EQUIPMENT.filter((e) => e.item_type === type).map((e) => ({
-    label: e.item_name,
-    description: `${e.rarity} • Hệ ${e.element} • ${e.price} LT`,
+    label: String(e.item_name).slice(0, 95),
+    description: `${e.rarity} • Hệ ${e.element} • ${e.price} LT`.slice(0, 95),
     emoji_id: emId(e.emoji_key),
     value: e.item_id,
   }));
-  gb.advSelectMenu('sel_shop_eq_w', 'msg_shop_equip', { placeholder: 'Vũ Khí Phàm & Linh (8 món)', customVariableName: 'picked_shop_eq_w', row: '1', weight: '1', basic_options: eqOpts('weapon') }, { x: -240, y: 1580 });
-  gb.advSelectMenu('sel_shop_eq_g', 'msg_shop_equip', { placeholder: 'Bảo Ngọc Phàm & Linh (8 món)', customVariableName: 'picked_shop_eq_g', row: '2', weight: '1', basic_options: eqOpts('gem') }, { x: -80, y: 1580 });
-  gb.advSelectMenu('sel_shop_eq_s', 'msg_shop_equip', { placeholder: 'Chiến Hồn Phàm & Linh (8 món)', customVariableName: 'picked_shop_eq_s', row: '3', weight: '1', basic_options: eqOpts('soul') }, { x: 80, y: 1580 });
+  const wCnt = SHOP_EQUIPMENT.filter((e) => e.item_type === 'weapon').length;
+  const gCnt = SHOP_EQUIPMENT.filter((e) => e.item_type === 'gem').length;
+  const sCnt = SHOP_EQUIPMENT.filter((e) => e.item_type === 'soul').length;
+  gb.advSelectMenu('sel_shop_eq_w', 'msg_shop_equip', { placeholder: `Vũ Khí Phàm & Linh (${wCnt} món)`, customVariableName: 'picked_shop_eq_w', row: '1', weight: '1', basic_options: eqOpts('weapon') }, { x: -240, y: 1580 });
+  gb.advSelectMenu('sel_shop_eq_g', 'msg_shop_equip', { placeholder: `Bảo Ngọc Phàm & Linh (${gCnt} món)`, customVariableName: 'picked_shop_eq_g', row: '2', weight: '1', basic_options: eqOpts('gem') }, { x: -80, y: 1580 });
+  gb.advSelectMenu('sel_shop_eq_s', 'msg_shop_equip', { placeholder: `Chiến Hồn Phàm & Linh (${sCnt} món)`, customVariableName: 'picked_shop_eq_s', row: '3', weight: '1', basic_options: eqOpts('soul') }, { x: 80, y: 1580 });
 
-  // Category 5: Consumables
+  // Category 5: Consumables (6 items incl. tower_reset_card)
   embedMsg(gb, 'msg_shop_cons', {
-    title: `${em('su_star_stone')} QUẦY VẬT PHẨM & TRANG TRÍ (5 MÓN)`,
+    title: `${em('su_star_stone')} QUẦY VẬT PHẨM & TRANG TRÍ (${SHOP_CONSUMABLES.length} MÓN)`,
     description: SHOP_CONSUMABLES.map((c) => `• ${c.icon} **${c.name}** — **${c.price.toLocaleString('vi-VN')}** ${em('su_linhthach')}\n  *${c.description}*`).join('\n'),
     color: '#38bdf8',
   }, { x: 450, y: 1380 });
   gb.link(rCons, 'msg_shop_cons');
   gb.link(sCons, 'msg_shop_cons');
   gb.advSelectMenu('sel_shop_cons', 'msg_shop_cons', {
-    placeholder: 'Chọn Vật Phẩm Tiêu Hao / Trang Trí (5 món)',
+    placeholder: `Chọn Vật Phẩm Tiêu Hao / Trang Trí (${SHOP_CONSUMABLES.length} món)`,
     customVariableName: 'picked_shop_cons',
     basic_options: SHOP_CONSUMABLES.map((c) => ({
-      label: c.name,
-      description: `${c.price} LT • ${c.description}`,
-      emoji_id: emId(c.item_id === 'gacha_ticket_equip' ? 'su_ticket_equip' : c.item_id === 'gacha_ticket_pet' ? 'su_ticket_pet' : c.item_id === 'pet_star_stone' ? 'su_star_stone' : c.item_id === 'title_rename_card' ? 'su_title_card' : 'su_frame_token'),
+      label: String(c.name).slice(0, 95),
+      description: `${c.price} LT • ${c.description}`.slice(0, 95),
+      emoji_id: emId(
+        c.item_id === 'gacha_ticket_equip' ? 'su_ticket_equip'
+          : c.item_id === 'gacha_ticket_pet' ? 'su_ticket_pet'
+            : c.item_id === 'pet_star_stone' ? 'su_star_stone'
+              : c.item_id === 'tower_reset_card' ? 'su_tower_reset_card'
+                : c.item_id === 'title_rename_card' ? 'su_title_card'
+                  : 'su_frame_token'
+      ),
       value: c.item_id,
     })),
   }, { x: 450, y: 1580 });
@@ -468,9 +479,9 @@ export function buildShopCmd() {
     placeholder: `Chọn Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói • 7d/30d/Vĩnh Viễn)`,
     customVariableName: 'picked_shop_role',
     basic_options: SHOP_ROLE_PACKAGES.map((r) => ({
-      label: r.name,
-      description: `7d: ${r.prices['7d']} | 30d: ${r.prices['30d']} | Vĩnh Viễn: ${r.prices.permanent.toLocaleString('vi-VN')} LT`,
-      emoji_id: emId('su_medal_role'),
+      label: String(r.name).slice(0, 95),
+      description: `7d: ${r.prices['7d']} | 30d: ${r.prices['30d']} | Vĩnh Viễn: ${r.prices.permanent.toLocaleString('vi-VN')} LT`.slice(0, 95),
+      emoji_id: emId(roleTierEmojiKey(r.rarity_key)),
       value: r.role_id,
     })),
   }, { x: 240, y: 1580 });
@@ -531,8 +542,8 @@ export function buildShopCmd() {
     roles: [],
     additional_roles: '{sh_rbuy_res.response.add_role_id}',
     success_handles: false,
-    target: { variable: '{user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: 100, y: 3440 });
   gb.link(cAddRole.yes, 'sh_add_role');
 

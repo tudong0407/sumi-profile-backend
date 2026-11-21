@@ -153,11 +153,11 @@ function makeEmbedAction(gb, id, { title, description = '', color = '#ec4899', i
 }
 
 // ============================================================================
-// 1. /profile (Full HD+ 2000x1000)
+// 1. /profile (2000x1000 WebP)
 // ============================================================================
 export function buildProfileCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('profile', 'Xem thẻ hồ sơ tu tiên Full HD+, linh thú xuất trận và role quyền năng', { ephemeral: false });
+  gb.rootSlash('profile', 'Xem thẻ hồ sơ tu tiên, linh thú xuất trận và role quyền năng', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('user', 'user', 'Tu sĩ cần xem hồ sơ (để trống để xem chính mình)', { required: false, x: 420, y: 0 });
 
@@ -168,14 +168,14 @@ export function buildProfileCmd() {
     title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/profile/{option_user}.webp?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
-    footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
+    footerText: 'SuMi Family • Tu Tiên Giới',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_profile_self', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • HỒ SƠ TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/profile/{user_id}.webp?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
-    footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
+    footerText: 'SuMi Family • Tu Tiên Giới',
   }, { x: 240, y: 500 });
 
   gb.link(cHas.yes, 'action_profile_opt');
@@ -184,11 +184,11 @@ export function buildProfileCmd() {
 }
 
 // ============================================================================
-// 2. /rank (Full HD+ 2000x410 WebP)
+// 2. /rank (2000x410 WebP)
 // ============================================================================
 export function buildRankCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('rank', 'Xem thẻ cảnh giới tu tiên mini Full HD+ và tiến độ cấp độ', { ephemeral: false });
+  gb.rootSlash('rank', 'Xem thẻ cảnh giới tu tiên mini và tiến độ cấp độ', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('user', 'user', 'Tu sĩ cần xem cảnh giới (để trống để xem chính mình)', { required: false, x: 420, y: 0 });
 
@@ -199,14 +199,14 @@ export function buildRankCmd() {
     title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/rank/{option_user}.webp?fallback_id={option_user}&fallback_name={encode_text[{user_displayName[option_user]}]}&fallback_avatar={encode_text[{user_icon[option_user]}]}&t={time_now_unix}`,
-    footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
+    footerText: 'SuMi Family • Tu Tiên Giới',
   }, { x: -240, y: 500 });
 
   makeEmbedAction(gb, 'action_rank_self', {
     title: `${em('su_fox_mascot')} SUMI FAMILY • THẺ CẢNH GIỚI TU TIÊN`,
     color: '#ff75b5',
     imageUrl: `${BACKEND_BASE}/api/rank/{user_id}.webp?fallback_id={user_id}&fallback_name={encode_text[{user_displayName}]}&fallback_avatar={encode_text[{user_icon}]}&t={time_now_unix}`,
-    footerText: 'SuMi Family • Tu Tiên Giới Full HD+',
+    footerText: 'SuMi Family • Tu Tiên Giới',
   }, { x: 240, y: 500 });
 
   gb.link(cHas.yes, 'action_rank_opt');
@@ -215,27 +215,26 @@ export function buildRankCmd() {
 }
 
 // ============================================================================
-// 3. /battle (Multi-Turn Adaptive WebP + Nút Xem Nhật Ký Trận Đấu Ephemeral)
+// 3. /battle (Multi-Turn Adaptive WebP + PvE Tự Do + Nút Xem Nhật Ký Trận Đấu)
 // ============================================================================
 export function buildBattleCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('battle', 'Thách đấu Linh Thú 1v1 — Chiến Báo Động Đa Lượt Full HD+', { ephemeral: false });
+  gb.rootSlash('battle', 'Đấu Trường Linh Thú 1v1 (PvP với Đạo Hữu hoặc bỏ trống đấu PvE Tự Do ±Linh Thạch)', { ephemeral: false });
   gb.errorHandlerWait();
-  gb.option('doi_thu', 'user', 'Đạo hữu muốn thách đấu (để trống để đấu thử với Hanabira Mei)', { required: false, x: 420, y: 0 });
+  gb.option('doi_thu', 'user', 'Đạo hữu muốn thách đấu (để trống để đấu PvE Tự Do nhận +10/-5 LT)', { required: false, x: 420, y: 0 });
 
   const cHas = gb.cmp('b_has_u', '{option_doi_thu}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 220 });
   gb.link('root', cHas.condId);
 
   gb.act('b_set_opt', 'set_unique_variable', { reference: 'def_uid', value: '{option_doi_thu}', success_handles: false }, { x: -240, y: 400 });
   gb.link(cHas.yes, 'b_set_opt');
+  gb.act('b_set_mode_pvp', 'set_unique_variable', { reference: 'b_mode', value: 'pvp', success_handles: false }, { x: -240, y: 580 });
+  gb.link('b_set_opt', 'b_set_mode_pvp');
 
-  const cIsHana = gb.cmp('b_is_hana', '{user_id}', '1429509324845092875', 'equal_to', {}, { x: 240, y: 400 });
-  gb.link(cHas.no, cIsHana.condId);
-
-  gb.act('b_set_fu', 'set_unique_variable', { reference: 'def_uid', value: '757091869183311872', success_handles: false }, { x: 100, y: 580 });
-  gb.act('b_set_hana', 'set_unique_variable', { reference: 'def_uid', value: '1429509324845092875', success_handles: false }, { x: 380, y: 580 });
-  gb.link(cIsHana.yes, 'b_set_fu');
-  gb.link(cIsHana.no, 'b_set_hana');
+  gb.act('b_set_pve', 'set_unique_variable', { reference: 'def_uid', value: 'pve_free', success_handles: false }, { x: 240, y: 400 });
+  gb.link(cHas.no, 'b_set_pve');
+  gb.act('b_set_mode_pve', 'set_unique_variable', { reference: 'b_mode', value: 'pve_free', success_handles: false }, { x: 240, y: 580 });
+  gb.link('b_set_pve', 'b_set_mode_pve');
 
   // Immediate ACK to satisfy Discord 3s interaction window
   makeEmbedAction(gb, 'battle_ack', {
@@ -246,9 +245,8 @@ export function buildBattleCmd() {
     footerText: 'SuMi Family • Đấu Trường Tiên Giới',
   }, { x: 0, y: 760 });
 
-  gb.link('b_set_opt', 'battle_ack');
-  gb.link('b_set_fu', 'battle_ack');
-  gb.link('b_set_hana', 'battle_ack');
+  gb.link('b_set_mode_pvp', 'battle_ack');
+  gb.link('b_set_mode_pve', 'battle_ack');
 
   gb.act('battle_api', 'api_action', {
     name: 'battle_res',
@@ -259,7 +257,7 @@ export function buildBattleCmd() {
       headers: [{ key: 'Content-Type', value: 'application/json' }],
       params: [],
       body: [],
-      rawBody: '{"attackerId":"{user_id}","defenderId":"{def_uid}","channelId":"{channel_id}","options":{"maxTurns":20}}',
+      rawBody: '{"attackerId":"{user_id}","defenderId":"{def_uid}","channelId":"{channel_id}","mode":"{b_mode}","options":{"maxTurns":20}}',
       contentType: 'application/json',
       options: {
         excludeEmptyFields: true,
@@ -313,12 +311,12 @@ export function buildBattleCmd() {
   // Frame cuối chốt hạ WINNER (2000x1000 WebP sắc nét) + Nút Xem Nhật Ký Trận Đấu
   makeEmbedAction(gb, 'battle_edit_final', {
     title: '{battle_res.response.headline}',
-    description: '',
+    description: '{battle_res.response.reward_summary}',
     color: '#ec4899',
     imageUrl: '{battle_res.response.finalImageWebpUrl}',
     target: { editId: 'battle_ack' },
     action_id: 'battle_ack',
-    footerText: 'SuMi Family • Ảnh Chiến Báo 1v1 Full HD+',
+    footerText: 'SuMi Family • Chiến Báo 1v1',
   }, { x: 0, y: 2060 });
   gb.link('battle_wait_2', 'battle_edit_final');
   gb.link(cHasF3.no, 'battle_edit_final');
@@ -386,7 +384,7 @@ function buildItemOptions(itemType) {
     const uniqueTag = i.is_unique ? ' • Độc Nhất 1%' : ` • ${i.drop_rate}%`;
     return {
       label: String(i.item_name).slice(0, 95),
-      description: `${i.rarity} • ${statSummary}${uniqueTag}`,
+      description: `${i.rarity} • ${statSummary}${uniqueTag}`.slice(0, 95),
       emoji_id: emId(i.emoji_key),
       value: i.item_id,
     };
@@ -398,7 +396,7 @@ function buildPetOptions(rarityKeys) {
     const tag = p.is_starter ? 'Khởi đầu tân thủ' : p.hax_skill;
     return {
       label: String(p.pet_name).slice(0, 95),
-      description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag} • ${p.drop_rate}%`,
+      description: `Hệ ${p.element} • ${p.base_atk}/${p.base_def}/${p.base_spd} • ${tag} • ${p.drop_rate}%`.slice(0, 95),
       emoji_id: emId(p.emoji_key),
       value: p.pet_type,
     };
@@ -407,7 +405,7 @@ function buildPetOptions(rarityKeys) {
 
 export function buildWikiCmd() {
   const gb = new ExtendedGraphBuilder();
-  gb.rootSlash('wiki', 'Cẩm nang tu tiên SuMi Family — Cảnh giới, Ngũ Hành, 45 Pháp Bảo & 20 Linh Thú', { ephemeral: false });
+  gb.rootSlash('wiki', 'Cẩm nang tu tiên SuMi Family — Cảnh giới, Ngũ Hành, 65 Pháp Bảo & 40 Linh Thú', { ephemeral: false });
   gb.errorHandlerWait();
   gb.option('chuyen_muc', 'string', 'Chuyên mục cần tra cứu (tùy chọn)', {
     required: false,
@@ -454,9 +452,9 @@ export function buildWikiCmd() {
     basic_options: [
       { label: 'Tổng Quan Tu Tiên', description: 'Khởi đầu tân thủ & danh sách lệnh cốt lõi', emoji_id: emId('su_wiki_scroll'), value: 'overview' },
       { label: 'Hệ Thống Cảnh Giới & Thăng Cấp', description: '7 Đại Cảnh Giới, công thức EXP, mốc Role & Slot', emoji_id: emId('su_realm_7_hondondao'), value: 'realms' },
-      { label: 'Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1 & sơ đồ Vòng Xoay Ngũ Hành Full HD+', emoji_id: emId('su_arena'), value: 'battle' },
-      { label: 'Trang Bị Loadout (45 Pháp Bảo)', description: '45 Pháp Bảo: Vũ Khí, Bảo Ngọc, Chiến Hồn & Quy tắc Độc Nhất', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
-      { label: 'Linh Thú Tiên Giới (20 Chiến Pet)', description: '20 Chiến Linh Thú theo 4 bậc Phẩm Cấp & kỹ năng HAX', emoji_id: emId('su_pet_paw'), value: 'pets' },
+      { label: 'Đấu Trường & Ngũ Hành Tương Khắc', description: 'Luật 1v1, PvE Tự Do & sơ đồ Vòng Xoay Ngũ Hành', emoji_id: emId('su_arena'), value: 'battle' },
+      { label: 'Trang Bị Loadout (65 Pháp Bảo)', description: '65 Pháp Bảo: Vũ Khí, Bảo Ngọc, Chiến Hồn & Quy tắc Độc Nhất', emoji_id: emId('su_crossed_swords'), value: 'equipment' },
+      { label: 'Linh Thú Tiên Giới (40 Chiến Pet)', description: '40 Chiến Linh Thú theo 4 bậc Phẩm Cấp & kỹ năng HAX', emoji_id: emId('su_pet_paw'), value: 'pets' },
       { label: 'Kinh Tế Linh Thạch & Gia Tộc', description: 'Linh Thạch, Gacha Role, Nhiệm Vụ, Tặng Quà & Gia Tộc', emoji_id: emId('su_linhthach'), value: 'economy' },
     ],
   }, { x: 800, y: 820 });
@@ -492,14 +490,14 @@ export function buildWikiCmd() {
   gb.link(rRealms, 'msg_wiki_realms');
   gb.link(sRealms, 'msg_wiki_realms');
 
-  // 2. Chuyên mục Đấu Trường & Sơ Đồ Vòng Xoay Ngũ Hành Full HD+
+  // 2. Chuyên mục Đấu Trường & Sơ Đồ Vòng Xoay Ngũ Hành
   makeEmbedAction(gb, 'msg_wiki_battle', {
     title: bt.title,
     description: bt.content,
     color: '#f43f5e',
     imageUrl: `${BACKEND_BASE}/api/wiki/chart/elements.png`,
     fields: bt.fields,
-    footerText: 'SuMi Family • Sơ Đồ Ngũ Hành & Dị Tố Full HD+ (2000×1000)',
+    footerText: 'SuMi Family • Sơ Đồ Ngũ Hành & Dị Tố',
   }, { x: -450, y: 1380 });
   gb.link(rBattle, 'msg_wiki_battle');
   gb.link(sBattle, 'msg_wiki_battle');
@@ -526,31 +524,35 @@ export function buildWikiCmd() {
   gb.link(rEquip, 'msg_wiki_equip');
   gb.link(sEquip, 'msg_wiki_equip');
 
+  const wikiWOpts = buildItemOptions('weapon');
+  const wikiGOpts = buildItemOptions('gem');
+  const wikiSOpts = buildItemOptions('soul');
+
   gb.advSelectMenu('sel_eq_weapon', 'msg_wiki_equip', {
-    placeholder: 'Vũ Khí (15 món)',
+    placeholder: `Vũ Khí (${wikiWOpts.length} món)`,
     customVariableName: 'picked_weapon',
     row: '1',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildItemOptions('weapon'),
+    basic_options: wikiWOpts,
   }, { x: -450, y: 1620 });
 
   gb.advSelectMenu('sel_eq_gem', 'msg_wiki_equip', {
-    placeholder: 'Bảo Ngọc (15 món)',
+    placeholder: `Bảo Ngọc (${wikiGOpts.length} món)`,
     customVariableName: 'picked_gem',
     row: '2',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildItemOptions('gem'),
+    basic_options: wikiGOpts,
   }, { x: -150, y: 1620 });
 
   gb.advSelectMenu('sel_eq_soul', 'msg_wiki_equip', {
-    placeholder: 'Chiến Hồn (15 món)',
+    placeholder: `Chiến Hồn (${wikiSOpts.length} món)`,
     customVariableName: 'picked_soul',
     row: '3',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildItemOptions('soul'),
+    basic_options: wikiSOpts,
   }, { x: 150, y: 1620 });
 
   gb.act('set_item_w', 'set_unique_variable', { reference: 'wiki_item_id', value: '{picked_weapon}', success_handles: false }, { x: -450, y: 1800 });
@@ -561,7 +563,7 @@ export function buildWikiCmd() {
   gb.link('sel_eq_soul', 'set_item_s');
 
   makeEmbedAction(gb, 'eq_detail_ack', {
-    title: `${em('su_crossed_swords')} Đang tải Thẻ Pháp Bảo Full HD+...`,
+    title: `${em('su_crossed_swords')} Đang tải Thẻ Pháp Bảo...`,
     description: 'Đang tra cứu thông số, kỹ năng HAX và chủ sở hữu hiện tại từ Supabase...',
     color: '#f59e0b',
     editId: 'eq_detail_ack',
@@ -617,40 +619,45 @@ export function buildWikiCmd() {
   gb.link(rPets, 'msg_wiki_pets');
   gb.link(sPets, 'msg_wiki_pets');
 
+  const wikiPCOpts = buildPetOptions(['common']);
+  const wikiPROpts = buildPetOptions(['rare']);
+  const wikiPEOpts = buildPetOptions(['epic']);
+  const wikiPMOpts = buildPetOptions(['mythic']);
+
   gb.advSelectMenu('sel_pet_common', 'msg_wiki_pets', {
-    placeholder: 'Phàm Phẩm • Tỉ lệ 60% (5 Linh Thú)',
+    placeholder: `Phàm Phẩm • Tỉ lệ 60% (${wikiPCOpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_c',
     row: '1',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildPetOptions(['common']),
+    basic_options: wikiPCOpts,
   }, { x: 450, y: 1620 });
 
   gb.advSelectMenu('sel_pet_rare', 'msg_wiki_pets', {
-    placeholder: 'Linh Phẩm • Tỉ lệ 25% (5 Linh Thú)',
+    placeholder: `Linh Phẩm • Tỉ lệ 25% (${wikiPROpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_r',
     row: '2',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildPetOptions(['rare']),
+    basic_options: wikiPROpts,
   }, { x: 750, y: 1620 });
 
   gb.advSelectMenu('sel_pet_epic', 'msg_wiki_pets', {
-    placeholder: 'Tiên Phẩm • Tỉ lệ 14% (4 Linh Thú)',
+    placeholder: `Tiên Phẩm • Tỉ lệ 14% (${wikiPEOpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_e',
     row: '3',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildPetOptions(['epic']),
+    basic_options: wikiPEOpts,
   }, { x: 1050, y: 1620 });
 
   gb.advSelectMenu('sel_pet_mythic', 'msg_wiki_pets', {
-    placeholder: 'Thần Thoại • Tỉ lệ 1% (6 Linh Thú)',
+    placeholder: `Thần Thoại • Tỉ lệ 1% (${wikiPMOpts.length} Linh Thú)`,
     customVariableName: 'picked_pet_m',
     row: '4',
     weight: '1',
     showReplies: 'show',
-    basic_options: buildPetOptions(['mythic']),
+    basic_options: wikiPMOpts,
   }, { x: 1350, y: 1620 });
 
   gb.act('set_pet_c', 'set_unique_variable', { reference: 'wiki_pet_id', value: '{picked_pet_c}', success_handles: false }, { x: 450, y: 1800 });
@@ -663,7 +670,7 @@ export function buildWikiCmd() {
   gb.link('sel_pet_mythic', 'set_pet_m');
 
   makeEmbedAction(gb, 'pet_detail_ack', {
-    title: `${em('su_pet_paw')} Đang tải Thẻ Linh Thú Full HD+...`,
+    title: `${em('su_pet_paw')} Đang tải Thẻ Linh Thú...`,
     description: 'Đang tra cứu hệ nguyên tố, bộ chỉ số ATK/DEF/SPD/HP và kỹ năng HAX...',
     color: '#ec4899',
     editId: 'pet_detail_ack',
@@ -781,8 +788,8 @@ export function buildChatExpEvent() {
     roles: [],
     additional_roles: '{exp_res.response.unlocked_level_role_id}',
     success_handles: false,
-    target: { variable: '{event_user_id}' },
-    server_id: '',
+    target: { self: true },
+    server_id: SUMI_GUILD_ID,
   }, { x: -340, y: 1620 });
   gb.link(cRole.yes, 'ce_add_role');
 
@@ -842,8 +849,8 @@ export function buildVoiceExpEvent(eventName, eventType, action) {
       roles: [],
       additional_roles: '{vexp_res.response.unlocked_level_role_id}',
       success_handles: false,
-      target: { variable: '{event_user_id}' },
-      server_id: '',
+      target: { self: true },
+      server_id: SUMI_GUILD_ID,
     }, { x: -340, y: 1380 });
     gb.link(cRole.yes, 've_add_role');
   }
@@ -926,10 +933,44 @@ export function buildRenderKeepAliveEvent() {
     roles: [],
     additional_roles: '{cleanup_res.response.remove_role_csv}',
     success_handles: false,
-    target: { variable: '{cleanup_res.response.target_user_id}' },
+    target: { id: '{cleanup_res.response.target_user_id}' },
     server_id: SUMI_GUILD_ID,
   }, { x: -180, y: 1180 });
   gb.link('ka_wait_2', 'ka_rem_role');
+
+  gb.act('ka_wait_hb', 'wait_action', { seconds: '1', success_handles: false }, { x: 0, y: 1360 });
+  gb.link('ka_rem_role', 'ka_wait_hb');
+  gb.link(cExpired.no, 'ka_wait_hb');
+
+  gb.act('ka_heartbeat_api', 'api_action', {
+    name: 'hb_res',
+    ephemeral: false,
+    request_options: {
+      method: 'POST',
+      url: `${BACKEND_BASE}/api/exp/voice-heartbeat`,
+      headers: [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' },
+      ],
+      params: [],
+      body: [],
+      rawBody: '{}',
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        jsonSafeVariables: true,
+        bodyMode: 'raw',
+        contentType: 'application/json',
+        failOnError: false,
+      },
+    },
+    success_handles: false,
+  }, { x: 0, y: 1540 });
+  gb.link('ka_wait_hb', 'ka_heartbeat_api');
 
   return gb.elements();
 }

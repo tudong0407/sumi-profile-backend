@@ -168,7 +168,7 @@ export function buildNhiemVuCmd() {
   gb.errorHandlerWait();
   gb.option('hanh_dong', 'string', 'Chọn hành động', {
     required: true,
-    choices: ['status', 'claim', 'tower'],
+    choices: ['status', 'claim', 'tower', 'reset'],
     x: 420,
     y: 0,
   });
@@ -176,9 +176,10 @@ export function buildNhiemVuCmd() {
   gb.cond('nv_mode', 'comparison', { base_value: '{option_hanh_dong}', target: { self: true } }, { x: 0, y: 220 });
   gb.link('root', 'nv_mode');
 
-  const bClaim = gb.branch('nv_mode', 'nv_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -350, y: 400 });
-  const bTower = gb.branch('nv_mode', 'nv_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: 0, y: 400 });
-  const bStat = gb.elseBranch('nv_mode', 'nv_stat', 'comparison', { x: 350, y: 400 });
+  const bClaim = gb.branch('nv_mode', 'nv_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -450, y: 400 });
+  const bTower = gb.branch('nv_mode', 'nv_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: -150, y: 400 });
+  const bReset = gb.branch('nv_mode', 'nv_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 150, y: 400 });
+  const bStat = gb.elseBranch('nv_mode', 'nv_stat', 'comparison', { x: 450, y: 400 });
 
   // Claim 3/3 Daily Quests
   embedMsg(gb, 'nv_claim_ack', {
@@ -239,6 +240,36 @@ export function buildNhiemVuCmd() {
     footer: 'SuMi Family • Tối đa 5 lượt khiêu chiến mỗi ngày (UTC+7)',
   }, { x: 0, y: 960 });
   gb.link('nv_tower_api', 'nv_tower_edit');
+
+  // Tower Reset Card (+5 attempts)
+  embedMsg(gb, 'nv_reset_ack', {
+    title: `${em('su_tower_reset_card')} Đang kích hoạt Thẻ Reset Tháp...`,
+    description: 'Đang kiểm tra thẻ trong túi đồ của {user_displayName}...',
+    color: '#a855f7',
+    editId: 'nv_reset_ack',
+  }, { x: 150, y: 600 });
+  gb.link(bReset, 'nv_reset_ack');
+
+  apiAction(
+    gb,
+    'nv_reset_api',
+    'nv_reset_res',
+    'POST',
+    `${BACKEND_BASE}/api/quest/tower/reset`,
+    '{"userId":"{user_id}"}',
+    { x: 150, y: 780 },
+  );
+  gb.link('nv_reset_ack', 'nv_reset_api');
+
+  embedMsg(gb, 'nv_reset_edit', {
+    title: `${em('su_tower_reset_card')} HỒI PHỤC LƯỢT THÁP THÍ LUYỆN`,
+    description: '{nv_reset_res.response.message}',
+    color: '#a855f7',
+    target: { editId: 'nv_reset_ack' },
+    action_id: 'nv_reset_ack',
+    footer: 'SuMi Family • Dùng Thẻ Reset Lượt Đi Tháp (/shop)',
+  }, { x: 150, y: 960 });
+  gb.link('nv_reset_api', 'nv_reset_edit');
 
   // Status
   embedMsg(gb, 'nv_stat_ack', {
