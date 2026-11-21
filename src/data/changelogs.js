@@ -5,9 +5,41 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.2';
+export const LATEST_VERSION = '1.3';
 
 export const CHANGELOGS = [
+  {
+    version: '1.3',
+    title: 'ĐẠI CẢI TỔ LÃNH ĐỊA, NÔNG TRẠI & BÁCH KHOA V1.3',
+    released_at: '2026-11-22',
+    color: '#ec4899',
+    summary: 'Khai mở hệ thống Linh Vực • Thần Thức • Thần Cảnh, bổ sung 50 Linh Thú & 100 Pháp Bảo cân bằng (<= 15%), Nông Trại /farm & /exchange, 4 thức chơi Linh Thạch, chuẩn hóa Emoji UID và đồng bộ toàn bộ /wiki.',
+    sections: [
+      {
+        heading: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (/linhvuc • /roll loai:domain)`,
+        bullets: [
+          '**30 Linh Vực, 15 Thần Thức & 15 Thần Cảnh** (kèm 5 Linh Vực Thần Thoại Độc Nhất Toàn Server) chính thức gia nhập đấu trường từ **Hiệp 2**.',
+          '**Cơ chế Chiến Thuật Tinh Tế:** Linh Vực không cộng thẳng chỉ số cơ bản mà cường hóa **Buff xuyên giáp/HAX** phe mình và **Debuff** đối phương theo vòng tương khắc **5 Hệ (`Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực`)**, tiêu hao `1` hoặc `2 Linh Mạch`/hiệp khi giằng co.',
+          '**Thần Thức** gia tăng giới hạn Linh Mạch & hiệu lực Buff; **Thần Cảnh** cường hóa Debuff & bổ sung hiệu ứng bất lợi mới.',
+        ],
+      },
+      {
+        heading: `${em('su_crossed_swords')} Mở Rộng 50 Linh Thú & 100 Pháp Bảo Mới (Cân Bằng <= 15%)`,
+        bullets: [
+          'Tổng cộng **90 Linh Thú tiêu chuẩn** *(gồm 10 Thần Thoại Độc Nhất + 40 Thần Thoại Tự Do)* & **165 Pháp Bảo Loadout** *(57 Vũ Khí / 54 Bảo Ngọc / 54 Chiến Hồn, gồm 39 Độc Nhất + 56 Thần Thoại Tự Do)* với nội tại HAX đa dạng và cân bằng biên độ **tối đa 15%** giữa Độc Nhất và Thường.',
+          'Chuẩn hóa **100% Emoji UID** cho toàn bộ Linh Thú, Pháp Bảo, Linh Vực, Vật Phẩm (nhận trực tiếp UID/Emoji trên `/info`, `/equip`, `/dismantle`, `/enchant`, `/linhvuc`) & khôi phục biểu tượng **Lệnh Bài Ảnh Nền** (`frame_unlock_token`) trên `/inv`.',
+        ],
+      },
+      {
+        heading: `${em('su_sprout')} Nông Trại (/farm • /exchange), Giải Trí & Kinh Tế Tu Tiên`,
+        bullets: [
+          '**Nông Trại Thời Gian Thực (`/farm` & `/exchange`):** Canh tác **Linh Điền** & ấp trứng **Linh Các** (`4 → 6 ô`, chu kỳ `6h/12h/24h`), chăm sóc đúng khung giờ để thu **Linh Thạch** & **Linh Quả Tiên Giới** (`farm_essence`) quy đổi Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset Tháp.',
+          '**4 Thức Chơi Linh Thạch (`10–10.000 LT`):** Ra mắt `/coinflip` *(1:2)*, `/blackjack` *(1:2)*, `/slots` *(4 ô, tối đa 1:5)* và `/crash` *(Ngự Kiếm)* kèm hiệu ứng hoạt ảnh trực quan.',
+          '**Nâng Cấp Nhiệm Vụ & Lao Động:** Giới hạn `/job` tăng lên **8 ca/ngày**; `/nhiemvu` mở rộng thành **5 Nhiệm Vụ Ngày** *(+15/+20/+25/+20/+20 LT)* + thưởng hoàn tất **5/5** hậu hĩnh hơn; đồng bộ dữ liệu `/wiki` *(Voice EXP 85–135/5p chấm công 12p)* và tri thức Bot Nhiễm Nhiễm theo văn phong trang trọng.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.2',
     title: 'ĐẠI CẢI TỔ PHÁP ẤN & KINH TẾ TU TIÊN v1.2',
@@ -19,7 +51,7 @@ export const CHANGELOGS = [
         heading: `${gradeEmoji('S')} Khắc Ấn Phẩm Chất D → C → B → A → S (/enchant)`,
         bullets: [
           'Mỗi Linh Thú & Pháp Bảo mới nhận đều ngẫu nhiên phẩm chất **D (`40%`, +0%) / C (`32%`, +6%) / B (`20%`, +14%) / A (`8%`, +24%)** — **0%** rơi thẳng **S**.',
-          `Dùng **Đá Khắc Ấn** ${em('su_enchant_stone')} (\`150 LT\` trong \`/shop\`, mua tối đa \`5/ngày\` + rơi ở **Boss Tháp mỗi 5 tầng**) qua \`/enchant\` để đột phá tới **Hạng S (+40% chỉ số gốc)**.`,
+          `Dùng **Đá Khắc Ấn** ${em('enchant_stone')} (\`150 LT\` trong \`/shop\`, mua tối đa \`5/ngày\` + rơi ở **Boss Tháp mỗi 5 tầng**) qua \`/enchant\` để đột phá tới **Hạng S (+40% chỉ số gốc)**.`,
           'Cơ chế **Pity (+5%/lần xịt)** đảm bảo càng ép càng dễ lên, rớt không tụt hạng!',
         ],
       },

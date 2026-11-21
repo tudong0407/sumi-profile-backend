@@ -107,7 +107,7 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10) {
       };
     });
   } else {
-    title = `${em('su_ring_thanthoai')} BẢNG XẾP HẠNG • TIÊN LỮ VĨNH KẾT (TOP ${limit})`;
+    title = `${em('ring_mythic')} BẢNG XẾP HẠNG • TIÊN LỮ VĨNH KẾT (TOP ${limit})`;
     const { data: marriedUsers, error } = await supabase
       .from('users')
       .select('user_id, username, marry_user_id, marry_username, marry_ring_id, marry_date')

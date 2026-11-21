@@ -20,6 +20,9 @@ import {
   AVATAR_FRAME_BY_ID,
   FUYUMI_USER_ID,
   MYTHIC_UNIQUE_ITEM_IDS,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
   ENCHANT_GRADES,
   ENCHANT_UPGRADE_CONFIG,
   normalizeEnchantGrade,
@@ -36,6 +39,10 @@ import {
   roleTierEmoji,
   gradeEmoji,
   ringEmoji,
+  domainEmoji,
+  senseEmoji,
+  realmEmojiById,
+  farmEmoji,
 } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
 
@@ -81,7 +88,14 @@ export function normalizeEmojiAwareQuery(raw) {
   }
   if (lower.startsWith('su_')) {
     const stripped = lower.slice('su_'.length);
-    if (EQUIPMENT_BY_ID[stripped] || PET_BY_TYPE[stripped] || MARRY_RING_BY_ID[stripped]) {
+    if (
+      EQUIPMENT_BY_ID[stripped]
+      || PET_BY_TYPE[stripped]
+      || MARRY_RING_BY_ID[stripped]
+      || DOMAIN_BY_ID[stripped]
+      || DIVINE_SENSE_BY_ID[stripped]
+      || DIVINE_REALM_BY_ID[stripped]
+    ) {
       return stripped;
     }
     const matchedCons = SHOP_CONSUMABLES.find((c) => c.item_id === stripped);
@@ -288,6 +302,17 @@ export async function getInventory(userId, options = {}) {
     supabase.from('user_inventory').select('*').eq('user_id', cleanId).gt('quantity', 0),
   ]);
 
+  let equippedDomainsRaw = [];
+  try {
+    const domQuery = supabase.from('user_domains')?.select?.('*')?.eq?.('user_id', cleanId);
+    if (domQuery) {
+      const domRes = typeof domQuery.eq === 'function' ? await domQuery.eq('is_equipped', true) : await domQuery;
+      equippedDomainsRaw = (domRes?.data || []).filter((d) => d && d.is_equipped !== false);
+    }
+  } catch {
+    equippedDomainsRaw = [];
+  }
+
   const SHOP_CONS_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
 
   const pets = sortPetList((petsRes.data || []).map((p) => {
@@ -297,7 +322,7 @@ export async function getInventory(userId, options = {}) {
       enchant_grade: grade,
       enchant_bonus_pct: getEnchantBonusPct(grade),
       grade_icon: gradeEmoji(grade),
-      icon: petEmoji(p.pet_type, em('su_fox_mascot')),
+      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
       tier_icon: tierEmoji((PET_BY_TYPE[p.pet_type]?.rarity_key) || 'common'),
     };
   }), options.petSort || 'power_desc');
@@ -347,8 +372,24 @@ export async function getInventory(userId, options = {}) {
     const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
     const bgMeta = BACKGROUND_BY_ID[inv.item_id];
     const frameMeta = inv.item_id.startsWith('frame_') ? AVATAR_FRAME_BY_ID[inv.item_id.slice(6)] : null;
-    const icon = cMeta?.icon || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id) : (bgMeta || frameMeta) ? em('su_frame_token') : em('su_pin_sigil'));
-    const displayName = cMeta?.name || bgMeta?.name || (frameMeta ? `Khung ${frameMeta.name}` : inv.item_id);
+    const domainMeta = DOMAIN_BY_ID[inv.item_id];
+    const senseMeta = DIVINE_SENSE_BY_ID[inv.item_id];
+    const realmMeta = DIVINE_REALM_BY_ID[inv.item_id];
+    const icon = cMeta?.icon
+      || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id)
+        : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', '🍑')
+        : (bgMeta || frameMeta) ? em('frame_unlock_token')
+        : domainMeta ? domainEmoji(inv.item_id, em('su_arena'))
+        : senseMeta ? senseEmoji(inv.item_id, em('su_sparkle'))
+        : realmMeta ? realmEmojiById(inv.item_id, em('su_arena'))
+        : em('su_pin_sigil'));
+    const displayName = cMeta?.name
+      || bgMeta?.name
+      || domainMeta?.name
+      || senseMeta?.name
+      || realmMeta?.name
+      || (inv.item_id === 'farm_essence' ? 'Linh Quả Tiên Giới' : null)
+      || (frameMeta ? `Khung ${frameMeta.name}` : inv.item_id);
     return {
       ...inv,
       icon,
@@ -435,7 +476,30 @@ export async function getInventory(userId, options = {}) {
   const summaryConsumables = consumableGrid;
   const summaryRoles = summaryRolesCompact;
 
-  const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\` • **Ảnh Nền:** ${bgName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
+  const farmEssence = Math.max(0, Number(user.farm_essence || 0));
+  const equippedDomain = equippedDomainsRaw.find((d) => d.entity_kind === 'domain');
+  const equippedSense = equippedDomainsRaw.find((d) => d.entity_kind === 'sense');
+  const equippedRealm = equippedDomainsRaw.find((d) => d.entity_kind === 'realm');
+  const domainMeta = equippedDomain ? DOMAIN_BY_ID[equippedDomain.entity_id] : null;
+  const senseMeta = equippedSense ? DIVINE_SENSE_BY_ID[equippedSense.entity_id] : null;
+  const realmMeta = equippedRealm ? DIVINE_REALM_BY_ID[equippedRealm.entity_id] : null;
+
+  const domainParts = [];
+  if (domainMeta) {
+    domainParts.push(`${domainEmoji(domainMeta.domain_id, em('su_arena'))} **${domainMeta.name}**`);
+  }
+  if (senseMeta) {
+    domainParts.push(`${senseEmoji(senseMeta.sense_id, em('su_sparkle'))} ${senseMeta.name}`);
+  }
+  if (realmMeta) {
+    domainParts.push(`${realmEmojiById(realmMeta.realm_id, em('su_arena'))} ${realmMeta.name}`);
+  }
+  const domainHeaderLine = domainParts.length > 0 ? `• **Linh Vực Xuất Trận:** ${domainParts.join(' • ')}` : '';
+  const essencePart = farmEssence > 0
+    ? ` • ${farmEmoji('farm_essence', '🍑')} **Linh Quả:** \`${farmEssence.toLocaleString('vi-VN')}\``
+    : '';
+
+  const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\`${essencePart} • ${em('frame_unlock_token')} **Ảnh Nền:** ${bgName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
 
   let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI`;
   let viewDescription = '';
@@ -449,11 +513,12 @@ export async function getInventory(userId, options = {}) {
     viewTitle = `${em('su_medal_role')} KHO ROLE QUYỀN NĂNG (${roles.length})`;
     viewDescription = summaryRolesFull;
   } else if (view === 'consumables') {
-    viewTitle = `${em('su_enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})`;
+    viewTitle = `${em('enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})`;
     viewDescription = summaryConsumablesDetailed;
   } else {
     const sections = [
       headerLine,
+      ...(domainHeaderLine ? [domainHeaderLine] : []),
       '',
       `**${em('su_pet_paw')} Linh Thú (${pets.length})**`,
       petGrid,
@@ -461,13 +526,13 @@ export async function getInventory(userId, options = {}) {
       `**${em('su_crossed_swords')} Pháp Bảo (${items.length})**`,
       itemGrid,
       '',
-      `**${em('su_enchant_stone')} Vật Phẩm Tiêu Hao & Mở Khóa (${consumables.length})**`,
+      `**${em('enchant_stone')} Vật Phẩm Tiêu Hao & Mở Khóa (${consumables.length})**`,
       consumableGrid,
       '',
       `**${em('su_medal_role')} Role Quyền Năng (${roles.length})**`,
       summaryRolesCompact,
       '',
-      `*Mẹo: Chọn Menu trên để chuyển tab chi tiết, hoặc copy thẳng emoji vào \`/info\`, \`/equip\`, \`/enchant\`, \`/dismantle\`!*`,
+      `*Mẹo: Chọn Menu trên để chuyển tab chi tiết, dùng \`/linhvuc\` quản lý Linh Vực, hoặc copy thẳng emoji vào \`/info\`, \`/equip\`, \`/enchant\`, \`/dismantle\`!*`,
     ];
     viewDescription = sections.join('\n').slice(0, 3950);
   }
@@ -483,10 +548,16 @@ export async function getInventory(userId, options = {}) {
       level: user.level,
       linh_thach: Number(user.linh_thach || 0),
       linh_thach_fmt: Number(user.linh_thach || 0).toLocaleString('vi-VN'),
+      farm_essence: farmEssence,
       max_role_slots: getMaxRoleSlotsByLevel(user.level || 1),
       background_url: bgRaw,
       background_name: bgName,
       marry_ring_id: user.marry_ring_id || null,
+    },
+    domain_loadout: {
+      domain: domainMeta ? { domain_id: domainMeta.domain_id, name: domainMeta.name, icon: domainEmoji(domainMeta.domain_id) } : null,
+      sense: senseMeta ? { sense_id: senseMeta.sense_id, name: senseMeta.name, icon: senseEmoji(senseMeta.sense_id) } : null,
+      realm: realmMeta ? { realm_id: realmMeta.realm_id, name: realmMeta.name, icon: realmEmojiById(realmMeta.realm_id) } : null,
     },
     pets,
     equipment_items: items,
@@ -872,7 +943,7 @@ export async function equipTarget(userId, payload = {}) {
       success: true,
       category: 'background',
       background_url: bg.file,
-      message: `${em('su_frame_token')} Đã đổi ảnh nền Profile & Rank sang **${bg.name}**!`,
+      message: `${em('frame_unlock_token')} Đã đổi ảnh nền Profile & Rank sang **${bg.name}**!`,
     };
   }
 
@@ -883,7 +954,7 @@ export async function equipTarget(userId, payload = {}) {
         return { success: false, status: 403, error: 'EXCLUSIVE_FRAME', message: 'Khung viền **Cửu Vĩ Hoàng Kim** là đặc quyền độc tôn của Tiểu thư Fuyumi!' };
       }
       await supabase.from('users').update({ avatar_frame: 'celestial_fox_gold', updated_at: new Date().toISOString() }).eq('user_id', cleanId);
-      return { success: true, category: 'frame', avatar_frame: 'celestial_fox_gold', message: `${em('su_frame_token')} Đã trang bị khung viền **Cửu Vĩ Hoàng Kim**!` };
+      return { success: true, category: 'frame', avatar_frame: 'celestial_fox_gold', message: `${em('frame_unlock_token')} Đã trang bị khung viền **Cửu Vĩ Hoàng Kim**!` };
     }
 
     const frameMeta = AVATAR_FRAME_BY_ID[frameKey];
@@ -894,7 +965,7 @@ export async function equipTarget(userId, payload = {}) {
 
     if (frameKey === 'default') {
       await supabase.from('users').update({ avatar_frame: 'default', updated_at: new Date().toISOString() }).eq('user_id', cleanId);
-      return { success: true, category: 'frame', avatar_frame: 'default', message: `${em('su_frame_token')} Đã khôi phục khung viền Avatar mặc định theo cảnh giới.` };
+      return { success: true, category: 'frame', avatar_frame: 'default', message: `${em('frame_unlock_token')} Đã khôi phục khung viền Avatar mặc định theo cảnh giới.` };
     }
 
     const unlockItemId = `frame_${frameKey}`;
@@ -948,7 +1019,7 @@ export async function equipTarget(userId, payload = {}) {
       success: true,
       category: 'frame',
       avatar_frame: frameKey,
-      message: `${em('su_frame_token')} Đã mở khóa và trang bị khung Avatar **${frameMeta.name}**!`,
+      message: `${em('frame_unlock_token')} Đã mở khóa và trang bị khung Avatar **${frameMeta.name}**!`,
     };
   }
 
@@ -991,7 +1062,7 @@ export async function equipTarget(userId, payload = {}) {
       success: true,
       category: 'title',
       custom_title: cleanTitle,
-      message: `${em('su_title_card')} Đã đổi Danh Hiệu Tu Tiên thành **« ${cleanTitle} »**!`,
+      message: `${em('title_rename_card')} Đã đổi Danh Hiệu Tu Tiên thành **« ${cleanTitle} »**!`,
     };
   }
 
@@ -1071,7 +1142,7 @@ export async function unequipTarget(userId, payload = {}) {
       success: true,
       category: 'background',
       background_url: 'default_background.png',
-      message: `${em('su_frame_token')} Đã khôi phục ảnh nền Đạo Cảnh Mặc Định.`,
+      message: `${em('frame_unlock_token')} Đã khôi phục ảnh nền Đạo Cảnh Mặc Định.`,
     };
   }
 
@@ -1085,7 +1156,7 @@ export async function unequipTarget(userId, payload = {}) {
       success: true,
       category: 'frame',
       avatar_frame: 'default',
-      message: `${em('su_frame_token')} Đã tháo khung viền, khôi phục về khung mặc định theo cảnh giới.`,
+      message: `${em('frame_unlock_token')} Đã tháo khung viền, khôi phục về khung mặc định theo cảnh giới.`,
     };
   }
 
@@ -1845,7 +1916,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
         success: false,
         status: 400,
         error: 'INSUFFICIENT_MATERIALS',
-        message: `Cần **${stoneCost}** ${em('su_star_stone')} **Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost}** ${em('su_linhthach')} **Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1} Sao** ${em('su_realm_star')}!`,
+        message: `Cần **${stoneCost}** ${em('pet_star_stone')} **Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost}** ${em('su_linhthach')} **Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1} Sao** ${em('su_realm_star')}!`,
       };
     }
 
@@ -1874,7 +1945,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
       new_star: nextStar,
       linh_thach: currentBal - ltCost,
       power_score: newPower,
-      message: `${em('su_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** lên **${nextStar} Sao** ${em('su_realm_star')} (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+      message: `${em('pet_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** lên **${nextStar} Sao** ${em('su_realm_star')} (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
     };
   }
 
@@ -2045,7 +2116,7 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
         linh_thach: currentBal,
         message: [
           `Không đủ nguyên liệu Khắc Ấn **${targetName}** (${gradeEmoji(currentGrade)} **${currentGrade}** → ${gradeEmoji(quote.to)} **${quote.to}** • Tỉ lệ **${quote.effectiveRate}%**)!`,
-          `• Cần: **${quote.stones}** ${em('su_enchant_stone')} **Đá Khắc Ấn** *(hiện có ${ownedStones})* & **${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** *(hiện có ${currentBal.toLocaleString('vi-VN')})*`,
+          `• Cần: **${quote.stones}** ${em('enchant_stone')} **Đá Khắc Ấn** *(hiện có ${ownedStones})* & **${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** *(hiện có ${currentBal.toLocaleString('vi-VN')})*`,
           `• Mua thêm Đá Khắc Ấn trong \`/shop\` (` + '`150 LT`' + `, tối đa 5/ngày) hoặc săn **Boss Tháp mỗi 5 tầng**!`,
         ].join('\n'),
       };
@@ -2084,14 +2155,14 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
       ? [
           `${em('su_sparkle')} **KHẮC ẤN ĐỘT PHÁ THÀNH CÔNG!**`,
           `• ${targetIcon} **${targetName}**: ${gradeEmoji(currentGrade)} **Hạng ${currentGrade}** (+${oldBonus}%) → ${gradeEmoji(newGrade)} **Hạng ${newGrade}** (**+${newBonus}% chỉ số gốc**)!`,
-          `• Tiêu hao: **-${quote.stones}** ${em('su_enchant_stone')} (${remainingStones} còn lại) • **-${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} (${remainingLt.toLocaleString('vi-VN')} LT)`,
+          `• Tiêu hao: **-${quote.stones}** ${em('enchant_stone')} (${remainingStones} còn lại) • **-${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} (${remainingLt.toLocaleString('vi-VN')} LT)`,
           nextQuote ? `• Lượt kế (**${newGrade} → ${nextQuote.to}**): Tỉ lệ **${nextQuote.effectiveRate}%** (${nextQuote.stones} Đá + ${nextQuote.lt} LT).` : `• ${gradeEmoji('S')} **ĐÃ ĐẠT ĐỈNH CAO HẠNG S (+40%)!**`,
         ].join('\n')
       : [
-          `${em('su_enchant_stone')} **Khắc Ấn Thất Bại — Không Tụt Hạng!**`,
+          `${em('enchant_stone')} **Khắc Ấn Thất Bại — Không Tụt Hạng!**`,
           `• ${targetIcon} **${targetName}** giữ nguyên ${gradeEmoji(currentGrade)} **Hạng ${currentGrade}** *(tỉ lệ vừa quay: ${quote.effectiveRate}%)*`,
           `• Tích lũy **Pity +5%** → Tỉ lệ lần kế (${quote.from} → ${quote.to}): **${nextQuote?.effectiveRate || quote.effectiveRate}%** *(Pity ×${newPity})*`,
-          `• Tiêu hao: **-${quote.stones}** ${em('su_enchant_stone')} (${remainingStones} còn lại) • **-${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} (${remainingLt.toLocaleString('vi-VN')} LT)`,
+          `• Tiêu hao: **-${quote.stones}** ${em('enchant_stone')} (${remainingStones} còn lại) • **-${quote.lt.toLocaleString('vi-VN')}** ${em('su_linhthach')} (${remainingLt.toLocaleString('vi-VN')} LT)`,
         ].join('\n');
 
     return {

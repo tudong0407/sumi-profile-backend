@@ -15,20 +15,20 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     if (testServer) await testServer.close();
   });
 
-  it('1. GET /api/wiki/catalog returns 65 items (23/21/21) and exactly 40 standard pets (10/10/10/10), excluding Fuyumi exclusive pet', async () => {
+  it('1. GET /api/wiki/catalog returns 165 items (57/54/54) and 90 standard pets (13/13/14/50), excluding Fuyumi exclusive pet', async () => {
     const res = await testServer.fetch('/api/wiki/catalog');
     assert.equal(res.status, 200);
     const json = await res.json();
     assert.equal(json.success, true);
 
-    assert.equal(json.equipment.weapon.length, 23);
-    assert.equal(json.equipment.gem.length, 21);
-    assert.equal(json.equipment.soul.length, 21);
+    assert.equal(json.equipment.weapon.length, 57);
+    assert.equal(json.equipment.gem.length, 54);
+    assert.equal(json.equipment.soul.length, 54);
 
-    assert.equal(json.pets.common.length, 10, 'Must have 10 Phàm Phẩm pets');
-    assert.equal(json.pets.rare.length, 10, 'Must have 10 Linh Phẩm pets');
-    assert.equal(json.pets.epic.length, 10, 'Must have 10 Tiên Phẩm pets');
-    assert.equal(json.pets.mythic.length, 10, 'Must have exactly 10 standard Thần Thoại pets');
+    assert.equal(json.pets.common.length, 13, 'Must have 13 Phàm Phẩm pets');
+    assert.equal(json.pets.rare.length, 13, 'Must have 13 Linh Phẩm pets');
+    assert.equal(json.pets.epic.length, 14, 'Must have 14 Tiên Phẩm pets');
+    assert.equal(json.pets.mythic.length, 50, 'Must have 50 standard Thần Thoại pets');
 
     const allWikiPets = [
       ...json.pets.common,
@@ -36,7 +36,7 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
       ...json.pets.epic,
       ...json.pets.mythic,
     ];
-    assert.equal(allWikiPets.length, 40, 'Wiki catalog must expose exactly 40 standard pets');
+    assert.equal(allWikiPets.length, 90, 'Wiki catalog must expose exactly 90 standard pets');
     assert.ok(!allWikiPets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.is_exclusive_fuyumi), 'Exclusive Fuyumi pet must NOT appear in wiki catalog');
   });
 

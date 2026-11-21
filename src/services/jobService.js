@@ -1,8 +1,8 @@
 /**
  * src/services/jobService.js
  * Hệ thống 6 Nghề Tu Tiên (/job):
- * - Giới hạn 6 ca/ngày (UTC+7), hồi chiêu 1 giờ/ca.
- * - Thưởng Linh Thạch + EXP, đồng thời cộng tiến độ Hợp Đồng Tuần (/nhiemvu).
+ * - Giới hạn 8 ca/ngày (UTC+7), hồi chiêu 1 giờ/ca.
+ * - Thưởng Linh Thạch + EXP, đồng thời cộng tiến độ Hợp Đồng Tuần & Nhiệm Vụ Ngày (/nhiemvu).
  */
 
 import { supabase } from '../config/supabase.js';
@@ -197,8 +197,8 @@ export async function doJob(userId, rawJobId = '', options = {}) {
         last_job_id: job.job_id,
         updated_at: nowIso,
       }, { onConflict: 'user_id' }),
-      trackQuestActivity(cleanId, { expDelta: rewardExp, jobDelta: 1 }, now),
     ]);
+    await trackQuestActivity(cleanId, { expDelta: rewardExp, jobDelta: 1, now });
 
     const story = job.stories[Math.floor(rng() * job.stories.length)] || job.summary;
     const lvlUpNote = nextProgress.level > curLvl

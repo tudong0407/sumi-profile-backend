@@ -14,6 +14,13 @@ import {
   PET_BY_TYPE,
   LEVEL_ROLE_MILESTONES,
   MYTHIC_UNIQUE_ITEM_IDS,
+  MYTHIC_UNIQUE_PET_TYPES,
+  DOMAIN_CATALOG,
+  DIVINE_SENSE_CATALOG,
+  DIVINE_REALM_CATALOG,
+  MYTHIC_UNIQUE_DOMAIN_IDS,
+  MYTHIC_UNIQUE_SENSE_IDS,
+  MYTHIC_UNIQUE_REALM_IDS,
   GACHA_ROLE_CATALOG,
   ROLE_GACHA_DURATION_TIERS,
   getClanLevelConfig,
@@ -27,6 +34,9 @@ import {
   petEmoji,
   realmEmoji,
   gradeEmoji,
+  domainEmoji,
+  senseEmoji,
+  realmEmojiById,
 } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
@@ -355,7 +365,13 @@ export async function rollGacha(userId, options = {}) {
   }
 
   const rawPool = String(options.pool || '').trim().toLowerCase();
-  const pool = rawPool === 'pet' ? 'pet' : rawPool === 'role' ? 'role' : 'equipment';
+  const pool = rawPool === 'pet'
+    ? 'pet'
+    : rawPool === 'role'
+      ? 'role'
+      : rawPool === 'domain'
+        ? 'domain'
+        : 'equipment';
   const count = Number(options.count) === 10 ? 10 : 1;
   const useTicket = Boolean(options.useTicket);
   const rng = typeof options.rng === 'function' ? options.rng : Math.random;
@@ -403,10 +419,18 @@ export async function rollGacha(userId, options = {}) {
       };
     }
 
-    const ticketId = pool === 'pet' ? 'gacha_ticket_pet' : pool === 'equipment' ? 'gacha_ticket_equip' : null;
+    const ticketId = pool === 'pet'
+      ? 'gacha_ticket_pet'
+      : pool === 'equipment'
+        ? 'gacha_ticket_equip'
+        : pool === 'domain'
+          ? 'gacha_ticket_domain'
+          : null;
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level) || 1);
     const gachaDiscountPct = Number(roleBuffs?.gachaDiscountPct || 0);
-    const baseCost = count === 10 ? ROLL_TEN_COST : ROLL_SINGLE_COST;
+    const baseSingleCost = pool === 'domain' ? 60 : ROLL_SINGLE_COST;
+    const baseTenCost = pool === 'domain' ? 540 : ROLL_TEN_COST;
+    const baseCost = count === 10 ? baseTenCost : baseSingleCost;
     let paidWith = 'linh_thach';
     let cost = gachaDiscountPct > 0
       ? Math.max(1, Math.round(baseCost * (1 - gachaDiscountPct / 100)))
@@ -664,9 +688,108 @@ export async function rollGacha(userId, options = {}) {
             slot: picked.item_type,
           });
         }
+      } else if (pool === 'domain') {
+        const subRoll = rng();
+        const entityKind = subRoll < 0.50 ? 'domain' : subRoll < 0.75 ? 'sense' : 'realm';
+        const fullPool = entityKind === 'domain' ? DOMAIN_CATALOG : entityKind === 'sense' ? DIVINE_SENSE_CATALOG : DIVINE_REALM_CATALOG;
+        const uniqueSet = entityKind === 'domain' ? MYTHIC_UNIQUE_DOMAIN_IDS : entityKind === 'sense' ? MYTHIC_UNIQUE_SENSE_IDS : MYTHIC_UNIQUE_REALM_IDS;
+
+        let candidates = fullPool.filter((x) => !x.is_exclusive_fuyumi && x.rarity_key === rarityKey);
+        if (rarityKey === 'mythic') {
+          const { data: takenUniqueRows } = await supabase
+            .from('user_domains')
+            .select('entity_id')
+            .eq('entity_kind', entityKind)
+            .in('entity_id', [...uniqueSet]);
+          const takenSet = new Set((takenUniqueRows || []).map((r) => r.entity_id));
+          candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.id)));
+          if (candidates.length === 0) {
+            refundLinhThach += 300;
+            bonusStarStones += 5;
+            results.push({
+              kind: 'refund',
+              emoji: tierEmoji('mythic'),
+              rarity: 'Thần Thoại',
+              name: 'Linh Vực Thần Thoại Độc Nhất Đã Hết — Hoàn Quà Bồi Thường',
+              compensation: '+300 Linh Thạch & +5 Tinh Thạch Nâng Sao',
+            });
+            continue;
+          }
+        }
+
+        const picked = candidates[Math.floor(rng() * candidates.length)];
+        const dIcon = entityKind === 'domain'
+          ? domainEmoji(picked.id, tierEmoji(picked.rarity_key))
+          : entityKind === 'sense'
+            ? senseEmoji(picked.id, tierEmoji(picked.rarity_key))
+            : realmEmojiById(picked.id, tierEmoji(picked.rarity_key));
+
+        const { data: ownDomain } = await supabase
+          .from('user_domains')
+          .select('id, quantity')
+          .eq('user_id', cleanId)
+          .eq('entity_kind', entityKind)
+          .eq('entity_id', picked.id)
+          .maybeSingle();
+
+        if (ownDomain) {
+          const nextQty = Math.max(1, Number(ownDomain.quantity) || 1) + 1;
+          await supabase
+            .from('user_domains')
+            .update({ quantity: nextQty, updated_at: new Date().toISOString() })
+            .eq('id', ownDomain.id);
+          results.push({
+            kind: 'duplicate_domain',
+            emoji: dIcon,
+            quantity: nextQty,
+            entity_kind: entityKind,
+            entity_id: picked.id,
+            name: picked.name,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+          });
+        } else {
+          await supabase.from('user_domains').insert({
+            user_id: cleanId,
+            entity_kind: entityKind,
+            entity_id: picked.id,
+            quantity: 1,
+            is_equipped: false,
+            is_unique: Boolean(picked.is_unique),
+            source: 'gacha',
+          });
+          results.push({
+            kind: 'new_domain',
+            emoji: dIcon,
+            quantity: 1,
+            entity_kind: entityKind,
+            entity_id: picked.id,
+            name: picked.name,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+          });
+        }
       } else {
         const ENCHANT_GRADE_RANK = { D: 0, C: 1, B: 2, A: 3, S: 4 };
-        const candidates = standardPets.filter((p) => p.rarity_key === rarityKey);
+        let candidates = standardPets.filter((p) => p.rarity_key === rarityKey);
+        if (rarityKey === 'mythic') {
+          const { data: ownedUniquePets } = await supabase
+            .from('user_pets')
+            .select('pet_type')
+            .in('pet_type', [...MYTHIC_UNIQUE_PET_TYPES]);
+          const takenPets = new Set((ownedUniquePets || []).map((r) => r.pet_type));
+          candidates = candidates.filter((p) => !(p.is_unique && takenPets.has(p.pet_type)));
+          if (candidates.length === 0) {
+            refundLinhThach += 300;
+            bonusStarStones += 5;
+            results.push({
+              kind: 'refund',
+              emoji: tierEmoji('mythic'),
+              rarity: 'Thần Thoại',
+              name: 'Linh Thú Thần Thoại Độc Nhất Đã Hết — Hoàn Quà Bồi Thường',
+              compensation: '+300 Linh Thạch & +5 Tinh Thạch Nâng Sao',
+            });
+            continue;
+          }
+        }
         const picked = candidates[Math.floor(rng() * candidates.length)];
         const rolledGrade = rollDefaultEnchantGrade(rng);
         const { data: ownPet } = await supabase
@@ -720,6 +843,7 @@ export async function rollGacha(userId, options = {}) {
             def: picked.base_def,
             spd: picked.base_spd,
             is_active: false,
+            is_unique: Boolean(picked.is_unique),
             source: 'gacha',
             paid_price: 0,
             enchant_grade: rolledGrade,
@@ -756,15 +880,20 @@ export async function rollGacha(userId, options = {}) {
     const kindLabelMap = {
       new_item: 'Mới',
       new_pet: 'Mới',
+      new_domain: 'Mới',
       new_role: 'Mới (Đeo/Lưu Túi)',
       stack_role: 'Cộng Dồn Ngày',
       upgrade_permanent: 'Thăng Hoa Vĩnh Viễn!',
       duplicate_item: 'Cộng Dồn Số Lượng',
       duplicate_pet: 'Cộng Dồn Số Lượng',
+      duplicate_domain: 'Cộng Dồn Số Lượng',
       duplicate_role_refund: 'Đã Vĩnh Viễn (Hoàn Quà)',
       refund: 'Bồi thường',
     };
     const resultLines = results.map((r) => {
+      if (r.kind === 'duplicate_domain') {
+        return `• ${r.emoji || em('su_realm_star')} **${r.name}** (${r.rarity}) — Trùng +1 (Kho: **×${r.quantity}**)`;
+      }
       if (r.kind === 'duplicate_item' || r.kind === 'duplicate_pet') {
         const gradeNote = r.grade_upgraded
           ? ` • **Kế thừa Tư Chất ${r.prev_grade} → ${r.enchant_grade}!**`
@@ -786,13 +915,13 @@ export async function rollGacha(userId, options = {}) {
     })();
 
     const roleIdsList = [...addedDiscordRoleIds];
-    const poolLabel = pool === 'pet' ? 'Linh Thú' : pool === 'role' ? 'Role Quyền Năng' : 'Pháp Bảo';
+    const poolLabel = pool === 'pet' ? 'Linh Thú' : pool === 'role' ? 'Role Quyền Năng' : pool === 'domain' ? 'Linh Vực • Thần Thức • Thần Cảnh' : 'Pháp Bảo';
     const costLabel = paidWith === 'linh_thach'
       ? `\`${cost}\` ${em('su_linhthach')}`
       : `\`${count}\` Vé Gacha (\`0\` ${em('su_linhthach')})`;
-    const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('su_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
+    const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('pet_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
     const dupHeaderLine = (pool === 'role' || refundLinhThach > 0 || bonusStarStones > 0)
-      ? `${em('su_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
+      ? `${em('pet_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
       : null;
     const fullMessage = [
       `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,

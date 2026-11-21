@@ -129,10 +129,10 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.equal(dmShopJson.refund_linh_thach, 50);
   });
 
-  it('2. All 65 Equipment HAX & 40 Public Pet HAX execute cleanly + 5 HAX bugs fixed + circular counter matrix', async () => {
+  it('2. All 165 Equipment HAX & 90 Public Pet HAX execute cleanly + 5 HAX bugs fixed + circular counter matrix', async () => {
     const publicPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
-    assert.equal(publicPets.length, 40);
-    assert.equal(EQUIPMENT_CATALOG.length, 65);
+    assert.equal(publicPets.length, 90);
+    assert.equal(EQUIPMENT_CATALOG.length, 165);
 
     // Every one of 65 equipment & 40 pets completes deterministic combat without NaN or infinite loops
     for (let i = 0; i < publicPets.length; i += 1) {
@@ -437,7 +437,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     const updRes = await testServer.fetch('/api/update');
     assert.equal(updRes.status, 200);
     const updJson = await updRes.json();
-    assert.equal(updJson.version, '1.2');
+    assert.equal(updJson.version, '1.3');
     const updMissing = await testServer.fetch('/api/update/9.9');
     assert.equal(updMissing.status, 404);
 

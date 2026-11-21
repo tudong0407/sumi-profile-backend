@@ -181,10 +181,13 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     }
   });
 
-  it('5. /nhiemvu: status, Tower PvE challenge, attempt cap (5/day), and Claim 3/3 quests', async () => {
+  it('5. /nhiemvu: status, Tower PvE challenge, attempt cap (5/day), and Claim 5/5 quests', async () => {
     if (!supabase) return;
-    // Ensure USER_B checked in today (/daily done in test 3) & has quest row reset cleanly
-    await supabase.from('user_quests').delete().eq('user_id', USER_B);
+    // Reset both user_quests and today's daily flag so all 5 quests begin incomplete
+    await Promise.all([
+      supabase.from('user_quests').delete().eq('user_id', USER_B),
+      supabase.from('users').update({ last_daily: null }).eq('user_id', USER_B),
+    ]);
 
     const statusBefore = await testServer.fetch(`/api/quest/status/${USER_B}`);
     assert.equal(statusBefore.status, 200);
@@ -192,7 +195,7 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.equal(sbj.tower_floor, 0);
     assert.equal(sbj.can_claim, false);
 
-    // Claim before completing all 3 quests must fail 400
+    // Claim before completing any quest must fail 400
     const prematureClaim = await testServer.fetch('/api/quest/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -215,8 +218,11 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.ok(tj.reward_linh_thach > 0);
     assert.equal(tj.attempts_used, 1);
 
-    // Add 60 chat EXP deterministically for 3/3 quest verification
-    await trackQuestActivity(USER_B, { expDelta: 60 });
+    // Complete all 5 daily quests deterministically (daily + 150 EXP + 2 extra wins + 2 jobs + 1 farm/mg activity)
+    const vnToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+    await supabase.from('users').update({ last_daily: new Date().toISOString() }).eq('user_id', USER_B);
+    await trackQuestActivity(USER_B, { expDelta: 150, winDelta: 2, jobDelta: 2, activityDelta: 1 });
+    await supabase.from('user_quests').update({ job_date: vnToday, jobs_today: 2 }).eq('user_id', USER_B);
 
     const statusReady = await testServer.fetch(`/api/quest/status/${USER_B}`);
     const srj = await statusReady.json();
@@ -230,7 +236,7 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(claimOk.status, 200);
     const cj = await claimOk.json();
-    assert.equal(cj.reward_linh_thach, 100);
+    assert.equal(cj.reward_linh_thach, 215); // 15+20+25+20+20 individual + 115 (5/5 bonus)
 
     // Double claim rejected
     const claimAgain = await testServer.fetch('/api/quest/claim', {

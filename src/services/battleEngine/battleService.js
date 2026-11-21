@@ -8,7 +8,9 @@ import {
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
 } from '../../data/catalog.js';
-import { em, petEmoji } from '../../config/emojiHelper.js';
+import { em, petEmoji, domainEmoji } from '../../config/emojiHelper.js';
+import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
+import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
 import { trackQuestActivity } from '../questService.js';
@@ -552,7 +554,7 @@ function formatEquipDetailedLines(c, compact = false) {
   return [
     `• ${em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
     `• ${em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
-    `• ${em('su_fox_mascot')} ${desc(s, 'Chiến Hồn')}`,
+    `• ${em('cuu_vi_hong_ho')} ${desc(s, 'Chiến Hồn')}`,
   ];
 }
 
@@ -563,6 +565,7 @@ function buildFullBattleLog({
   initialHp,
   elementMatchup,
   battleStartEvents,
+  domainEvents = [],
   turns,
   turnNumber,
   winner,
@@ -592,15 +595,26 @@ function buildFullBattleLog({
     return d ? `**${name}** — *${d}*` : `**${name}**`;
   };
 
+  const domainLineTxt = (c) => {
+    const dl = c.domainLoadout || {};
+    if (!dl.domain) return null;
+    const d = dl.domain;
+    const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (dl.sense?.bonus_energy || 0));
+    const extras = [dl.sense?.name, dl.realm?.name].filter(Boolean).join(' • ');
+    return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${d.element} • ${lm} Linh Mạch${extras ? ` • ${extras}` : ''})*`;
+  };
+
   const makeHeaderLines = (compact = false) => [
     `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(${attacker.petRarity || 'Phàm'} • Hệ ${attacker.element} • Lv.${attacker.level} • ${attacker.star || 1}★)*`,
     `• \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(attacker)}`,
+    ...(domainLineTxt(attacker) ? [domainLineTxt(attacker)] : []),
     ...formatEquipDetailedLines(attacker, compact),
     '',
     `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(${defender.petRarity || 'Phàm'} • Hệ ${defender.element} • Lv.${defender.level} • ${defender.star || 1}★)*`,
     `• \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(defender)}`,
+    ...(domainLineTxt(defender) ? [domainLineTxt(defender)] : []),
     ...formatEquipDetailedLines(defender, compact),
     `• Tương khắc: **${elemNote}**`,
   ];
@@ -608,11 +622,21 @@ function buildFullBattleLog({
   const headerLines = makeHeaderLines(false);
   const compactHeaderLines = makeHeaderLines(true);
 
-  const startLines = battleStartEvents.length > 0
-    ? ['', '**Khai Trận HAX:**', ...battleStartEvents.map((ev) => {
-      const aPet = ev.actor === attacker.id ? attacker.petName : defender.petName;
-      return `• ${em('su_thunder_hax')} **${aPet}**: ${ev.skill}`;
-    })]
+  const combinedStartEvents = [
+    ...battleStartEvents.map((ev) => ({
+      pet: ev.actor === attacker.id ? attacker.petName : defender.petName,
+      skill: ev.skill,
+      tag: 'Khai Trận',
+    })),
+    ...domainEvents.slice(0, 8).map((ev) => ({
+      pet: ev.actor === attacker.id ? attacker.petName : defender.petName,
+      skill: `H${ev.turn} • ${ev.skill}`,
+      tag: 'Linh Vực',
+    })),
+  ];
+
+  const startLines = combinedStartEvents.length > 0
+    ? ['', '**Khai Trận HAX & Đấu Linh Vực:**', ...combinedStartEvents.map((ev) => `• ${em('su_thunder_hax')} **${ev.pet}**: ${ev.skill}`)]
     : [];
 
   const buildTurnLines = (compactMode = false) => turns.map((t) => {
@@ -974,6 +998,7 @@ function executeHit({
   label = null,
   forcedDamage = null,
   forcedDefPiercePct = 0,
+  forcedShieldPiercePct = 0,
   extraEvents = [],
 }) {
   let attackPhase;
@@ -987,7 +1012,11 @@ function executeHit({
       isMiss: false,
       isDodged: false,
       triggerCounter: false,
-      shieldPiercePct: 0,
+      shieldPiercePct: forcedShieldPiercePct,
+      shieldDamageMult: 1.0,
+      bonusTrueOnShieldBreakPct: 0,
+      ignoreEnemyDmgRedPct: 0,
+      isTrueDamage: Boolean(elemData.isTrueDamage),
       lifestealPct: 0,
       instantExecute: false,
       haxTriggered: label,
@@ -1001,7 +1030,10 @@ function executeHit({
   let actualDamageDealt = 0;
 
   if (!attackPhase.isMiss) {
-    const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng);
+    const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng, {
+      ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
+      isTrueDamage: Boolean(attackPhase.isTrueDamage),
+    });
     for (const ev of damageRecv.events || []) {
       if (ev?.skill) notes.push(ev.skill);
     }
@@ -1011,27 +1043,37 @@ function executeHit({
 
     if (hadShield > 0) {
       const piercePct = Math.min(1, Math.max(0, Number(attackPhase.shieldPiercePct) || 0));
+      const shieldMult = Math.max(1.0, Number(attackPhase.shieldDamageMult) || 1.0);
       const bypassDmg = Math.floor(dmgToApply * piercePct);
       let shieldableDmg = dmgToApply - bypassDmg;
 
-      if (target.shield >= shieldableDmg) {
-        target.shield -= shieldableDmg;
+      const shieldCost = Math.ceil(shieldableDmg * shieldMult);
+      if (target.shield >= shieldCost) {
+        target.shield -= shieldCost;
         shieldableDmg = 0;
       } else {
-        shieldableDmg -= target.shield;
+        const absorbedByShield = Math.floor(target.shield / shieldMult);
+        shieldableDmg = Math.max(0, shieldableDmg - absorbedByShield);
         target.shield = 0;
       }
       dmgToApply = bypassDmg + shieldableDmg;
 
-      if (target.shield === 0 && target.state.shieldExplodePct > 0) {
-        const pct = target.state.shieldExplodePct;
-        target.state.shieldExplodePct = 0;
-        const explodeDmg = Math.floor(target.maxHp * pct);
-        actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
-        notes.push(`Vỡ Khiên Bất Động Sơn Hà (-${explodeDmg.toLocaleString('vi-VN')} ST Chuẩn)`);
-        if (actor.currentHp <= 0) {
-          const li = triggerLethalInterception(actor, target, rng);
-          if (li.survived && li.skill) notes.push(li.skill);
+      if (target.shield === 0) {
+        if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
+          const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
+          dmgToApply += breakBonus;
+          notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
+        }
+        if (target.state.shieldExplodePct > 0) {
+          const pct = target.state.shieldExplodePct;
+          target.state.shieldExplodePct = 0;
+          const explodeDmg = Math.floor(target.maxHp * pct);
+          actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
+          notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST Chuẩn)`);
+          if (actor.currentHp <= 0) {
+            const li = triggerLethalInterception(actor, target, rng);
+            if (li.survived && li.skill) notes.push(li.skill);
+          }
         }
       }
     }
@@ -1130,16 +1172,18 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   const turns = [];
   const battleStartEvents = triggerBattleStart(attacker, defender, rng) || [];
+  const domainState = initDomainBattleState(attacker, defender);
+  const domainEvents = [];
 
   const getEffSpd = (c) => {
-    let base = Math.round(c.spd * (1 - (c.state.spdDebuffPct || 0)));
+    let base = Math.round(c.spd * (1 - (c.state.spdDebuffPct || 0)) * (1 + (c.state.earlySpdBonusPct || 0)));
     if (hasItem(c, 'soul_rare_1')) base = Math.round(base * 1.15);
     return base;
   };
 
   let attackerFirst = true;
-  const atkHasSpeedPriority = hasPet(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc');
-  const defHasSpeedPriority = hasPet(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc');
+  const atkHasSpeedPriority = hasPet(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc') || Boolean(V13_PET_HAX[attacker.petType]?.firstStrike);
+  const defHasSpeedPriority = hasPet(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc') || Boolean(V13_PET_HAX[defender.petType]?.firstStrike);
 
   if (atkHasSpeedPriority && !defHasSpeedPriority) {
     attackerFirst = true;
@@ -1153,6 +1197,13 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
   while (attacker.currentHp > 0 && defender.currentHp > 0 && turnNumber < maxTurns) {
     turnNumber += 1;
+
+    if (turnNumber >= 2) {
+      const dEvs = processTurnDomainPhase(turnNumber, attacker, defender, domainState, rng) || [];
+      if (dEvs.length > 0) {
+        domainEvents.push(...dEvs.map((e) => ({ ...e, turn: turnNumber })));
+      }
+    }
 
     const order = attackerFirst
       ? [{ actor: attacker, target: defender, role: 'attacker' }, { actor: defender, target: attacker, role: 'defender' }]
@@ -1201,9 +1252,12 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         extraEvents: startTags,
       });
 
-      // Phản công tức thì nếu Thái Âm Ngọc Thỏ né đòn thành công
+      // Phản công tức thì nếu Thái Âm Ngọc Thỏ hoặc Thiên Cơ Ngọc Hồ / Chiến Hồn né đòn thành công
       if (mainRes.attackPhase.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0) {
         const counterElem = getElementalAdvantage(actualTarget.element, actor.element);
+        const ratio = mainRes.attackPhase.counterAtkRatio || 0.80;
+        const pierce = mainRes.attackPhase.counterDefPierce || 0;
+        const cLabel = mainRes.attackPhase.counterLabel || 'Nguyệt Hoa Phản Công (80% ATK)';
         executeHit({
           actor: actualTarget,
           target: actor,
@@ -1215,9 +1269,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           turnNumber,
           role: oppRole,
           turns,
-          label: 'Nguyệt Hoa Phản Công (80% ATK)',
-          forcedDamage: Math.floor(actualTarget.atk * 0.80),
-          forcedDefPiercePct: 0,
+          label: cLabel,
+          forcedDamage: Math.floor(actualTarget.atk * ratio),
+          forcedDefPiercePct: pierce,
         });
       }
 
@@ -1257,6 +1311,53 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           forcedDamage: Math.floor(actor.atk * 0.70),
           forcedDefPiercePct: 0.50,
         });
+      }
+
+      // Liên kích phụ & Tuyệt kỹ chu kỳ 2 hiệp v1.3 (Thanh Lam Tiểu Diều, Thiên Khung Kim Điêu, Lôi Tiễn, Thời Không Trảm, Đế Kiếm...)
+      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && (actor.state?.haxLockedTurns || 0) === 0) {
+        const actorV13 = getCombatantV13HaxList(actor);
+        const haxBoost = 1 + Number(actor.domainRuntime?.own?.buffs?.haxProcBonusPct || 0);
+        for (const h of actorV13) {
+          if (h.extraStrike && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+            const p = Math.min(0.60, h.extraStrike.chance * haxBoost);
+            if (rng() < p) {
+              executeHit({
+                actor,
+                target: actualTarget,
+                rawBaseDamage: 0,
+                elemData,
+                rng,
+                attacker,
+                defender,
+                turnNumber,
+                role,
+                turns,
+                label: h.extraStrike.label,
+                forcedDamage: Math.floor(actor.atk * h.extraStrike.atkRatio),
+                forcedDefPiercePct: h.extraStrike.defPierce || 0,
+                forcedShieldPiercePct: h.extraStrike.shieldPierce || 0,
+              });
+            }
+          }
+          if (h.every2TurnStrike && turnNumber % 2 === 0 && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+            executeHit({
+              actor,
+              target: actualTarget,
+              rawBaseDamage: 0,
+              elemData,
+              rng,
+              attacker,
+              defender,
+              turnNumber,
+              role,
+              turns,
+              label: h.every2TurnStrike.label,
+              forcedDamage: Math.floor(actor.atk * h.every2TurnStrike.atkRatio),
+              forcedDefPiercePct: h.every2TurnStrike.defPierce || 0,
+              forcedShieldPiercePct: h.every2TurnStrike.shieldPierce || 0,
+            });
+          }
+        }
       }
 
       // Thời Không Đình Chỉ / Nguyệt Thần Bạch Vĩ Hồ: Đánh thêm 1 lượt qua cùng pipeline chuẩn!
@@ -1371,6 +1472,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     initialHp,
     elementMatchup,
     battleStartEvents,
+    domainEvents,
     turns,
     turnNumber,
     winner,
@@ -1411,6 +1513,30 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     highlights,
     headline,
     summary,
+    domainSummary: {
+      activatedAtTurn2: domainState.activatedAtTurn2,
+      attacker: {
+        hasDomain: domainState.attacker.hasDomain,
+        domainId: domainState.attacker.domain?.domain_id || null,
+        domainName: domainState.attacker.domain?.name || null,
+        element: domainState.attacker.domain?.element || null,
+        senseName: domainState.attacker.sense?.name || null,
+        realmName: domainState.attacker.realm?.name || null,
+        startEnergy: domainState.attacker.maxEnergy,
+        endEnergy: domainState.attacker.energy,
+      },
+      defender: {
+        hasDomain: domainState.defender.hasDomain,
+        domainId: domainState.defender.domain?.domain_id || null,
+        domainName: domainState.defender.domain?.name || null,
+        element: domainState.defender.domain?.element || null,
+        senseName: domainState.defender.sense?.name || null,
+        realmName: domainState.defender.realm?.name || null,
+        startEnergy: domainState.defender.maxEnergy,
+        endEnergy: domainState.defender.energy,
+      },
+      events: domainEvents,
+    },
     reportImagePath,
     reportImageUrl,
     frameCount: framesMeta.length,

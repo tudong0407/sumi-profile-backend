@@ -106,9 +106,9 @@ describe('Tier 1 - Phase 1 Inventory (/inv), Equip/Unequip & Pet Upgrade (/pet)'
     assert.equal(starJson.new_star, 2);
   });
 
-  it('4. upgradePet never decreases existing power_score and cuu_vi_hong_ho resolves to su_fox_mascot', async () => {
+  it('4. upgradePet never decreases existing power_score and cuu_vi_hong_ho resolves to cuu_vi_hong_ho UID emoji', async () => {
     const { petEmoji } = await import('../../src/config/emojiHelper.js');
-    assert.match(petEmoji('cuu_vi_hong_ho'), /su_fox_mascot/);
+    assert.match(petEmoji('cuu_vi_hong_ho'), /cuu_vi_hong_ho/);
 
     if (!supabase) return;
     await supabase.from('users').update({ linh_thach: 5000 }).eq('user_id', TEMP_INV_USER);

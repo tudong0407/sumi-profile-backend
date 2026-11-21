@@ -1,9 +1,2757 @@
 {
+  "ani_AkkoLaugh": {
+    "id": "1571062248275972187",
+    "name": "ani_AkkoLaugh",
+    "animated": false,
+    "tag": "<:ani_AkkoLaugh:1571062248275972187>"
+  },
+  "ani_angery_natsuki": {
+    "id": "1571061794716389437",
+    "name": "ani_angery_natsuki",
+    "animated": false,
+    "tag": "<:ani_angery_natsuki:1571061794716389437>"
+  },
+  "ani_angeryping": {
+    "id": "1571061856741756958",
+    "name": "ani_angeryping",
+    "animated": true,
+    "tag": "<a:ani_angeryping:1571061856741756958>"
+  },
+  "ani_AngryAwooGlitch": {
+    "id": "1571061949779677204",
+    "name": "ani_AngryAwooGlitch",
+    "animated": true,
+    "tag": "<a:ani_AngryAwooGlitch:1571061949779677204>"
+  },
+  "ani_aobaThumb": {
+    "id": "1571062063898304563",
+    "name": "ani_aobaThumb",
+    "animated": true,
+    "tag": "<a:ani_aobaThumb:1571062063898304563>"
+  },
+  "ani_aquadance": {
+    "id": "1571062053316202536",
+    "name": "ani_aquadance",
+    "animated": true,
+    "tag": "<a:ani_aquadance:1571062053316202536>"
+  },
+  "ani_gingerbear": {
+    "id": "1571062277967323228",
+    "name": "ani_gingerbear",
+    "animated": true,
+    "tag": "<a:ani_gingerbear:1571062277967323228>"
+  },
+  "ani_HishironWhat": {
+    "id": "1571061734360350842",
+    "name": "ani_HishironWhat",
+    "animated": false,
+    "tag": "<:ani_HishironWhat:1571061734360350842>"
+  },
+  "ani_HyperNeko": {
+    "id": "1571062156076777512",
+    "name": "ani_HyperNeko",
+    "animated": true,
+    "tag": "<a:ani_HyperNeko:1571062156076777512>"
+  },
+  "ani_IllyaSpaz": {
+    "id": "1571062146131828748",
+    "name": "ani_IllyaSpaz",
+    "animated": true,
+    "tag": "<a:ani_IllyaSpaz:1571062146131828748>"
+  },
+  "ani_kannainspect": {
+    "id": "1571061723811807242",
+    "name": "ani_kannainspect",
+    "animated": false,
+    "tag": "<:ani_kannainspect:1571061723811807242>"
+  },
+  "ani_pOwo": {
+    "id": "1571061897581559839",
+    "name": "ani_pOwo",
+    "animated": false,
+    "tag": "<:ani_pOwo:1571061897581559839>"
+  },
+  "ani_pUwu": {
+    "id": "1571061887964291093",
+    "name": "ani_pUwu",
+    "animated": false,
+    "tag": "<:ani_pUwu:1571061887964291093>"
+  },
+  "ani_remYeah": {
+    "id": "1571061744355512321",
+    "name": "ani_remYeah",
+    "animated": false,
+    "tag": "<:ani_remYeah:1571061744355512321>"
+  },
+  "ani_UmaruParty": {
+    "id": "1571061847216623736",
+    "name": "ani_UmaruParty",
+    "animated": true,
+    "tag": "<a:ani_UmaruParty:1571061847216623736>"
+  },
+  "bac_hai_huyen_vu_de": {
+    "id": "1573800129272488140",
+    "name": "bac_hai_huyen_vu_de",
+    "animated": false,
+    "tag": "<:bac_hai_huyen_vu_de:1573800129272488140>"
+  },
+  "bach_kim_ho_tu": {
+    "id": "1573412145553739796",
+    "name": "bach_kim_ho_tu",
+    "animated": false,
+    "tag": "<:bach_kim_ho_tu:1573412145553739796>"
+  },
+  "bach_ngoc_ky_lan": {
+    "id": "1573799698685497448",
+    "name": "bach_ngoc_ky_lan",
+    "animated": false,
+    "tag": "<:bach_ngoc_ky_lan:1573799698685497448>"
+  },
+  "bach_ngoc_thien_nga": {
+    "id": "1573659859562266784",
+    "name": "bach_ngoc_thien_nga",
+    "animated": true,
+    "tag": "<a:bach_ngoc_thien_nga:1573659859562266784>"
+  },
+  "bang_tuyet_ho": {
+    "id": "1573412155678789664",
+    "name": "bang_tuyet_ho",
+    "animated": false,
+    "tag": "<:bang_tuyet_ho:1573412155678789664>"
+  },
+  "card_back": {
+    "id": "1573802253834395778",
+    "name": "card_back",
+    "animated": false,
+    "tag": "<:card_back:1573802253834395778>"
+  },
+  "card_bust": {
+    "id": "1573802277406511304",
+    "name": "card_bust",
+    "animated": false,
+    "tag": "<:card_bust:1573802277406511304>"
+  },
+  "card_deal": {
+    "id": "1573802241574576268",
+    "name": "card_deal",
+    "animated": true,
+    "tag": "<a:card_deal:1573802241574576268>"
+  },
+  "card_win": {
+    "id": "1573802266211913798",
+    "name": "card_win",
+    "animated": false,
+    "tag": "<:card_win:1573802266211913798>"
+  },
+  "chu_tuoc_au_dieu": {
+    "id": "1573411228078968916",
+    "name": "chu_tuoc_au_dieu",
+    "animated": true,
+    "tag": "<a:chu_tuoc_au_dieu:1573411228078968916>"
+  },
+  "coin_heads": {
+    "id": "1573802137094328505",
+    "name": "coin_heads",
+    "animated": false,
+    "tag": "<:coin_heads:1573802137094328505>"
+  },
+  "coin_spin": {
+    "id": "1573802127963193385",
+    "name": "coin_spin",
+    "animated": true,
+    "tag": "<a:coin_spin:1573802127963193385>"
+  },
+  "coin_tails": {
+    "id": "1573802148368486582",
+    "name": "coin_tails",
+    "animated": false,
+    "tag": "<:coin_tails:1573802148368486582>"
+  },
+  "crash_boom": {
+    "id": "1573802298121912371",
+    "name": "crash_boom",
+    "animated": true,
+    "tag": "<a:crash_boom:1573802298121912371>"
+  },
+  "crash_cashout": {
+    "id": "1573802307752042497",
+    "name": "crash_cashout",
+    "animated": false,
+    "tag": "<:crash_cashout:1573802307752042497>"
+  },
+  "crash_fly": {
+    "id": "1573802287124578357",
+    "name": "crash_fly",
+    "animated": true,
+    "tag": "<a:crash_fly:1573802287124578357>"
+  },
+  "cuu_thien_loi_de_ho": {
+    "id": "1573800185090547924",
+    "name": "cuu_thien_loi_de_ho",
+    "animated": false,
+    "tag": "<:cuu_thien_loi_de_ho:1573800185090547924>"
+  },
+  "cuu_thien_loi_phuong": {
+    "id": "1573659880009764864",
+    "name": "cuu_thien_loi_phuong",
+    "animated": true,
+    "tag": "<a:cuu_thien_loi_phuong:1573659880009764864>"
+  },
+  "cuu_tieu_kim_long": {
+    "id": "1573799754935312576",
+    "name": "cuu_tieu_kim_long",
+    "animated": false,
+    "tag": "<:cuu_tieu_kim_long:1573799754935312576>"
+  },
+  "cuu_u_do_than_diem_lang": {
+    "id": "1573800159442370651",
+    "name": "cuu_u_do_than_diem_lang",
+    "animated": false,
+    "tag": "<:cuu_u_do_than_diem_lang:1573800159442370651>"
+  },
+  "cuu_u_huyen_xoa": {
+    "id": "1573799887483572244",
+    "name": "cuu_u_huyen_xoa",
+    "animated": false,
+    "tag": "<:cuu_u_huyen_xoa:1573799887483572244>"
+  },
+  "cuu_vi_hong_ho": {
+    "id": "1573411004727951400",
+    "name": "cuu_vi_hong_ho",
+    "animated": true,
+    "tag": "<a:cuu_vi_hong_ho:1573411004727951400>"
+  },
+  "dia_long_nham_vuong": {
+    "id": "1573659896325472356",
+    "name": "dia_long_nham_vuong",
+    "animated": true,
+    "tag": "<a:dia_long_nham_vuong:1573659896325472356>"
+  },
+  "domain_common_1": {
+    "id": "1573801399991533614",
+    "name": "domain_common_1",
+    "animated": false,
+    "tag": "<:domain_common_1:1573801399991533614>"
+  },
+  "domain_common_2": {
+    "id": "1573801410955444355",
+    "name": "domain_common_2",
+    "animated": false,
+    "tag": "<:domain_common_2:1573801410955444355>"
+  },
+  "domain_common_3": {
+    "id": "1573801422678532209",
+    "name": "domain_common_3",
+    "animated": false,
+    "tag": "<:domain_common_3:1573801422678532209>"
+  },
+  "domain_common_4": {
+    "id": "1573801434099617894",
+    "name": "domain_common_4",
+    "animated": false,
+    "tag": "<:domain_common_4:1573801434099617894>"
+  },
+  "domain_common_5": {
+    "id": "1573801451489198243",
+    "name": "domain_common_5",
+    "animated": false,
+    "tag": "<:domain_common_5:1573801451489198243>"
+  },
+  "domain_epic_1": {
+    "id": "1573801521022247232",
+    "name": "domain_epic_1",
+    "animated": false,
+    "tag": "<:domain_epic_1:1573801521022247232>"
+  },
+  "domain_epic_2": {
+    "id": "1573801528978841810",
+    "name": "domain_epic_2",
+    "animated": false,
+    "tag": "<:domain_epic_2:1573801528978841810>"
+  },
+  "domain_epic_3": {
+    "id": "1573801545655394465",
+    "name": "domain_epic_3",
+    "animated": false,
+    "tag": "<:domain_epic_3:1573801545655394465>"
+  },
+  "domain_epic_4": {
+    "id": "1573801559358185572",
+    "name": "domain_epic_4",
+    "animated": false,
+    "tag": "<:domain_epic_4:1573801559358185572>"
+  },
+  "domain_epic_5": {
+    "id": "1573801573560361030",
+    "name": "domain_epic_5",
+    "animated": false,
+    "tag": "<:domain_epic_5:1573801573560361030>"
+  },
+  "domain_fuyumi_cuu_vi_hong_mong": {
+    "id": "1573801770432335990",
+    "name": "domain_fuyumi_cuu_vi_hong_mong",
+    "animated": false,
+    "tag": "<:domain_fuyumi_cuu_vi_hong_mong:1573801770432335990>"
+  },
+  "domain_mythic_1": {
+    "id": "1573801587824922715",
+    "name": "domain_mythic_1",
+    "animated": false,
+    "tag": "<:domain_mythic_1:1573801587824922715>"
+  },
+  "domain_mythic_10": {
+    "id": "1573801702472290405",
+    "name": "domain_mythic_10",
+    "animated": false,
+    "tag": "<:domain_mythic_10:1573801702472290405>"
+  },
+  "domain_mythic_2": {
+    "id": "1573801600634327120",
+    "name": "domain_mythic_2",
+    "animated": false,
+    "tag": "<:domain_mythic_2:1573801600634327120>"
+  },
+  "domain_mythic_3": {
+    "id": "1573801614664405032",
+    "name": "domain_mythic_3",
+    "animated": false,
+    "tag": "<:domain_mythic_3:1573801614664405032>"
+  },
+  "domain_mythic_4": {
+    "id": "1573801625238118515",
+    "name": "domain_mythic_4",
+    "animated": false,
+    "tag": "<:domain_mythic_4:1573801625238118515>"
+  },
+  "domain_mythic_5": {
+    "id": "1573801640308379888",
+    "name": "domain_mythic_5",
+    "animated": false,
+    "tag": "<:domain_mythic_5:1573801640308379888>"
+  },
+  "domain_mythic_6": {
+    "id": "1573801657282727996",
+    "name": "domain_mythic_6",
+    "animated": false,
+    "tag": "<:domain_mythic_6:1573801657282727996>"
+  },
+  "domain_mythic_7": {
+    "id": "1573801668733173762",
+    "name": "domain_mythic_7",
+    "animated": false,
+    "tag": "<:domain_mythic_7:1573801668733173762>"
+  },
+  "domain_mythic_8": {
+    "id": "1573801681974468639",
+    "name": "domain_mythic_8",
+    "animated": false,
+    "tag": "<:domain_mythic_8:1573801681974468639>"
+  },
+  "domain_mythic_9": {
+    "id": "1573801691915092094",
+    "name": "domain_mythic_9",
+    "animated": false,
+    "tag": "<:domain_mythic_9:1573801691915092094>"
+  },
+  "domain_rare_1": {
+    "id": "1573801459609510049",
+    "name": "domain_rare_1",
+    "animated": false,
+    "tag": "<:domain_rare_1:1573801459609510049>"
+  },
+  "domain_rare_2": {
+    "id": "1573801468962545734",
+    "name": "domain_rare_2",
+    "animated": false,
+    "tag": "<:domain_rare_2:1573801468962545734>"
+  },
+  "domain_rare_3": {
+    "id": "1573801479393771690",
+    "name": "domain_rare_3",
+    "animated": false,
+    "tag": "<:domain_rare_3:1573801479393771690>"
+  },
+  "domain_rare_4": {
+    "id": "1573801495009300643",
+    "name": "domain_rare_4",
+    "animated": false,
+    "tag": "<:domain_rare_4:1573801495009300643>"
+  },
+  "domain_rare_5": {
+    "id": "1573801509337174136",
+    "name": "domain_rare_5",
+    "animated": false,
+    "tag": "<:domain_rare_5:1573801509337174136>"
+  },
+  "domain_unique_1": {
+    "id": "1573801712156811264",
+    "name": "domain_unique_1",
+    "animated": false,
+    "tag": "<:domain_unique_1:1573801712156811264>"
+  },
+  "domain_unique_2": {
+    "id": "1573801725284974827",
+    "name": "domain_unique_2",
+    "animated": false,
+    "tag": "<:domain_unique_2:1573801725284974827>"
+  },
+  "domain_unique_3": {
+    "id": "1573801739805659258",
+    "name": "domain_unique_3",
+    "animated": false,
+    "tag": "<:domain_unique_3:1573801739805659258>"
+  },
+  "domain_unique_4": {
+    "id": "1573801748705837207",
+    "name": "domain_unique_4",
+    "animated": false,
+    "tag": "<:domain_unique_4:1573801748705837207>"
+  },
+  "domain_unique_5": {
+    "id": "1573801759670013972",
+    "name": "domain_unique_5",
+    "animated": false,
+    "tag": "<:domain_unique_5:1573801759670013972>"
+  },
+  "egg_linh_thu": {
+    "id": "1573802361321816094",
+    "name": "egg_linh_thu",
+    "animated": false,
+    "tag": "<:egg_linh_thu:1573802361321816094>"
+  },
+  "egg_than_thu": {
+    "id": "1573802382851317800",
+    "name": "egg_than_thu",
+    "animated": false,
+    "tag": "<:egg_than_thu:1573802382851317800>"
+  },
+  "egg_tien_thu": {
+    "id": "1573802370142310512",
+    "name": "egg_tien_thu",
+    "animated": false,
+    "tag": "<:egg_tien_thu:1573802370142310512>"
+  },
+  "enchant_stone": {
+    "id": "1573719323610980423",
+    "name": "enchant_stone",
+    "animated": true,
+    "tag": "<a:enchant_stone:1573719323610980423>"
+  },
+  "farm_essence": {
+    "id": "1573802317738938439",
+    "name": "farm_essence",
+    "animated": false,
+    "tag": "<:farm_essence:1573802317738938439>"
+  },
+  "fox_MamaHug": {
+    "id": "1571059228670562334",
+    "name": "fox_MamaHug",
+    "animated": false,
+    "tag": "<:fox_MamaHug:1571059228670562334>"
+  },
+  "fox_PPalCopium": {
+    "id": "1571059930805309560",
+    "name": "fox_PPalCopium",
+    "animated": false,
+    "tag": "<:fox_PPalCopium:1571059930805309560>"
+  },
+  "fox_PPalCozy": {
+    "id": "1571059920906752061",
+    "name": "fox_PPalCozy",
+    "animated": false,
+    "tag": "<:fox_PPalCozy:1571059920906752061>"
+  },
+  "fox_PPalCry": {
+    "id": "1571059940817113219",
+    "name": "fox_PPalCry",
+    "animated": false,
+    "tag": "<:fox_PPalCry:1571059940817113219>"
+  },
+  "fox_PPalHeadpat": {
+    "id": "1571059950497828960",
+    "name": "fox_PPalHeadpat",
+    "animated": false,
+    "tag": "<:fox_PPalHeadpat:1571059950497828960>"
+  },
+  "fox_PPalHeart": {
+    "id": "1571059960333336687",
+    "name": "fox_PPalHeart",
+    "animated": false,
+    "tag": "<:fox_PPalHeart:1571059960333336687>"
+  },
+  "fox_PPalHype": {
+    "id": "1571059969585971303",
+    "name": "fox_PPalHype",
+    "animated": false,
+    "tag": "<:fox_PPalHype:1571059969585971303>"
+  },
+  "fox_PPallaugh": {
+    "id": "1571060044232138842",
+    "name": "fox_PPallaugh",
+    "animated": false,
+    "tag": "<:fox_PPallaugh:1571060044232138842>"
+  },
+  "fox_PPalLazy": {
+    "id": "1571059979333673210",
+    "name": "fox_PPalLazy",
+    "animated": false,
+    "tag": "<:fox_PPalLazy:1571059979333673210>"
+  },
+  "fox_PPalLoading": {
+    "id": "1571059989261320282",
+    "name": "fox_PPalLoading",
+    "animated": false,
+    "tag": "<:fox_PPalLoading:1571059989261320282>"
+  },
+  "fox_PPalMonka": {
+    "id": "1571059999642361927",
+    "name": "fox_PPalMonka",
+    "animated": false,
+    "tag": "<:fox_PPalMonka:1571059999642361927>"
+  },
+  "fox_PPalNoted": {
+    "id": "1571060009570144327",
+    "name": "fox_PPalNoted",
+    "animated": false,
+    "tag": "<:fox_PPalNoted:1571060009570144327>"
+  },
+  "fox_PPalOmegalul": {
+    "id": "1571060053723709480",
+    "name": "fox_PPalOmegalul",
+    "animated": false,
+    "tag": "<:fox_PPalOmegalul:1571060053723709480>"
+  },
+  "fox_PPalPausechamp": {
+    "id": "1571060019598856252",
+    "name": "fox_PPalPausechamp",
+    "animated": false,
+    "tag": "<:fox_PPalPausechamp:1571060019598856252>"
+  },
+  "fox_PPalRage": {
+    "id": "1571060064465190943",
+    "name": "fox_PPalRage",
+    "animated": false,
+    "tag": "<:fox_PPalRage:1571060064465190943>"
+  },
+  "fox_PPalShy": {
+    "id": "1571060033930920036",
+    "name": "fox_PPalShy",
+    "animated": false,
+    "tag": "<:fox_PPalShy:1571060033930920036>"
+  },
+  "fox_PPalsuffer": {
+    "id": "1571060074669932555",
+    "name": "fox_PPalsuffer",
+    "animated": false,
+    "tag": "<:fox_PPalsuffer:1571060074669932555>"
+  },
+  "fox_SilvervaleAnimeGlasses": {
+    "id": "1571059663842185227",
+    "name": "fox_SilvervaleAnimeGlasses",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleAnimeGlasses:1571059663842185227>"
+  },
+  "fox_SilvervaleAwoo": {
+    "id": "1571059450570088490",
+    "name": "fox_SilvervaleAwoo",
+    "animated": false,
+    "tag": "<:fox_SilvervaleAwoo:1571059450570088490>"
+  },
+  "fox_SilvervaleAyaya": {
+    "id": "1571059687153995847",
+    "name": "fox_SilvervaleAyaya",
+    "animated": false,
+    "tag": "<:fox_SilvervaleAyaya:1571059687153995847>"
+  },
+  "fox_SilvervaleBlankies": {
+    "id": "1571059312707633243",
+    "name": "fox_SilvervaleBlankies",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleBlankies:1571059312707633243>"
+  },
+  "fox_SilvervaleBlind": {
+    "id": "1571059618422194216",
+    "name": "fox_SilvervaleBlind",
+    "animated": false,
+    "tag": "<:fox_SilvervaleBlind:1571059618422194216>"
+  },
+  "fox_SilvervaleBoop": {
+    "id": "1571059489937825792",
+    "name": "fox_SilvervaleBoop",
+    "animated": false,
+    "tag": "<:fox_SilvervaleBoop:1571059489937825792>"
+  },
+  "fox_SilvervaleCool": {
+    "id": "1571059509642919966",
+    "name": "fox_SilvervaleCool",
+    "animated": false,
+    "tag": "<:fox_SilvervaleCool:1571059509642919966>"
+  },
+  "fox_SilvervaleCozy": {
+    "id": "1571059460959633458",
+    "name": "fox_SilvervaleCozy",
+    "animated": false,
+    "tag": "<:fox_SilvervaleCozy:1571059460959633458>"
+  },
+  "fox_SilvervaleCozyFren": {
+    "id": "1571059430739415080",
+    "name": "fox_SilvervaleCozyFren",
+    "animated": false,
+    "tag": "<:fox_SilvervaleCozyFren:1571059430739415080>"
+  },
+  "fox_SilvervaleCrying": {
+    "id": "1571059910974775439",
+    "name": "fox_SilvervaleCrying",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleCrying:1571059910974775439>"
+  },
+  "fox_SilvervaleCult": {
+    "id": "1571059651334905938",
+    "name": "fox_SilvervaleCult",
+    "animated": false,
+    "tag": "<:fox_SilvervaleCult:1571059651334905938>"
+  },
+  "fox_SilvervaleD": {
+    "id": "1571059706758434947",
+    "name": "fox_SilvervaleD",
+    "animated": false,
+    "tag": "<:fox_SilvervaleD:1571059706758434947>"
+  },
+  "fox_SilvervaleDead": {
+    "id": "1571059589103882260",
+    "name": "fox_SilvervaleDead",
+    "animated": false,
+    "tag": "<:fox_SilvervaleDead:1571059589103882260>"
+  },
+  "fox_SilvervaleDerp": {
+    "id": "1571059518924656691",
+    "name": "fox_SilvervaleDerp",
+    "animated": false,
+    "tag": "<:fox_SilvervaleDerp:1571059518924656691>"
+  },
+  "fox_SilvervaleDisgust": {
+    "id": "1571059547810955294",
+    "name": "fox_SilvervaleDisgust",
+    "animated": false,
+    "tag": "<:fox_SilvervaleDisgust:1571059547810955294>"
+  },
+  "fox_SilvervaleFacePalm": {
+    "id": "1571059797761982605",
+    "name": "fox_SilvervaleFacePalm",
+    "animated": false,
+    "tag": "<:fox_SilvervaleFacePalm:1571059797761982605>"
+  },
+  "fox_SilvervaleFeelsBirthday": {
+    "id": "1571059420866285649",
+    "name": "fox_SilvervaleFeelsBirthday",
+    "animated": false,
+    "tag": "<:fox_SilvervaleFeelsBirthday:1571059420866285649>"
+  },
+  "fox_SilvervaleGasm": {
+    "id": "1571059716602204232",
+    "name": "fox_SilvervaleGasm",
+    "animated": false,
+    "tag": "<:fox_SilvervaleGasm:1571059716602204232>"
+  },
+  "fox_SilvervaleGimme": {
+    "id": "1571059558716149903",
+    "name": "fox_SilvervaleGimme",
+    "animated": false,
+    "tag": "<:fox_SilvervaleGimme:1571059558716149903>"
+  },
+  "fox_SilvervaleGUN": {
+    "id": "1571059736701444256",
+    "name": "fox_SilvervaleGUN",
+    "animated": false,
+    "tag": "<:fox_SilvervaleGUN:1571059736701444256>"
+  },
+  "fox_SilvervaleHug": {
+    "id": "1571059499815538738",
+    "name": "fox_SilvervaleHug",
+    "animated": false,
+    "tag": "<:fox_SilvervaleHug:1571059499815538738>"
+  },
+  "fox_SilvervaleHuh": {
+    "id": "1571059746524368977",
+    "name": "fox_SilvervaleHuh",
+    "animated": false,
+    "tag": "<:fox_SilvervaleHuh:1571059746524368977>"
+  },
+  "fox_SilvervaleHuhs": {
+    "id": "1571059676957778001",
+    "name": "fox_SilvervaleHuhs",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleHuhs:1571059676957778001>"
+  },
+  "fox_SilvervaleHydrates": {
+    "id": "1571059300384645172",
+    "name": "fox_SilvervaleHydrates",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleHydrates:1571059300384645172>"
+  },
+  "fox_SilvervaleHyper": {
+    "id": "1571059756766994462",
+    "name": "fox_SilvervaleHyper",
+    "animated": false,
+    "tag": "<:fox_SilvervaleHyper:1571059756766994462>"
+  },
+  "fox_SilvervaleJam": {
+    "id": "1571059786919837826",
+    "name": "fox_SilvervaleJam",
+    "animated": false,
+    "tag": "<:fox_SilvervaleJam:1571059786919837826>"
+  },
+  "fox_SilvervaleLick": {
+    "id": "1571059352775958609",
+    "name": "fox_SilvervaleLick",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleLick:1571059352775958609>"
+  },
+  "fox_SilvervaleLick2": {
+    "id": "1571059364683583528",
+    "name": "fox_SilvervaleLick2",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleLick2:1571059364683583528>"
+  },
+  "fox_SilvervaleLoadings": {
+    "id": "1571059376712716319",
+    "name": "fox_SilvervaleLoadings",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleLoadings:1571059376712716319>"
+  },
+  "fox_SilvervaleLOL": {
+    "id": "1571059777075945543",
+    "name": "fox_SilvervaleLOL",
+    "animated": false,
+    "tag": "<:fox_SilvervaleLOL:1571059777075945543>"
+  },
+  "fox_SilvervaleLove": {
+    "id": "1571059627968172054",
+    "name": "fox_SilvervaleLove",
+    "animated": false,
+    "tag": "<:fox_SilvervaleLove:1571059627968172054>"
+  },
+  "fox_SilvervaleLurk": {
+    "id": "1571059387177373766",
+    "name": "fox_SilvervaleLurk",
+    "animated": false,
+    "tag": "<:fox_SilvervaleLurk:1571059387177373766>"
+  },
+  "fox_SilvervaleLurkings": {
+    "id": "1571059641297797120",
+    "name": "fox_SilvervaleLurkings",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleLurkings:1571059641297797120>"
+  },
+  "fox_SilvervaleMath": {
+    "id": "1571059599098908722",
+    "name": "fox_SilvervaleMath",
+    "animated": false,
+    "tag": "<:fox_SilvervaleMath:1571059599098908722>"
+  },
+  "fox_SilvervaleModchecks": {
+    "id": "1571059324308951100",
+    "name": "fox_SilvervaleModchecks",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleModchecks:1571059324308951100>"
+  },
+  "fox_SilvervaleNoseBleed": {
+    "id": "1571059440248160377",
+    "name": "fox_SilvervaleNoseBleed",
+    "animated": false,
+    "tag": "<:fox_SilvervaleNoseBleed:1571059440248160377>"
+  },
+  "fox_SilvervaleNoU": {
+    "id": "1571059579263914114",
+    "name": "fox_SilvervaleNoU",
+    "animated": false,
+    "tag": "<:fox_SilvervaleNoU:1571059579263914114>"
+  },
+  "fox_SilvervaleOhNo": {
+    "id": "1571059568891535410",
+    "name": "fox_SilvervaleOhNo",
+    "animated": false,
+    "tag": "<:fox_SilvervaleOhNo:1571059568891535410>"
+  },
+  "fox_SilvervalePlead": {
+    "id": "1571059696998023209",
+    "name": "fox_SilvervalePlead",
+    "animated": false,
+    "tag": "<:fox_SilvervalePlead:1571059696998023209>"
+  },
+  "fox_SilvervalePog": {
+    "id": "1571059817760690256",
+    "name": "fox_SilvervalePog",
+    "animated": false,
+    "tag": "<:fox_SilvervalePog:1571059817760690256>"
+  },
+  "fox_SilvervalePout": {
+    "id": "1571059480169291876",
+    "name": "fox_SilvervalePout",
+    "animated": false,
+    "tag": "<:fox_SilvervalePout:1571059480169291876>"
+  },
+  "fox_SilvervalePray": {
+    "id": "1571059827810115696",
+    "name": "fox_SilvervalePray",
+    "animated": false,
+    "tag": "<:fox_SilvervalePray:1571059827810115696>"
+  },
+  "fox_SilvervaleREE": {
+    "id": "1571059837989560320",
+    "name": "fox_SilvervaleREE",
+    "animated": false,
+    "tag": "<:fox_SilvervaleREE:1571059837989560320>"
+  },
+  "fox_SilvervaleShrug": {
+    "id": "1571059847871594587",
+    "name": "fox_SilvervaleShrug",
+    "animated": false,
+    "tag": "<:fox_SilvervaleShrug:1571059847871594587>"
+  },
+  "fox_SilvervaleShy": {
+    "id": "1571059470610726992",
+    "name": "fox_SilvervaleShy",
+    "animated": false,
+    "tag": "<:fox_SilvervaleShy:1571059470610726992>"
+  },
+  "fox_SilvervaleSleep": {
+    "id": "1571059528433401956",
+    "name": "fox_SilvervaleSleep",
+    "animated": false,
+    "tag": "<:fox_SilvervaleSleep:1571059528433401956>"
+  },
+  "fox_SilvervaleSleepings": {
+    "id": "1571059411097624636",
+    "name": "fox_SilvervaleSleepings",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleSleepings:1571059411097624636>"
+  },
+  "fox_SilvervaleSleepy": {
+    "id": "1571059857740796026",
+    "name": "fox_SilvervaleSleepy",
+    "animated": false,
+    "tag": "<:fox_SilvervaleSleepy:1571059857740796026>"
+  },
+  "fox_SilvervaleSmug": {
+    "id": "1571059538218451044",
+    "name": "fox_SilvervaleSmug",
+    "animated": false,
+    "tag": "<:fox_SilvervaleSmug:1571059538218451044>"
+  },
+  "fox_SilvervaleSteers": {
+    "id": "1571059287747207199",
+    "name": "fox_SilvervaleSteers",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleSteers:1571059287747207199>"
+  },
+  "fox_SilvervaleStress": {
+    "id": "1571059807757144104",
+    "name": "fox_SilvervaleStress",
+    "animated": false,
+    "tag": "<:fox_SilvervaleStress:1571059807757144104>"
+  },
+  "fox_SilvervaleSuffer": {
+    "id": "1571059238589956126",
+    "name": "fox_SilvervaleSuffer",
+    "animated": false,
+    "tag": "<:fox_SilvervaleSuffer:1571059238589956126>"
+  },
+  "fox_SilvervaleSweat": {
+    "id": "1571059868276625488",
+    "name": "fox_SilvervaleSweat",
+    "animated": false,
+    "tag": "<:fox_SilvervaleSweat:1571059868276625488>"
+  },
+  "fox_SilvervaleTaps": {
+    "id": "1571059344106328074",
+    "name": "fox_SilvervaleTaps",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleTaps:1571059344106328074>"
+  },
+  "fox_SilvervaleThink": {
+    "id": "1571059878758326333",
+    "name": "fox_SilvervaleThink",
+    "animated": false,
+    "tag": "<:fox_SilvervaleThink:1571059878758326333>"
+  },
+  "fox_SilvervaleThumbsup": {
+    "id": "1571059767152091227",
+    "name": "fox_SilvervaleThumbsup",
+    "animated": false,
+    "tag": "<:fox_SilvervaleThumbsup:1571059767152091227>"
+  },
+  "fox_SilvervaleWat": {
+    "id": "1571059726563803238",
+    "name": "fox_SilvervaleWat",
+    "animated": false,
+    "tag": "<:fox_SilvervaleWat:1571059726563803238>"
+  },
+  "fox_SilvervaleWaves": {
+    "id": "1571059399097847898",
+    "name": "fox_SilvervaleWaves",
+    "animated": true,
+    "tag": "<a:fox_SilvervaleWaves:1571059399097847898>"
+  },
+  "fox_SilvervaleWeirdchamp": {
+    "id": "1571059334337663137",
+    "name": "fox_SilvervaleWeirdchamp",
+    "animated": false,
+    "tag": "<:fox_SilvervaleWeirdchamp:1571059334337663137>"
+  },
+  "fox_SilvervaleWoW": {
+    "id": "1571059608737423480",
+    "name": "fox_SilvervaleWoW",
+    "animated": false,
+    "tag": "<:fox_SilvervaleWoW:1571059608737423480>"
+  },
+  "fox_SilvervaleYandere": {
+    "id": "1571059888598294650",
+    "name": "fox_SilvervaleYandere",
+    "animated": false,
+    "tag": "<:fox_SilvervaleYandere:1571059888598294650>"
+  },
+  "fox_SilvervaleYocciHug": {
+    "id": "1571059260207403068",
+    "name": "fox_SilvervaleYocciHug",
+    "animated": false,
+    "tag": "<:fox_SilvervaleYocciHug:1571059260207403068>"
+  },
+  "fox_SilvervaleZoom": {
+    "id": "1571059898622673008",
+    "name": "fox_SilvervaleZoom",
+    "animated": false,
+    "tag": "<:fox_SilvervaleZoom:1571059898622673008>"
+  },
+  "fox_zbirthdayslices": {
+    "id": "1571059218516148314",
+    "name": "fox_zbirthdayslices",
+    "animated": true,
+    "tag": "<a:fox_zbirthdayslices:1571059218516148314>"
+  },
+  "fox_zconfetti": {
+    "id": "1571059270517137508",
+    "name": "fox_zconfetti",
+    "animated": true,
+    "tag": "<a:fox_zconfetti:1571059270517137508>"
+  },
+  "fox_zEDM": {
+    "id": "1571059249654661221",
+    "name": "fox_zEDM",
+    "animated": true,
+    "tag": "<a:fox_zEDM:1571059249654661221>"
+  },
+  "frame_unlock_token": {
+    "id": "1573411925298253935",
+    "name": "frame_unlock_token",
+    "animated": false,
+    "tag": "<:frame_unlock_token:1573411925298253935>"
+  },
+  "gacha_ticket_equip": {
+    "id": "1573411690815430740",
+    "name": "gacha_ticket_equip",
+    "animated": true,
+    "tag": "<a:gacha_ticket_equip:1573411690815430740>"
+  },
+  "gacha_ticket_pet": {
+    "id": "1573411705046695951",
+    "name": "gacha_ticket_pet",
+    "animated": true,
+    "tag": "<a:gacha_ticket_pet:1573411705046695951>"
+  },
+  "gem_common_1": {
+    "id": "1573411950778515577",
+    "name": "gem_common_1",
+    "animated": false,
+    "tag": "<:gem_common_1:1573411950778515577>"
+  },
+  "gem_common_2": {
+    "id": "1573411962535026779",
+    "name": "gem_common_2",
+    "animated": false,
+    "tag": "<:gem_common_2:1573411962535026779>"
+  },
+  "gem_common_3": {
+    "id": "1573411973725687981",
+    "name": "gem_common_3",
+    "animated": false,
+    "tag": "<:gem_common_3:1573411973725687981>"
+  },
+  "gem_common_4": {
+    "id": "1573411986027319298",
+    "name": "gem_common_4",
+    "animated": false,
+    "tag": "<:gem_common_4:1573411986027319298>"
+  },
+  "gem_common_5": {
+    "id": "1573659345802231939",
+    "name": "gem_common_5",
+    "animated": true,
+    "tag": "<a:gem_common_5:1573659345802231939>"
+  },
+  "gem_common_6": {
+    "id": "1573800625270169612",
+    "name": "gem_common_6",
+    "animated": false,
+    "tag": "<:gem_common_6:1573800625270169612>"
+  },
+  "gem_common_7": {
+    "id": "1573800638041559203",
+    "name": "gem_common_7",
+    "animated": false,
+    "tag": "<:gem_common_7:1573800638041559203>"
+  },
+  "gem_epic_1": {
+    "id": "1573411999080124577",
+    "name": "gem_epic_1",
+    "animated": false,
+    "tag": "<:gem_epic_1:1573411999080124577>"
+  },
+  "gem_epic_2": {
+    "id": "1573412016767631441",
+    "name": "gem_epic_2",
+    "animated": false,
+    "tag": "<:gem_epic_2:1573412016767631441>"
+  },
+  "gem_epic_3": {
+    "id": "1573412032970104942",
+    "name": "gem_epic_3",
+    "animated": false,
+    "tag": "<:gem_epic_3:1573412032970104942>"
+  },
+  "gem_epic_4": {
+    "id": "1573412046010188006",
+    "name": "gem_epic_4",
+    "animated": false,
+    "tag": "<:gem_epic_4:1573412046010188006>"
+  },
+  "gem_epic_5": {
+    "id": "1573659359324537004",
+    "name": "gem_epic_5",
+    "animated": true,
+    "tag": "<a:gem_epic_5:1573659359324537004>"
+  },
+  "gem_epic_6": {
+    "id": "1573659377288749068",
+    "name": "gem_epic_6",
+    "animated": true,
+    "tag": "<a:gem_epic_6:1573659377288749068>"
+  },
+  "gem_epic_7": {
+    "id": "1573800668135952555",
+    "name": "gem_epic_7",
+    "animated": false,
+    "tag": "<:gem_epic_7:1573800668135952555>"
+  },
+  "gem_epic_8": {
+    "id": "1573800679804248255",
+    "name": "gem_epic_8",
+    "animated": false,
+    "tag": "<:gem_epic_8:1573800679804248255>"
+  },
+  "gem_mythic_1": {
+    "id": "1573411026840322118",
+    "name": "gem_mythic_1",
+    "animated": true,
+    "tag": "<a:gem_mythic_1:1573411026840322118>"
+  },
+  "gem_mythic_10": {
+    "id": "1573800730714968064",
+    "name": "gem_mythic_10",
+    "animated": false,
+    "tag": "<:gem_mythic_10:1573800730714968064>"
+  },
+  "gem_mythic_11": {
+    "id": "1573800741519360091",
+    "name": "gem_mythic_11",
+    "animated": false,
+    "tag": "<:gem_mythic_11:1573800741519360091>"
+  },
+  "gem_mythic_12": {
+    "id": "1573800761337454632",
+    "name": "gem_mythic_12",
+    "animated": false,
+    "tag": "<:gem_mythic_12:1573800761337454632>"
+  },
+  "gem_mythic_13": {
+    "id": "1573800776172699699",
+    "name": "gem_mythic_13",
+    "animated": false,
+    "tag": "<:gem_mythic_13:1573800776172699699>"
+  },
+  "gem_mythic_14": {
+    "id": "1573800784515305573",
+    "name": "gem_mythic_14",
+    "animated": false,
+    "tag": "<:gem_mythic_14:1573800784515305573>"
+  },
+  "gem_mythic_15": {
+    "id": "1573800793788649613",
+    "name": "gem_mythic_15",
+    "animated": false,
+    "tag": "<:gem_mythic_15:1573800793788649613>"
+  },
+  "gem_mythic_16": {
+    "id": "1573800805214068876",
+    "name": "gem_mythic_16",
+    "animated": false,
+    "tag": "<:gem_mythic_16:1573800805214068876>"
+  },
+  "gem_mythic_17": {
+    "id": "1573800823895363678",
+    "name": "gem_mythic_17",
+    "animated": false,
+    "tag": "<:gem_mythic_17:1573800823895363678>"
+  },
+  "gem_mythic_18": {
+    "id": "1573800835886874755",
+    "name": "gem_mythic_18",
+    "animated": false,
+    "tag": "<:gem_mythic_18:1573800835886874755>"
+  },
+  "gem_mythic_19": {
+    "id": "1573800845928042557",
+    "name": "gem_mythic_19",
+    "animated": false,
+    "tag": "<:gem_mythic_19:1573800845928042557>"
+  },
+  "gem_mythic_2": {
+    "id": "1573411039746195507",
+    "name": "gem_mythic_2",
+    "animated": true,
+    "tag": "<a:gem_mythic_2:1573411039746195507>"
+  },
+  "gem_mythic_20": {
+    "id": "1573800858095849642",
+    "name": "gem_mythic_20",
+    "animated": false,
+    "tag": "<:gem_mythic_20:1573800858095849642>"
+  },
+  "gem_mythic_21": {
+    "id": "1573800866090319952",
+    "name": "gem_mythic_21",
+    "animated": false,
+    "tag": "<:gem_mythic_21:1573800866090319952>"
+  },
+  "gem_mythic_22": {
+    "id": "1573800876731142335",
+    "name": "gem_mythic_22",
+    "animated": false,
+    "tag": "<:gem_mythic_22:1573800876731142335>"
+  },
+  "gem_mythic_3": {
+    "id": "1573411056024555540",
+    "name": "gem_mythic_3",
+    "animated": true,
+    "tag": "<a:gem_mythic_3:1573411056024555540>"
+  },
+  "gem_mythic_4": {
+    "id": "1573659395697418320",
+    "name": "gem_mythic_4",
+    "animated": true,
+    "tag": "<a:gem_mythic_4:1573659395697418320>"
+  },
+  "gem_mythic_5": {
+    "id": "1573659414806794282",
+    "name": "gem_mythic_5",
+    "animated": true,
+    "tag": "<a:gem_mythic_5:1573659414806794282>"
+  },
+  "gem_mythic_6": {
+    "id": "1573800689727967313",
+    "name": "gem_mythic_6",
+    "animated": false,
+    "tag": "<:gem_mythic_6:1573800689727967313>"
+  },
+  "gem_mythic_7": {
+    "id": "1573800699186389002",
+    "name": "gem_mythic_7",
+    "animated": false,
+    "tag": "<:gem_mythic_7:1573800699186389002>"
+  },
+  "gem_mythic_8": {
+    "id": "1573800709151924354",
+    "name": "gem_mythic_8",
+    "animated": false,
+    "tag": "<:gem_mythic_8:1573800709151924354>"
+  },
+  "gem_mythic_9": {
+    "id": "1573800720938041414",
+    "name": "gem_mythic_9",
+    "animated": false,
+    "tag": "<:gem_mythic_9:1573800720938041414>"
+  },
+  "gem_rare_1": {
+    "id": "1573412059092361371",
+    "name": "gem_rare_1",
+    "animated": false,
+    "tag": "<:gem_rare_1:1573412059092361371>"
+  },
+  "gem_rare_2": {
+    "id": "1573412078667042818",
+    "name": "gem_rare_2",
+    "animated": false,
+    "tag": "<:gem_rare_2:1573412078667042818>"
+  },
+  "gem_rare_3": {
+    "id": "1573412090209898556",
+    "name": "gem_rare_3",
+    "animated": false,
+    "tag": "<:gem_rare_3:1573412090209898556>"
+  },
+  "gem_rare_4": {
+    "id": "1573412105359466536",
+    "name": "gem_rare_4",
+    "animated": false,
+    "tag": "<:gem_rare_4:1573412105359466536>"
+  },
+  "gem_rare_5": {
+    "id": "1573659474533810357",
+    "name": "gem_rare_5",
+    "animated": true,
+    "tag": "<a:gem_rare_5:1573659474533810357>"
+  },
+  "gem_rare_6": {
+    "id": "1573800647864750140",
+    "name": "gem_rare_6",
+    "animated": false,
+    "tag": "<:gem_rare_6:1573800647864750140>"
+  },
+  "gem_rare_7": {
+    "id": "1573800657318580264",
+    "name": "gem_rare_7",
+    "animated": false,
+    "tag": "<:gem_rare_7:1573800657318580264>"
+  },
+  "gem_unique_1": {
+    "id": "1573800891373461585",
+    "name": "gem_unique_1",
+    "animated": false,
+    "tag": "<:gem_unique_1:1573800891373461585>"
+  },
+  "gem_unique_10": {
+    "id": "1573801007094300687",
+    "name": "gem_unique_10",
+    "animated": false,
+    "tag": "<:gem_unique_10:1573801007094300687>"
+  },
+  "gem_unique_2": {
+    "id": "1573800904212349060",
+    "name": "gem_unique_2",
+    "animated": false,
+    "tag": "<:gem_unique_2:1573800904212349060>"
+  },
+  "gem_unique_3": {
+    "id": "1573800914631004266",
+    "name": "gem_unique_3",
+    "animated": false,
+    "tag": "<:gem_unique_3:1573800914631004266>"
+  },
+  "gem_unique_4": {
+    "id": "1573800929918984202",
+    "name": "gem_unique_4",
+    "animated": false,
+    "tag": "<:gem_unique_4:1573800929918984202>"
+  },
+  "gem_unique_5": {
+    "id": "1573800940463591444",
+    "name": "gem_unique_5",
+    "animated": false,
+    "tag": "<:gem_unique_5:1573800940463591444>"
+  },
+  "gem_unique_6": {
+    "id": "1573800950378790994",
+    "name": "gem_unique_6",
+    "animated": false,
+    "tag": "<:gem_unique_6:1573800950378790994>"
+  },
+  "gem_unique_7": {
+    "id": "1573800966963077281",
+    "name": "gem_unique_7",
+    "animated": false,
+    "tag": "<:gem_unique_7:1573800966963077281>"
+  },
+  "gem_unique_8": {
+    "id": "1573800980137386147",
+    "name": "gem_unique_8",
+    "animated": false,
+    "tag": "<:gem_unique_8:1573800980137386147>"
+  },
+  "gem_unique_9": {
+    "id": "1573800991378120876",
+    "name": "gem_unique_9",
+    "animated": false,
+    "tag": "<:gem_unique_9:1573800991378120876>"
+  },
+  "hac_diem_linh_nha": {
+    "id": "1573799687989760083",
+    "name": "hac_diem_linh_nha",
+    "animated": false,
+    "tag": "<:hac_diem_linh_nha:1573799687989760083>"
+  },
+  "hai_duong_tien_ngu": {
+    "id": "1573412168202850314",
+    "name": "hai_duong_tien_ngu",
+    "animated": false,
+    "tag": "<:hai_duong_tien_ngu:1573412168202850314>"
+  },
+  "han_bang_ky_lan": {
+    "id": "1573411242524020757",
+    "name": "han_bang_ky_lan",
+    "animated": true,
+    "tag": "<a:han_bang_ky_lan:1573411242524020757>"
+  },
+  "hoa_diem_ho": {
+    "id": "1573411256021557268",
+    "name": "hoa_diem_ho",
+    "animated": true,
+    "tag": "<a:hoa_diem_ho:1573411256021557268>"
+  },
+  "hoa_linh_tieu_ho": {
+    "id": "1573659920438665246",
+    "name": "hoa_linh_tieu_ho",
+    "animated": true,
+    "tag": "<a:hoa_linh_tieu_ho:1573659920438665246>"
+  },
+  "hoa_thach_nham_nham": {
+    "id": "1573412180244828333",
+    "name": "hoa_thach_nham_nham",
+    "animated": false,
+    "tag": "<:hoa_thach_nham_nham:1573412180244828333>"
+  },
+  "hoang_thien_ban_co_lan": {
+    "id": "1573800194242519210",
+    "name": "hoang_thien_ban_co_lan",
+    "animated": false,
+    "tag": "<:hoang_thien_ban_co_lan:1573800194242519210>"
+  },
+  "hoang_thien_ky_lan": {
+    "id": "1573659937937293425",
+    "name": "hoang_thien_ky_lan",
+    "animated": true,
+    "tag": "<a:hoang_thien_ky_lan:1573659937937293425>"
+  },
+  "hoang_tho_thach_su": {
+    "id": "1573659952902311936",
+    "name": "hoang_tho_thach_su",
+    "animated": true,
+    "tag": "<a:hoang_tho_thach_su:1573659952902311936>"
+  },
+  "hoang_tuyen_minh_ho": {
+    "id": "1573799927711145994",
+    "name": "hoang_tuyen_minh_ho",
+    "animated": false,
+    "tag": "<:hoang_tuyen_minh_ho:1573799927711145994>"
+  },
+  "hon_don_chi_to_long": {
+    "id": "1573800099170095276",
+    "name": "hon_don_chi_to_long",
+    "animated": false,
+    "tag": "<:hon_don_chi_to_long:1573800099170095276>"
+  },
+  "hon_nguyen_thanh_long": {
+    "id": "1573799798824247530",
+    "name": "hon_nguyen_thanh_long",
+    "animated": false,
+    "tag": "<:hon_nguyen_thanh_long:1573799798824247530>"
+  },
+  "huyen_bang_thuy_long": {
+    "id": "1573799725172265150",
+    "name": "huyen_bang_thuy_long",
+    "animated": false,
+    "tag": "<:huyen_bang_thuy_long:1573799725172265150>"
+  },
+  "huyen_minh_cuu_phuong": {
+    "id": "1573799777081229342",
+    "name": "huyen_minh_cuu_phuong",
+    "animated": false,
+    "tag": "<:huyen_minh_cuu_phuong:1573799777081229342>"
+  },
+  "huyen_thien_vo_cuc_ngao": {
+    "id": "1573799961286414449",
+    "name": "huyen_thien_vo_cuc_ngao",
+    "animated": false,
+    "tag": "<:huyen_thien_vo_cuc_ngao:1573799961286414449>"
+  },
+  "huyen_vu_linh_quy": {
+    "id": "1573659972078800906",
+    "name": "huyen_vu_linh_quy",
+    "animated": true,
+    "tag": "<a:huyen_vu_linh_quy:1573659972078800906>"
+  },
+  "huyet_nguyet_linh_dieu": {
+    "id": "1573660071739658277",
+    "name": "huyet_nguyet_linh_dieu",
+    "animated": true,
+    "tag": "<a:huyet_nguyet_linh_dieu:1573660071739658277>"
+  },
+  "huyet_sat_kiem_ho": {
+    "id": "1573799739638685767",
+    "name": "huyet_sat_kiem_ho",
+    "animated": false,
+    "tag": "<:huyet_sat_kiem_ho:1573799739638685767>"
+  },
+  "kawaii_aiyaXD": {
+    "id": "1571060084354842694",
+    "name": "kawaii_aiyaXD",
+    "animated": false,
+    "tag": "<:kawaii_aiyaXD:1571060084354842694>"
+  },
+  "kawaii_angrySMH": {
+    "id": "1571060431701807245",
+    "name": "kawaii_angrySMH",
+    "animated": true,
+    "tag": "<a:kawaii_angrySMH:1571060431701807245>"
+  },
+  "kawaii_baka": {
+    "id": "1571060193964597258",
+    "name": "kawaii_baka",
+    "animated": false,
+    "tag": "<:kawaii_baka:1571060193964597258>"
+  },
+  "kawaii_BongoWaveLove": {
+    "id": "1571060848229879868",
+    "name": "kawaii_BongoWaveLove",
+    "animated": true,
+    "tag": "<a:kawaii_BongoWaveLove:1571060848229879868>"
+  },
+  "kawaii_BubblyLove": {
+    "id": "1571060648325156914",
+    "name": "kawaii_BubblyLove",
+    "animated": false,
+    "tag": "<:kawaii_BubblyLove:1571060648325156914>"
+  },
+  "kawaii_BugcatYay": {
+    "id": "1571060184007184475",
+    "name": "kawaii_BugcatYay",
+    "animated": true,
+    "tag": "<a:kawaii_BugcatYay:1571060184007184475>"
+  },
+  "kawaii_BunCheeks": {
+    "id": "1571060818408243200",
+    "name": "kawaii_BunCheeks",
+    "animated": true,
+    "tag": "<a:kawaii_BunCheeks:1571060818408243200>"
+  },
+  "kawaii_butterfly": {
+    "id": "1571060487091785738",
+    "name": "kawaii_butterfly",
+    "animated": true,
+    "tag": "<a:kawaii_butterfly:1571060487091785738>"
+  },
+  "kawaii_CatCry": {
+    "id": "1571060698103021568",
+    "name": "kawaii_CatCry",
+    "animated": false,
+    "tag": "<:kawaii_CatCry:1571060698103021568>"
+  },
+  "kawaii_celebrate": {
+    "id": "1571060421916500008",
+    "name": "kawaii_celebrate",
+    "animated": true,
+    "tag": "<a:kawaii_celebrate:1571060421916500008>"
+  },
+  "kawaii_celebrating": {
+    "id": "1571060808723472394",
+    "name": "kawaii_celebrating",
+    "animated": false,
+    "tag": "<:kawaii_celebrating:1571060808723472394>"
+  },
+  "kawaii_ChikaWoah": {
+    "id": "1571060393680576604",
+    "name": "kawaii_ChikaWoah",
+    "animated": false,
+    "tag": "<:kawaii_ChikaWoah:1571060393680576604>"
+  },
+  "kawaii_ClownSmile": {
+    "id": "1571060760791228506",
+    "name": "kawaii_ClownSmile",
+    "animated": false,
+    "tag": "<:kawaii_ClownSmile:1571060760791228506>"
+  },
+  "kawaii_CryMeARiver": {
+    "id": "1571061008942759986",
+    "name": "kawaii_CryMeARiver",
+    "animated": true,
+    "tag": "<a:kawaii_CryMeARiver:1571061008942759986>"
+  },
+  "kawaii_CryTears": {
+    "id": "1571060103984193536",
+    "name": "kawaii_CryTears",
+    "animated": false,
+    "tag": "<:kawaii_CryTears:1571060103984193536>"
+  },
+  "kawaii_CuddleTeddy": {
+    "id": "1571060828365656116",
+    "name": "kawaii_CuddleTeddy",
+    "animated": true,
+    "tag": "<a:kawaii_CuddleTeddy:1571060828365656116>"
+  },
+  "kawaii_DinoFilledWithLove": {
+    "id": "1571060204164874301",
+    "name": "kawaii_DinoFilledWithLove",
+    "animated": true,
+    "tag": "<a:kawaii_DinoFilledWithLove:1571060204164874301>"
+  },
+  "kawaii_DoggieCuddle": {
+    "id": "1571060262272765963",
+    "name": "kawaii_DoggieCuddle",
+    "animated": false,
+    "tag": "<:kawaii_DoggieCuddle:1571060262272765963>"
+  },
+  "kawaii_duckywee": {
+    "id": "1571060779669655683",
+    "name": "kawaii_duckywee",
+    "animated": true,
+    "tag": "<a:kawaii_duckywee:1571060779669655683>"
+  },
+  "kawaii_EmiliaNya": {
+    "id": "1571060272154673243",
+    "name": "kawaii_EmiliaNya",
+    "animated": false,
+    "tag": "<:kawaii_EmiliaNya:1571060272154673243>"
+  },
+  "kawaii_GhostLove": {
+    "id": "1571060838452822088",
+    "name": "kawaii_GhostLove",
+    "animated": true,
+    "tag": "<a:kawaii_GhostLove:1571060838452822088>"
+  },
+  "kawaii_ghosty": {
+    "id": "1571060668298166363",
+    "name": "kawaii_ghosty",
+    "animated": true,
+    "tag": "<a:kawaii_ghosty:1571060668298166363>"
+  },
+  "kawaii_hype": {
+    "id": "1571060750724759633",
+    "name": "kawaii_hype",
+    "animated": true,
+    "tag": "<a:kawaii_hype:1571060750724759633>"
+  },
+  "kawaii_HyperShake": {
+    "id": "1571060917750210621",
+    "name": "kawaii_HyperShake",
+    "animated": true,
+    "tag": "<a:kawaii_HyperShake:1571060917750210621>"
+  },
+  "kawaii_KannaCrepeNom": {
+    "id": "1571060323727712266",
+    "name": "kawaii_KannaCrepeNom",
+    "animated": true,
+    "tag": "<a:kawaii_KannaCrepeNom:1571060323727712266>"
+  },
+  "kawaii_KannaWow": {
+    "id": "1571060658303279224",
+    "name": "kawaii_KannaWow",
+    "animated": false,
+    "tag": "<:kawaii_KannaWow:1571060658303279224>"
+  },
+  "kawaii_kawaiiChatBubble": {
+    "id": "1571061084222390352",
+    "name": "kawaii_kawaiiChatBubble",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiChatBubble:1571061084222390352>"
+  },
+  "kawaii_kawaiiFloatHeart": {
+    "id": "1571061171673497711",
+    "name": "kawaii_kawaiiFloatHeart",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiFloatHeart:1571061171673497711>"
+  },
+  "kawaii_kawaiiFloatingHearts": {
+    "id": "1571060799093477426",
+    "name": "kawaii_kawaiiFloatingHearts",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiFloatingHearts:1571060799093477426>"
+  },
+  "kawaii_kawaiiFlowers": {
+    "id": "1571060789337526303",
+    "name": "kawaii_kawaiiFlowers",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiFlowers:1571060789337526303>"
+  },
+  "kawaii_kawaiiGalaxyHeart": {
+    "id": "1571061056716017664",
+    "name": "kawaii_kawaiiGalaxyHeart",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiGalaxyHeart:1571061056716017664>"
+  },
+  "kawaii_kawaiiGalaxyStar": {
+    "id": "1571061047383564288",
+    "name": "kawaii_kawaiiGalaxyStar",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiGalaxyStar:1571061047383564288>"
+  },
+  "kawaii_kawaiiHeartMulti": {
+    "id": "1571060979519725649",
+    "name": "kawaii_kawaiiHeartMulti",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiHeartMulti:1571060979519725649>"
+  },
+  "kawaii_kawaiiHearts": {
+    "id": "1571060164323311626",
+    "name": "kawaii_kawaiiHearts",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiHearts:1571060164323311626>"
+  },
+  "kawaii_kawaiiMoonPink": {
+    "id": "1571060941573980240",
+    "name": "kawaii_kawaiiMoonPink",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiMoonPink:1571060941573980240>"
+  },
+  "kawaii_kawaiiPinkRibbon": {
+    "id": "1571060989338718288",
+    "name": "kawaii_kawaiiPinkRibbon",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiPinkRibbon:1571060989338718288>"
+  },
+  "kawaii_kawaiiRainbowHeart": {
+    "id": "1571061150697783336",
+    "name": "kawaii_kawaiiRainbowHeart",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiRainbowHeart:1571061150697783336>"
+  },
+  "kawaii_kawaiiRainbowMallow": {
+    "id": "1571061028140228609",
+    "name": "kawaii_kawaiiRainbowMallow",
+    "animated": false,
+    "tag": "<:kawaii_kawaiiRainbowMallow:1571061028140228609>"
+  },
+  "kawaii_kawaiiSakura": {
+    "id": "1571060907683881050",
+    "name": "kawaii_kawaiiSakura",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiSakura:1571060907683881050>"
+  },
+  "kawaii_kawaiiShootingStar": {
+    "id": "1571060451243069513",
+    "name": "kawaii_kawaiiShootingStar",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiShootingStar:1571060451243069513>"
+  },
+  "kawaii_kawaiiSpinningStars": {
+    "id": "1571060878600839218",
+    "name": "kawaii_kawaiiSpinningStars",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiSpinningStars:1571060878600839218>"
+  },
+  "kawaii_kawaiiStrawberrymilk": {
+    "id": "1571061037539795035",
+    "name": "kawaii_kawaiiStrawberrymilk",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiStrawberrymilk:1571061037539795035>"
+  },
+  "kawaii_kawaiiTwinkleStar": {
+    "id": "1571060868727177287",
+    "name": "kawaii_kawaiiTwinkleStar",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiTwinkleStar:1571060868727177287>"
+  },
+  "kawaii_kawaiiTwinkleStars": {
+    "id": "1571060616834191472",
+    "name": "kawaii_kawaiiTwinkleStars",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiTwinkleStars:1571060616834191472>"
+  },
+  "kawaii_kawaiiWingedStar": {
+    "id": "1571060154433151039",
+    "name": "kawaii_kawaiiWingedStar",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiWingedStar:1571060154433151039>"
+  },
+  "kawaii_kawaiiWishingStar": {
+    "id": "1571060999103062096",
+    "name": "kawaii_kawaiiWishingStar",
+    "animated": true,
+    "tag": "<a:kawaii_kawaiiWishingStar:1571060999103062096>"
+  },
+  "kawaii_MenheraInterested": {
+    "id": "1571060719821131836",
+    "name": "kawaii_MenheraInterested",
+    "animated": true,
+    "tag": "<a:kawaii_MenheraInterested:1571060719821131836>"
+  },
+  "kawaii_NekoCry": {
+    "id": "1571060967717216309",
+    "name": "kawaii_NekoCry",
+    "animated": true,
+    "tag": "<a:kawaii_NekoCry:1571060967717216309>"
+  },
+  "kawaii_NekoHeyo": {
+    "id": "1571060333269876909",
+    "name": "kawaii_NekoHeyo",
+    "animated": true,
+    "tag": "<a:kawaii_NekoHeyo:1571060333269876909>"
+  },
+  "kawaii_NekoPout": {
+    "id": "1571060898104086639",
+    "name": "kawaii_NekoPout",
+    "animated": true,
+    "tag": "<a:kawaii_NekoPout:1571060898104086639>"
+  },
+  "kawaii_NekoShock": {
+    "id": "1571061161561030666",
+    "name": "kawaii_NekoShock",
+    "animated": true,
+    "tag": "<a:kawaii_NekoShock:1571061161561030666>"
+  },
+  "kawaii_NekoSlam": {
+    "id": "1571061138475712582",
+    "name": "kawaii_NekoSlam",
+    "animated": true,
+    "tag": "<a:kawaii_NekoSlam:1571061138475712582>"
+  },
+  "kawaii_NekoSmile": {
+    "id": "1571060282284052480",
+    "name": "kawaii_NekoSmile",
+    "animated": false,
+    "tag": "<:kawaii_NekoSmile:1571060282284052480>"
+  },
+  "kawaii_NekoSparkles": {
+    "id": "1571060293612863498",
+    "name": "kawaii_NekoSparkles",
+    "animated": false,
+    "tag": "<:kawaii_NekoSparkles:1571060293612863498>"
+  },
+  "kawaii_NekoTea": {
+    "id": "1571061128434290738",
+    "name": "kawaii_NekoTea",
+    "animated": true,
+    "tag": "<a:kawaii_NekoTea:1571061128434290738>"
+  },
+  "kawaii_NekoThumbsUp": {
+    "id": "1571061107953766560",
+    "name": "kawaii_NekoThumbsUp",
+    "animated": true,
+    "tag": "<a:kawaii_NekoThumbsUp:1571061107953766560>"
+  },
+  "kawaii_NekoUhhh": {
+    "id": "1571061117818638366",
+    "name": "kawaii_NekoUhhh",
+    "animated": true,
+    "tag": "<a:kawaii_NekoUhhh:1571061117818638366>"
+  },
+  "kawaii_NekoYawn": {
+    "id": "1571060383387488256",
+    "name": "kawaii_NekoYawn",
+    "animated": true,
+    "tag": "<a:kawaii_NekoYawn:1571060383387488256>"
+  },
+  "kawaii_NoBullying": {
+    "id": "1571060888251670568",
+    "name": "kawaii_NoBullying",
+    "animated": false,
+    "tag": "<:kawaii_NoBullying:1571060888251670568>"
+  },
+  "kawaii_OwOWhatsThis": {
+    "id": "1571060688095420476",
+    "name": "kawaii_OwOWhatsThis",
+    "animated": true,
+    "tag": "<a:kawaii_OwOWhatsThis:1571060688095420476>"
+  },
+  "kawaii_PartyPink": {
+    "id": "1571060462861164544",
+    "name": "kawaii_PartyPink",
+    "animated": true,
+    "tag": "<a:kawaii_PartyPink:1571060462861164544>"
+  },
+  "kawaii_PikachuGirl": {
+    "id": "1571061097874718830",
+    "name": "kawaii_PikachuGirl",
+    "animated": true,
+    "tag": "<a:kawaii_PikachuGirl:1571061097874718830>"
+  },
+  "kawaii_PinkSobby": {
+    "id": "1571061018904367164",
+    "name": "kawaii_PinkSobby",
+    "animated": false,
+    "tag": "<:kawaii_PinkSobby:1571061018904367164>"
+  },
+  "kawaii_PleadCry": {
+    "id": "1571060313011519539",
+    "name": "kawaii_PleadCry",
+    "animated": true,
+    "tag": "<a:kawaii_PleadCry:1571060313011519539>"
+  },
+  "kawaii_Rawrblue": {
+    "id": "1571060441189195826",
+    "name": "kawaii_Rawrblue",
+    "animated": false,
+    "tag": "<:kawaii_Rawrblue:1571060441189195826>"
+  },
+  "kawaii_Rawrpink": {
+    "id": "1571060353612120195",
+    "name": "kawaii_Rawrpink",
+    "animated": false,
+    "tag": "<:kawaii_Rawrpink:1571060353612120195>"
+  },
+  "kawaii_SagaHitByTruck": {
+    "id": "1571060931536883722",
+    "name": "kawaii_SagaHitByTruck",
+    "animated": true,
+    "tag": "<a:kawaii_SagaHitByTruck:1571060931536883722>"
+  },
+  "kawaii_SailorMoonHuh": {
+    "id": "1571060343063576626",
+    "name": "kawaii_SailorMoonHuh",
+    "animated": false,
+    "tag": "<:kawaii_SailorMoonHuh:1571060343063576626>"
+  },
+  "kawaii_SailorMoonSmile": {
+    "id": "1571060363460477028",
+    "name": "kawaii_SailorMoonSmile",
+    "animated": false,
+    "tag": "<:kawaii_SailorMoonSmile:1571060363460477028>"
+  },
+  "kawaii_SenkoLook": {
+    "id": "1571060626531287150",
+    "name": "kawaii_SenkoLook",
+    "animated": true,
+    "tag": "<a:kawaii_SenkoLook:1571060626531287150>"
+  },
+  "kawaii_ShyKitty": {
+    "id": "1571060251883470848",
+    "name": "kawaii_ShyKitty",
+    "animated": false,
+    "tag": "<:kawaii_ShyKitty:1571060251883470848>"
+  },
+  "kawaii_SlamDesk": {
+    "id": "1571060770240991273",
+    "name": "kawaii_SlamDesk",
+    "animated": true,
+    "tag": "<a:kawaii_SlamDesk:1571060770240991273>"
+  },
+  "kawaii_SquirrelClap": {
+    "id": "1571061210906890300",
+    "name": "kawaii_SquirrelClap",
+    "animated": true,
+    "tag": "<a:kawaii_SquirrelClap:1571061210906890300>"
+  },
+  "kawaii_SquirrelCry": {
+    "id": "1571061181488300122",
+    "name": "kawaii_SquirrelCry",
+    "animated": true,
+    "tag": "<a:kawaii_SquirrelCry:1571061181488300122>"
+  },
+  "kawaii_SquirrelRolli": {
+    "id": "1571061191462224042",
+    "name": "kawaii_SquirrelRolli",
+    "animated": true,
+    "tag": "<a:kawaii_SquirrelRolli:1571061191462224042>"
+  },
+  "kawaii_SquirrelWhine": {
+    "id": "1571061200861663315",
+    "name": "kawaii_SquirrelWhine",
+    "animated": true,
+    "tag": "<a:kawaii_SquirrelWhine:1571061200861663315>"
+  },
+  "kawaii_SusSmirk": {
+    "id": "1571060303528198164",
+    "name": "kawaii_SusSmirk",
+    "animated": false,
+    "tag": "<:kawaii_SusSmirk:1571060303528198164>"
+  },
+  "kawaii_SusuPanic": {
+    "id": "1571060174309953566",
+    "name": "kawaii_SusuPanic",
+    "animated": false,
+    "tag": "<:kawaii_SusuPanic:1571060174309953566>"
+  },
+  "kawaii_TogaStab": {
+    "id": "1571060740776001627",
+    "name": "kawaii_TogaStab",
+    "animated": true,
+    "tag": "<a:kawaii_TogaStab:1571060740776001627>"
+  },
+  "kawaii_UwU": {
+    "id": "1571060373312766033",
+    "name": "kawaii_UwU",
+    "animated": false,
+    "tag": "<:kawaii_UwU:1571060373312766033>"
+  },
+  "kawaii_UwUSmirk": {
+    "id": "1571060858325434409",
+    "name": "kawaii_UwUSmirk",
+    "animated": false,
+    "tag": "<:kawaii_UwUSmirk:1571060858325434409>"
+  },
+  "kawaii_wingblue1": {
+    "id": "1571060213715570728",
+    "name": "kawaii_wingblue1",
+    "animated": false,
+    "tag": "<:kawaii_wingblue1:1571060213715570728>"
+  },
+  "kawaii_wingblue2": {
+    "id": "1571060223127326761",
+    "name": "kawaii_wingblue2",
+    "animated": false,
+    "tag": "<:kawaii_wingblue2:1571060223127326761>"
+  },
+  "kawaii_wingpink1": {
+    "id": "1571060242354278461",
+    "name": "kawaii_wingpink1",
+    "animated": false,
+    "tag": "<:kawaii_wingpink1:1571060242354278461>"
+  },
+  "kawaii_wingpink2": {
+    "id": "1571060232732413982",
+    "name": "kawaii_wingpink2",
+    "animated": false,
+    "tag": "<:kawaii_wingpink2:1571060232732413982>"
+  },
+  "kawaii_wowie": {
+    "id": "1571060678289268796",
+    "name": "kawaii_wowie",
+    "animated": true,
+    "tag": "<a:kawaii_wowie:1571060678289268796>"
+  },
+  "kawaii_WTFDisgust": {
+    "id": "1571060708697841714",
+    "name": "kawaii_WTFDisgust",
+    "animated": false,
+    "tag": "<:kawaii_WTFDisgust:1571060708697841714>"
+  },
+  "kawaii_YayHype": {
+    "id": "1571060638711554069",
+    "name": "kawaii_YayHype",
+    "animated": true,
+    "tag": "<a:kawaii_YayHype:1571060638711554069>"
+  },
+  "kawaii_yChubbyLinaNom": {
+    "id": "1571060094282498129",
+    "name": "kawaii_yChubbyLinaNom",
+    "animated": false,
+    "tag": "<:kawaii_yChubbyLinaNom:1571060094282498129>"
+  },
+  "kawaii_yyBunnySlap": {
+    "id": "1571060113366716437",
+    "name": "kawaii_yyBunnySlap",
+    "animated": false,
+    "tag": "<:kawaii_yyBunnySlap:1571060113366716437>"
+  },
+  "kawaii_zConfusedStar": {
+    "id": "1571060133457428520",
+    "name": "kawaii_zConfusedStar",
+    "animated": false,
+    "tag": "<:kawaii_zConfusedStar:1571060133457428520>"
+  },
+  "kawaii_zLazyLina": {
+    "id": "1571060123642626058",
+    "name": "kawaii_zLazyLina",
+    "animated": false,
+    "tag": "<:kawaii_zLazyLina:1571060123642626058>"
+  },
+  "kawaii_zUhOkay": {
+    "id": "1571060144538783755",
+    "name": "kawaii_zUhOkay",
+    "animated": false,
+    "tag": "<:kawaii_zUhOkay:1571060144538783755>"
+  },
+  "kim_giap_tue_lan": {
+    "id": "1573660095202459878",
+    "name": "kim_giap_tue_lan",
+    "animated": true,
+    "tag": "<a:kim_giap_tue_lan:1573660095202459878>"
+  },
+  "kim_quang_toan_nghe": {
+    "id": "1573799971034103938",
+    "name": "kim_quang_toan_nghe",
+    "animated": false,
+    "tag": "<:kim_quang_toan_nghe:1573799971034103938>"
+  },
+  "kim_si_dieu_hoang": {
+    "id": "1573411271456325735",
+    "name": "kim_si_dieu_hoang",
+    "animated": true,
+    "tag": "<a:kim_si_dieu_hoang:1573411271456325735>"
+  },
+  "kim_van_linh_bao": {
+    "id": "1573799665374072936",
+    "name": "kim_van_linh_bao",
+    "animated": false,
+    "tag": "<:kim_van_linh_bao:1573799665374072936>"
+  },
+  "kitsune_crown": {
+    "id": "1571059173607743530",
+    "name": "kitsune_crown",
+    "animated": false,
+    "tag": "<:kitsune_crown:1571059173607743530>"
+  },
+  "kitsune_denied": {
+    "id": "1571059206918905937",
+    "name": "kitsune_denied",
+    "animated": false,
+    "tag": "<:kitsune_denied:1571059206918905937>"
+  },
+  "kitsune_loop": {
+    "id": "1571059148936847391",
+    "name": "kitsune_loop",
+    "animated": false,
+    "tag": "<:kitsune_loop:1571059148936847391>"
+  },
+  "kitsune_note": {
+    "id": "1571059165491761192",
+    "name": "kitsune_note",
+    "animated": false,
+    "tag": "<:kitsune_note:1571059165491761192>"
+  },
+  "kitsune_pause": {
+    "id": "1571059115189477436",
+    "name": "kitsune_pause",
+    "animated": false,
+    "tag": "<:kitsune_pause:1571059115189477436>"
+  },
+  "kitsune_play": {
+    "id": "1571058648916959344",
+    "name": "kitsune_play",
+    "animated": false,
+    "tag": "<:kitsune_play:1571058648916959344>"
+  },
+  "kitsune_queue": {
+    "id": "1571059190418509846",
+    "name": "kitsune_queue",
+    "animated": false,
+    "tag": "<:kitsune_queue:1571059190418509846>"
+  },
+  "kitsune_replay": {
+    "id": "1571059131589206086",
+    "name": "kitsune_replay",
+    "animated": false,
+    "tag": "<:kitsune_replay:1571059131589206086>"
+  },
+  "kitsune_shuffle": {
+    "id": "1571059157392695367",
+    "name": "kitsune_shuffle",
+    "animated": false,
+    "tag": "<:kitsune_shuffle:1571059157392695367>"
+  },
+  "kitsune_skip": {
+    "id": "1571059123305451580",
+    "name": "kitsune_skip",
+    "animated": false,
+    "tag": "<:kitsune_skip:1571059123305451580>"
+  },
+  "kitsune_stop": {
+    "id": "1571059140237721600",
+    "name": "kitsune_stop",
+    "animated": false,
+    "tag": "<:kitsune_stop:1571059140237721600>"
+  },
+  "kitsune_volume": {
+    "id": "1571059181920722974",
+    "name": "kitsune_volume",
+    "animated": false,
+    "tag": "<:kitsune_volume:1571059181920722974>"
+  },
+  "kitsune_warn": {
+    "id": "1571059198572109915",
+    "name": "kitsune_warn",
+    "animated": false,
+    "tag": "<:kitsune_warn:1571059198572109915>"
+  },
+  "linh_ho_tieu_bach": {
+    "id": "1573799630871855184",
+    "name": "linh_ho_tieu_bach",
+    "animated": false,
+    "tag": "<:linh_ho_tieu_bach:1573799630871855184>"
+  },
+  "linh_mieu_hoa_tien": {
+    "id": "1573411293610778694",
+    "name": "linh_mieu_hoa_tien",
+    "animated": true,
+    "tag": "<a:linh_mieu_hoa_tien:1573411293610778694>"
+  },
+  "loi_dinh_kim_ho": {
+    "id": "1573411307808358414",
+    "name": "loi_dinh_kim_ho",
+    "animated": true,
+    "tag": "<a:loi_dinh_kim_ho:1573411307808358414>"
+  },
+  "loi_kiet_thien_long": {
+    "id": "1573799995466055851",
+    "name": "loi_kiet_thien_long",
+    "animated": false,
+    "tag": "<:loi_kiet_thien_long:1573799995466055851>"
+  },
+  "loi_than_cuu_ung": {
+    "id": "1573799813688856787",
+    "name": "loi_than_cuu_ung",
+    "animated": false,
+    "tag": "<:loi_than_cuu_ung:1573799813688856787>"
+  },
+  "man_da_la_linh_thu": {
+    "id": "1573411334358573139",
+    "name": "man_da_la_linh_thu",
+    "animated": true,
+    "tag": "<a:man_da_la_linh_thu:1573411334358573139>"
+  },
+  "minh_gioi_u_ho": {
+    "id": "1573660110268399740",
+    "name": "minh_gioi_u_ho",
+    "animated": true,
+    "tag": "<a:minh_gioi_u_ho:1573660110268399740>"
+  },
+  "moc_hoang_than_tuoc": {
+    "id": "1573799916567003196",
+    "name": "moc_hoang_than_tuoc",
+    "animated": false,
+    "tag": "<:moc_hoang_than_tuoc:1573799916567003196>"
+  },
+  "music_edm": {
+    "id": "1571058910503374989",
+    "name": "music_edm",
+    "animated": true,
+    "tag": "<a:music_edm:1571058910503374989>"
+  },
+  "nguyet_anh_thao_tho": {
+    "id": "1573660128077414410",
+    "name": "nguyet_anh_thao_tho",
+    "animated": true,
+    "tag": "<a:nguyet_anh_thao_tho:1573660128077414410>"
+  },
+  "nguyet_than_cuu_vy_bach": {
+    "id": "1573660143676293170",
+    "name": "nguyet_than_cuu_vy_bach",
+    "animated": true,
+    "tag": "<a:nguyet_than_cuu_vy_bach:1573660143676293170>"
+  },
+  "pet_star_stone": {
+    "id": "1573411662789091480",
+    "name": "pet_star_stone",
+    "animated": true,
+    "tag": "<a:pet_star_stone:1573411662789091480>"
+  },
+  "phong_vu_tieu_tuoc": {
+    "id": "1573660157571895467",
+    "name": "phong_vu_tieu_tuoc",
+    "animated": true,
+    "tag": "<a:phong_vu_tieu_tuoc:1573660157571895467>"
+  },
+  "quang_linh_cuu_ho": {
+    "id": "1573799939123843224",
+    "name": "quang_linh_cuu_ho",
+    "animated": false,
+    "tag": "<:quang_linh_cuu_ho:1573799939123843224>"
+  },
+  "quang_minh_thanh_thu": {
+    "id": "1573411360124174467",
+    "name": "quang_minh_thanh_thu",
+    "animated": true,
+    "tag": "<a:quang_minh_thanh_thu:1573411360124174467>"
+  },
+  "realm_common_1": {
+    "id": "1573801947746533499",
+    "name": "realm_common_1",
+    "animated": false,
+    "tag": "<:realm_common_1:1573801947746533499>"
+  },
+  "realm_common_2": {
+    "id": "1573801959578796065",
+    "name": "realm_common_2",
+    "animated": false,
+    "tag": "<:realm_common_2:1573801959578796065>"
+  },
+  "realm_common_3": {
+    "id": "1573801973512282182",
+    "name": "realm_common_3",
+    "animated": false,
+    "tag": "<:realm_common_3:1573801973512282182>"
+  },
+  "realm_epic_1": {
+    "id": "1573802021314887910",
+    "name": "realm_epic_1",
+    "animated": false,
+    "tag": "<:realm_epic_1:1573802021314887910>"
+  },
+  "realm_epic_2": {
+    "id": "1573802035961135316",
+    "name": "realm_epic_2",
+    "animated": false,
+    "tag": "<:realm_epic_2:1573802035961135316>"
+  },
+  "realm_epic_3": {
+    "id": "1573802045339603187",
+    "name": "realm_epic_3",
+    "animated": false,
+    "tag": "<:realm_epic_3:1573802045339603187>"
+  },
+  "realm_fuyumi_van_co_tuyet_diet": {
+    "id": "1573802117284634634",
+    "name": "realm_fuyumi_van_co_tuyet_diet",
+    "animated": false,
+    "tag": "<:realm_fuyumi_van_co_tuyet_diet:1573802117284634634>"
+  },
+  "realm_mythic_1": {
+    "id": "1573802054785171559",
+    "name": "realm_mythic_1",
+    "animated": false,
+    "tag": "<:realm_mythic_1:1573802054785171559>"
+  },
+  "realm_mythic_2": {
+    "id": "1573802065287712869",
+    "name": "realm_mythic_2",
+    "animated": false,
+    "tag": "<:realm_mythic_2:1573802065287712869>"
+  },
+  "realm_mythic_3": {
+    "id": "1573802074221707335",
+    "name": "realm_mythic_3",
+    "animated": false,
+    "tag": "<:realm_mythic_3:1573802074221707335>"
+  },
+  "realm_mythic_4": {
+    "id": "1573802083914612746",
+    "name": "realm_mythic_4",
+    "animated": false,
+    "tag": "<:realm_mythic_4:1573802083914612746>"
+  },
+  "realm_rare_1": {
+    "id": "1573801984975179816",
+    "name": "realm_rare_1",
+    "animated": false,
+    "tag": "<:realm_rare_1:1573801984975179816>"
+  },
+  "realm_rare_2": {
+    "id": "1573801997671464990",
+    "name": "realm_rare_2",
+    "animated": false,
+    "tag": "<:realm_rare_2:1573801997671464990>"
+  },
+  "realm_rare_3": {
+    "id": "1573802009948061928",
+    "name": "realm_rare_3",
+    "animated": false,
+    "tag": "<:realm_rare_3:1573802009948061928>"
+  },
+  "realm_unique_1": {
+    "id": "1573802094715080804",
+    "name": "realm_unique_1",
+    "animated": false,
+    "tag": "<:realm_unique_1:1573802094715080804>"
+  },
+  "realm_unique_2": {
+    "id": "1573802108673724569",
+    "name": "realm_unique_2",
+    "animated": false,
+    "tag": "<:realm_unique_2:1573802108673724569>"
+  },
+  "ring_common": {
+    "id": "1573412311836655906",
+    "name": "ring_common",
+    "animated": false,
+    "tag": "<:ring_common:1573412311836655906>"
+  },
+  "ring_epic": {
+    "id": "1573411564957077805",
+    "name": "ring_epic",
+    "animated": true,
+    "tag": "<a:ring_epic:1573411564957077805>"
+  },
+  "ring_mythic": {
+    "id": "1573411545562751156",
+    "name": "ring_mythic",
+    "animated": true,
+    "tag": "<a:ring_mythic:1573411545562751156>"
+  },
+  "ring_rare": {
+    "id": "1573412297223835829",
+    "name": "ring_rare",
+    "animated": false,
+    "tag": "<:ring_rare:1573412297223835829>"
+  },
+  "seed_linh_thao": {
+    "id": "1573802327947743363",
+    "name": "seed_linh_thao",
+    "animated": false,
+    "tag": "<:seed_linh_thao:1573802327947743363>"
+  },
+  "seed_than_moc": {
+    "id": "1573802351100174406",
+    "name": "seed_than_moc",
+    "animated": false,
+    "tag": "<:seed_than_moc:1573802351100174406>"
+  },
+  "seed_tien_thao": {
+    "id": "1573802341277376742",
+    "name": "seed_tien_thao",
+    "animated": false,
+    "tag": "<:seed_tien_thao:1573802341277376742>"
+  },
+  "sense_common_1": {
+    "id": "1573801781123752087",
+    "name": "sense_common_1",
+    "animated": false,
+    "tag": "<:sense_common_1:1573801781123752087>"
+  },
+  "sense_common_2": {
+    "id": "1573801789344456766",
+    "name": "sense_common_2",
+    "animated": false,
+    "tag": "<:sense_common_2:1573801789344456766>"
+  },
+  "sense_common_3": {
+    "id": "1573801799226232964",
+    "name": "sense_common_3",
+    "animated": false,
+    "tag": "<:sense_common_3:1573801799226232964>"
+  },
+  "sense_epic_1": {
+    "id": "1573801839424573610",
+    "name": "sense_epic_1",
+    "animated": false,
+    "tag": "<:sense_epic_1:1573801839424573610>"
+  },
+  "sense_epic_2": {
+    "id": "1573801850249937087",
+    "name": "sense_epic_2",
+    "animated": false,
+    "tag": "<:sense_epic_2:1573801850249937087>"
+  },
+  "sense_epic_3": {
+    "id": "1573801860794552343",
+    "name": "sense_epic_3",
+    "animated": false,
+    "tag": "<:sense_epic_3:1573801860794552343>"
+  },
+  "sense_fuyumi_thai_thuong_hong_ho": {
+    "id": "1573801937361576098",
+    "name": "sense_fuyumi_thai_thuong_hong_ho",
+    "animated": false,
+    "tag": "<:sense_fuyumi_thai_thuong_hong_ho:1573801937361576098>"
+  },
+  "sense_mythic_1": {
+    "id": "1573801873742241882",
+    "name": "sense_mythic_1",
+    "animated": false,
+    "tag": "<:sense_mythic_1:1573801873742241882>"
+  },
+  "sense_mythic_2": {
+    "id": "1573801883238273166",
+    "name": "sense_mythic_2",
+    "animated": false,
+    "tag": "<:sense_mythic_2:1573801883238273166>"
+  },
+  "sense_mythic_3": {
+    "id": "1573801892541112361",
+    "name": "sense_mythic_3",
+    "animated": false,
+    "tag": "<:sense_mythic_3:1573801892541112361>"
+  },
+  "sense_mythic_4": {
+    "id": "1573801900116283434",
+    "name": "sense_mythic_4",
+    "animated": false,
+    "tag": "<:sense_mythic_4:1573801900116283434>"
+  },
+  "sense_rare_1": {
+    "id": "1573801808911142974",
+    "name": "sense_rare_1",
+    "animated": false,
+    "tag": "<:sense_rare_1:1573801808911142974>"
+  },
+  "sense_rare_2": {
+    "id": "1573801817345888276",
+    "name": "sense_rare_2",
+    "animated": false,
+    "tag": "<:sense_rare_2:1573801817345888276>"
+  },
+  "sense_rare_3": {
+    "id": "1573801827382595604",
+    "name": "sense_rare_3",
+    "animated": false,
+    "tag": "<:sense_rare_3:1573801827382595604>"
+  },
+  "sense_unique_1": {
+    "id": "1573801909649670326",
+    "name": "sense_unique_1",
+    "animated": false,
+    "tag": "<:sense_unique_1:1573801909649670326>"
+  },
+  "sense_unique_2": {
+    "id": "1573801920337023137",
+    "name": "sense_unique_2",
+    "animated": false,
+    "tag": "<:sense_unique_2:1573801920337023137>"
+  },
+  "slot_fox": {
+    "id": "1573802167998095414",
+    "name": "slot_fox",
+    "animated": false,
+    "tag": "<:slot_fox:1573802167998095414>"
+  },
+  "slot_jade": {
+    "id": "1573802177745518773",
+    "name": "slot_jade",
+    "animated": false,
+    "tag": "<:slot_jade:1573802177745518773>"
+  },
+  "slot_lotus": {
+    "id": "1573802216970649731",
+    "name": "slot_lotus",
+    "animated": false,
+    "tag": "<:slot_lotus:1573802216970649731>"
+  },
+  "slot_pill": {
+    "id": "1573802204878610513",
+    "name": "slot_pill",
+    "animated": false,
+    "tag": "<:slot_pill:1573802204878610513>"
+  },
+  "slot_scroll": {
+    "id": "1573802230606200952",
+    "name": "slot_scroll",
+    "animated": false,
+    "tag": "<:slot_scroll:1573802230606200952>"
+  },
+  "slot_spin": {
+    "id": "1573802158376099940",
+    "name": "slot_spin",
+    "animated": true,
+    "tag": "<a:slot_spin:1573802158376099940>"
+  },
+  "slot_sword": {
+    "id": "1573802191507038349",
+    "name": "slot_sword",
+    "animated": false,
+    "tag": "<:slot_sword:1573802191507038349>"
+  },
+  "soul_common_1": {
+    "id": "1573412336411082934",
+    "name": "soul_common_1",
+    "animated": false,
+    "tag": "<:soul_common_1:1573412336411082934>"
+  },
+  "soul_common_2": {
+    "id": "1573412350093033702",
+    "name": "soul_common_2",
+    "animated": false,
+    "tag": "<:soul_common_2:1573412350093033702>"
+  },
+  "soul_common_3": {
+    "id": "1573412363934109748",
+    "name": "soul_common_3",
+    "animated": false,
+    "tag": "<:soul_common_3:1573412363934109748>"
+  },
+  "soul_common_4": {
+    "id": "1573412377062277322",
+    "name": "soul_common_4",
+    "animated": false,
+    "tag": "<:soul_common_4:1573412377062277322>"
+  },
+  "soul_common_5": {
+    "id": "1573659492032450740",
+    "name": "soul_common_5",
+    "animated": true,
+    "tag": "<a:soul_common_5:1573659492032450740>"
+  },
+  "soul_common_6": {
+    "id": "1573801014870413463",
+    "name": "soul_common_6",
+    "animated": false,
+    "tag": "<:soul_common_6:1573801014870413463>"
+  },
+  "soul_common_7": {
+    "id": "1573801023804285028",
+    "name": "soul_common_7",
+    "animated": false,
+    "tag": "<:soul_common_7:1573801023804285028>"
+  },
+  "soul_epic_1": {
+    "id": "1573412387661287545",
+    "name": "soul_epic_1",
+    "animated": false,
+    "tag": "<:soul_epic_1:1573412387661287545>"
+  },
+  "soul_epic_2": {
+    "id": "1573412404656865461",
+    "name": "soul_epic_2",
+    "animated": false,
+    "tag": "<:soul_epic_2:1573412404656865461>"
+  },
+  "soul_epic_3": {
+    "id": "1573412418506334239",
+    "name": "soul_epic_3",
+    "animated": false,
+    "tag": "<:soul_epic_3:1573412418506334239>"
+  },
+  "soul_epic_4": {
+    "id": "1573412431898874056",
+    "name": "soul_epic_4",
+    "animated": false,
+    "tag": "<:soul_epic_4:1573412431898874056>"
+  },
+  "soul_epic_5": {
+    "id": "1573659516908863588",
+    "name": "soul_epic_5",
+    "animated": true,
+    "tag": "<a:soul_epic_5:1573659516908863588>"
+  },
+  "soul_epic_6": {
+    "id": "1573659564891709540",
+    "name": "soul_epic_6",
+    "animated": true,
+    "tag": "<a:soul_epic_6:1573659564891709540>"
+  },
+  "soul_epic_7": {
+    "id": "1573801066506752030",
+    "name": "soul_epic_7",
+    "animated": false,
+    "tag": "<:soul_epic_7:1573801066506752030>"
+  },
+  "soul_epic_8": {
+    "id": "1573801079160709232",
+    "name": "soul_epic_8",
+    "animated": false,
+    "tag": "<:soul_epic_8:1573801079160709232>"
+  },
+  "soul_epic_9": {
+    "id": "1573801091995275384",
+    "name": "soul_epic_9",
+    "animated": false,
+    "tag": "<:soul_epic_9:1573801091995275384>"
+  },
+  "soul_mythic_1": {
+    "id": "1573411602127134720",
+    "name": "soul_mythic_1",
+    "animated": true,
+    "tag": "<a:soul_mythic_1:1573411602127134720>"
+  },
+  "soul_mythic_10": {
+    "id": "1573801145795616867",
+    "name": "soul_mythic_10",
+    "animated": false,
+    "tag": "<:soul_mythic_10:1573801145795616867>"
+  },
+  "soul_mythic_11": {
+    "id": "1573801157237932112",
+    "name": "soul_mythic_11",
+    "animated": false,
+    "tag": "<:soul_mythic_11:1573801157237932112>"
+  },
+  "soul_mythic_12": {
+    "id": "1573801171343245312",
+    "name": "soul_mythic_12",
+    "animated": false,
+    "tag": "<:soul_mythic_12:1573801171343245312>"
+  },
+  "soul_mythic_13": {
+    "id": "1573801182982316164",
+    "name": "soul_mythic_13",
+    "animated": false,
+    "tag": "<:soul_mythic_13:1573801182982316164>"
+  },
+  "soul_mythic_14": {
+    "id": "1573801193870725294",
+    "name": "soul_mythic_14",
+    "animated": false,
+    "tag": "<:soul_mythic_14:1573801193870725294>"
+  },
+  "soul_mythic_15": {
+    "id": "1573801203416965242",
+    "name": "soul_mythic_15",
+    "animated": false,
+    "tag": "<:soul_mythic_15:1573801203416965242>"
+  },
+  "soul_mythic_16": {
+    "id": "1573801214678671420",
+    "name": "soul_mythic_16",
+    "animated": false,
+    "tag": "<:soul_mythic_16:1573801214678671420>"
+  },
+  "soul_mythic_17": {
+    "id": "1573801227962290347",
+    "name": "soul_mythic_17",
+    "animated": false,
+    "tag": "<:soul_mythic_17:1573801227962290347>"
+  },
+  "soul_mythic_18": {
+    "id": "1573801239660077129",
+    "name": "soul_mythic_18",
+    "animated": false,
+    "tag": "<:soul_mythic_18:1573801239660077129>"
+  },
+  "soul_mythic_19": {
+    "id": "1573801260912476331",
+    "name": "soul_mythic_19",
+    "animated": false,
+    "tag": "<:soul_mythic_19:1573801260912476331>"
+  },
+  "soul_mythic_2": {
+    "id": "1573411621202698390",
+    "name": "soul_mythic_2",
+    "animated": true,
+    "tag": "<a:soul_mythic_2:1573411621202698390>"
+  },
+  "soul_mythic_20": {
+    "id": "1573801271020888164",
+    "name": "soul_mythic_20",
+    "animated": false,
+    "tag": "<:soul_mythic_20:1573801271020888164>"
+  },
+  "soul_mythic_21": {
+    "id": "1573801285894012948",
+    "name": "soul_mythic_21",
+    "animated": false,
+    "tag": "<:soul_mythic_21:1573801285894012948>"
+  },
+  "soul_mythic_3": {
+    "id": "1573411636868284527",
+    "name": "soul_mythic_3",
+    "animated": true,
+    "tag": "<a:soul_mythic_3:1573411636868284527>"
+  },
+  "soul_mythic_4": {
+    "id": "1573659579735081043",
+    "name": "soul_mythic_4",
+    "animated": true,
+    "tag": "<a:soul_mythic_4:1573659579735081043>"
+  },
+  "soul_mythic_5": {
+    "id": "1573659654842622072",
+    "name": "soul_mythic_5",
+    "animated": true,
+    "tag": "<a:soul_mythic_5:1573659654842622072>"
+  },
+  "soul_mythic_6": {
+    "id": "1573801100451254313",
+    "name": "soul_mythic_6",
+    "animated": false,
+    "tag": "<:soul_mythic_6:1573801100451254313>"
+  },
+  "soul_mythic_7": {
+    "id": "1573801109430997085",
+    "name": "soul_mythic_7",
+    "animated": false,
+    "tag": "<:soul_mythic_7:1573801109430997085>"
+  },
+  "soul_mythic_8": {
+    "id": "1573801126363398214",
+    "name": "soul_mythic_8",
+    "animated": false,
+    "tag": "<:soul_mythic_8:1573801126363398214>"
+  },
+  "soul_mythic_9": {
+    "id": "1573801136438378726",
+    "name": "soul_mythic_9",
+    "animated": false,
+    "tag": "<:soul_mythic_9:1573801136438378726>"
+  },
+  "soul_rare_1": {
+    "id": "1573412445127712860",
+    "name": "soul_rare_1",
+    "animated": false,
+    "tag": "<:soul_rare_1:1573412445127712860>"
+  },
+  "soul_rare_2": {
+    "id": "1573412460164022352",
+    "name": "soul_rare_2",
+    "animated": false,
+    "tag": "<:soul_rare_2:1573412460164022352>"
+  },
+  "soul_rare_3": {
+    "id": "1573412470788194345",
+    "name": "soul_rare_3",
+    "animated": false,
+    "tag": "<:soul_rare_3:1573412470788194345>"
+  },
+  "soul_rare_4": {
+    "id": "1573412482129600653",
+    "name": "soul_rare_4",
+    "animated": false,
+    "tag": "<:soul_rare_4:1573412482129600653>"
+  },
+  "soul_rare_5": {
+    "id": "1573659671565181029",
+    "name": "soul_rare_5",
+    "animated": true,
+    "tag": "<a:soul_rare_5:1573659671565181029>"
+  },
+  "soul_rare_6": {
+    "id": "1573801034843684874",
+    "name": "soul_rare_6",
+    "animated": false,
+    "tag": "<:soul_rare_6:1573801034843684874>"
+  },
+  "soul_rare_7": {
+    "id": "1573801051809652747",
+    "name": "soul_rare_7",
+    "animated": false,
+    "tag": "<:soul_rare_7:1573801051809652747>"
+  },
+  "soul_unique_1": {
+    "id": "1573801297851981844",
+    "name": "soul_unique_1",
+    "animated": false,
+    "tag": "<:soul_unique_1:1573801297851981844>"
+  },
+  "soul_unique_10": {
+    "id": "1573801390122336347",
+    "name": "soul_unique_10",
+    "animated": false,
+    "tag": "<:soul_unique_10:1573801390122336347>"
+  },
+  "soul_unique_2": {
+    "id": "1573801306483859596",
+    "name": "soul_unique_2",
+    "animated": false,
+    "tag": "<:soul_unique_2:1573801306483859596>"
+  },
+  "soul_unique_3": {
+    "id": "1573801317422334104",
+    "name": "soul_unique_3",
+    "animated": false,
+    "tag": "<:soul_unique_3:1573801317422334104>"
+  },
+  "soul_unique_4": {
+    "id": "1573801326486356079",
+    "name": "soul_unique_4",
+    "animated": false,
+    "tag": "<:soul_unique_4:1573801326486356079>"
+  },
+  "soul_unique_5": {
+    "id": "1573801339341897819",
+    "name": "soul_unique_5",
+    "animated": false,
+    "tag": "<:soul_unique_5:1573801339341897819>"
+  },
+  "soul_unique_6": {
+    "id": "1573801351312580700",
+    "name": "soul_unique_6",
+    "animated": false,
+    "tag": "<:soul_unique_6:1573801351312580700>"
+  },
+  "soul_unique_7": {
+    "id": "1573801363177996380",
+    "name": "soul_unique_7",
+    "animated": false,
+    "tag": "<:soul_unique_7:1573801363177996380>"
+  },
+  "soul_unique_8": {
+    "id": "1573801371344437399",
+    "name": "soul_unique_8",
+    "animated": false,
+    "tag": "<:soul_unique_8:1573801371344437399>"
+  },
+  "soul_unique_9": {
+    "id": "1573801379703562320",
+    "name": "soul_unique_9",
+    "animated": false,
+    "tag": "<:soul_unique_9:1573801379703562320>"
+  },
   "su_arena": {
     "id": "1573410736758067240",
     "name": "su_arena",
     "animated": true,
     "tag": "<a:su_arena:1573410736758067240>"
+  },
+  "su_clan_castle": {
+    "id": "1573411861422932111",
+    "name": "su_clan_castle",
+    "animated": false,
+    "tag": "<:su_clan_castle:1573411861422932111>"
   },
   "su_crit_boom": {
     "id": "1573410831721308280",
@@ -35,11 +2783,23 @@
     "animated": true,
     "tag": "<a:su_el_hondon:1573410903599218878>"
   },
+  "su_el_kim": {
+    "id": "1573411877239652432",
+    "name": "su_el_kim",
+    "animated": false,
+    "tag": "<:su_el_kim:1573411877239652432>"
+  },
   "su_el_loi": {
     "id": "1573410944585957456",
     "name": "su_el_loi",
     "animated": true,
     "tag": "<a:su_el_loi:1573410944585957456>"
+  },
+  "su_el_moc": {
+    "id": "1573411890565087264",
+    "name": "su_el_moc",
+    "animated": false,
+    "tag": "<:su_el_moc:1573411890565087264>"
   },
   "su_el_quang": {
     "id": "1573410971249025195",
@@ -47,35 +2807,59 @@
     "animated": true,
     "tag": "<a:su_el_quang:1573410971249025195>"
   },
+  "su_el_tho": {
+    "id": "1573411902795817092",
+    "name": "su_el_tho",
+    "animated": false,
+    "tag": "<:su_el_tho:1573411902795817092>"
+  },
+  "su_el_thuy": {
+    "id": "1573411912803426435",
+    "name": "su_el_thuy",
+    "animated": false,
+    "tag": "<:su_el_thuy:1573411912803426435>"
+  },
   "su_element_wheel": {
     "id": "1573410984968716292",
     "name": "su_element_wheel",
     "animated": true,
     "tag": "<a:su_element_wheel:1573410984968716292>"
   },
-  "su_fox_mascot": {
-    "id": "1573411004727951400",
-    "name": "su_fox_mascot",
-    "animated": true,
-    "tag": "<a:su_fox_mascot:1573411004727951400>"
+  "su_gacha_dice": {
+    "id": "1573411940477444217",
+    "name": "su_gacha_dice",
+    "animated": false,
+    "tag": "<:su_gacha_dice:1573411940477444217>"
   },
-  "su_gem_mythic_1": {
-    "id": "1573411026840322118",
-    "name": "su_gem_mythic_1",
+  "su_grade_a": {
+    "id": "1573719407597850708",
+    "name": "su_grade_a",
     "animated": true,
-    "tag": "<a:su_gem_mythic_1:1573411026840322118>"
+    "tag": "<a:su_grade_a:1573719407597850708>"
   },
-  "su_gem_mythic_2": {
-    "id": "1573411039746195507",
-    "name": "su_gem_mythic_2",
+  "su_grade_b": {
+    "id": "1573719391118565497",
+    "name": "su_grade_b",
     "animated": true,
-    "tag": "<a:su_gem_mythic_2:1573411039746195507>"
+    "tag": "<a:su_grade_b:1573719391118565497>"
   },
-  "su_gem_mythic_3": {
-    "id": "1573411056024555540",
-    "name": "su_gem_mythic_3",
+  "su_grade_c": {
+    "id": "1573719376035586088",
+    "name": "su_grade_c",
     "animated": true,
-    "tag": "<a:su_gem_mythic_3:1573411056024555540>"
+    "tag": "<a:su_grade_c:1573719376035586088>"
+  },
+  "su_grade_d": {
+    "id": "1573719341185368106",
+    "name": "su_grade_d",
+    "animated": true,
+    "tag": "<a:su_grade_d:1573719341185368106>"
+  },
+  "su_grade_s": {
+    "id": "1573719425172119672",
+    "name": "su_grade_s",
+    "animated": true,
+    "tag": "<a:su_grade_s:1573719425172119672>"
   },
   "su_level_up": {
     "id": "1573411071472046172",
@@ -137,65 +2921,29 @@
     "animated": true,
     "tag": "<a:su_lv80:1573411213549764788>"
   },
-  "su_pet_chu_tuoc_au_dieu": {
-    "id": "1573411228078968916",
-    "name": "su_pet_chu_tuoc_au_dieu",
-    "animated": true,
-    "tag": "<a:su_pet_chu_tuoc_au_dieu:1573411228078968916>"
+  "su_medal_role": {
+    "id": "1573412120282931240",
+    "name": "su_medal_role",
+    "animated": false,
+    "tag": "<:su_medal_role:1573412120282931240>"
   },
-  "su_pet_han_bang_ky_lan": {
-    "id": "1573411242524020757",
-    "name": "su_pet_han_bang_ky_lan",
-    "animated": true,
-    "tag": "<a:su_pet_han_bang_ky_lan:1573411242524020757>"
+  "su_mountain": {
+    "id": "1573412132765307090",
+    "name": "su_mountain",
+    "animated": false,
+    "tag": "<:su_mountain:1573412132765307090>"
   },
-  "su_pet_hoa_diem_ho": {
-    "id": "1573411256021557268",
-    "name": "su_pet_hoa_diem_ho",
-    "animated": true,
-    "tag": "<a:su_pet_hoa_diem_ho:1573411256021557268>"
+  "su_pet_paw": {
+    "id": "1573412201031803022",
+    "name": "su_pet_paw",
+    "animated": false,
+    "tag": "<:su_pet_paw:1573412201031803022>"
   },
-  "su_pet_kim_si_dieu_hoang": {
-    "id": "1573411271456325735",
-    "name": "su_pet_kim_si_dieu_hoang",
-    "animated": true,
-    "tag": "<a:su_pet_kim_si_dieu_hoang:1573411271456325735>"
-  },
-  "su_pet_linh_mieu_hoa_tien": {
-    "id": "1573411293610778694",
-    "name": "su_pet_linh_mieu_hoa_tien",
-    "animated": true,
-    "tag": "<a:su_pet_linh_mieu_hoa_tien:1573411293610778694>"
-  },
-  "su_pet_loi_dinh_kim_ho": {
-    "id": "1573411307808358414",
-    "name": "su_pet_loi_dinh_kim_ho",
-    "animated": true,
-    "tag": "<a:su_pet_loi_dinh_kim_ho:1573411307808358414>"
-  },
-  "su_pet_man_da_la_linh_thu": {
-    "id": "1573411334358573139",
-    "name": "su_pet_man_da_la_linh_thu",
-    "animated": true,
-    "tag": "<a:su_pet_man_da_la_linh_thu:1573411334358573139>"
-  },
-  "su_pet_quang_minh_thanh_thu": {
-    "id": "1573411360124174467",
-    "name": "su_pet_quang_minh_thanh_thu",
-    "animated": true,
-    "tag": "<a:su_pet_quang_minh_thanh_thu:1573411360124174467>"
-  },
-  "su_pet_tinh_khong_da_thao": {
-    "id": "1573411376586817860",
-    "name": "su_pet_tinh_khong_da_thao",
-    "animated": true,
-    "tag": "<a:su_pet_tinh_khong_da_thao:1573411376586817860>"
-  },
-  "su_pet_u_minh_lang_vuong": {
-    "id": "1573411407121223792",
-    "name": "su_pet_u_minh_lang_vuong",
-    "animated": true,
-    "tag": "<a:su_pet_u_minh_lang_vuong:1573411407121223792>"
+  "su_pin_sigil": {
+    "id": "1573410516297064580",
+    "name": "su_pin_sigil",
+    "animated": false,
+    "tag": "<:su_pin_sigil:1573410516297064580>"
   },
   "su_realm_1_luyenkhi": {
     "id": "1573411421264281672",
@@ -245,17 +2993,29 @@
     "animated": true,
     "tag": "<a:su_realm_star:1573411526335926476>"
   },
-  "su_ring_thanthoai": {
-    "id": "1573411545562751156",
-    "name": "su_ring_thanthoai",
+  "su_role_tier_common": {
+    "id": "1573659191464431616",
+    "name": "su_role_tier_common",
     "animated": true,
-    "tag": "<a:su_ring_thanthoai:1573411545562751156>"
+    "tag": "<a:su_role_tier_common:1573659191464431616>"
   },
-  "su_ring_tien": {
-    "id": "1573411564957077805",
-    "name": "su_ring_tien",
+  "su_role_tier_epic": {
+    "id": "1573659207566106807",
+    "name": "su_role_tier_epic",
     "animated": true,
-    "tag": "<a:su_ring_tien:1573411564957077805>"
+    "tag": "<a:su_role_tier_epic:1573659207566106807>"
+  },
+  "su_role_tier_mythic": {
+    "id": "1573659225459003405",
+    "name": "su_role_tier_mythic",
+    "animated": true,
+    "tag": "<a:su_role_tier_mythic:1573659225459003405>"
+  },
+  "su_role_tier_rare": {
+    "id": "1573659242437550121",
+    "name": "su_role_tier_rare",
+    "animated": true,
+    "tag": "<a:su_role_tier_rare:1573659242437550121>"
   },
   "su_sakura": {
     "id": "1573411580366815302",
@@ -263,23 +3023,11 @@
     "animated": true,
     "tag": "<a:su_sakura:1573411580366815302>"
   },
-  "su_soul_mythic_1": {
-    "id": "1573411602127134720",
-    "name": "su_soul_mythic_1",
-    "animated": true,
-    "tag": "<a:su_soul_mythic_1:1573411602127134720>"
-  },
-  "su_soul_mythic_2": {
-    "id": "1573411621202698390",
-    "name": "su_soul_mythic_2",
-    "animated": true,
-    "tag": "<a:su_soul_mythic_2:1573411621202698390>"
-  },
-  "su_soul_mythic_3": {
-    "id": "1573411636868284527",
-    "name": "su_soul_mythic_3",
-    "animated": true,
-    "tag": "<a:su_soul_mythic_3:1573411636868284527>"
+  "su_shield_def": {
+    "id": "1573412323543224361",
+    "name": "su_shield_def",
+    "animated": false,
+    "tag": "<:su_shield_def:1573412323543224361>"
   },
   "su_sparkle": {
     "id": "1573411649543737426",
@@ -287,29 +3035,23 @@
     "animated": true,
     "tag": "<a:su_sparkle:1573411649543737426>"
   },
-  "su_star_stone": {
-    "id": "1573411662789091480",
-    "name": "su_star_stone",
-    "animated": true,
-    "tag": "<a:su_star_stone:1573411662789091480>"
+  "su_sprout": {
+    "id": "1573412494049939486",
+    "name": "su_sprout",
+    "animated": false,
+    "tag": "<:su_sprout:1573412494049939486>"
+  },
+  "su_stats_chart": {
+    "id": "1573412510772494427",
+    "name": "su_stats_chart",
+    "animated": false,
+    "tag": "<:su_stats_chart:1573412510772494427>"
   },
   "su_thunder_hax": {
     "id": "1573411676336820294",
     "name": "su_thunder_hax",
     "animated": true,
     "tag": "<a:su_thunder_hax:1573411676336820294>"
-  },
-  "su_ticket_equip": {
-    "id": "1573411690815430740",
-    "name": "su_ticket_equip",
-    "animated": true,
-    "tag": "<a:su_ticket_equip:1573411690815430740>"
-  },
-  "su_ticket_pet": {
-    "id": "1573411705046695951",
-    "name": "su_ticket_pet",
-    "animated": true,
-    "tag": "<a:su_ticket_pet:1573411705046695951>"
   },
   "su_tier_linh": {
     "id": "1573411723891712060",
@@ -341,407 +3083,11 @@
     "animated": true,
     "tag": "<a:su_tier_toithuong:1573411778912718890>"
   },
-  "su_weapon_mythic_1": {
-    "id": "1573411797762052137",
-    "name": "su_weapon_mythic_1",
+  "su_tower_reset": {
+    "id": "1573612128068313148",
+    "name": "su_tower_reset",
     "animated": true,
-    "tag": "<a:su_weapon_mythic_1:1573411797762052137>"
-  },
-  "su_weapon_mythic_2": {
-    "id": "1573411812299243581",
-    "name": "su_weapon_mythic_2",
-    "animated": true,
-    "tag": "<a:su_weapon_mythic_2:1573411812299243581>"
-  },
-  "su_weapon_mythic_3": {
-    "id": "1573411830704115732",
-    "name": "su_weapon_mythic_3",
-    "animated": true,
-    "tag": "<a:su_weapon_mythic_3:1573411830704115732>"
-  },
-  "su_winner_trophy": {
-    "id": "1573411849729482972",
-    "name": "su_winner_trophy",
-    "animated": true,
-    "tag": "<a:su_winner_trophy:1573411849729482972>"
-  },
-  "su_clan_castle": {
-    "id": "1573411861422932111",
-    "name": "su_clan_castle",
-    "animated": false,
-    "tag": "<:su_clan_castle:1573411861422932111>"
-  },
-  "su_el_kim": {
-    "id": "1573411877239652432",
-    "name": "su_el_kim",
-    "animated": false,
-    "tag": "<:su_el_kim:1573411877239652432>"
-  },
-  "su_el_moc": {
-    "id": "1573411890565087264",
-    "name": "su_el_moc",
-    "animated": false,
-    "tag": "<:su_el_moc:1573411890565087264>"
-  },
-  "su_el_tho": {
-    "id": "1573411902795817092",
-    "name": "su_el_tho",
-    "animated": false,
-    "tag": "<:su_el_tho:1573411902795817092>"
-  },
-  "su_el_thuy": {
-    "id": "1573411912803426435",
-    "name": "su_el_thuy",
-    "animated": false,
-    "tag": "<:su_el_thuy:1573411912803426435>"
-  },
-  "su_frame_token": {
-    "id": "1573411925298253935",
-    "name": "su_frame_token",
-    "animated": false,
-    "tag": "<:su_frame_token:1573411925298253935>"
-  },
-  "su_gacha_dice": {
-    "id": "1573411940477444217",
-    "name": "su_gacha_dice",
-    "animated": false,
-    "tag": "<:su_gacha_dice:1573411940477444217>"
-  },
-  "su_gem_common_1": {
-    "id": "1573411950778515577",
-    "name": "su_gem_common_1",
-    "animated": false,
-    "tag": "<:su_gem_common_1:1573411950778515577>"
-  },
-  "su_gem_common_2": {
-    "id": "1573411962535026779",
-    "name": "su_gem_common_2",
-    "animated": false,
-    "tag": "<:su_gem_common_2:1573411962535026779>"
-  },
-  "su_gem_common_3": {
-    "id": "1573411973725687981",
-    "name": "su_gem_common_3",
-    "animated": false,
-    "tag": "<:su_gem_common_3:1573411973725687981>"
-  },
-  "su_gem_common_4": {
-    "id": "1573411986027319298",
-    "name": "su_gem_common_4",
-    "animated": false,
-    "tag": "<:su_gem_common_4:1573411986027319298>"
-  },
-  "su_gem_epic_1": {
-    "id": "1573411999080124577",
-    "name": "su_gem_epic_1",
-    "animated": false,
-    "tag": "<:su_gem_epic_1:1573411999080124577>"
-  },
-  "su_gem_epic_2": {
-    "id": "1573412016767631441",
-    "name": "su_gem_epic_2",
-    "animated": false,
-    "tag": "<:su_gem_epic_2:1573412016767631441>"
-  },
-  "su_gem_epic_3": {
-    "id": "1573412032970104942",
-    "name": "su_gem_epic_3",
-    "animated": false,
-    "tag": "<:su_gem_epic_3:1573412032970104942>"
-  },
-  "su_gem_epic_4": {
-    "id": "1573412046010188006",
-    "name": "su_gem_epic_4",
-    "animated": false,
-    "tag": "<:su_gem_epic_4:1573412046010188006>"
-  },
-  "su_gem_rare_1": {
-    "id": "1573412059092361371",
-    "name": "su_gem_rare_1",
-    "animated": false,
-    "tag": "<:su_gem_rare_1:1573412059092361371>"
-  },
-  "su_gem_rare_2": {
-    "id": "1573412078667042818",
-    "name": "su_gem_rare_2",
-    "animated": false,
-    "tag": "<:su_gem_rare_2:1573412078667042818>"
-  },
-  "su_gem_rare_3": {
-    "id": "1573412090209898556",
-    "name": "su_gem_rare_3",
-    "animated": false,
-    "tag": "<:su_gem_rare_3:1573412090209898556>"
-  },
-  "su_gem_rare_4": {
-    "id": "1573412105359466536",
-    "name": "su_gem_rare_4",
-    "animated": false,
-    "tag": "<:su_gem_rare_4:1573412105359466536>"
-  },
-  "su_medal_role": {
-    "id": "1573412120282931240",
-    "name": "su_medal_role",
-    "animated": false,
-    "tag": "<:su_medal_role:1573412120282931240>"
-  },
-  "su_mountain": {
-    "id": "1573412132765307090",
-    "name": "su_mountain",
-    "animated": false,
-    "tag": "<:su_mountain:1573412132765307090>"
-  },
-  "su_pet_bach_kim_ho_tu": {
-    "id": "1573412145553739796",
-    "name": "su_pet_bach_kim_ho_tu",
-    "animated": false,
-    "tag": "<:su_pet_bach_kim_ho_tu:1573412145553739796>"
-  },
-  "su_pet_bang_tuyet_ho": {
-    "id": "1573412155678789664",
-    "name": "su_pet_bang_tuyet_ho",
-    "animated": false,
-    "tag": "<:su_pet_bang_tuyet_ho:1573412155678789664>"
-  },
-  "su_pet_hai_duong_tien_ngu": {
-    "id": "1573412168202850314",
-    "name": "su_pet_hai_duong_tien_ngu",
-    "animated": false,
-    "tag": "<:su_pet_hai_duong_tien_ngu:1573412168202850314>"
-  },
-  "su_pet_hoa_thach_nham_nham": {
-    "id": "1573412180244828333",
-    "name": "su_pet_hoa_thach_nham_nham",
-    "animated": false,
-    "tag": "<:su_pet_hoa_thach_nham_nham:1573412180244828333>"
-  },
-  "su_pet_paw": {
-    "id": "1573412201031803022",
-    "name": "su_pet_paw",
-    "animated": false,
-    "tag": "<:su_pet_paw:1573412201031803022>"
-  },
-  "su_pet_thanh_truc_tien_loc": {
-    "id": "1573412219914559621",
-    "name": "su_pet_thanh_truc_tien_loc",
-    "animated": false,
-    "tag": "<:su_pet_thanh_truc_tien_loc:1573412219914559621>"
-  },
-  "su_pet_thao_moc_linh_vien": {
-    "id": "1573412235416440932",
-    "name": "su_pet_thao_moc_linh_vien",
-    "animated": false,
-    "tag": "<:su_pet_thao_moc_linh_vien:1573412235416440932>"
-  },
-  "su_pet_thiet_giap_xich_giac": {
-    "id": "1573412249047932938",
-    "name": "su_pet_thiet_giap_xich_giac",
-    "animated": false,
-    "tag": "<:su_pet_thiet_giap_xich_giac:1573412249047932938>"
-  },
-  "su_pet_thuy_tinh_huyen_ngao": {
-    "id": "1573412260536385608",
-    "name": "su_pet_thuy_tinh_huyen_ngao",
-    "animated": false,
-    "tag": "<:su_pet_thuy_tinh_huyen_ngao:1573412260536385608>"
-  },
-  "su_pet_viem_nguc_khuyen": {
-    "id": "1573412273869950976",
-    "name": "su_pet_viem_nguc_khuyen",
-    "animated": false,
-    "tag": "<:su_pet_viem_nguc_khuyen:1573412273869950976>"
-  },
-  "su_pet_xich_xa_hoa_long": {
-    "id": "1573412284548776140",
-    "name": "su_pet_xich_xa_hoa_long",
-    "animated": false,
-    "tag": "<:su_pet_xich_xa_hoa_long:1573412284548776140>"
-  },
-  "su_pin_sigil": {
-    "id": "1573410516297064580",
-    "name": "su_pin_sigil",
-    "animated": false,
-    "tag": "<:su_pin_sigil:1573410516297064580>"
-  },
-  "su_ring_linh": {
-    "id": "1573412297223835829",
-    "name": "su_ring_linh",
-    "animated": false,
-    "tag": "<:su_ring_linh:1573412297223835829>"
-  },
-  "su_ring_pham": {
-    "id": "1573412311836655906",
-    "name": "su_ring_pham",
-    "animated": false,
-    "tag": "<:su_ring_pham:1573412311836655906>"
-  },
-  "su_shield_def": {
-    "id": "1573412323543224361",
-    "name": "su_shield_def",
-    "animated": false,
-    "tag": "<:su_shield_def:1573412323543224361>"
-  },
-  "su_soul_common_1": {
-    "id": "1573412336411082934",
-    "name": "su_soul_common_1",
-    "animated": false,
-    "tag": "<:su_soul_common_1:1573412336411082934>"
-  },
-  "su_soul_common_2": {
-    "id": "1573412350093033702",
-    "name": "su_soul_common_2",
-    "animated": false,
-    "tag": "<:su_soul_common_2:1573412350093033702>"
-  },
-  "su_soul_common_3": {
-    "id": "1573412363934109748",
-    "name": "su_soul_common_3",
-    "animated": false,
-    "tag": "<:su_soul_common_3:1573412363934109748>"
-  },
-  "su_soul_common_4": {
-    "id": "1573412377062277322",
-    "name": "su_soul_common_4",
-    "animated": false,
-    "tag": "<:su_soul_common_4:1573412377062277322>"
-  },
-  "su_soul_epic_1": {
-    "id": "1573412387661287545",
-    "name": "su_soul_epic_1",
-    "animated": false,
-    "tag": "<:su_soul_epic_1:1573412387661287545>"
-  },
-  "su_soul_epic_2": {
-    "id": "1573412404656865461",
-    "name": "su_soul_epic_2",
-    "animated": false,
-    "tag": "<:su_soul_epic_2:1573412404656865461>"
-  },
-  "su_soul_epic_3": {
-    "id": "1573412418506334239",
-    "name": "su_soul_epic_3",
-    "animated": false,
-    "tag": "<:su_soul_epic_3:1573412418506334239>"
-  },
-  "su_soul_epic_4": {
-    "id": "1573412431898874056",
-    "name": "su_soul_epic_4",
-    "animated": false,
-    "tag": "<:su_soul_epic_4:1573412431898874056>"
-  },
-  "su_soul_rare_1": {
-    "id": "1573412445127712860",
-    "name": "su_soul_rare_1",
-    "animated": false,
-    "tag": "<:su_soul_rare_1:1573412445127712860>"
-  },
-  "su_soul_rare_2": {
-    "id": "1573412460164022352",
-    "name": "su_soul_rare_2",
-    "animated": false,
-    "tag": "<:su_soul_rare_2:1573412460164022352>"
-  },
-  "su_soul_rare_3": {
-    "id": "1573412470788194345",
-    "name": "su_soul_rare_3",
-    "animated": false,
-    "tag": "<:su_soul_rare_3:1573412470788194345>"
-  },
-  "su_soul_rare_4": {
-    "id": "1573412482129600653",
-    "name": "su_soul_rare_4",
-    "animated": false,
-    "tag": "<:su_soul_rare_4:1573412482129600653>"
-  },
-  "su_sprout": {
-    "id": "1573412494049939486",
-    "name": "su_sprout",
-    "animated": false,
-    "tag": "<:su_sprout:1573412494049939486>"
-  },
-  "su_stats_chart": {
-    "id": "1573412510772494427",
-    "name": "su_stats_chart",
-    "animated": false,
-    "tag": "<:su_stats_chart:1573412510772494427>"
-  },
-  "su_title_card": {
-    "id": "1573412524509110282",
-    "name": "su_title_card",
-    "animated": false,
-    "tag": "<:su_title_card:1573412524509110282>"
-  },
-  "su_weapon_common_1": {
-    "id": "1573412535661633596",
-    "name": "su_weapon_common_1",
-    "animated": false,
-    "tag": "<:su_weapon_common_1:1573412535661633596>"
-  },
-  "su_weapon_common_2": {
-    "id": "1573412548055933019",
-    "name": "su_weapon_common_2",
-    "animated": false,
-    "tag": "<:su_weapon_common_2:1573412548055933019>"
-  },
-  "su_weapon_common_3": {
-    "id": "1573412563348234301",
-    "name": "su_weapon_common_3",
-    "animated": false,
-    "tag": "<:su_weapon_common_3:1573412563348234301>"
-  },
-  "su_weapon_common_4": {
-    "id": "1573412575335415973",
-    "name": "su_weapon_common_4",
-    "animated": false,
-    "tag": "<:su_weapon_common_4:1573412575335415973>"
-  },
-  "su_weapon_epic_1": {
-    "id": "1573412588585361520",
-    "name": "su_weapon_epic_1",
-    "animated": false,
-    "tag": "<:su_weapon_epic_1:1573412588585361520>"
-  },
-  "su_weapon_epic_2": {
-    "id": "1573412601130393702",
-    "name": "su_weapon_epic_2",
-    "animated": false,
-    "tag": "<:su_weapon_epic_2:1573412601130393702>"
-  },
-  "su_weapon_epic_3": {
-    "id": "1573412609909203075",
-    "name": "su_weapon_epic_3",
-    "animated": false,
-    "tag": "<:su_weapon_epic_3:1573412609909203075>"
-  },
-  "su_weapon_epic_4": {
-    "id": "1573412626854187010",
-    "name": "su_weapon_epic_4",
-    "animated": false,
-    "tag": "<:su_weapon_epic_4:1573412626854187010>"
-  },
-  "su_weapon_rare_1": {
-    "id": "1573412639831494676",
-    "name": "su_weapon_rare_1",
-    "animated": false,
-    "tag": "<:su_weapon_rare_1:1573412639831494676>"
-  },
-  "su_weapon_rare_2": {
-    "id": "1573412651889991722",
-    "name": "su_weapon_rare_2",
-    "animated": false,
-    "tag": "<:su_weapon_rare_2:1573412651889991722>"
-  },
-  "su_weapon_rare_3": {
-    "id": "1573412664561107035",
-    "name": "su_weapon_rare_3",
-    "animated": false,
-    "tag": "<:su_weapon_rare_3:1573412664561107035>"
-  },
-  "su_weapon_rare_4": {
-    "id": "1573412677546410185",
-    "name": "su_weapon_rare_4",
-    "animated": false,
-    "tag": "<:su_weapon_rare_4:1573412677546410185>"
+    "tag": "<a:su_tower_reset:1573612128068313148>"
   },
   "su_wiki_scroll": {
     "id": "1573412689303314533",
@@ -749,316 +3095,682 @@
     "animated": false,
     "tag": "<:su_wiki_scroll:1573412689303314533>"
   },
-  "su_tower_reset": {
-    "id": "1573612128068313148",
-    "name": "su_tower_reset",
+  "su_winner_trophy": {
+    "id": "1573411849729482972",
+    "name": "su_winner_trophy",
     "animated": true,
-    "tag": "<a:su_tower_reset:1573612128068313148>"
+    "tag": "<a:su_winner_trophy:1573411849729482972>"
   },
-  "su_role_tier_common": {
-    "id": "1573659191464431616",
-    "name": "su_role_tier_common",
-    "animated": true,
-    "tag": "<a:su_role_tier_common:1573659191464431616>"
-  },
-  "su_role_tier_epic": {
-    "id": "1573659207566106807",
-    "name": "su_role_tier_epic",
-    "animated": true,
-    "tag": "<a:su_role_tier_epic:1573659207566106807>"
-  },
-  "su_role_tier_mythic": {
-    "id": "1573659225459003405",
-    "name": "su_role_tier_mythic",
-    "animated": true,
-    "tag": "<a:su_role_tier_mythic:1573659225459003405>"
-  },
-  "su_role_tier_rare": {
-    "id": "1573659242437550121",
-    "name": "su_role_tier_rare",
-    "animated": true,
-    "tag": "<a:su_role_tier_rare:1573659242437550121>"
-  },
-  "su_gem_common_5": {
-    "id": "1573659345802231939",
-    "name": "su_gem_common_5",
-    "animated": true,
-    "tag": "<a:su_gem_common_5:1573659345802231939>"
-  },
-  "su_gem_epic_5": {
-    "id": "1573659359324537004",
-    "name": "su_gem_epic_5",
-    "animated": true,
-    "tag": "<a:su_gem_epic_5:1573659359324537004>"
-  },
-  "su_gem_epic_6": {
-    "id": "1573659377288749068",
-    "name": "su_gem_epic_6",
-    "animated": true,
-    "tag": "<a:su_gem_epic_6:1573659377288749068>"
-  },
-  "su_gem_mythic_4": {
-    "id": "1573659395697418320",
-    "name": "su_gem_mythic_4",
-    "animated": true,
-    "tag": "<a:su_gem_mythic_4:1573659395697418320>"
-  },
-  "su_gem_mythic_5": {
-    "id": "1573659414806794282",
-    "name": "su_gem_mythic_5",
-    "animated": true,
-    "tag": "<a:su_gem_mythic_5:1573659414806794282>"
-  },
-  "su_gem_rare_5": {
-    "id": "1573659474533810357",
-    "name": "su_gem_rare_5",
-    "animated": true,
-    "tag": "<a:su_gem_rare_5:1573659474533810357>"
-  },
-  "su_soul_common_5": {
-    "id": "1573659492032450740",
-    "name": "su_soul_common_5",
-    "animated": true,
-    "tag": "<a:su_soul_common_5:1573659492032450740>"
-  },
-  "su_soul_epic_5": {
-    "id": "1573659516908863588",
-    "name": "su_soul_epic_5",
-    "animated": true,
-    "tag": "<a:su_soul_epic_5:1573659516908863588>"
-  },
-  "su_soul_epic_6": {
-    "id": "1573659564891709540",
-    "name": "su_soul_epic_6",
-    "animated": true,
-    "tag": "<a:su_soul_epic_6:1573659564891709540>"
-  },
-  "su_soul_mythic_4": {
-    "id": "1573659579735081043",
-    "name": "su_soul_mythic_4",
-    "animated": true,
-    "tag": "<a:su_soul_mythic_4:1573659579735081043>"
-  },
-  "su_soul_mythic_5": {
-    "id": "1573659654842622072",
-    "name": "su_soul_mythic_5",
-    "animated": true,
-    "tag": "<a:su_soul_mythic_5:1573659654842622072>"
-  },
-  "su_soul_rare_5": {
-    "id": "1573659671565181029",
-    "name": "su_soul_rare_5",
-    "animated": true,
-    "tag": "<a:su_soul_rare_5:1573659671565181029>"
-  },
-  "su_weapon_common_5": {
-    "id": "1573659686811475999",
-    "name": "su_weapon_common_5",
-    "animated": true,
-    "tag": "<a:su_weapon_common_5:1573659686811475999>"
-  },
-  "su_weapon_common_6": {
-    "id": "1573659700044632126",
-    "name": "su_weapon_common_6",
-    "animated": true,
-    "tag": "<a:su_weapon_common_6:1573659700044632126>"
-  },
-  "su_weapon_epic_5": {
-    "id": "1573659717924823092",
-    "name": "su_weapon_epic_5",
-    "animated": true,
-    "tag": "<a:su_weapon_epic_5:1573659717924823092>"
-  },
-  "su_weapon_epic_6": {
-    "id": "1573659733376635040",
-    "name": "su_weapon_epic_6",
-    "animated": true,
-    "tag": "<a:su_weapon_epic_6:1573659733376635040>"
-  },
-  "su_weapon_mythic_4": {
-    "id": "1573659747616423936",
-    "name": "su_weapon_mythic_4",
-    "animated": true,
-    "tag": "<a:su_weapon_mythic_4:1573659747616423936>"
-  },
-  "su_weapon_mythic_5": {
-    "id": "1573659767174467604",
-    "name": "su_weapon_mythic_5",
-    "animated": true,
-    "tag": "<a:su_weapon_mythic_5:1573659767174467604>"
-  },
-  "su_weapon_rare_5": {
-    "id": "1573659780873195640",
-    "name": "su_weapon_rare_5",
-    "animated": true,
-    "tag": "<a:su_weapon_rare_5:1573659780873195640>"
-  },
-  "su_weapon_rare_6": {
-    "id": "1573659812158505062",
-    "name": "su_weapon_rare_6",
-    "animated": true,
-    "tag": "<a:su_weapon_rare_6:1573659812158505062>"
-  },
-  "su_pet_bach_ngoc_thien_nga": {
-    "id": "1573659859562266784",
-    "name": "su_pet_bach_ngoc_thien_nga",
-    "animated": true,
-    "tag": "<a:su_pet_bach_ngoc_thien_nga:1573659859562266784>"
-  },
-  "su_pet_cuu_thien_loi_phuong": {
-    "id": "1573659880009764864",
-    "name": "su_pet_cuu_thien_loi_phuong",
-    "animated": true,
-    "tag": "<a:su_pet_cuu_thien_loi_phuong:1573659880009764864>"
-  },
-  "su_pet_dia_long_nham_vuong": {
-    "id": "1573659896325472356",
-    "name": "su_pet_dia_long_nham_vuong",
-    "animated": true,
-    "tag": "<a:su_pet_dia_long_nham_vuong:1573659896325472356>"
-  },
-  "su_pet_hoa_linh_tieu_ho": {
-    "id": "1573659920438665246",
-    "name": "su_pet_hoa_linh_tieu_ho",
-    "animated": true,
-    "tag": "<a:su_pet_hoa_linh_tieu_ho:1573659920438665246>"
-  },
-  "su_pet_hoang_thien_ky_lan": {
-    "id": "1573659937937293425",
-    "name": "su_pet_hoang_thien_ky_lan",
-    "animated": true,
-    "tag": "<a:su_pet_hoang_thien_ky_lan:1573659937937293425>"
-  },
-  "su_pet_hoang_tho_thach_su": {
-    "id": "1573659952902311936",
-    "name": "su_pet_hoang_tho_thach_su",
-    "animated": true,
-    "tag": "<a:su_pet_hoang_tho_thach_su:1573659952902311936>"
-  },
-  "su_pet_huyen_vu_linh_quy": {
-    "id": "1573659972078800906",
-    "name": "su_pet_huyen_vu_linh_quy",
-    "animated": true,
-    "tag": "<a:su_pet_huyen_vu_linh_quy:1573659972078800906>"
-  },
-  "su_pet_huyet_nguyet_linh_dieu": {
-    "id": "1573660071739658277",
-    "name": "su_pet_huyet_nguyet_linh_dieu",
-    "animated": true,
-    "tag": "<a:su_pet_huyet_nguyet_linh_dieu:1573660071739658277>"
-  },
-  "su_pet_kim_giap_tue_lan": {
-    "id": "1573660095202459878",
-    "name": "su_pet_kim_giap_tue_lan",
-    "animated": true,
-    "tag": "<a:su_pet_kim_giap_tue_lan:1573660095202459878>"
-  },
-  "su_pet_minh_gioi_u_ho": {
-    "id": "1573660110268399740",
-    "name": "su_pet_minh_gioi_u_ho",
-    "animated": true,
-    "tag": "<a:su_pet_minh_gioi_u_ho:1573660110268399740>"
-  },
-  "su_pet_nguyet_anh_thao_tho": {
-    "id": "1573660128077414410",
-    "name": "su_pet_nguyet_anh_thao_tho",
-    "animated": true,
-    "tag": "<a:su_pet_nguyet_anh_thao_tho:1573660128077414410>"
-  },
-  "su_pet_nguyet_than_cuu_vy_bach": {
-    "id": "1573660143676293170",
-    "name": "su_pet_nguyet_than_cuu_vy_bach",
-    "animated": true,
-    "tag": "<a:su_pet_nguyet_than_cuu_vy_bach:1573660143676293170>"
-  },
-  "su_pet_phong_vu_tieu_tuoc": {
-    "id": "1573660157571895467",
-    "name": "su_pet_phong_vu_tieu_tuoc",
-    "animated": true,
-    "tag": "<a:su_pet_phong_vu_tieu_tuoc:1573660157571895467>"
-  },
-  "su_pet_thai_am_ngoc_tho": {
-    "id": "1573660174932254792",
-    "name": "su_pet_thai_am_ngoc_tho",
-    "animated": true,
-    "tag": "<a:su_pet_thai_am_ngoc_tho:1573660174932254792>"
-  },
-  "su_pet_thai_duong_kim_o": {
-    "id": "1573660190501249025",
-    "name": "su_pet_thai_duong_kim_o",
-    "animated": true,
-    "tag": "<a:su_pet_thai_duong_kim_o:1573660190501249025>"
-  },
-  "su_pet_thanh_de_moc_long": {
-    "id": "1573660200882282536",
-    "name": "su_pet_thanh_de_moc_long",
-    "animated": true,
-    "tag": "<a:su_pet_thanh_de_moc_long:1573660200882282536>"
-  },
-  "su_pet_thanh_long_au_xa": {
-    "id": "1573660216820498543",
-    "name": "su_pet_thanh_long_au_xa",
-    "animated": true,
-    "tag": "<a:su_pet_thanh_long_au_xa:1573660216820498543>"
-  },
-  "su_pet_tu_dien_linh_ung": {
-    "id": "1573660231362420862",
-    "name": "su_pet_tu_dien_linh_ung",
-    "animated": true,
-    "tag": "<a:su_pet_tu_dien_linh_ung:1573660231362420862>"
-  },
-  "su_pet_tu_kim_bach_trach": {
-    "id": "1573660251993940069",
-    "name": "su_pet_tu_kim_bach_trach",
-    "animated": true,
-    "tag": "<a:su_pet_tu_kim_bach_trach:1573660251993940069>"
-  },
-  "su_pet_u_linh_tieu_mieu": {
-    "id": "1573660266619478026",
-    "name": "su_pet_u_linh_tieu_mieu",
-    "animated": true,
-    "tag": "<a:su_pet_u_linh_tieu_mieu:1573660266619478026>"
-  },
-  "su_tower_reset_card": {
-    "id": "1573660276778078208",
-    "name": "su_tower_reset_card",
+  "sumi_3": {
+    "id": "1571061504705433640",
+    "name": "sumi_3",
     "animated": false,
-    "tag": "<:su_tower_reset_card:1573660276778078208>"
+    "tag": "<:sumi_3:1571061504705433640>"
   },
-  "su_enchant_stone": {
-    "id": "1573719323610980423",
-    "name": "su_enchant_stone",
-    "animated": true,
-    "tag": "<a:su_enchant_stone:1573719323610980423>"
+  "sumi_3417foxsunglasses": {
+    "id": "1571061331065573396",
+    "name": "sumi_3417foxsunglasses",
+    "animated": false,
+    "tag": "<:sumi_3417foxsunglasses:1571061331065573396>"
   },
-  "su_grade_d": {
-    "id": "1573719341185368106",
-    "name": "su_grade_d",
-    "animated": true,
-    "tag": "<a:su_grade_d:1573719341185368106>"
+  "sumi_ara_ara": {
+    "id": "1571061703775621241",
+    "name": "sumi_ara_ara",
+    "animated": false,
+    "tag": "<:sumi_ara_ara:1571061703775621241>"
   },
-  "su_grade_c": {
-    "id": "1573719376035586088",
-    "name": "su_grade_c",
-    "animated": true,
-    "tag": "<a:su_grade_c:1573719376035586088>"
+  "sumi_astolfonight": {
+    "id": "1571061565937946654",
+    "name": "sumi_astolfonight",
+    "animated": false,
+    "tag": "<:sumi_astolfonight:1571061565937946654>"
   },
-  "su_grade_b": {
-    "id": "1573719391118565497",
-    "name": "su_grade_b",
-    "animated": true,
-    "tag": "<a:su_grade_b:1573719391118565497>"
+  "sumi_cutecatboy": {
+    "id": "1571061713539833946",
+    "name": "sumi_cutecatboy",
+    "animated": false,
+    "tag": "<:sumi_cutecatboy:1571061713539833946>"
   },
-  "su_grade_a": {
-    "id": "1573719407597850708",
-    "name": "su_grade_a",
-    "animated": true,
-    "tag": "<a:su_grade_a:1573719407597850708>"
+  "sumi_KannaSip": {
+    "id": "1571061526557761586",
+    "name": "sumi_KannaSip",
+    "animated": false,
+    "tag": "<:sumi_KannaSip:1571061526557761586>"
   },
-  "su_grade_s": {
-    "id": "1573719425172119672",
-    "name": "su_grade_s",
+  "sumi_KannaWhat": {
+    "id": "1571061634594775080",
+    "name": "sumi_KannaWhat",
+    "animated": false,
+    "tag": "<:sumi_KannaWhat:1571061634594775080>"
+  },
+  "sumi_milky": {
+    "id": "1571061321204502598",
+    "name": "sumi_milky",
+    "animated": false,
+    "tag": "<:sumi_milky:1571061321204502598>"
+  },
+  "sumi_pikachufacepalm": {
+    "id": "1571061684527824946",
+    "name": "sumi_pikachufacepalm",
+    "animated": false,
+    "tag": "<:sumi_pikachufacepalm:1571061684527824946>"
+  },
+  "sumi_Verify": {
+    "id": "1571061494999810159",
+    "name": "sumi_Verify",
     "animated": true,
-    "tag": "<a:su_grade_s:1573719425172119672>"
+    "tag": "<a:sumi_Verify:1571061494999810159>"
+  },
+  "thach_hoang_cu_linh": {
+    "id": "1573800027401232465",
+    "name": "thach_hoang_cu_linh",
+    "animated": false,
+    "tag": "<:thach_hoang_cu_linh:1573800027401232465>"
+  },
+  "thai_am_ngoc_tho": {
+    "id": "1573660174932254792",
+    "name": "thai_am_ngoc_tho",
+    "animated": true,
+    "tag": "<a:thai_am_ngoc_tho:1573660174932254792>"
+  },
+  "thai_at_than_trach": {
+    "id": "1573799951887110186",
+    "name": "thai_at_than_trach",
+    "animated": false,
+    "tag": "<:thai_at_than_trach:1573799951887110186>"
+  },
+  "thai_co_bach_ho": {
+    "id": "1573799766759051466",
+    "name": "thai_co_bach_ho",
+    "animated": false,
+    "tag": "<:thai_co_bach_ho:1573799766759051466>"
+  },
+  "thai_cuc_thanh_quang_thu": {
+    "id": "1573800149942280263",
+    "name": "thai_cuc_thanh_quang_thu",
+    "animated": false,
+    "tag": "<:thai_cuc_thanh_quang_thu:1573800149942280263>"
+  },
+  "thai_duong_kim_o": {
+    "id": "1573660190501249025",
+    "name": "thai_duong_kim_o",
+    "animated": true,
+    "tag": "<a:thai_duong_kim_o:1573660190501249025>"
+  },
+  "thai_duong_than_su": {
+    "id": "1573800089254633472",
+    "name": "thai_duong_than_su",
+    "animated": false,
+    "tag": "<:thai_duong_than_su:1573800089254633472>"
+  },
+  "thai_so_cuu_phuong_hoang": {
+    "id": "1573800109307592743",
+    "name": "thai_so_cuu_phuong_hoang",
+    "animated": false,
+    "tag": "<:thai_so_cuu_phuong_hoang:1573800109307592743>"
+  },
+  "thanh_bang_hai_hoang": {
+    "id": "1573799982991937628",
+    "name": "thanh_bang_hai_hoang",
+    "animated": false,
+    "tag": "<:thanh_bang_hai_hoang:1573799982991937628>"
+  },
+  "thanh_de_moc_long": {
+    "id": "1573660200882282536",
+    "name": "thanh_de_moc_long",
+    "animated": true,
+    "tag": "<a:thanh_de_moc_long:1573660200882282536>"
+  },
+  "thanh_de_van_co_long": {
+    "id": "1573800172817744073",
+    "name": "thanh_de_van_co_long",
+    "animated": false,
+    "tag": "<:thanh_de_van_co_long:1573800172817744073>"
+  },
+  "thanh_lam_tieu_dieu": {
+    "id": "1573799655266058331",
+    "name": "thanh_lam_tieu_dieu",
+    "animated": false,
+    "tag": "<:thanh_lam_tieu_dieu:1573799655266058331>"
+  },
+  "thanh_long_au_xa": {
+    "id": "1573660216820498543",
+    "name": "thanh_long_au_xa",
+    "animated": true,
+    "tag": "<a:thanh_long_au_xa:1573660216820498543>"
+  },
+  "thanh_truc_tien_loc": {
+    "id": "1573412219914559621",
+    "name": "thanh_truc_tien_loc",
+    "animated": false,
+    "tag": "<:thanh_truc_tien_loc:1573412219914559621>"
+  },
+  "thao_moc_linh_vien": {
+    "id": "1573412235416440932",
+    "name": "thao_moc_linh_vien",
+    "animated": false,
+    "tag": "<:thao_moc_linh_vien:1573412235416440932>"
+  },
+  "thien_co_ngoc_ho": {
+    "id": "1573799823809843361",
+    "name": "thien_co_ngoc_ho",
+    "animated": false,
+    "tag": "<:thien_co_ngoc_ho:1573799823809843361>"
+  },
+  "thien_khong_kim_dieu": {
+    "id": "1573799897390518444",
+    "name": "thien_khong_kim_dieu",
+    "animated": false,
+    "tag": "<:thien_khong_kim_dieu:1573799897390518444>"
+  },
+  "thien_loi_thach_vien": {
+    "id": "1573799713193590784",
+    "name": "thien_loi_thach_vien",
+    "animated": false,
+    "tag": "<:thien_loi_thach_vien:1573799713193590784>"
+  },
+  "thiet_giap_xich_giac": {
+    "id": "1573412249047932938",
+    "name": "thiet_giap_xich_giac",
+    "animated": false,
+    "tag": "<:thiet_giap_xich_giac:1573412249047932938>"
+  },
+  "thoi_khong_than_tinh_ho": {
+    "id": "1573800139452063895",
+    "name": "thoi_khong_than_tinh_ho",
+    "animated": false,
+    "tag": "<:thoi_khong_than_tinh_ho:1573800139452063895>"
+  },
+  "thuy_tinh_huyen_ngao": {
+    "id": "1573412260536385608",
+    "name": "thuy_tinh_huyen_ngao",
+    "animated": false,
+    "tag": "<:thuy_tinh_huyen_ngao:1573412260536385608>"
+  },
+  "thuy_vu_thanh_phuong": {
+    "id": "1573799876792418354",
+    "name": "thuy_vu_thanh_phuong",
+    "animated": false,
+    "tag": "<:thuy_vu_thanh_phuong:1573799876792418354>"
+  },
+  "tinh_khong_da_thao": {
+    "id": "1573411376586817860",
+    "name": "tinh_khong_da_thao",
+    "animated": true,
+    "tag": "<a:tinh_khong_da_thao:1573411376586817860>"
+  },
+  "tinh_tu_thien_nga": {
+    "id": "1573800037262295170",
+    "name": "tinh_tu_thien_nga",
+    "animated": false,
+    "tag": "<:tinh_tu_thien_nga:1573800037262295170>"
+  },
+  "tinh_van_cuu_loc": {
+    "id": "1573799854440714310",
+    "name": "tinh_van_cuu_loc",
+    "animated": false,
+    "tag": "<:tinh_van_cuu_loc:1573799854440714310>"
+  },
+  "title_rename_card": {
+    "id": "1573412524509110282",
+    "name": "title_rename_card",
+    "animated": false,
+    "tag": "<:title_rename_card:1573412524509110282>"
+  },
+  "tower_reset_card": {
+    "id": "1573660276778078208",
+    "name": "tower_reset_card",
+    "animated": false,
+    "tag": "<:tower_reset_card:1573660276778078208>"
+  },
+  "tu_dien_linh_ung": {
+    "id": "1573660231362420862",
+    "name": "tu_dien_linh_ung",
+    "animated": true,
+    "tag": "<a:tu_dien_linh_ung:1573660231362420862>"
+  },
+  "tu_kim_bach_trach": {
+    "id": "1573660251993940069",
+    "name": "tu_kim_bach_trach",
+    "animated": true,
+    "tag": "<a:tu_kim_bach_trach:1573660251993940069>"
+  },
+  "tu_tieu_loi_su": {
+    "id": "1573799907016310914",
+    "name": "tu_tieu_loi_su",
+    "animated": false,
+    "tag": "<:tu_tieu_loi_su:1573799907016310914>"
+  },
+  "tu_vi_huyen_quy": {
+    "id": "1573799788808249526",
+    "name": "tu_vi_huyen_quy",
+    "animated": false,
+    "tag": "<:tu_vi_huyen_quy:1573799788808249526>"
+  },
+  "u_do_ma_lang": {
+    "id": "1573799834744524920",
+    "name": "u_do_ma_lang",
+    "animated": false,
+    "tag": "<:u_do_ma_lang:1573799834744524920>"
+  },
+  "u_lam_linh_diep": {
+    "id": "1573799677470580808",
+    "name": "u_lam_linh_diep",
+    "animated": false,
+    "tag": "<:u_lam_linh_diep:1573799677470580808>"
+  },
+  "u_linh_kiem_ma": {
+    "id": "1573800052542021712",
+    "name": "u_linh_kiem_ma",
+    "animated": false,
+    "tag": "<:u_linh_kiem_ma:1573800052542021712>"
+  },
+  "u_linh_tieu_mieu": {
+    "id": "1573660266619478026",
+    "name": "u_linh_tieu_mieu",
+    "animated": true,
+    "tag": "<a:u_linh_tieu_mieu:1573660266619478026>"
+  },
+  "u_minh_lang_vuong": {
+    "id": "1573411407121223792",
+    "name": "u_minh_lang_vuong",
+    "animated": true,
+    "tag": "<a:u_minh_lang_vuong:1573411407121223792>"
+  },
+  "van_kiem_de_ton_ho": {
+    "id": "1573800119613259936",
+    "name": "van_kiem_de_ton_ho",
+    "animated": false,
+    "tag": "<:van_kiem_de_ton_ho:1573800119613259936>"
+  },
+  "van_moc_xuan_long": {
+    "id": "1573800078165147728",
+    "name": "van_moc_xuan_long",
+    "animated": false,
+    "tag": "<:van_moc_xuan_long:1573800078165147728>"
+  },
+  "van_nhac_than_ngu": {
+    "id": "1573799842289946664",
+    "name": "van_nhac_than_ngu",
+    "animated": false,
+    "tag": "<:van_nhac_than_ngu:1573799842289946664>"
+  },
+  "viem_nguc_khuyen": {
+    "id": "1573412273869950976",
+    "name": "viem_nguc_khuyen",
+    "animated": false,
+    "tag": "<:viem_nguc_khuyen:1573412273869950976>"
+  },
+  "vu_tru_khong_lo": {
+    "id": "1573800067981381652",
+    "name": "vu_tru_khong_lo",
+    "animated": false,
+    "tag": "<:vu_tru_khong_lo:1573800067981381652>"
+  },
+  "weapon_common_1": {
+    "id": "1573412535661633596",
+    "name": "weapon_common_1",
+    "animated": false,
+    "tag": "<:weapon_common_1:1573412535661633596>"
+  },
+  "weapon_common_2": {
+    "id": "1573412548055933019",
+    "name": "weapon_common_2",
+    "animated": false,
+    "tag": "<:weapon_common_2:1573412548055933019>"
+  },
+  "weapon_common_3": {
+    "id": "1573412563348234301",
+    "name": "weapon_common_3",
+    "animated": false,
+    "tag": "<:weapon_common_3:1573412563348234301>"
+  },
+  "weapon_common_4": {
+    "id": "1573412575335415973",
+    "name": "weapon_common_4",
+    "animated": false,
+    "tag": "<:weapon_common_4:1573412575335415973>"
+  },
+  "weapon_common_5": {
+    "id": "1573659686811475999",
+    "name": "weapon_common_5",
+    "animated": true,
+    "tag": "<a:weapon_common_5:1573659686811475999>"
+  },
+  "weapon_common_6": {
+    "id": "1573659700044632126",
+    "name": "weapon_common_6",
+    "animated": true,
+    "tag": "<a:weapon_common_6:1573659700044632126>"
+  },
+  "weapon_common_7": {
+    "id": "1573800204811903231",
+    "name": "weapon_common_7",
+    "animated": false,
+    "tag": "<:weapon_common_7:1573800204811903231>"
+  },
+  "weapon_common_8": {
+    "id": "1573800215524282418",
+    "name": "weapon_common_8",
+    "animated": false,
+    "tag": "<:weapon_common_8:1573800215524282418>"
+  },
+  "weapon_epic_1": {
+    "id": "1573412588585361520",
+    "name": "weapon_epic_1",
+    "animated": false,
+    "tag": "<:weapon_epic_1:1573412588585361520>"
+  },
+  "weapon_epic_2": {
+    "id": "1573412601130393702",
+    "name": "weapon_epic_2",
+    "animated": false,
+    "tag": "<:weapon_epic_2:1573412601130393702>"
+  },
+  "weapon_epic_3": {
+    "id": "1573412609909203075",
+    "name": "weapon_epic_3",
+    "animated": false,
+    "tag": "<:weapon_epic_3:1573412609909203075>"
+  },
+  "weapon_epic_4": {
+    "id": "1573412626854187010",
+    "name": "weapon_epic_4",
+    "animated": false,
+    "tag": "<:weapon_epic_4:1573412626854187010>"
+  },
+  "weapon_epic_5": {
+    "id": "1573659717924823092",
+    "name": "weapon_epic_5",
+    "animated": true,
+    "tag": "<a:weapon_epic_5:1573659717924823092>"
+  },
+  "weapon_epic_6": {
+    "id": "1573659733376635040",
+    "name": "weapon_epic_6",
+    "animated": true,
+    "tag": "<a:weapon_epic_6:1573659733376635040>"
+  },
+  "weapon_epic_7": {
+    "id": "1573800249036636202",
+    "name": "weapon_epic_7",
+    "animated": false,
+    "tag": "<:weapon_epic_7:1573800249036636202>"
+  },
+  "weapon_epic_8": {
+    "id": "1573800263557578904",
+    "name": "weapon_epic_8",
+    "animated": false,
+    "tag": "<:weapon_epic_8:1573800263557578904>"
+  },
+  "weapon_epic_9": {
+    "id": "1573800281441960057",
+    "name": "weapon_epic_9",
+    "animated": false,
+    "tag": "<:weapon_epic_9:1573800281441960057>"
+  },
+  "weapon_mythic_1": {
+    "id": "1573411797762052137",
+    "name": "weapon_mythic_1",
+    "animated": true,
+    "tag": "<a:weapon_mythic_1:1573411797762052137>"
+  },
+  "weapon_mythic_10": {
+    "id": "1573800341563117729",
+    "name": "weapon_mythic_10",
+    "animated": false,
+    "tag": "<:weapon_mythic_10:1573800341563117729>"
+  },
+  "weapon_mythic_11": {
+    "id": "1573800355001663609",
+    "name": "weapon_mythic_11",
+    "animated": false,
+    "tag": "<:weapon_mythic_11:1573800355001663609>"
+  },
+  "weapon_mythic_12": {
+    "id": "1573800366263238706",
+    "name": "weapon_mythic_12",
+    "animated": false,
+    "tag": "<:weapon_mythic_12:1573800366263238706>"
+  },
+  "weapon_mythic_13": {
+    "id": "1573800373842350162",
+    "name": "weapon_mythic_13",
+    "animated": false,
+    "tag": "<:weapon_mythic_13:1573800373842350162>"
+  },
+  "weapon_mythic_14": {
+    "id": "1573800383581659326",
+    "name": "weapon_mythic_14",
+    "animated": false,
+    "tag": "<:weapon_mythic_14:1573800383581659326>"
+  },
+  "weapon_mythic_15": {
+    "id": "1573800393412976772",
+    "name": "weapon_mythic_15",
+    "animated": false,
+    "tag": "<:weapon_mythic_15:1573800393412976772>"
+  },
+  "weapon_mythic_16": {
+    "id": "1573800404062568579",
+    "name": "weapon_mythic_16",
+    "animated": false,
+    "tag": "<:weapon_mythic_16:1573800404062568579>"
+  },
+  "weapon_mythic_17": {
+    "id": "1573800414577692772",
+    "name": "weapon_mythic_17",
+    "animated": false,
+    "tag": "<:weapon_mythic_17:1573800414577692772>"
+  },
+  "weapon_mythic_18": {
+    "id": "1573800432327983247",
+    "name": "weapon_mythic_18",
+    "animated": false,
+    "tag": "<:weapon_mythic_18:1573800432327983247>"
+  },
+  "weapon_mythic_19": {
+    "id": "1573800446815109221",
+    "name": "weapon_mythic_19",
+    "animated": false,
+    "tag": "<:weapon_mythic_19:1573800446815109221>"
+  },
+  "weapon_mythic_2": {
+    "id": "1573411812299243581",
+    "name": "weapon_mythic_2",
+    "animated": true,
+    "tag": "<a:weapon_mythic_2:1573411812299243581>"
+  },
+  "weapon_mythic_20": {
+    "id": "1573800463080357988",
+    "name": "weapon_mythic_20",
+    "animated": false,
+    "tag": "<:weapon_mythic_20:1573800463080357988>"
+  },
+  "weapon_mythic_21": {
+    "id": "1573800475638374571",
+    "name": "weapon_mythic_21",
+    "animated": false,
+    "tag": "<:weapon_mythic_21:1573800475638374571>"
+  },
+  "weapon_mythic_22": {
+    "id": "1573800487008862308",
+    "name": "weapon_mythic_22",
+    "animated": false,
+    "tag": "<:weapon_mythic_22:1573800487008862308>"
+  },
+  "weapon_mythic_3": {
+    "id": "1573411830704115732",
+    "name": "weapon_mythic_3",
+    "animated": true,
+    "tag": "<a:weapon_mythic_3:1573411830704115732>"
+  },
+  "weapon_mythic_4": {
+    "id": "1573659747616423936",
+    "name": "weapon_mythic_4",
+    "animated": true,
+    "tag": "<a:weapon_mythic_4:1573659747616423936>"
+  },
+  "weapon_mythic_5": {
+    "id": "1573659767174467604",
+    "name": "weapon_mythic_5",
+    "animated": true,
+    "tag": "<a:weapon_mythic_5:1573659767174467604>"
+  },
+  "weapon_mythic_6": {
+    "id": "1573800296855900240",
+    "name": "weapon_mythic_6",
+    "animated": false,
+    "tag": "<:weapon_mythic_6:1573800296855900240>"
+  },
+  "weapon_mythic_7": {
+    "id": "1573800309967425606",
+    "name": "weapon_mythic_7",
+    "animated": false,
+    "tag": "<:weapon_mythic_7:1573800309967425606>"
+  },
+  "weapon_mythic_8": {
+    "id": "1573800321212219602",
+    "name": "weapon_mythic_8",
+    "animated": false,
+    "tag": "<:weapon_mythic_8:1573800321212219602>"
+  },
+  "weapon_mythic_9": {
+    "id": "1573800330691350538",
+    "name": "weapon_mythic_9",
+    "animated": false,
+    "tag": "<:weapon_mythic_9:1573800330691350538>"
+  },
+  "weapon_rare_1": {
+    "id": "1573412639831494676",
+    "name": "weapon_rare_1",
+    "animated": false,
+    "tag": "<:weapon_rare_1:1573412639831494676>"
+  },
+  "weapon_rare_2": {
+    "id": "1573412651889991722",
+    "name": "weapon_rare_2",
+    "animated": false,
+    "tag": "<:weapon_rare_2:1573412651889991722>"
+  },
+  "weapon_rare_3": {
+    "id": "1573412664561107035",
+    "name": "weapon_rare_3",
+    "animated": false,
+    "tag": "<:weapon_rare_3:1573412664561107035>"
+  },
+  "weapon_rare_4": {
+    "id": "1573412677546410185",
+    "name": "weapon_rare_4",
+    "animated": false,
+    "tag": "<:weapon_rare_4:1573412677546410185>"
+  },
+  "weapon_rare_5": {
+    "id": "1573659780873195640",
+    "name": "weapon_rare_5",
+    "animated": true,
+    "tag": "<a:weapon_rare_5:1573659780873195640>"
+  },
+  "weapon_rare_6": {
+    "id": "1573659812158505062",
+    "name": "weapon_rare_6",
+    "animated": true,
+    "tag": "<a:weapon_rare_6:1573659812158505062>"
+  },
+  "weapon_rare_7": {
+    "id": "1573800228010852493",
+    "name": "weapon_rare_7",
+    "animated": false,
+    "tag": "<:weapon_rare_7:1573800228010852493>"
+  },
+  "weapon_rare_8": {
+    "id": "1573800239469695156",
+    "name": "weapon_rare_8",
+    "animated": false,
+    "tag": "<:weapon_rare_8:1573800239469695156>"
+  },
+  "weapon_unique_1": {
+    "id": "1573800497247293521",
+    "name": "weapon_unique_1",
+    "animated": false,
+    "tag": "<:weapon_unique_1:1573800497247293521>"
+  },
+  "weapon_unique_10": {
+    "id": "1573800612037009498",
+    "name": "weapon_unique_10",
+    "animated": false,
+    "tag": "<:weapon_unique_10:1573800612037009498>"
+  },
+  "weapon_unique_2": {
+    "id": "1573800506588143766",
+    "name": "weapon_unique_2",
+    "animated": false,
+    "tag": "<:weapon_unique_2:1573800506588143766>"
+  },
+  "weapon_unique_3": {
+    "id": "1573800516742418616",
+    "name": "weapon_unique_3",
+    "animated": false,
+    "tag": "<:weapon_unique_3:1573800516742418616>"
+  },
+  "weapon_unique_4": {
+    "id": "1573800532923908117",
+    "name": "weapon_unique_4",
+    "animated": false,
+    "tag": "<:weapon_unique_4:1573800532923908117>"
+  },
+  "weapon_unique_5": {
+    "id": "1573800543376384070",
+    "name": "weapon_unique_5",
+    "animated": false,
+    "tag": "<:weapon_unique_5:1573800543376384070>"
+  },
+  "weapon_unique_6": {
+    "id": "1573800554776498286",
+    "name": "weapon_unique_6",
+    "animated": false,
+    "tag": "<:weapon_unique_6:1573800554776498286>"
+  },
+  "weapon_unique_7": {
+    "id": "1573800565975158875",
+    "name": "weapon_unique_7",
+    "animated": false,
+    "tag": "<:weapon_unique_7:1573800565975158875>"
+  },
+  "weapon_unique_8": {
+    "id": "1573800576758583338",
+    "name": "weapon_unique_8",
+    "animated": false,
+    "tag": "<:weapon_unique_8:1573800576758583338>"
+  },
+  "weapon_unique_9": {
+    "id": "1573800600414720172",
+    "name": "weapon_unique_9",
+    "animated": false,
+    "tag": "<:weapon_unique_9:1573800600414720172>"
+  },
+  "xich_diem_ky_lan": {
+    "id": "1573799866411257979",
+    "name": "xich_diem_ky_lan",
+    "animated": false,
+    "tag": "<:xich_diem_ky_lan:1573799866411257979>"
+  },
+  "xich_nguyet_tue_ho": {
+    "id": "1573800006043959550",
+    "name": "xich_nguyet_tue_ho",
+    "animated": false,
+    "tag": "<:xich_nguyet_tue_ho:1573800006043959550>"
+  },
+  "xich_thach_tieu_quy": {
+    "id": "1573799643890974761",
+    "name": "xich_thach_tieu_quy",
+    "animated": false,
+    "tag": "<:xich_thach_tieu_quy:1573799643890974761>"
+  },
+  "xich_xa_hoa_long": {
+    "id": "1573412284548776140",
+    "name": "xich_xa_hoa_long",
+    "animated": false,
+    "tag": "<:xich_xa_hoa_long:1573412284548776140>"
   }
 }

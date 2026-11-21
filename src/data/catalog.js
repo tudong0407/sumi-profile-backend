@@ -1,7 +1,7 @@
 /**
  * src/data/catalog.js
- * Danh mục chuẩn (Single Source of Truth) cho 65 Pháp Bảo Loadout, 41 Linh Thú (4 Phẩm Cấp + Độc Quyền Fuyumi),
- * Pet Tân Thủ Mặc Định, và các mốc Level Role / Shop Roles của SuMi Family (Update v1.1).
+ * Danh mục chuẩn (Single Source of Truth) cho 165 Pháp Bảo Loadout, 91 Linh Thú (v1.3 + Độc Quyền Fuyumi),
+ * 31 Linh Vực + 16 Thần Thức + 16 Thần Cảnh, Nông Trại (/farm, /exchange), và hệ thống SuMi Family (Update v1.3).
  */
 
 import {
@@ -18,7 +18,23 @@ import {
   elementEmoji,
   gradeEmoji,
   gradeEmojiKey,
+  domainEmoji,
+  domainEmojiKey,
+  senseEmoji,
+  senseEmojiKey,
+  realmEmojiById,
+  realmEmojiKeyById,
+  farmEmoji,
 } from '../config/emojiHelper.js';
+import {
+  V13_DOMAIN_ELEMENTS,
+  V13_DOMAINS,
+  V13_DIVINE_SENSES,
+  V13_DIVINE_REALMS,
+  V13_NEW_PETS,
+  V13_NEW_EQUIPMENT,
+  V13_FARM_ASSETS,
+} from './v13ExpansionCatalog.js';
 
 export const FUYUMI_USER_ID = '757091869183311872';
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://sumi-profile-backend.onrender.com').replace(/\/$/, '');
@@ -61,11 +77,28 @@ export const MYTHIC_UNIQUE_ITEM_IDS = new Set([
   'weapon_mythic_1', 'weapon_mythic_2', 'weapon_mythic_3',
   'gem_mythic_1', 'gem_mythic_2', 'gem_mythic_3',
   'soul_mythic_1', 'soul_mythic_2', 'soul_mythic_3',
+  ...V13_NEW_EQUIPMENT.filter((it) => it.is_unique).map((it) => it.item_id),
 ]);
 
+export const MYTHIC_UNIQUE_PET_TYPES = new Set(
+  V13_NEW_PETS.filter((p) => p.is_unique).map((p) => p.pet_type),
+);
+
+export const MYTHIC_UNIQUE_DOMAIN_IDS = new Set(
+  V13_DOMAINS.filter((d) => d.is_unique && !d.is_exclusive_fuyumi).map((d) => d.domain_id),
+);
+
+export const MYTHIC_UNIQUE_SENSE_IDS = new Set(
+  V13_DIVINE_SENSES.filter((s) => s.is_unique && !s.is_exclusive_fuyumi).map((s) => s.sense_id),
+);
+
+export const MYTHIC_UNIQUE_REALM_IDS = new Set(
+  V13_DIVINE_REALMS.filter((r) => r.is_unique && !r.is_exclusive_fuyumi).map((r) => r.realm_id),
+);
+
 /**
- * Toàn bộ 65 Pháp Bảo Loadout (23 Vũ Khí, 21 Bảo Ngọc, 21 Chiến Hồn)
- * Chỉ 9 Thần Thoại gốc (MYTHIC_UNIQUE_ITEM_IDS) là Độc Nhất toàn server; 6 Thần Thoại mới không khóa Unique.
+ * Toàn bộ 165 Pháp Bảo Loadout (57 Vũ Khí, 54 Bảo Ngọc, 54 Chiến Hồn)
+ * Gồm 39 Thần Thoại Độc Nhất Toàn Server (9 gốc + 30 v1.3) & 56 Thần Thoại Không Độc Nhất (6 v1.1 + 50 v1.3).
  */
 export const EQUIPMENT_CATALOG = [
   // 23 Vũ Khí (Weapons)
@@ -147,8 +180,10 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'soul_mythic_3', item_name: '« Luân Hồi Bất Diệt Chiến Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Luân Hồi', bonus_atk: 360, bonus_def: 320, bonus_spd: 470, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Sinh Mệnh Nghịch Chuyển', hax_description: 'Khi HP tụt dưới 20% (còn sống), hoán đổi ngay % máu hiện tại với đối thủ (1 lần/trận).', drop_rate: 1.0, is_unique: true },
   { item_id: 'soul_mythic_4', item_name: '« Thái Bạch Kiếm Tiên Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Kim', bonus_atk: 390, bonus_def: 220, bonus_spd: 450, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Vạn Kiếm Quy Tông', hax_description: 'Mỗi 2 hiệp tung thêm kiếm khí 70% ATK xuyên 50% DEF.', drop_rate: 1.0, is_unique: false },
   { item_id: 'soul_mythic_5', item_name: '« Tinh Tú Huyền Nữ Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Quang', bonus_atk: 310, bonus_def: 360, bonus_spd: 460, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Tinh Quang Chúc Phúc', hax_description: 'Miễn nhiễm Choáng/Đóng Băng/Mị Hoặc & hồi 10% HP tối đa/hiệp.', drop_rate: 1.0, is_unique: false },
+  ...V13_NEW_EQUIPMENT,
 ].map((item) => ({
   ...item,
+  is_unique: Boolean(item.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(item.item_id)),
   drop_rate: RARITY_TIERS[item.rarity_key]?.dropRate ?? item.drop_rate,
   icon: itemEmoji(item.item_id),
   emoji_key: itemEmojiKey(item.item_id),
@@ -209,13 +244,15 @@ export const PET_CATALOG = [
   { pet_type: 'hoang_thien_ky_lan', pet_name: 'Hoàng Thiên Kỳ Lân', element: 'Thổ', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 510, base_def: 560, base_spd: 470, hax_skill: 'Bất Động Sơn Hà', hax_description: 'Đầu trận khiên 65% HP; khi khiên vỡ phát nổ gây 20% HP tối đa ST chuẩn.', image_file: 'pets/hoang_thien_ky_lan.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thai_duong_kim_o', pet_name: 'Thái Dương Kim Ô', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 570, base_def: 430, base_spd: 540, hax_skill: 'Chân Hỏa Phần Thiên', hax_description: 'Xuyên 65% DEF + thiêu đốt 10% HP tối đa địch mỗi hiệp (bỏ qua khiên).', image_file: 'pets/thai_duong_kim_o.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'nguyet_than_cuu_vy_bach', pet_name: 'Nguyệt Thần Bạch Vĩ Hồ', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 530, base_def: 470, base_spd: 560, hax_skill: 'Thời Không Hoán Ảnh', hax_description: '1 lần/trận khi HP < 35%, giải hiệu ứng xấu, hồi 30% HP & thêm 1 lượt.', image_file: 'pets/nguyet_than_cuu_vy_bach.png', is_starter: false, is_exclusive_fuyumi: false },
+  ...V13_NEW_PETS,
 
   // Độc Quyền Tiểu Thư Fuyumi
   { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc. Độc quyền Tiểu thư Fuyumi.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
+  is_unique: Boolean(p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)),
   drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.5 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.5,
-  icon: petEmoji(p.pet_type, em('su_fox_mascot')),
+  icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
   emoji_key: petEmojiKey(p.pet_type),
   element_icon: elementEmoji(p.element),
   base_hp: Math.max(500, 1000 + p.base_def * 5),
@@ -303,13 +340,14 @@ export const SHOP_EQUIPMENT = EQUIPMENT_CATALOG
  * Vật phẩm tiêu hao / nâng cấp bán thẳng trong /shop
  */
 export const SHOP_CONSUMABLES = [
-  { item_id: 'gacha_ticket_equip', name: 'Vé Rèn Pháp Bảo', category: 'consumable', price: 50, icon: em('su_ticket_equip'), description: 'Dùng thay 50 Linh Thạch khi quay Gacha Pháp Bảo (/roll).' },
-  { item_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', category: 'consumable', price: 50, icon: em('su_ticket_pet'), description: 'Dùng thay 50 Linh Thạch khi quay Gacha Linh Thú (/roll).' },
-  { item_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', category: 'consumable', price: 100, icon: em('su_star_stone'), description: 'Nguyên liệu đột phá cấp Sao (1 -> 10 Sao) cho Linh Thú (/linhthu).' },
-  { item_id: 'tower_reset_card', name: 'Thẻ Reset Lượt Đi Tháp', category: 'consumable', price: 200, daily_limit: 3, max_stack: 10, icon: em('su_tower_reset_card', '🗼'), description: 'Hồi ngay 5/5 lượt khiêu chiến Tháp Thí Luyện trong ngày (/nhiemvu hanh_dong:reset). Giới hạn mua 3/ngày, tối đa 10 thẻ trong túi.' },
-  { item_id: 'enchant_stone', name: 'Đá Khắc Ấn', category: 'consumable', price: 150, daily_limit: 5, max_stack: 99, icon: em('su_enchant_stone', '🔮'), description: 'Đá Khắc Ấn dùng để cường hóa Phẩm Chất D→C→B→A→S cho Linh Thú & Pháp Bảo (/enchant). Giới hạn mua 5/ngày trong Shop; săn thêm tại Boss Tháp mỗi 5 tầng.' },
-  { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: em('su_title_card'), description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
-  { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản', category: 'consumable', price: 800, icon: em('su_frame_token'), description: 'Mở khóa khung viền Avatar đặc biệt trên /profile & /rank.' },
+  { item_id: 'gacha_ticket_equip', name: 'Vé Rèn Pháp Bảo', category: 'consumable', price: 50, icon: em('gacha_ticket_equip'), description: 'Dùng thay 50 Linh Thạch khi quay Gacha Pháp Bảo (/roll).' },
+  { item_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', category: 'consumable', price: 50, icon: em('gacha_ticket_pet'), description: 'Dùng thay 50 Linh Thạch khi quay Gacha Linh Thú (/roll).' },
+  { item_id: 'gacha_ticket_domain', name: 'Vé Khai Mở Linh Vực', category: 'consumable', price: 60, icon: em('su_gacha_dice', '🔮'), description: 'Dùng thay 60 Linh Thạch khi quay Gacha Linh Vực • Thần Thức • Thần Cảnh (/roll loai:domain).' },
+  { item_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', category: 'consumable', price: 100, icon: em('pet_star_stone'), description: 'Nguyên liệu đột phá cấp Sao (1 -> 10 Sao) cho Linh Thú (/linhthu).' },
+  { item_id: 'tower_reset_card', name: 'Thẻ Reset Lượt Đi Tháp', category: 'consumable', price: 200, daily_limit: 3, max_stack: 10, icon: em('tower_reset_card', '🗼'), description: 'Hồi ngay 5/5 lượt khiêu chiến Tháp Thí Luyện trong ngày (/nhiemvu hanh_dong:reset). Giới hạn mua 3/ngày, tối đa 10 thẻ trong túi.' },
+  { item_id: 'enchant_stone', name: 'Đá Khắc Ấn', category: 'consumable', price: 150, daily_limit: 5, max_stack: 99, icon: em('enchant_stone', '🔮'), description: 'Đá Khắc Ấn dùng để cường hóa Phẩm Chất D→C→B→A→S cho Linh Thú & Pháp Bảo (/enchant). Giới hạn mua 5/ngày trong Shop; săn thêm tại Boss Tháp mỗi 5 tầng.' },
+  { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: em('title_rename_card'), description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
+  { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản', category: 'consumable', price: 800, icon: em('frame_unlock_token'), description: 'Mở khóa khung viền Avatar đặc biệt trên /profile & /rank.' },
 ];
 
 export const SHOP_CONSUMABLE_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
@@ -363,8 +401,8 @@ export const SHOP_ROLE_PACKAGES = [
   { role_id: '1573186028196462613', name: '« Lôi Âm Tôn Giả »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_thunder_hax')} Quyền Ưu Tiên Nói Voice`, prices: { '7d': 200, '30d': 650, permanent: 2000 } },
   { role_id: '1573186032289980416', name: '« Tịch Tĩnh Tán Nhân »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_shield_def')} Quyền Tắt Tiếng Voice`, prices: { '7d': 350, '30d': 1100, permanent: 3500 } },
   { role_id: '1573186036585201726', name: '« Bế Tức Chân Nhân »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_shield_def')} Quyền Tắt Tai Nghe Voice`, prices: { '7d': 350, '30d': 1100, permanent: 3500 } },
-  { role_id: '1573186040716468316', name: '« Huyễn Diện Đạo Quân »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_title_card')} Tự Do Đổi Biệt Danh`, prices: { '7d': 180, '30d': 600, permanent: 1800 } },
-  { role_id: '1573186045468614687', name: '« Định Danh Sứ Giả »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_title_card')} Quản Lý Biệt Danh`, prices: { '7d': 320, '30d': 1000, permanent: 3200 } },
+  { role_id: '1573186040716468316', name: '« Huyễn Diện Đạo Quân »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('title_rename_card')} Tự Do Đổi Biệt Danh`, prices: { '7d': 180, '30d': 600, permanent: 1800 } },
+  { role_id: '1573186045468614687', name: '« Định Danh Sứ Giả »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('title_rename_card')} Quản Lý Biệt Danh`, prices: { '7d': 320, '30d': 1000, permanent: 3200 } },
   { role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_thunder_hax')} Miễn Chờ Chat Chậm`, prices: { '7d': 150, '30d': 500, permanent: 1500 } },
   { role_id: '1573186053500833802', name: '« Họa Đồ Linh Sư »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sakura')} Đăng Ảnh Kênh Giới Hạn`, prices: { '7d': 150, '30d': 500, permanent: 1500 } },
   { role_id: '1573186057778888745', name: '« Vạn Tượng Linh Hồ »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sparkle')} Dùng Emoji Ngoại Server`, prices: { '7d': 200, '30d': 650, permanent: 2000 } },
@@ -573,9 +611,9 @@ export function getEnchantUpgradeQuote(currentGrade, pityCount = 0) {
 }
 
 /**
- * Hệ thống Nghề Tu Tiên & Hợp Đồng Tuần (/job & /nhiemvu, v1.2)
+ * Hệ thống Nghề Tu Tiên & Hợp Đồng Tuần (/job & /nhiemvu, v1.3)
  */
-export const JOB_DAILY_LIMIT = 6;
+export const JOB_DAILY_LIMIT = 8;
 export const JOB_COOLDOWN_MS = 60 * 60 * 1000;
 
 export const JOBS_CATALOG = [
@@ -667,3 +705,98 @@ export const WEEKLY_CONTRACTS_CONFIG = {
   exp: { target: 10000, rewardLt: 450, rewardStones: 2, label: 'Tích lũy 10.000 EXP trong tuần' },
   bonus: { rewardLt: 600, rewardStones: 5, label: 'Thưởng Hoàn Tất 3/3 Hợp Đồng Tuần' },
 };
+
+// =========================================================================
+// HỆ THỐNG LINH VỰC • THẦN THỨC • THẦN CẢNH (v1.3)
+// =========================================================================
+export const DOMAIN_ELEMENTS = V13_DOMAIN_ELEMENTS;
+
+export const DOMAIN_CATALOG = V13_DOMAINS.map((d) => ({
+  ...d,
+  entity_kind: 'domain',
+  id: d.domain_id,
+  is_unique: Boolean(d.is_unique || MYTHIC_UNIQUE_DOMAIN_IDS.has(d.domain_id)),
+  drop_rate: d.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[d.rarity_key]?.dropRate ?? 0),
+  icon: domainEmoji(d.domain_id, em('su_realm_star')),
+  emoji_key: domainEmojiKey(d.domain_id),
+  file: `domains/${d.domain_id}.png`,
+}));
+
+export const DOMAIN_BY_ID = Object.fromEntries(DOMAIN_CATALOG.map((d) => [d.domain_id, d]));
+
+export const DIVINE_SENSE_CATALOG = V13_DIVINE_SENSES.map((s) => ({
+  ...s,
+  entity_kind: 'sense',
+  id: s.sense_id,
+  is_unique: Boolean(s.is_unique || MYTHIC_UNIQUE_SENSE_IDS.has(s.sense_id)),
+  drop_rate: s.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[s.rarity_key]?.dropRate ?? 0),
+  icon: senseEmoji(s.sense_id, em('su_sparkle')),
+  emoji_key: senseEmojiKey(s.sense_id),
+  file: `domains/${s.sense_id}.png`,
+}));
+
+export const DIVINE_SENSE_BY_ID = Object.fromEntries(DIVINE_SENSE_CATALOG.map((s) => [s.sense_id, s]));
+
+export const DIVINE_REALM_CATALOG = V13_DIVINE_REALMS.map((r) => ({
+  ...r,
+  entity_kind: 'realm',
+  id: r.realm_id,
+  is_unique: Boolean(r.is_unique || MYTHIC_UNIQUE_REALM_IDS.has(r.realm_id)),
+  drop_rate: r.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[r.rarity_key]?.dropRate ?? 0),
+  icon: realmEmojiById(r.realm_id, em('su_arena')),
+  emoji_key: realmEmojiKeyById(r.realm_id),
+  file: `domains/${r.realm_id}.png`,
+}));
+
+export const DIVINE_REALM_BY_ID = Object.fromEntries(DIVINE_REALM_CATALOG.map((r) => [r.realm_id, r]));
+
+// =========================================================================
+// NÔNG TRẠI THỜI GIAN THỰC (/farm) & ĐỔI QUÀ (/exchange) (v1.3)
+// =========================================================================
+const FARM_SEED_PRICING = {
+  seed_linh_thao: {
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 80, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 145, reward_essence: 15, min_care_recommended: 1,
+  },
+  seed_tien_thao: {
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 200, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 390, reward_essence: 40, min_care_recommended: 2,
+  },
+  seed_than_moc: {
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 500, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1050, reward_essence: 110, min_care_recommended: 2,
+  },
+  egg_linh_thu: {
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 120, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 220, reward_essence: 22, min_care_recommended: 1,
+  },
+  egg_tien_thu: {
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 300, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 580, reward_essence: 60, min_care_recommended: 2,
+  },
+  egg_than_thu: {
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 750, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1600, reward_essence: 165, min_care_recommended: 2,
+  },
+};
+
+export const FARM_SEEDS = V13_FARM_ASSETS
+  .filter((a) => FARM_SEED_PRICING[a.uid])
+  .map((a) => ({
+    seed_id: a.uid,
+    name: a.name,
+    ...FARM_SEED_PRICING[a.uid],
+    care_window: a.care_window,
+    reward_summary: a.reward_summary,
+    icon: farmEmoji(a.uid, FARM_SEED_PRICING[a.uid].plot_type === 'linh_dien' ? '🌱' : '🥚'),
+    file: `farm/${a.uid}.png`,
+  }));
+
+export const FARM_SEED_BY_ID = Object.fromEntries(FARM_SEEDS.map((s) => [s.seed_id, s]));
+
+export const EXCHANGE_ITEMS = [
+  { exchange_id: 'exchange_lt_500', name: 'Túi 500 Linh Thạch', cost_essence: 120, reward_kind: 'linh_thach', reward_amount: 500, icon: em('su_linhthach'), description: 'Quy đổi 120 Linh Quả Tiên Giới lấy ngay 500 Linh Thạch.' },
+  { exchange_id: 'enchant_stone', name: 'Đá Khắc Ấn', cost_essence: 35, reward_kind: 'inventory', item_id: 'enchant_stone', reward_amount: 1, max_stack: 99, icon: em('enchant_stone', '🔮'), description: 'Cường hóa Khắc Ấn D→S cho Linh Thú & Pháp Bảo (túi tối đa 99).' },
+  { exchange_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', cost_essence: 45, reward_kind: 'inventory', item_id: 'pet_star_stone', reward_amount: 1, icon: em('pet_star_stone', '⭐'), description: 'Nguyên liệu đột phá cấp Sao cho Linh Thú.' },
+  { exchange_id: 'tower_reset_card', name: 'Thẻ Tẩy Tủy Tháp Thí Luyện', cost_essence: 90, reward_kind: 'inventory', item_id: 'tower_reset_card', reward_amount: 1, max_stack: 10, icon: em('tower_reset_card', '🗼'), description: 'Hồi đầy 5/5 lượt khiêu chiến Tháp trong ngày (túi tối đa 10).' },
+  { exchange_id: 'gacha_ticket_equip', name: 'Vé Triệu Hồi Pháp Bảo', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_equip', reward_amount: 1, icon: em('gacha_ticket_equip', '🎟️'), description: 'Dùng miễn phí 1 lượt /roll loai:equipment.' },
+  { exchange_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_pet', reward_amount: 1, icon: em('gacha_ticket_pet', '🎫'), description: 'Dùng miễn phí 1 lượt /roll loai:pet.' },
+  { exchange_id: 'gacha_ticket_domain', name: 'Vé Khai Mở Linh Vực', cost_essence: 65, reward_kind: 'inventory', item_id: 'gacha_ticket_domain', reward_amount: 1, icon: em('su_gacha_dice', '🔮'), description: 'Dùng miễn phí 1 lượt /roll loai:domain.' },
+  { exchange_id: 'farm_slot_unlock', name: 'Mở Khóa Ô Canh Tác (#5 / #6)', cost_essence: 300, reward_kind: 'farm_slot', reward_amount: 1, max_slots: 6, icon: farmEmoji('farm_essence', '🍑'), description: 'Mở rộng nông trại từ 4 ô lên 5 ô và tối đa 6 ô (tối đa 2 lần mở).' },
+];
+
+export const EXCHANGE_ITEM_BY_ID = Object.fromEntries(EXCHANGE_ITEMS.map((it) => [it.exchange_id, it]));

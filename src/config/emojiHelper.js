@@ -29,9 +29,53 @@ export function reloadEmojiMap() {
   return emojiMap;
 }
 
+export const LEGACY_TO_UID_ALIAS = {
+  su_fox_mascot: 'cuu_vi_hong_ho',
+  su_frame_token: 'frame_unlock_token',
+  su_enchant_stone: 'enchant_stone',
+  su_star_stone: 'pet_star_stone',
+  su_ticket_equip: 'gacha_ticket_equip',
+  su_ticket_pet: 'gacha_ticket_pet',
+  su_tower_reset_card: 'tower_reset_card',
+  su_title_card: 'title_rename_card',
+  su_ring_pham: 'ring_common',
+  su_ring_linh: 'ring_rare',
+  su_ring_tien: 'ring_epic',
+  su_ring_thanthoai: 'ring_mythic',
+};
+
+const UID_TO_LEGACY_ALIAS = Object.fromEntries(
+  Object.entries(LEGACY_TO_UID_ALIAS).map(([k, v]) => [v, k]),
+);
+
 export function getEmojiEntry(name) {
   if (!name) return null;
-  return emojiMap[name] || null;
+  const key = String(name).trim();
+  if (!key) return null;
+
+  if (emojiMap[key]) return emojiMap[key];
+
+  const mappedAlias = LEGACY_TO_UID_ALIAS[key];
+  if (mappedAlias && emojiMap[mappedAlias]) return emojiMap[mappedAlias];
+
+  if (key.startsWith('su_pet_')) {
+    const stripped = key.slice('su_pet_'.length);
+    if (emojiMap[stripped]) return emojiMap[stripped];
+  }
+  if (key.startsWith('su_')) {
+    const stripped = key.slice('su_'.length);
+    if (emojiMap[stripped]) return emojiMap[stripped];
+  }
+
+  const mappedLegacy = UID_TO_LEGACY_ALIAS[key];
+  if (mappedLegacy && emojiMap[mappedLegacy]) return emojiMap[mappedLegacy];
+
+  if (!key.startsWith('su_')) {
+    if (emojiMap[`su_${key}`]) return emojiMap[`su_${key}`];
+    if (emojiMap[`su_pet_${key}`]) return emojiMap[`su_pet_${key}`];
+  }
+
+  return null;
 }
 
 /**
@@ -97,7 +141,7 @@ export function elementEmoji(element, fallback = '') {
 }
 
 export function itemEmojiKey(itemId) {
-  return itemId ? `su_${itemId}` : '';
+  return itemId ? String(itemId).trim() : '';
 }
 
 export function itemEmoji(itemId, fallback = '') {
@@ -105,9 +149,7 @@ export function itemEmoji(itemId, fallback = '') {
 }
 
 export function petEmojiKey(petType) {
-  if (!petType) return '';
-  if (petType === 'cuu_vi_hong_ho') return 'su_fox_mascot';
-  return `su_pet_${petType}`;
+  return petType ? String(petType).trim() : '';
 }
 
 export function petEmoji(petType, fallback = '') {
@@ -116,10 +158,42 @@ export function petEmoji(petType, fallback = '') {
 
 export function ringEmojiKey(ringIdOrRarity) {
   const s = String(ringIdOrRarity || '').toLowerCase();
-  if (s.includes('mythic') || s.includes('than')) return 'su_ring_thanthoai';
-  if (s.includes('epic') || s.includes('tien')) return 'su_ring_tien';
-  if (s.includes('rare') || s.includes('linh')) return 'su_ring_linh';
-  return 'su_ring_pham';
+  if (s.includes('mythic') || s.includes('than')) return 'ring_mythic';
+  if (s.includes('epic') || s.includes('tien')) return 'ring_epic';
+  if (s.includes('rare') || s.includes('linh')) return 'ring_rare';
+  return 'ring_common';
+}
+
+export function domainEmojiKey(domainId) {
+  return domainId ? String(domainId).trim() : '';
+}
+
+export function domainEmoji(domainId, fallback = '') {
+  return em(domainEmojiKey(domainId), fallback);
+}
+
+export function senseEmojiKey(senseId) {
+  return senseId ? String(senseId).trim() : '';
+}
+
+export function senseEmoji(senseId, fallback = '') {
+  return em(senseEmojiKey(senseId), fallback);
+}
+
+export function realmEmojiKeyById(realmId) {
+  return realmId ? String(realmId).trim() : '';
+}
+
+export function realmEmojiById(realmId, fallback = '') {
+  return em(realmEmojiKeyById(realmId), fallback);
+}
+
+export function farmEmoji(farmId, fallback = '') {
+  return farmId ? em(String(farmId).trim(), fallback) : fallback;
+}
+
+export function minigameEmoji(mgId, fallback = '') {
+  return mgId ? em(String(mgId).trim(), fallback) : fallback;
 }
 
 export function ringEmoji(ringIdOrRarity, fallback = '') {

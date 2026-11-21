@@ -90,6 +90,28 @@ import {
   respondClanWar,
   getClanWarStatus,
 } from './services/clanService.js';
+import {
+  getDomainInventory,
+  equipDomainEntity,
+  unequipDomainEntity,
+  dismantleDomainEntity,
+} from './services/domainService.js';
+import {
+  playCoinflip,
+  playSlots,
+  startBlackjack,
+  blackjackAction,
+  crashGame,
+} from './services/minigameService.js';
+import {
+  getFarmStatus,
+  plantFarmPlot,
+  careAllPlots,
+  harvestAllPlots,
+  clearWiltedPlots,
+  getExchangeCatalog,
+  buyExchangeItem,
+} from './services/farmService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { renderBattleCard } from './canvas/battleRenderer.js';
@@ -243,9 +265,24 @@ app.get('/', (req, res) => {
       pet_list: 'GET /api/pet/:userId[?sort=power_desc|rarity_desc|rarity_asc|level_desc|star_desc]',
       pet_active: 'POST /api/pet/active',
       pet_upgrade: 'POST /api/pet/upgrade',
-      shop_catalog: 'GET /api/shop/catalog[?category=...]',
+      shop_catalog: 'GET /api/shop/catalog[?category=...&page=1]',
       shop_preview: 'POST /api/shop/preview',
       shop_buy: 'POST /api/shop/buy',
+      domain_inventory: 'GET /api/domain/inventory/:userId[?view=overview|domain|sense|realm]',
+      domain_equip: 'POST /api/domain/equip',
+      domain_unequip: 'POST /api/domain/unequip',
+      domain_dismantle: 'POST /api/domain/dismantle',
+      minigame_coinflip: 'POST /api/minigame/coinflip',
+      minigame_slots: 'POST /api/minigame/slots',
+      minigame_blackjack: 'POST /api/minigame/blackjack',
+      minigame_crash: 'POST /api/minigame/crash',
+      farm_status: 'GET /api/farm/status/:userId',
+      farm_plant: 'POST /api/farm/plant',
+      farm_care: 'POST /api/farm/care',
+      farm_harvest: 'POST /api/farm/harvest',
+      farm_clear: 'POST /api/farm/clear',
+      exchange_catalog: 'GET /api/exchange/catalog[?userId=...]',
+      exchange_buy: 'POST /api/exchange/buy',
       marry_status: 'GET /api/marry/status/:userId',
       marry_propose: 'POST /api/marry/propose',
       marry_respond: 'POST /api/marry/respond',
@@ -1167,6 +1204,7 @@ app.get('/api/shop/catalog', async (req, res) => {
   try {
     const result = await getShopCatalog(req.query.category || 'all', {
       userId: req.query.userId,
+      page: req.query.page,
       username: getCleanParam(req.query.username),
       avatarUrl: getCleanParam(req.query.avatar),
     });
@@ -1553,6 +1591,216 @@ app.post('/api/roles/cleanup-expired', requireBackendApiKey, async (req, res) =>
   } catch (err) {
     console.error('[Server] /api/roles/cleanup-expired error:', err);
     return res.status(500).json({ success: false, error: 'ROLE_CLEANUP_FAILED', message: err.message });
+  }
+});
+
+// ============================================================================
+// V1.3 EXPANSION: LINH VỰC (/linhvuc), MINIGAMES, NÔNG TRẠI (/farm, /exchange)
+// ============================================================================
+app.get('/api/domain/inventory/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getDomainInventory(req.params.userId, {
+      view: getCleanParam(req.query.view, 'overview') || 'overview',
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/domain/inventory error:', err);
+    return res.status(500).json({ success: false, error: 'DOMAIN_INV_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/domain/equip', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await equipDomainEntity(body.userId, getCleanParam(body.targetId, body.entityId), {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/domain/equip error:', err);
+    return res.status(500).json({ success: false, error: 'DOMAIN_EQUIP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/domain/unequip', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await unequipDomainEntity(body.userId, getCleanParam(body.slot, 'all') || 'all');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/domain/unequip error:', err);
+    return res.status(500).json({ success: false, error: 'DOMAIN_UNEQUIP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/domain/dismantle', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await dismantleDomainEntity(body.userId, getCleanParam(body.targetId, body.entityId));
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/domain/dismantle error:', err);
+    return res.status(500).json({ success: false, error: 'DOMAIN_DISMANTLE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/minigame/coinflip', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await playCoinflip(body.userId, body.bet ?? body.amount, getCleanParam(body.choice, 'heads') || 'heads', {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/minigame/coinflip error:', err);
+    return res.status(500).json({ success: false, error: 'COINFLIP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/minigame/slots', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await playSlots(body.userId, body.bet ?? body.amount, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/minigame/slots error:', err);
+    return res.status(500).json({ success: false, error: 'SLOTS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/minigame/blackjack', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const act = String(getCleanParam(body.action) || '').toLowerCase();
+    const opts = {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    };
+    const result = ['hit', 'stand', 'double'].includes(act)
+      ? await blackjackAction(body.userId, act, opts)
+      : await startBlackjack(body.userId, body.bet ?? body.amount, opts);
+    const httpStatus = Number.isInteger(result?.status) ? result.status : (result?.success ? 200 : 400);
+    return res.status(httpStatus).json(result);
+  } catch (err) {
+    console.error('[Server] /api/minigame/blackjack error:', err);
+    return res.status(500).json({ success: false, error: 'BLACKJACK_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/minigame/crash', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const actionOrBet = getCleanParam(body.action) ?? body.bet ?? body.amount;
+    const autoCashout = body.autoCashout ?? body.multiplier ?? null;
+    const result = await crashGame(body.userId, actionOrBet, autoCashout, {
+      bet: body.bet ?? body.amount,
+      autoCashout,
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/minigame/crash error:', err);
+    return res.status(500).json({ success: false, error: 'CRASH_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/farm/status/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getFarmStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/status error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/plant', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await plantFarmPlot(body.userId, getCleanParam(body.seedId, body.targetId), {
+      slotIndex: body.slotIndex,
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/plant error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_PLANT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/care', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await careAllPlots(body.userId, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/care error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_CARE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/harvest', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await harvestAllPlots(body.userId, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/harvest error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_HARVEST_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/clear', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await clearWiltedPlots(body.userId, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/clear error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_CLEAR_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/exchange/catalog', async (req, res) => {
+  try {
+    const result = await getExchangeCatalog(req.query.userId || null);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/exchange/catalog error:', err);
+    return res.status(500).json({ success: false, error: 'EXCHANGE_CATALOG_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/exchange/buy', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await buyExchangeItem(body.userId, getCleanParam(body.exchangeId, body.itemId), body.quantity ?? 1, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/exchange/buy error:', err);
+    return res.status(500).json({ success: false, error: 'EXCHANGE_BUY_FAILED', message: err.message });
   }
 });
 

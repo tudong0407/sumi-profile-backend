@@ -1,12 +1,17 @@
 /**
  * src/services/infoService.js
- * Hệ thống tra cứu trực tiếp theo UID hoặc tên (/info <ma_id>) cho Linh Thú, Pháp Bảo, Role, Vật Phẩm, Nhẫn, Background & Khung.
- * Bảo mật: Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho) chỉ hiển thị khi requesterId === FUYUMI_USER_ID.
+ * Hệ thống tra cứu trực tiếp theo UID hoặc tên (/info <ma_id>) cho Linh Thú, Pháp Bảo, Linh Vực, Thần Thức, Thần Cảnh, Hạt Giống, Role, Vật Phẩm, Nhẫn, Background & Khung.
+ * Bảo mật: Vật phẩm/Linh Thú/Linh Vực độc quyền Fuyumi chỉ hiển thị khi requesterId === FUYUMI_USER_ID.
  */
 
 import {
   PET_CATALOG,
   EQUIPMENT_CATALOG,
+  DOMAIN_CATALOG,
+  DIVINE_SENSE_CATALOG,
+  DIVINE_REALM_CATALOG,
+  FARM_SEEDS,
+  EXCHANGE_ITEMS,
   GACHA_ROLE_CATALOG,
   LEVEL_ROLE_MILESTONES,
   SHOP_CONSUMABLES,
@@ -27,6 +32,10 @@ import {
   petEmoji,
   itemEmoji,
   ringEmoji,
+  domainEmoji,
+  senseEmoji,
+  realmEmojiById,
+  farmEmoji,
 } from '../config/emojiHelper.js';
 
 function normText(s) {
@@ -62,8 +71,17 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
   // 1. Exact ID matches first
   const visiblePets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi || isFuyumi);
+  const visibleDomains = DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi || isFuyumi);
+  const visibleSenses = DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi || isFuyumi);
+  const visibleRealms = DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi || isFuyumi);
+
   let matchedPet = visiblePets.find((p) => p.pet_type.toLowerCase() === qLower);
   let matchedItem = EQUIPMENT_CATALOG.find((i) => i.item_id.toLowerCase() === qLower);
+  let matchedDomain = visibleDomains.find((d) => d.domain_id.toLowerCase() === qLower);
+  let matchedSense = visibleSenses.find((s) => s.sense_id.toLowerCase() === qLower);
+  let matchedRealm = visibleRealms.find((r) => r.realm_id.toLowerCase() === qLower);
+  let matchedSeed = FARM_SEEDS.find((s) => s.seed_id.toLowerCase() === qLower);
+  let matchedExchange = EXCHANGE_ITEMS.find((ex) => ex.exchange_id.toLowerCase() === qLower);
   let matchedRole = GACHA_ROLE_CATALOG.find((r) => r.role_id === cleanMention);
   let matchedLvlRole = LEVEL_ROLE_MILESTONES.find((m) => m.roleId === cleanMention);
   let matchedCons = SHOP_CONSUMABLES.find((c) => c.item_id.toLowerCase() === qLower);
@@ -71,31 +89,55 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   let matchedBg = BACKGROUND_CATALOG.find((b) => b.bg_id.toLowerCase() === qLower);
   let matchedFrame = AVATAR_FRAMES.find((f) => f.frame_id.toLowerCase() === qLower || `frame_${f.frame_id}`.toLowerCase() === qLower);
 
+  const hasExactMatch = () => Boolean(
+    matchedPet || matchedItem || matchedDomain || matchedSense || matchedRealm
+    || matchedSeed || matchedExchange || matchedRole || matchedLvlRole
+    || matchedCons || matchedRing || matchedBg || matchedFrame,
+  );
+
   // 2. Partial name fallback
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedPet = visiblePets.find((p) => normText(p.pet_name) === qNorm)
       || visiblePets.find((p) => normText(p.pet_name).includes(qNorm) || p.pet_type.toLowerCase().includes(qLower));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedItem = EQUIPMENT_CATALOG.find((i) => normText(i.item_name) === qNorm)
       || EQUIPMENT_CATALOG.find((i) => normText(i.item_name).includes(qNorm) || i.item_id.toLowerCase().includes(qLower));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
+    matchedDomain = visibleDomains.find((d) => normText(d.name) === qNorm)
+      || visibleDomains.find((d) => normText(d.name).includes(qNorm) || d.domain_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
+    matchedSense = visibleSenses.find((s) => normText(s.name) === qNorm)
+      || visibleSenses.find((s) => normText(s.name).includes(qNorm) || s.sense_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
+    matchedRealm = visibleRealms.find((r) => normText(r.name) === qNorm)
+      || visibleRealms.find((r) => normText(r.name).includes(qNorm) || r.realm_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
+    matchedSeed = FARM_SEEDS.find((s) => normText(s.name).includes(qNorm) || s.seed_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
     matchedCons = SHOP_CONSUMABLES.find((c) => normText(c.name).includes(qNorm) || c.item_id.toLowerCase().includes(qLower));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
+    matchedExchange = EXCHANGE_ITEMS.find((ex) => normText(ex.name).includes(qNorm) || ex.exchange_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
     matchedRole = GACHA_ROLE_CATALOG.find((r) => normText(r.name).includes(qNorm));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedLvlRole = LEVEL_ROLE_MILESTONES.find((m) => normText(m.name).includes(qNorm));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedRing = MARRY_RINGS.find((r) => normText(r.name).includes(qNorm));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedBg = BACKGROUND_CATALOG.find((b) => normText(b.name).includes(qNorm) || b.bg_id.toLowerCase().includes(qLower));
   }
-  if (!matchedPet && !matchedItem && !matchedRole && !matchedLvlRole && !matchedCons && !matchedRing && !matchedBg && !matchedFrame) {
+  if (!hasExactMatch()) {
     matchedFrame = AVATAR_FRAMES.find((f) => normText(f.name).includes(qNorm));
   }
 
@@ -134,8 +176,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: lines.join('\n'),
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: p.is_exclusive_fuyumi
-        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.2`
-        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.2`,
+        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.3`
+        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.3`,
       footer: `SuMi Family • Tra cứu UID: ${p.pet_type}`,
     };
   }
@@ -177,7 +219,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${itemEmoji(it.item_id, em('su_crossed_swords'))} PHÁP BẢO: ${it.item_name}`,
       description: lines.join('\n'),
       color: it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.2`,
+      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.3`,
       footer: `SuMi Family • Tra cứu UID: ${it.item_id}`,
     };
   }
@@ -280,6 +322,139 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     };
   }
 
+  if (matchedDomain) {
+    const d = matchedDomain;
+    const isInf = d.is_exclusive_fuyumi || d.base_energy >= 999;
+    const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[d.rarity_key] || 6;
+    const sourceText = d.is_exclusive_fuyumi
+      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      : `Gacha \`/roll loai:domain\` (**${d.drop_rate}%** bậc ${d.rarity})${d.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
+    const lines = [
+      `• **Mã UID:** \`${d.domain_id}\` • **Hệ Vực:** **${d.element}**`,
+      `• **Phẩm chất:** ${tierEmoji(d.rarity_key)} **${d.rarity}** • **Linh Mạch Gốc:** \`${isInf ? '∞' : d.base_energy}\` (Kích hoạt từ Hiệp 2)`,
+      `• ${em('su_sparkle')} **Buff phe mình:** ${d.buff_desc}`,
+      `• ${em('su_thunder_hax')} **Debuff phe địch:** ${d.debuff_desc}`,
+      d.enemy_active_debuff_pierce > 0 ? `• **Xuyên Kháng Lãnh Địa:** Gây \`${Math.round(d.enemy_active_debuff_pierce * 100)}%\` Debuff xuyên qua Lãnh Vực địch` : null,
+      d.enemy_buff_suppression > 0 ? `• **Áp Chế Sân Địch:** Giảm \`${Math.round(d.enemy_buff_suppression * 100)}%\` hiệu lực Buff của Lãnh Vực đối phương` : null,
+      `• **Nguồn sở hữu:** ${sourceText}`,
+      d.is_exclusive_fuyumi ? null : `• **Thu hồi (\`/linhvuc hanh_dong:dismantle\`):** **${dismantleVal}** ${lt}`,
+      `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${d.domain_id}\` để kích hoạt.*`,
+    ].filter(Boolean);
+
+    return {
+      success: true,
+      category: 'domain',
+      id: d.domain_id,
+      name: d.name,
+      title: `${domainEmoji(d.domain_id, em('su_arena'))} LINH VỰC: ${d.name}`,
+      description: lines.join('\n'),
+      color: d.rarity_key === 'supreme' ? '#ec4899' : d.rarity_key === 'mythic' ? '#f59e0b' : d.rarity_key === 'epic' ? '#a855f7' : d.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
+      image_url: `${PUBLIC_BASE_URL}/assets/domains/${d.domain_id}.png`,
+      footer: `SuMi Family • Linh Vực UID: ${d.domain_id}`,
+    };
+  }
+
+  if (matchedSense) {
+    const s = matchedSense;
+    const isInf = s.is_exclusive_fuyumi || s.bonus_energy >= 999;
+    const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[s.rarity_key] || 6;
+    const sourceText = s.is_exclusive_fuyumi
+      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      : `Gacha \`/roll loai:domain\` (**${s.drop_rate}%** bậc ${s.rarity})${s.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
+    return {
+      success: true,
+      category: 'sense',
+      id: s.sense_id,
+      name: s.name,
+      title: `${senseEmoji(s.sense_id, em('su_sparkle'))} THẦN THỨC: ${s.name}`,
+      description: [
+        `• **Mã UID:** \`${s.sense_id}\` • ${tierEmoji(s.rarity_key)} **${s.rarity}**`,
+        `• **Gia tăng Linh Mạch:** \`+${isInf ? '∞' : s.bonus_energy}\` • **Cường hóa Buff Sân Nhà:** \`+${Math.round((s.buff_boost_pct || 0) * 100)}%\``,
+        `• **Hiệu ứng:** ${s.desc}`,
+        `• **Nguồn sở hữu:** ${sourceText}`,
+        s.is_exclusive_fuyumi ? null : `• **Thu hồi (\`/linhvuc hanh_dong:dismantle\`):** **${dismantleVal}** ${lt}`,
+        `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${s.sense_id}\` để gắn vào Linh Vực.*`,
+      ].filter(Boolean).join('\n'),
+      color: s.rarity_key === 'supreme' ? '#ec4899' : '#38bdf8',
+      image_url: `${PUBLIC_BASE_URL}/assets/domains/${s.sense_id}.png`,
+      footer: `SuMi Family • Thần Thức UID: ${s.sense_id}`,
+    };
+  }
+
+  if (matchedRealm) {
+    const r = matchedRealm;
+    const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[r.rarity_key] || 6;
+    const sourceText = r.is_exclusive_fuyumi
+      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      : `Gacha \`/roll loai:domain\` (**${r.drop_rate}%** bậc ${r.rarity})${r.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
+    return {
+      success: true,
+      category: 'realm',
+      id: r.realm_id,
+      name: r.name,
+      title: `${realmEmojiById(r.realm_id, em('su_arena'))} THẦN CẢNH: ${r.name}`,
+      description: [
+        `• **Mã UID:** \`${r.realm_id}\` • ${tierEmoji(r.rarity_key)} **${r.rarity}**`,
+        `• **Cường hóa Debuff Sân Địch:** \`+${Math.round((r.debuff_boost_pct || 0) * 100)}%\``,
+        `• **Hiệu ứng:** ${r.desc}`,
+        `• **Nguồn sở hữu:** ${sourceText}`,
+        r.is_exclusive_fuyumi ? null : `• **Thu hồi (\`/linhvuc hanh_dong:dismantle\`):** **${dismantleVal}** ${lt}`,
+        `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${r.realm_id}\` để gắn vào Linh Vực.*`,
+      ].filter(Boolean).join('\n'),
+      color: r.rarity_key === 'supreme' ? '#ec4899' : '#f43f5e',
+      image_url: `${PUBLIC_BASE_URL}/assets/domains/${r.realm_id}.png`,
+      footer: `SuMi Family • Thần Cảnh UID: ${r.realm_id}`,
+    };
+  }
+
+  if (matchedSeed) {
+    const s = matchedSeed;
+    return {
+      success: true,
+      category: 'farm_seed',
+      id: s.seed_id,
+      name: s.name,
+      title: `${farmEmoji(s.seed_id, '🌱')} NÔNG TRẠI: ${s.name}`,
+      description: [
+        `• **Mã UID:** \`${s.seed_id}\` • **Khu vực:** **${s.plot_label}**`,
+        `• **Chi phí gieo/ấp:** **${s.cost_lt.toLocaleString('vi-VN')}** ${lt} • **Chu kỳ:** **${s.growth_hours} giờ**`,
+        `• **Chăm sóc:** ${s.care_window}`,
+        `• **Thu hoạch dự kiến:** ${s.reward_summary}`,
+        `• *Dùng \`/farm hanh_dong:plant hat_giong:${s.seed_id}\` để bắt đầu.*`,
+      ].join('\n'),
+      color: '#22c55e',
+      image_url: `${PUBLIC_BASE_URL}/assets/farm/${s.seed_id}.png`,
+      footer: `SuMi Family • Nông Trại UID: ${s.seed_id}`,
+    };
+  }
+
+  if (matchedExchange || qLower === 'farm_essence') {
+    const ex = matchedExchange || EXCHANGE_ITEMS[0];
+    const isRawEssence = qLower === 'farm_essence';
+    return {
+      success: true,
+      category: 'exchange',
+      id: isRawEssence ? 'farm_essence' : ex.exchange_id,
+      name: isRawEssence ? 'Linh Quả Tiên Giới' : ex.name,
+      title: `${farmEmoji('farm_essence', '🍑')} ${isRawEssence ? 'VẬT PHẨM NÔNG TRẠI: Linh Quả Tiên Giới' : `ĐỔI QUÀ NÔNG TRẠI: ${ex.name}`}`,
+      description: isRawEssence
+        ? [
+            `• **Mã UID:** \`farm_essence\``,
+            `• **Nguồn kiếm:** Thu hoạch từ nông trại thời gian thực \`/farm\`.`,
+            `• **Công dụng:** Đổi lấy Linh Thạch, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Tẩy Tủy Tháp hoặc mở ô ruộng thứ 5–6 tại \`/exchange\`.`,
+          ].join('\n')
+        : [
+            `• **Mã UID:** \`${ex.exchange_id}\``,
+            `• **Chi phí quy đổi:** **${ex.cost_essence.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence', '🍑')} **Linh Quả Tiên Giới**`,
+            `• **Chi tiết:** ${ex.description}`,
+            `• *Dùng \`/exchange ma_qua:${ex.exchange_id}\` để quy đổi.*`,
+          ].join('\n'),
+      color: '#f59e0b',
+      image_url: `${PUBLIC_BASE_URL}/assets/farm/farm_essence.png`,
+      footer: `SuMi Family • /exchange`,
+    };
+  }
+
   if (matchedBg) {
     const b = matchedBg;
     return {
@@ -287,7 +462,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       category: 'background',
       id: b.bg_id,
       name: b.name,
-      title: `${em('su_frame_token')} ẢNH NỀN: ${b.name}`,
+      title: `${em('frame_unlock_token')} ẢNH NỀN: ${b.name}`,
       description: [
         `• **Mã UID:** \`${b.bg_id}\` • ${tierEmoji(b.rarity_key)} **${b.rarity}**`,
         b.price > 0 ? `• **Giá bán (\`/shop\`):** **${b.price.toLocaleString('vi-VN')}** ${lt}` : '• **Nguồn:** Mở khóa mặc định.',
@@ -306,7 +481,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       category: 'frame',
       id: f.frame_id,
       name: f.name,
-      title: `${em('su_frame_token')} KHUNG VIỀN: ${f.name}`,
+      title: `${em('frame_unlock_token')} KHUNG VIỀN: ${f.name}`,
       description: [
         `• **Mã UID:** \`${f.frame_id}\``,
         f.token_required ? `• **Yêu cầu:** Cần **Lệnh Bài Khung Viền Độc Bản** (800 LT tại \`/shop\`).` : '• **Nguồn:** Mở khóa mặc định.',
@@ -324,7 +499,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     status: 404,
     error: 'INFO_NOT_FOUND',
     title: `${em('su_wiki_scroll')} Không tìm thấy dữ liệu`,
-    description: `Không tìm thấy Linh Thú, Pháp Bảo, Role hay Vật Phẩm nào khớp \`${raw}\`.\n• Hãy thử nhập đúng UID trong \`/inv\`, \`/phapbao\`, \`/linhthu\` hoặc một phần tên (VD: \`Thái Cổ\`, \`weapon_epic_4\`, \`tower_reset_card\`).`,
+    description: `Không tìm thấy Linh Thú, Pháp Bảo, Linh Vực, Role hay Vật Phẩm nào khớp \`${raw}\`.\n• Hãy thử nhập đúng UID trong \`/inv\`, \`/phapbao\`, \`/linhthu\`, \`/linhvuc\` hoặc một phần tên (VD: \`Thái Cổ\`, \`weapon_epic_4\`, \`domain_epic_1\`, \`tower_reset_card\`).`,
     color: '#f43f5e',
     image_url: '',
     footer: 'SuMi Family • /info <ma_id>',

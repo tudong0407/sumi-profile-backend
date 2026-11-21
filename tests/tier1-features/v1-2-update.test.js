@@ -198,7 +198,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
   it('3. Pha 2A: First-command Update Ack Gate blocks 18 gameplay routes at 1.1, leaves /wiki+/info+/updates+/profile open, unlocks on /api/update/ack', async () => {
     if (!supabase) return;
     await ensureUserInitialized(USER_V12_GATE, { username: 'V12GateTester' });
-    await supabase.from('users').update({ last_seen_update_version: '1.1' }).eq('user_id', USER_V12_GATE);
+    await supabase.from('users').update({ last_seen_update_version: '1.2' }).eq('user_id', USER_V12_GATE);
     clearUpdateGateCache(USER_V12_GATE);
 
     // Gameplay routes blocked cleanly with HTTP 200
@@ -207,7 +207,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     const blockedJson = await blockedInv.json();
     assert.equal(blockedJson.success, false);
     assert.equal(blockedJson.needs_update_ack, 'true');
-    assert.equal(blockedJson.update_version, '1.2');
+    assert.equal(blockedJson.update_version, '1.3');
 
     const blockedJob = await testServer.fetch(`/api/job/status/${USER_V12_GATE}`);
     assert.equal((await blockedJob.json()).needs_update_ack, 'true');
@@ -225,7 +225,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     assert.equal(profRes.status, 200);
     assert.equal((await profRes.json()).success, true);
 
-    // Acknowledge v1.2 -> unlocks immediately
+    // Acknowledge v1.3 -> unlocks immediately
     const ackRes = await testServer.fetch('/api/update/ack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -234,7 +234,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     assert.equal(ackRes.status, 200);
     const ackJson = await ackRes.json();
     assert.equal(ackJson.success, true);
-    assert.equal(ackJson.acknowledged_version, '1.2');
+    assert.equal(ackJson.acknowledged_version, '1.3');
 
     const openInv = await testServer.fetch(`/api/inv/${USER_V12_GATE}`);
     assert.equal(openInv.status, 200);
@@ -386,8 +386,8 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
     // Pre-render /health + exclusive /info/pet/cuu_vi_hong_ho vs /wiki 404
     const healthJson = await (await testServer.fetch('/health')).json();
-    assert.equal(healthJson.update_version, '1.2');
-    assert.equal(healthJson.prerender.totalStaticCards, 98);
+    assert.equal(healthJson.update_version, '1.3');
+    assert.equal(healthJson.prerender.totalStaticCards, 218);
 
     const exclusiveInfoRes = await testServer.fetch('/api/info/pet/cuu_vi_hong_ho.webp');
     assert.equal(exclusiveInfoRes.status, 200);
@@ -398,7 +398,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
     const fuyumiLookup = lookupInfo('cuu_vi_hong_ho', { requesterId: FUYUMI_USER_ID });
     assert.equal(fuyumiLookup.success, true);
-    assert.match(fuyumiLookup.image_url, /\/api\/info\/pet\/cuu_vi_hong_ho\.webp\?v=1\.2$/);
+    assert.match(fuyumiLookup.image_url, /\/api\/info\/pet\/cuu_vi_hong_ho\.webp\?v=1\.3$/);
 
     const strangerLookup = lookupInfo('cuu_vi_hong_ho', { requesterId: USER_V12_A });
     assert.equal(strangerLookup.success, false);

@@ -1,8 +1,8 @@
 /**
  * src/services/shopService.js
  * Hệ thống Cửa Hàng Tiên Giới (/shop):
- * - 6 Danh Mục: Nhẫn Cưới (4), Linh Thú Phàm/Linh (10), Pháp Bảo Phàm/Linh (24),
- *   Role Quyền Năng Tiện Ích (9 gói x 7d/30d/Vĩnh Viễn), Vật Phẩm Tiêu Hao (5), Background Profile/Rank (20).
+ * - 6 Danh Mục: Nhẫn Cưới (4), Linh Thú Phàm/Linh (26), Pháp Bảo Phàm/Linh (45),
+ *   Role Quyền Năng Tiện Ích (9 gói x 7d/30d/Vĩnh Viễn), Vật Phẩm Tiêu Hao (7), Background Profile/Rank (20).
  * - Lưu tạm lựa chọn vào Supabase shop_selections để Button [Mua Ngay] / [Thuê 7/30 Ngày / Vĩnh Viễn]
  *   thực thi chính xác theo {user_id}, kèm per-user async lock chống bấm đúp.
  */
@@ -105,7 +105,7 @@ function resolveShopEntry(category, itemId) {
   return null;
 }
 
-function buildCategorySummary(cat) {
+function buildCategorySummary(cat, page = 1) {
   const lt = em('su_linhthach');
   if (cat === 'rings') {
     return MARRY_RINGS.map((r) =>
@@ -113,14 +113,23 @@ function buildCategorySummary(cat) {
     ).join('\n');
   }
   if (cat === 'pets') {
-    return SHOP_PETS.map((p) =>
+    const pageSize = 24;
+    const totalPages = Math.max(1, Math.ceil(SHOP_PETS.length / pageSize));
+    const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const slice = SHOP_PETS.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const footer = totalPages > 1 ? `\n• *Trang **${safePage}/${totalPages}** (tổng ${SHOP_PETS.length} Linh Thú • tối đa 24 mục/trang)*` : '';
+    return slice.map((p) =>
       `• ${petEmoji(p.pet_type)} **${p.pet_name}** *(${p.rarity} • ${p.element})* — **${p.price.toLocaleString('vi-VN')}** ${lt} • \`${p.base_atk}/${p.base_def}/${p.base_spd}\``
-    ).join('\n');
+    ).join('\n') + footer;
   }
   if (cat === 'equipment') {
-    return SHOP_EQUIPMENT.slice(0, 12).map((e) =>
+    const pageSize = 12;
+    const totalPages = Math.max(1, Math.ceil(SHOP_EQUIPMENT.length / pageSize));
+    const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const slice = SHOP_EQUIPMENT.slice((safePage - 1) * pageSize, safePage * pageSize);
+    return slice.map((e) =>
       `• ${itemEmoji(e.item_id)} **${e.item_name}** *(${e.rarity} • ${e.item_type})* — **${e.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n• *... và ${SHOP_EQUIPMENT.length - 12} Pháp Bảo Linh Phẩm khác trong danh sách*`;
+    ).join('\n') + `\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${SHOP_EQUIPMENT.length} Pháp Bảo Phàm & Linh Phẩm*`;
   }
   if (cat === 'roles') {
     return SHOP_ROLE_PACKAGES.map((r) =>
@@ -134,9 +143,13 @@ function buildCategorySummary(cat) {
   }
   if (cat === 'backgrounds') {
     const bgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
-    return bgs.slice(0, 10).map((b) =>
-      `• ${em('su_frame_token')} **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n• *... tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(bgs.length / pageSize));
+    const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const slice = bgs.slice((safePage - 1) * pageSize, safePage * pageSize);
+    return slice.map((b) =>
+      `• ${em('frame_unlock_token')} **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${lt}`
+    ).join('\n') + `\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
   }
   return '';
 }
@@ -171,6 +184,12 @@ export async function getShopCatalog(category = 'all', options = {}) {
     return { success: false, status: 404, error: 'CATEGORY_NOT_FOUND', message: `Danh mục '${category}' không tồn tại.` };
   }
 
+  const pageSize = cat === 'equipment' ? 12 : cat === 'backgrounds' ? 10 : 24;
+  const fullCatItems = (cat && cat !== 'all') ? (catalogData[cat] || []) : [];
+  const totalPages = Math.max(1, Math.ceil(fullCatItems.length / pageSize));
+  const safePage = Math.min(Math.max(1, parseInt(options.page || '1', 10) || 1), totalPages);
+  const pageItems = fullCatItems.slice((safePage - 1) * pageSize, safePage * pageSize).slice(0, 25);
+
   const summaryText = cat === 'all' || !cat
     ? [
         `${em('su_linhthach')} **CHÀO MỪNG ĐẾN VỚI TIÊN BẢO CÁC (SHOP SUMI FAMILY)**`,
@@ -179,10 +198,10 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Linh Thú (${SHOP_PETS.length} loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
         `• **Pháp Bảo (${SHOP_EQUIPMENT.length} món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
         `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
-        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
+        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha (Pháp Bảo/Linh Thú/Linh Vực), Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
       ].filter(Boolean).join('\n')
-    : buildCategorySummary(cat);
+    : buildCategorySummary(cat, safePage);
 
   return {
     success: true,
@@ -190,7 +209,18 @@ export async function getShopCatalog(category = 'all', options = {}) {
     balance,
     balance_fmt: balance !== null ? balance.toLocaleString('vi-VN') : '',
     summary_text: summaryText,
-    ...(cat && cat !== 'all' ? { items: catalogData[cat] } : { categories: catalogData }),
+    ...(cat && cat !== 'all'
+      ? {
+          items: fullCatItems,
+          page: safePage,
+          total_pages: totalPages,
+          page_items: pageItems,
+          dropdown_options: pageItems.slice(0, 25).map((it) => ({
+            label: String(it.name || it.item_name || it.pet_name || it.item_id || it.pet_type || '').slice(0, 100),
+            value: String(it.item_id || it.pet_type || it.role_id || it.bg_id || '').slice(0, 100),
+          })),
+        }
+      : { categories: catalogData }),
   };
 }
 
@@ -331,13 +361,13 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     imageUrl = `${PUBLIC_BASE_URL}/assets/shop/${it.item_id}.png`;
     color = '#38bdf8';
     description = [
-      `${em('su_star_stone')} **Vật Phẩm Tu Tiên** ${ownedNote}`.trim(),
+      `${em('pet_star_stone')} **Vật Phẩm Tu Tiên** ${ownedNote}`.trim(),
       `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_sparkle')} ${it.description}`,
     ].join('\n');
   } else if (resolved.category === 'backgrounds') {
     price = disc(it.price);
-    title = `${em('su_frame_token')} ${it.name}`;
+    title = `${em('frame_unlock_token')} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/${it.file}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [

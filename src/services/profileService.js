@@ -10,6 +10,9 @@ import {
   normalizeEnchantGrade,
   getEnchantMultiplier,
   getEnchantBonusPct,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
 } from '../data/catalog.js';
 import { LATEST_VERSION } from '../data/changelogs.js';
 import { computeMarriageBuffs } from './marryService.js';
@@ -308,6 +311,11 @@ export function getFuyumiProfileMock() {
       { slot: 4, role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: '⚡ Miễn Chờ Chat Chậm', rarity: 'epic' },
       { slot: 5, role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', perk: '📌 Ghim Tin Nhắn', rarity: 'legendary' },
     ],
+    domain_loadout: {
+      domain: DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null,
+      sense: DIVINE_SENSE_BY_ID.sense_fuyumi_thai_thuong_hong_ho || null,
+      realm: DIVINE_REALM_BY_ID.realm_fuyumi_van_co_tuyet_diet || null,
+    },
   };
 }
 
@@ -596,11 +604,13 @@ export async function getProfileData(userId, overrides = {}) {
         { data: pet },
         { data: equippedItems, error: equipErr },
         { data: roles },
+        { data: equippedDomains },
       ] = await Promise.all([
         supabase.from('users').select('*').eq('user_id', cleanId).single(),
         supabase.from('user_pets').select('*').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
         supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
         supabase.from('user_roles').select('*').eq('user_id', cleanId).eq('is_equipped', true).order('equipped_slot', { ascending: true }),
+        supabase.from('user_domains').select('*').eq('user_id', cleanId).eq('is_equipped', true),
       ]);
 
       if (!userErr && user) {
@@ -771,6 +781,15 @@ export async function getProfileData(userId, overrides = {}) {
           petData.power = Math.round(petData.power * (1 + roleBuffs.petPowerBonusPct / 100));
         }
 
+        const dRow = (equippedDomains || []).find((d) => d.entity_kind === 'domain');
+        const sRow = (equippedDomains || []).find((d) => d.entity_kind === 'sense');
+        const rRow = (equippedDomains || []).find((d) => d.entity_kind === 'realm');
+        const domainLoadout = {
+          domain: dRow?.entity_id ? (DOMAIN_BY_ID[dRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null) : null),
+          sense: sRow?.entity_id ? (DIVINE_SENSE_BY_ID[sRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DIVINE_SENSE_BY_ID.sense_fuyumi_thai_thuong_hong_ho || null) : null),
+          realm: rRow?.entity_id ? (DIVINE_REALM_BY_ID[rRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DIVINE_REALM_BY_ID.realm_fuyumi_van_co_tuyet_diet || null) : null),
+        };
+
         baseProfile = {
           user_id: user.user_id,
           username: user.username,
@@ -785,6 +804,8 @@ export async function getProfileData(userId, overrides = {}) {
           exp: Number(user.exp) || 0,
           next_level_exp: getExpForNextLevel(userLvlNum),
           linh_thach: Number(user.linh_thach) || 0,
+          farm_slots_unlocked: Number(user.farm_slots_unlocked) || 4,
+          farm_essence: Number(user.farm_essence) || 0,
           max_role_slots: Number(user.max_role_slots) || 1,
           streak: Number(user.streak) || 0,
           marry_ring_id: marriedData?.ring_id || user.marry_ring_id || null,
@@ -794,6 +815,7 @@ export async function getProfileData(userId, overrides = {}) {
           equipped_roles: equippedRoles,
           role_pet_power_bonus_pct: roleBuffs.petPowerBonusPct,
           role_buffs: roleBuffs,
+          domain_loadout: domainLoadout,
         };
       }
     } catch (e) {

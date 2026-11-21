@@ -23,9 +23,20 @@ import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './
 import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
 
-export const DAILY_QUEST_EXP_TARGET = 50;
-export const DAILY_QUEST_BATTLE_TARGET = 1;
-export const DAILY_QUEST_REWARD_LT = 100;
+export const DAILY_QUEST_EXP_TARGET = 150;
+export const DAILY_QUEST_WINS_TARGET = 3;
+export const DAILY_QUEST_BATTLE_TARGET = DAILY_QUEST_WINS_TARGET;
+export const DAILY_QUEST_JOBS_TARGET = 2;
+export const DAILY_QUEST_ACTIVITY_TARGET = 1;
+export const DAILY_QUEST_REWARD_LT = 115;
+
+export const DAILY_QUESTS_CONFIG = {
+  q1: { id: 'daily', col: 'daily_claimed_q1', name: 'Điểm danh /daily hôm nay', target: 1, rewardLt: 15 },
+  q2: { id: 'exp', col: 'daily_claimed_q2', name: `Tích lũy ${DAILY_QUEST_EXP_TARGET} EXP Chat/Voice`, target: DAILY_QUEST_EXP_TARGET, rewardLt: 20 },
+  q3: { id: 'wins', col: 'daily_claimed_q3', name: `Chiến thắng ${DAILY_QUEST_WINS_TARGET} trận /battle hoặc Tháp`, target: DAILY_QUEST_WINS_TARGET, rewardLt: 25 },
+  q4: { id: 'jobs', col: 'daily_claimed_q4', name: `Hoàn thành ${DAILY_QUEST_JOBS_TARGET} ca Làm Việc (/job)`, target: DAILY_QUEST_JOBS_TARGET, rewardLt: 20 },
+  q5: { id: 'activity', col: 'daily_claimed_q5', name: `Chăm sóc /farm hoặc chơi ${DAILY_QUEST_ACTIVITY_TARGET} ván Minigame`, target: DAILY_QUEST_ACTIVITY_TARGET, rewardLt: 20 },
+};
 export const TOWER_MAX_FLOOR = 200;
 export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
 export const TOWER_WIN_BONUS_LT = 10;
@@ -110,7 +121,7 @@ export function getVnWeekKey(date = new Date()) {
   return monday.toISOString().slice(0, 10);
 }
 
-async function addInventoryItem(userId, itemId, category, delta) {
+export async function addInventoryItem(userId, itemId, category, delta) {
   const { data: ex } = await supabase
     .from('user_inventory')
     .select('quantity')
@@ -145,6 +156,7 @@ async function loadNormalizedQuestRow(cleanId, now = new Date()) {
     .maybeSingle();
 
   const sameQuestDay = row?.quest_date === todayKey;
+  const sameJobDay = row?.job_date === todayKey;
   const sameTowerDay = row?.tower_attempts_date === todayKey;
   const sameWeek = row?.weekly_week_key === weekKey;
 
@@ -154,6 +166,14 @@ async function loadNormalizedQuestRow(cleanId, now = new Date()) {
     daily_claimed_at: sameQuestDay ? row?.daily_claimed_at || null : null,
     chat_exp_today: sameQuestDay ? Number(row?.chat_exp_today || 0) : 0,
     battles_today: sameQuestDay ? Number(row?.battles_today || 0) : 0,
+    wins_today: sameQuestDay ? Number(row?.wins_today || 0) : 0,
+    farm_or_mg_today: sameQuestDay ? Number(row?.farm_or_mg_today || 0) : 0,
+    jobs_today: sameJobDay ? Number(row?.jobs_today || 0) : 0,
+    daily_claimed_q1: sameQuestDay ? Boolean(row?.daily_claimed_q1) : false,
+    daily_claimed_q2: sameQuestDay ? Boolean(row?.daily_claimed_q2) : false,
+    daily_claimed_q3: sameQuestDay ? Boolean(row?.daily_claimed_q3) : false,
+    daily_claimed_q4: sameQuestDay ? Boolean(row?.daily_claimed_q4) : false,
+    daily_claimed_q5: sameQuestDay ? Boolean(row?.daily_claimed_q5) : false,
     tower_floor: Number(row?.tower_floor || 0),
     tower_attempts_date: todayKey,
     tower_attempts_today: sameTowerDay ? Number(row?.tower_attempts_today || 0) : 0,
@@ -168,10 +188,40 @@ async function loadNormalizedQuestRow(cleanId, now = new Date()) {
   };
 }
 
+function buildQuestUpsertPayload(cleanId, state, overrides = {}, nowIso = new Date().toISOString()) {
+  return {
+    user_id: cleanId,
+    quest_date: state.quest_date,
+    daily_claimed_at: state.daily_claimed_at,
+    chat_exp_today: state.chat_exp_today,
+    battles_today: state.battles_today,
+    wins_today: state.wins_today,
+    farm_or_mg_today: state.farm_or_mg_today,
+    daily_claimed_q1: state.daily_claimed_q1,
+    daily_claimed_q2: state.daily_claimed_q2,
+    daily_claimed_q3: state.daily_claimed_q3,
+    daily_claimed_q4: state.daily_claimed_q4,
+    daily_claimed_q5: state.daily_claimed_q5,
+    tower_floor: state.tower_floor,
+    tower_attempts_date: state.tower_attempts_date,
+    tower_attempts_today: state.tower_attempts_today,
+    weekly_week_key: state.weekly_week_key,
+    weekly_jobs_done: state.weekly_jobs_done,
+    weekly_battle_wins: state.weekly_battle_wins,
+    weekly_exp_earned: state.weekly_exp_earned,
+    weekly_claimed_jobs: state.weekly_claimed_jobs,
+    weekly_claimed_wins: state.weekly_claimed_wins,
+    weekly_claimed_exp: state.weekly_claimed_exp,
+    weekly_bonus_claimed: state.weekly_bonus_claimed,
+    updated_at: nowIso,
+    ...overrides,
+  };
+}
+
 /**
  * Ghi nhận tiến độ nhiệm vụ hàng ngày & Hợp Đồng Tuần (non-blocking).
  */
-export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0, winDelta = 0, jobDelta = 0, now = new Date() } = {}) {
+export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0, winDelta = 0, jobDelta = 0, activityDelta = 0, now = new Date() } = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId || !/^[0-9]{17,20}$/.test(cleanId) || !supabase) return null;
 
@@ -182,37 +232,35 @@ export async function trackQuestActivity(userId, { expDelta = 0, battleDelta = 0
       const addBat = Math.max(0, Number(battleDelta) || 0);
       const addWin = Math.max(0, Number(winDelta) || 0);
       const addJob = Math.max(0, Number(jobDelta) || 0);
+      const addAct = Math.max(0, Number(activityDelta) || 0);
 
       const nextExp = state.chat_exp_today + addExp;
       const nextBattles = state.battles_today + addBat;
+      const nextWins = state.wins_today + addWin;
+      const nextAct = state.farm_or_mg_today + addAct;
       const nextWeeklyExp = state.weekly_exp_earned + addExp;
       const nextWeeklyWins = state.weekly_battle_wins + addWin;
       const nextWeeklyJobs = state.weekly_jobs_done + addJob;
       const nowIso = now.toISOString();
 
-      await supabase.from('user_quests').upsert({
-        user_id: cleanId,
-        quest_date: state.quest_date,
-        daily_claimed_at: state.daily_claimed_at,
-        chat_exp_today: nextExp,
-        battles_today: nextBattles,
-        tower_floor: state.tower_floor,
-        tower_attempts_date: state.tower_attempts_date,
-        tower_attempts_today: state.tower_attempts_today,
-        weekly_week_key: state.weekly_week_key,
-        weekly_jobs_done: nextWeeklyJobs,
-        weekly_battle_wins: nextWeeklyWins,
-        weekly_exp_earned: nextWeeklyExp,
-        weekly_claimed_jobs: state.weekly_claimed_jobs,
-        weekly_claimed_wins: state.weekly_claimed_wins,
-        weekly_claimed_exp: state.weekly_claimed_exp,
-        weekly_bonus_claimed: state.weekly_bonus_claimed,
-        updated_at: nowIso,
-      }, { onConflict: 'user_id' });
+      await supabase.from('user_quests').upsert(
+        buildQuestUpsertPayload(cleanId, state, {
+          chat_exp_today: nextExp,
+          battles_today: nextBattles,
+          wins_today: nextWins,
+          farm_or_mg_today: nextAct,
+          weekly_jobs_done: nextWeeklyJobs,
+          weekly_battle_wins: nextWeeklyWins,
+          weekly_exp_earned: nextWeeklyExp,
+        }, nowIso),
+        { onConflict: 'user_id' },
+      );
 
       return {
         chat_exp_today: nextExp,
         battles_today: nextBattles,
+        wins_today: nextWins,
+        farm_or_mg_today: nextAct,
         weekly_jobs_done: nextWeeklyJobs,
         weekly_battle_wins: nextWeeklyWins,
         weekly_exp_earned: nextWeeklyExp,
@@ -243,16 +291,56 @@ export async function getQuestStatus(userId, options = {}) {
   const ownedResetCards = Number(resetCardRes?.data?.quantity || 0);
   const ownedEnchantStones = Number(stoneRes?.data?.quantity || 0);
   const dailyDone = Boolean(user.last_daily && getVnDateKey(new Date(user.last_daily)) === state.quest_date);
-  const expDone = state.chat_exp_today >= DAILY_QUEST_EXP_TARGET;
-  const battleDone = state.battles_today >= DAILY_QUEST_BATTLE_TARGET;
-  const allCompleted = dailyDone && expDone && battleDone;
-  const alreadyClaimed = Boolean(state.daily_claimed_at);
-
   const quests = [
-    { id: 'daily', name: 'Điểm danh Tu Tiên (`/daily`)', progress: dailyDone ? 1 : 0, target: 1, done: dailyDone },
-    { id: 'exp', name: 'Tích lũy EXP ngày (Chat / Voice)', progress: Math.min(state.chat_exp_today, DAILY_QUEST_EXP_TARGET), target: DAILY_QUEST_EXP_TARGET, done: expDone },
-    { id: 'battle', name: 'Tham gia `/battle` hoặc Tháp Thí Luyện', progress: Math.min(state.battles_today, DAILY_QUEST_BATTLE_TARGET), target: DAILY_QUEST_BATTLE_TARGET, done: battleDone },
+    {
+      id: 'daily',
+      name: DAILY_QUESTS_CONFIG.q1.name,
+      progress: dailyDone ? 1 : 0,
+      target: 1,
+      done: dailyDone,
+      claimed: state.daily_claimed_q1 || Boolean(state.daily_claimed_at),
+      reward_lt: DAILY_QUESTS_CONFIG.q1.rewardLt,
+    },
+    {
+      id: 'exp',
+      name: DAILY_QUESTS_CONFIG.q2.name,
+      progress: Math.min(state.chat_exp_today, DAILY_QUEST_EXP_TARGET),
+      target: DAILY_QUEST_EXP_TARGET,
+      done: state.chat_exp_today >= DAILY_QUEST_EXP_TARGET,
+      claimed: state.daily_claimed_q2 || Boolean(state.daily_claimed_at),
+      reward_lt: DAILY_QUESTS_CONFIG.q2.rewardLt,
+    },
+    {
+      id: 'wins',
+      name: DAILY_QUESTS_CONFIG.q3.name,
+      progress: Math.min(state.wins_today, DAILY_QUEST_WINS_TARGET),
+      target: DAILY_QUEST_WINS_TARGET,
+      done: state.wins_today >= DAILY_QUEST_WINS_TARGET,
+      claimed: state.daily_claimed_q3 || Boolean(state.daily_claimed_at),
+      reward_lt: DAILY_QUESTS_CONFIG.q3.rewardLt,
+    },
+    {
+      id: 'jobs',
+      name: DAILY_QUESTS_CONFIG.q4.name,
+      progress: Math.min(state.jobs_today, DAILY_QUEST_JOBS_TARGET),
+      target: DAILY_QUEST_JOBS_TARGET,
+      done: state.jobs_today >= DAILY_QUEST_JOBS_TARGET,
+      claimed: state.daily_claimed_q4 || Boolean(state.daily_claimed_at),
+      reward_lt: DAILY_QUESTS_CONFIG.q4.rewardLt,
+    },
+    {
+      id: 'activity',
+      name: DAILY_QUESTS_CONFIG.q5.name,
+      progress: Math.min(state.farm_or_mg_today, DAILY_QUEST_ACTIVITY_TARGET),
+      target: DAILY_QUEST_ACTIVITY_TARGET,
+      done: state.farm_or_mg_today >= DAILY_QUEST_ACTIVITY_TARGET,
+      claimed: state.daily_claimed_q5 || Boolean(state.daily_claimed_at),
+      reward_lt: DAILY_QUESTS_CONFIG.q5.rewardLt,
+    },
   ];
+  const allCompleted = quests.every((q) => q.done);
+  const alreadyClaimed = Boolean(state.daily_claimed_at);
+  const canClaimDaily = quests.some((q) => q.done && !q.claimed) || (allCompleted && !alreadyClaimed);
 
   const weeklyContracts = [
     {
@@ -295,20 +383,20 @@ export async function getQuestStatus(userId, options = {}) {
 
   const lines = [
     `**1. Nhiệm Vụ Hàng Ngày (${state.quest_date})**`,
-    ...quests.map((q) => `${mark(q.done)} **${q.name}** — \`${q.progress}/${q.target}\``),
-    `• **Phần thưởng 3/3:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('su_ticket_equip')} • \`+1\` ${em('su_star_stone')}`,
+    ...quests.map((q) => `${mark(q.done, q.claimed)} **${q.name}** — \`${q.progress}/${q.target}\` *(+${q.reward_lt} LT)*`),
+    `• **Thưởng Hoàn Tất 5/5:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('gacha_ticket_equip')} • \`+1\` ${em('pet_star_stone')} • \`+1\` ${em('enchant_stone')}`,
     alreadyClaimed
-      ? `${em('su_sparkle')} **Trạng thái:** Đã nhận thưởng Nhiệm Vụ Ngày hôm nay!`
-      : allCompleted
-        ? `${em('su_sparkle')} **Trạng thái:** Đã hoàn thành 3/3! Dùng \`/nhiemvu hanh_dong:claim\` để nhận thưởng.`
-        : `• *Hoàn thành đủ 3 nhiệm vụ rồi dùng \`/nhiemvu hanh_dong:claim\`.*`,
+      ? `${em('su_sparkle')} **Trạng thái:** Đã nhận trọn bộ thưởng Nhiệm Vụ Ngày hôm nay!`
+      : canClaimDaily
+        ? `${em('su_sparkle')} **Trạng thái:** Có nhiệm vụ đã hoàn tất! Dùng \`/nhiemvu hanh_dong:claim\` để nhận thưởng ngay.`
+        : `• *Hoàn thành từng nhiệm vụ để nhận thưởng lẻ và mở thưởng 5/5 qua \`/nhiemvu hanh_dong:claim\`.*`,
     ``,
     `**2. Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00)**`,
-    ...weeklyContracts.map((c) => `${mark(c.done, c.claimed)} **${c.label}** — \`${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}\` *(+${c.rewardLt} LT + ${c.rewardStones} ${em('su_enchant_stone')})*`),
-    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt} LT + ${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('su_enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
+    ...weeklyContracts.map((c) => `${mark(c.done, c.claimed)} **${c.label}** — \`${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}\` *(+${c.rewardLt} LT + ${c.rewardStones} ${em('enchant_stone')})*`),
+    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt} LT + ${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
     ``,
     `**3. Tháp Thí Luyện 200 Tầng (${nextTierName})**`,
-    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/10\` ${em('su_tower_reset_card', '🗼')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('su_enchant_stone')}`,
+    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/10\` ${em('tower_reset_card', '🗼')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('enchant_stone')}`,
     `• Dùng \`/nhiemvu hanh_dong:tower\` để khiêu chiến **Tầng ${nextFloor}** *(Win +${TOWER_WIN_BONUS_LT} LT / Lose -${TOWER_LOSS_PENALTY_LT} LT • Boss 5 tầng rơi +1 Tinh Thạch & +1 Đá Khắc Ấn)*!`,
     state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
   ].filter(Boolean);
@@ -322,7 +410,7 @@ export async function getQuestStatus(userId, options = {}) {
     quests,
     all_completed: allCompleted,
     already_claimed: alreadyClaimed,
-    can_claim: allCompleted && !alreadyClaimed,
+    can_claim: canClaimDaily,
     weekly_contracts: weeklyContracts,
     weekly_bonus_claimed: state.weekly_bonus_claimed,
     weekly_can_claim: weeklyClaimable,
@@ -350,60 +438,96 @@ export async function claimDailyQuests(userId, options = {}) {
     if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
     const state = await loadNormalizedQuestRow(cleanId, now);
-    if (state.daily_claimed_at) {
-      return {
-        success: false,
-        status: 400,
-        error: 'ALREADY_CLAIMED',
-        message: `${em('su_sparkle')} Bạn đã nhận thưởng Nhiệm Vụ Hàng Ngày hôm nay rồi!`,
-      };
+    const dailyDone = Boolean(user.last_daily && getVnDateKey(new Date(user.last_daily)) === state.quest_date);
+    const statusMap = {
+      q1: dailyDone,
+      q2: state.chat_exp_today >= DAILY_QUEST_EXP_TARGET,
+      q3: state.wins_today >= DAILY_QUEST_WINS_TARGET,
+      q4: state.jobs_today >= DAILY_QUEST_JOBS_TARGET,
+      q5: state.farm_or_mg_today >= DAILY_QUEST_ACTIVITY_TARGET,
+    };
+
+    const nextFlags = {
+      daily_claimed_q1: state.daily_claimed_q1,
+      daily_claimed_q2: state.daily_claimed_q2,
+      daily_claimed_q3: state.daily_claimed_q3,
+      daily_claimed_q4: state.daily_claimed_q4,
+      daily_claimed_q5: state.daily_claimed_q5,
+    };
+
+    let rewardLt = 0;
+    const claimedNames = [];
+    for (const key of ['q1', 'q2', 'q3', 'q4', 'q5']) {
+      const cfg = DAILY_QUESTS_CONFIG[key];
+      if (statusMap[key] && !nextFlags[cfg.col]) {
+        nextFlags[cfg.col] = true;
+        rewardLt += cfg.rewardLt;
+        claimedNames.push(`${cfg.name} (+${cfg.rewardLt} LT)`);
+      }
     }
 
-    const dailyDone = Boolean(user.last_daily && getVnDateKey(new Date(user.last_daily)) === state.quest_date);
-    const expDone = state.chat_exp_today >= DAILY_QUEST_EXP_TARGET;
-    const battleDone = state.battles_today >= DAILY_QUEST_BATTLE_TARGET;
-    if (!dailyDone || !expDone || !battleDone) {
+    const allDone = Object.values(statusMap).every(Boolean);
+    let claimedBonus = false;
+    if (allDone && !state.daily_claimed_at) {
+      claimedBonus = true;
+      rewardLt += DAILY_QUEST_REWARD_LT;
+    }
+
+    if (claimedNames.length === 0 && !claimedBonus) {
+      if (allDone && state.daily_claimed_at) {
+        return {
+          success: false,
+          status: 400,
+          error: 'ALREADY_CLAIMED',
+          message: `${em('su_sparkle')} Bạn đã nhận trọn bộ thưởng Nhiệm Vụ Hàng Ngày hôm nay rồi!`,
+        };
+      }
       return {
         success: false,
         status: 400,
         error: 'QUESTS_INCOMPLETE',
-        message: `Chưa hoàn thành đủ 3 nhiệm vụ ngày! (/daily: ${dailyDone ? 'xong' : 'chưa'}, EXP: ${state.chat_exp_today}/${DAILY_QUEST_EXP_TARGET}, Giao đấu: ${state.battles_today}/${DAILY_QUEST_BATTLE_TARGET}).`,
+        message: `Chưa có nhiệm vụ ngày mới nào hoàn thành để nhận thưởng! (/daily: ${dailyDone ? '1/1' : '0/1'}, EXP: ${state.chat_exp_today}/${DAILY_QUEST_EXP_TARGET}, Thắng trận: ${state.wins_today}/${DAILY_QUEST_WINS_TARGET}, /job: ${state.jobs_today}/${DAILY_QUEST_JOBS_TARGET}, /farm/Minigame: ${state.farm_or_mg_today}/${DAILY_QUEST_ACTIVITY_TARGET}).`,
       };
     }
 
     const nowIso = now.toISOString();
-    const newBal = Number(user.linh_thach || 0) + DAILY_QUEST_REWARD_LT;
-
-    await Promise.all([
+    const newBal = Number(user.linh_thach || 0) + rewardLt;
+    const dbTasks = [
       supabase.from('users').update({ linh_thach: newBal, updated_at: nowIso }).eq('user_id', cleanId),
-      addInventoryItem(cleanId, 'gacha_ticket_equip', 'consumable', 1),
-      addInventoryItem(cleanId, 'pet_star_stone', 'consumable', 1),
-      supabase.from('user_quests').upsert({
-        user_id: cleanId,
-        quest_date: state.quest_date,
-        daily_claimed_at: nowIso,
-        chat_exp_today: state.chat_exp_today,
-        battles_today: state.battles_today,
-        tower_floor: state.tower_floor,
-        tower_attempts_date: state.tower_attempts_date,
-        tower_attempts_today: state.tower_attempts_today,
-        weekly_week_key: state.weekly_week_key,
-        weekly_jobs_done: state.weekly_jobs_done,
-        weekly_battle_wins: state.weekly_battle_wins,
-        weekly_exp_earned: state.weekly_exp_earned,
-        weekly_claimed_jobs: state.weekly_claimed_jobs,
-        weekly_claimed_wins: state.weekly_claimed_wins,
-        weekly_claimed_exp: state.weekly_claimed_exp,
-        weekly_bonus_claimed: state.weekly_bonus_claimed,
-        updated_at: nowIso,
-      }, { onConflict: 'user_id' }),
-    ]);
+      supabase.from('user_quests').upsert(
+        buildQuestUpsertPayload(cleanId, state, {
+          ...nextFlags,
+          daily_claimed_at: claimedBonus ? nowIso : state.daily_claimed_at,
+        }, nowIso),
+        { onConflict: 'user_id' },
+      ),
+    ];
+
+    if (claimedBonus) {
+      dbTasks.push(addInventoryItem(cleanId, 'gacha_ticket_equip', 'consumable', 1));
+      dbTasks.push(addInventoryItem(cleanId, 'pet_star_stone', 'consumable', 1));
+      dbTasks.push(addInventoryItem(cleanId, 'enchant_stone', 'consumable', 1));
+    }
+    await Promise.all(dbTasks);
+
+    const summaryLines = [
+      claimedBonus
+        ? `${em('su_winner_trophy')} **HOÀN TẤT 5/5 NHIỆM VỤ HÀNG NGÀY!**`
+        : `${em('su_sparkle')} **NHẬN THƯỞNG NHIỆM VỤ HÀNG NGÀY**`,
+      ...claimedNames.map((n) => `• ✅ ${n}`),
+      claimedBonus
+        ? `• ${em('su_winner_trophy')} **Thưởng Tổng 5/5:** **+${DAILY_QUEST_REWARD_LT}** ${em('su_linhthach')} • **+1** ${em('gacha_ticket_equip')} • **+1** ${em('pet_star_stone')} • **+1** ${em('enchant_stone')}`
+        : null,
+      `• **Tổng Linh Thạch Nhận:** **+${rewardLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **Số dư:** **${newBal.toLocaleString('vi-VN')} LT**`,
+    ].filter(Boolean);
 
     return {
       success: true,
-      reward_linh_thach: DAILY_QUEST_REWARD_LT,
+      claimed_quests: claimedNames,
+      claimed_bonus: claimedBonus,
+      reward_linh_thach: rewardLt,
       linh_thach: newBal,
-      message: `${em('su_winner_trophy')} Hoàn thành xuất sắc **3/3 Nhiệm Vụ Ngày**!\n• Nhận: **+${DAILY_QUEST_REWARD_LT}** ${em('su_linhthach')} • **+1** ${em('su_ticket_equip')} Vé Rèn Pháp Bảo • **+1** ${em('su_star_stone')} Tinh Thạch Nâng Sao\n• Số dư hiện tại: **${newBal.toLocaleString('vi-VN')} Linh Thạch**.`,
+      message: summaryLines.join('\n'),
     };
   });
 }
@@ -554,6 +678,7 @@ export async function challengeTower(userId, options = {}) {
     const nextFloor = won ? targetFloor : state.tower_floor;
     const nextAttempts = state.tower_attempts_today + 1;
     const nextBattles = state.battles_today + 1;
+    const nextWins = state.wins_today + (won ? 1 : 0);
     const nextWeeklyWins = state.weekly_battle_wins + (won ? 1 : 0);
 
     let rewardLt = 0;
@@ -581,25 +706,16 @@ export async function challengeTower(userId, options = {}) {
     const actualLtDelta = newBal - currentBal;
 
     const dbTasks = [
-      supabase.from('user_quests').upsert({
-        user_id: cleanId,
-        quest_date: state.quest_date,
-        daily_claimed_at: state.daily_claimed_at,
-        chat_exp_today: state.chat_exp_today,
-        battles_today: nextBattles,
-        tower_floor: nextFloor,
-        tower_attempts_date: state.tower_attempts_date,
-        tower_attempts_today: nextAttempts,
-        weekly_week_key: state.weekly_week_key,
-        weekly_jobs_done: state.weekly_jobs_done,
-        weekly_battle_wins: nextWeeklyWins,
-        weekly_exp_earned: state.weekly_exp_earned,
-        weekly_claimed_jobs: state.weekly_claimed_jobs,
-        weekly_claimed_wins: state.weekly_claimed_wins,
-        weekly_claimed_exp: state.weekly_claimed_exp,
-        weekly_bonus_claimed: state.weekly_bonus_claimed,
-        updated_at: nowIso,
-      }, { onConflict: 'user_id' }),
+      supabase.from('user_quests').upsert(
+        buildQuestUpsertPayload(cleanId, state, {
+          battles_today: nextBattles,
+          wins_today: nextWins,
+          tower_floor: nextFloor,
+          tower_attempts_today: nextAttempts,
+          weekly_battle_wins: nextWeeklyWins,
+        }, nowIso),
+        { onConflict: 'user_id' },
+      ),
     ];
 
     if (actualLtDelta !== 0) {
@@ -618,9 +734,9 @@ export async function challengeTower(userId, options = {}) {
 
     const rewardSummary = [
       rewardLt > 0 ? `+${rewardLt.toLocaleString('vi-VN')} ${em('su_linhthach')} *(gồm +${TOWER_WIN_BONUS_LT} LT thắng trận)*` : '',
-      rewardStarStones > 0 ? `+${rewardStarStones} ${em('su_star_stone')}` : '',
-      rewardEnchantStones > 0 ? `+${rewardEnchantStones} ${em('su_enchant_stone')}` : '',
-      rewardTickets > 0 ? `+${rewardTickets} ${em('su_ticket_pet')}` : '',
+      rewardStarStones > 0 ? `+${rewardStarStones} ${em('pet_star_stone')}` : '',
+      rewardEnchantStones > 0 ? `+${rewardEnchantStones} ${em('enchant_stone')}` : '',
+      rewardTickets > 0 ? `+${rewardTickets} ${em('gacha_ticket_pet')}` : '',
     ].filter(Boolean).join(' • ');
 
     return {
@@ -726,25 +842,15 @@ export async function claimWeeklyQuests(userId, options = {}) {
 
     const tasks = [
       supabase.from('users').update({ linh_thach: newBal, updated_at: nowIso }).eq('user_id', cleanId),
-      supabase.from('user_quests').upsert({
-        user_id: cleanId,
-        quest_date: state.quest_date,
-        daily_claimed_at: state.daily_claimed_at,
-        chat_exp_today: state.chat_exp_today,
-        battles_today: state.battles_today,
-        tower_floor: state.tower_floor,
-        tower_attempts_date: state.tower_attempts_date,
-        tower_attempts_today: state.tower_attempts_today,
-        weekly_week_key: state.weekly_week_key,
-        weekly_jobs_done: state.weekly_jobs_done,
-        weekly_battle_wins: state.weekly_battle_wins,
-        weekly_exp_earned: state.weekly_exp_earned,
-        weekly_claimed_jobs: nextClaimedJobs,
-        weekly_claimed_wins: nextClaimedWins,
-        weekly_claimed_exp: nextClaimedExp,
-        weekly_bonus_claimed: nextBonusClaimed,
-        updated_at: nowIso,
-      }, { onConflict: 'user_id' }),
+      supabase.from('user_quests').upsert(
+        buildQuestUpsertPayload(cleanId, state, {
+          weekly_claimed_jobs: nextClaimedJobs,
+          weekly_claimed_wins: nextClaimedWins,
+          weekly_claimed_exp: nextClaimedExp,
+          weekly_bonus_claimed: nextBonusClaimed,
+        }, nowIso),
+        { onConflict: 'user_id' },
+      ),
     ];
     if (totalStones > 0) {
       tasks.push(addInventoryItem(cleanId, 'enchant_stone', 'consumable', totalStones));
@@ -762,7 +868,7 @@ export async function claimWeeklyQuests(userId, options = {}) {
       message: [
         `${em('su_winner_trophy')} **NHẬN THƯỞNG HỢP ĐỒNG TUẦN THÀNH CÔNG!**`,
         ...claimedLabels.map((lbl) => `• ✅ ${lbl}`),
-        `• Tổng nhận: **+${totalLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** • **+${totalStones}** ${em('su_enchant_stone')} **Đá Khắc Ấn**`,
+        `• Tổng nhận: **+${totalLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** • **+${totalStones}** ${em('enchant_stone')} **Đá Khắc Ấn**`,
         `• Số dư hiện tại: **${newBal.toLocaleString('vi-VN')} Linh Thạch**`,
       ].join('\n'),
     };
@@ -788,7 +894,7 @@ export async function resetTowerAttempts(userId, options = {}) {
         success: false,
         status: 400,
         error: 'TOWER_ATTEMPTS_FULL',
-        message: `${em('su_tower_reset_card', '🗼')} Lượt đi Tháp hôm nay của bạn đang đầy **${TOWER_DAILY_ATTEMPTS_LIMIT}/${TOWER_DAILY_ATTEMPTS_LIMIT}**, không cần reset *(chưa tiêu hao thẻ)*!`,
+        message: `${em('tower_reset_card', '🗼')} Lượt đi Tháp hôm nay của bạn đang đầy **${TOWER_DAILY_ATTEMPTS_LIMIT}/${TOWER_DAILY_ATTEMPTS_LIMIT}**, không cần reset *(chưa tiêu hao thẻ)*!`,
       };
     }
 
@@ -805,32 +911,17 @@ export async function resetTowerAttempts(userId, options = {}) {
         success: false,
         status: 400,
         error: 'NO_TOWER_RESET_CARD',
-        message: `${em('su_tower_reset_card', '🗼')} Bạn chưa có **Thẻ Reset Lượt Đi Tháp** trong túi đồ! Hãy mua trong \`/shop\` với giá **200 Linh Thạch** *(giới hạn 3 thẻ/ngày)*.`,
+        message: `${em('tower_reset_card', '🗼')} Bạn chưa có **Thẻ Reset Lượt Đi Tháp** trong túi đồ! Hãy mua trong \`/shop\` với giá **200 Linh Thạch** *(giới hạn 3 thẻ/ngày)*.`,
       };
     }
 
     const nowIso = now.toISOString();
     const [remainingCards] = await Promise.all([
       addInventoryItem(cleanId, 'tower_reset_card', 'consumable', -1),
-      supabase.from('user_quests').upsert({
-        user_id: cleanId,
-        quest_date: state.quest_date,
-        daily_claimed_at: state.daily_claimed_at,
-        chat_exp_today: state.chat_exp_today,
-        battles_today: state.battles_today,
-        tower_floor: state.tower_floor,
-        tower_attempts_date: state.tower_attempts_date,
-        tower_attempts_today: 0,
-        weekly_week_key: state.weekly_week_key,
-        weekly_jobs_done: state.weekly_jobs_done,
-        weekly_battle_wins: state.weekly_battle_wins,
-        weekly_exp_earned: state.weekly_exp_earned,
-        weekly_claimed_jobs: state.weekly_claimed_jobs,
-        weekly_claimed_wins: state.weekly_claimed_wins,
-        weekly_claimed_exp: state.weekly_claimed_exp,
-        weekly_bonus_claimed: state.weekly_bonus_claimed,
-        updated_at: nowIso,
-      }, { onConflict: 'user_id' }),
+      supabase.from('user_quests').upsert(
+        buildQuestUpsertPayload(cleanId, state, { tower_attempts_today: 0 }, nowIso),
+        { onConflict: 'user_id' },
+      ),
     ]);
 
     return {
@@ -838,7 +929,7 @@ export async function resetTowerAttempts(userId, options = {}) {
       attempts_used: 0,
       attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
       remaining_cards: remainingCards,
-      message: `${em('su_tower_reset_card', '🗼')} Đã tiêu **1 Thẻ Reset Lượt Đi Tháp**!\n• Lượt khiêu chiến Tháp hôm nay đã hồi đầy **0/${TOWER_DAILY_ATTEMPTS_LIMIT}** *(sẵn sàng đánh tiếp 5 lượt)*.\n• Thẻ còn lại trong túi: **${remainingCards}/10**`,
+      message: `${em('tower_reset_card', '🗼')} Đã tiêu **1 Thẻ Reset Lượt Đi Tháp**!\n• Lượt khiêu chiến Tháp hôm nay đã hồi đầy **0/${TOWER_DAILY_ATTEMPTS_LIMIT}** *(sẵn sàng đánh tiếp 5 lượt)*.\n• Thẻ còn lại trong túi: **${remainingCards}/10**`,
     };
   });
 }

@@ -2,10 +2,32 @@ import { getProfileData } from '../profileService.js';
 import {
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
   normalizeEnchantGrade,
   getEnchantMultiplier,
 } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
+import { V13_PET_HAX, V13_EQUIP_HAX } from './v13HaxRegistry.js';
+
+function resolveDomainLoadout(profile) {
+  const raw = profile?.domain_loadout || profile?.domainLoadout || {};
+  const d = typeof raw.domain === 'string'
+    ? DOMAIN_BY_ID[raw.domain]
+    : (raw.domain || (raw.domain_id ? DOMAIN_BY_ID[raw.domain_id] : null));
+  const s = typeof raw.sense === 'string'
+    ? DIVINE_SENSE_BY_ID[raw.sense]
+    : (raw.sense || (raw.sense_id ? DIVINE_SENSE_BY_ID[raw.sense_id] : null));
+  const r = typeof raw.realm === 'string'
+    ? DIVINE_REALM_BY_ID[raw.realm]
+    : (raw.realm || (raw.realm_id ? DIVINE_REALM_BY_ID[raw.realm_id] : null));
+  return {
+    domain: d || null,
+    sense: s || null,
+    realm: r || null,
+  };
+}
 
 function enrichEquipItem(rawItem, slot) {
   if (!rawItem) return null;
@@ -119,12 +141,16 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   }
 
   const maxHp = Math.max(500, (level * 1000) + (finalDef * 5) + bonusHp);
-  const petCritBonus = petType === 'loi_dinh_kim_ho' ? 0.15 : petType === 'nguyet_anh_thao_tho' ? 0.08 : petType === 'tu_kim_bach_trach' ? 0.20 : 0;
-  const itemCritBonus = (bonusCrit / 100) + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
+  const legacyPetCrit = petType === 'loi_dinh_kim_ho' ? 0.15 : petType === 'nguyet_anh_thao_tho' ? 0.08 : petType === 'tu_kim_bach_trach' ? 0.20 : 0;
+  const v13PetCrit = V13_PET_HAX[petType]?.flatCritPct || 0;
+  const petCritBonus = legacyPetCrit + v13PetCrit;
+  const v13SoulCrit = V13_EQUIP_HAX[soul?.item_id]?.flatCritPct || 0;
+  const itemCritBonus = (bonusCrit / 100) + v13SoulCrit + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
   const critRate = Math.min(1.0, Math.max(0.05, 0.05 + itemCritBonus + petCritBonus));
 
   const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
   const petHaxDesc = catalogPet?.hax_description || pet.hax_desc || pet.hax_description || null;
+  const domainLoadout = resolveDomainLoadout(profile);
 
   return {
     id,
@@ -156,6 +182,8 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     currentHp: maxHp,
     shield: 0,
     equipment: { weapon, gem, soul },
+    domainLoadout,
+    domainRuntime: { own: null, incomingDebuffs: {} },
     hax: {
       pet: petHaxName || petHaxDesc || null,
       petDesc: petHaxDesc,
@@ -176,16 +204,23 @@ export function createInitialCombatState() {
     haxLockedTurns: 0,
     blindTurns: 0,
     missChanceTurns: 0,
+    stunImmuneTurns: 0,
+    enemyAccDebuffTurns: 0,
+    enemyAccDebuffPct: 0,
+    earlySpdBonusTurns: 0,
+    earlySpdBonusPct: 0,
     isStunned: false,
     isCharmed: false,
     isDoubleTurn: false,
     reviveUsed: false,
+    reviveShieldPct: 0,
     cheatDeathUsed: false,
     hpSwapUsed: false,
     doubleTurnUsed: false,
     phaseShiftUsed: false,
     executeBlockUsed: false,
     phoenixGemHealUsed: false,
+    emergencyHealUsed: false,
     firstStrikeDone: false,
     pierceDefNext: false,
     enrageActive: false,
@@ -195,6 +230,8 @@ export function createInitialCombatState() {
     atkDebuffPct: 0,
     defDebuffTurns: 0,
     defDebuffPct: 0,
+    defDebuffTotalPct: 0,
+    atkStealStacks: 0,
     spdDebuffTurns: 0,
     spdDebuffPct: 0,
     healReductionTurns: 0,
@@ -204,11 +241,13 @@ export function createInitialCombatState() {
     burnIgnoresShield: false,
     poisonActive: false,
     poisonPct: 0,
+    poisonTurns: 0,
     nextHitBonusPct: 0,
     damageReductionTurns: 0,
     damageReductionPct: 0,
     enemyDmgDebuffTurns: 0,
     enemyDmgDebuffPct: 0,
     shieldExplodePct: 0,
+    shieldActiveAtkBonusApplied: false,
   };
 }
