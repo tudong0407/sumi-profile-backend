@@ -546,19 +546,24 @@ function buildFullBattleLog({
     })]
     : [];
 
-  const buildTurnLines = (compactEmoji = false) => turns.map((t) => {
+  const buildTurnLines = (compactMode = false) => turns.map((t) => {
     const actorObj = t.actor === 'attacker' ? attacker : defender;
     const targetObj = t.actor === 'attacker' ? defender : attacker;
     if (t.action === 'skip') {
-      const sIcon = compactEmoji ? '🛡️' : em('su_shield_def');
+      const sIcon = compactMode ? '🛡️' : em('su_shield_def');
       return `• **H${t.turn}** [${actorObj.petName}]: ${sIcon} ${t.haxTriggered || 'Mất lượt'}`;
     }
     if (t.action === 'miss') {
-      return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
+      return compactMode
+        ? `• **H${t.turn}** **${actorObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`
+        : `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
     }
-    const cIcon = compactEmoji ? '💥' : em('su_crit_boom');
+    const cIcon = compactMode ? '💥' : em('su_crit_boom');
     const critTag = t.isCrit ? ` ${cIcon} **CRIT**` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
+    if (compactMode) {
+      return `• **H${t.turn}** **${actorObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')}/${t.defenderHp.toLocaleString('vi-VN')})*`;
+    }
     return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
   });
 
