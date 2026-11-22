@@ -112,8 +112,8 @@ export const WIKI_CATEGORIES = {
         content: '• Chat: 20–30 EXP / tin nhắn hợp lệ (cooldown 45 giây).\n• Voice: 85–135 EXP mỗi 5 phút hoạt động trong kênh thoại (chấm công định kỳ mỗi 12 phút không cần rời phòng).\n• Công thức thăng cấp: 60 × (Level ^ 1.45), trần 500.000 EXP tại Lv.100.\n• Buff EXP: « Linh Hồn Tu Luyện » (+15% EXP), « Cửu Vĩ Yêu Hậu » (+80% EXP).',
       },
       {
-        heading: '3. Mốc Level Roles Tự Động',
-        content: 'Lv.5 U Linh Chớm Nở → Lv.15 Linh Cáo Học Giả → Lv.20 Linh Cáo Tinh Anh → Lv.35 Yêu Hồ Nguyệt Ảnh → Lv.45 Huyễn Linh Thú → Lv.60 Thiên Hồ Viễn Cổ → Lv.80 Chi Linh Thánh Đế → Lv.100 Hỗn Độn Chúa Tể.',
+        heading: '3. Mốc Level Roles Tự Động & Quyền Discord',
+        content: '• Lv.5 U Linh Chớm Nở (+3% EXP): Gửi ảnh/tệp ở sảnh.\n• Lv.15 Linh Cáo Học Giả (+5% EXP): Nhúng link, Đổi nick, Emoji ngoại.\n• Lv.20 Linh Cáo Tinh Anh (+8% EXP, +5% LT): Sticker ngoại, Tin thoại, Lập Gia Tộc.\n• Lv.35 Yêu Hồ Nguyệt Ảnh (+12% EXP, +10% LT): Public Thread, Stream Voice.\n• Lv.45 Huyễn Linh Thú (+15% EXP, +10% LT, +5% Pet): Soundboard, Activities.\n• Lv.60 Thiên Hồ Viễn Cổ (+20% EXP, +15% LT, +8% Pet): Private Thread, Âm ngoại.\n• Lv.80 Chi Linh Thánh Đế (+30% EXP, +25% LT, +12% Pet): Priority Speaker, TTS, Poll.\n• Lv.100 Hỗn Độn Chúa Tể — Trảm Quyết Tối Thượng (+50% EXP, +50% LT, +20% Pet): Full Voice (Move/Mute/Deafen), Quản lý Nick/Thread, Ghim tin & Miễn Slowmode.',
       },
     ],
     fields: [
@@ -128,8 +128,17 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_medal_role')} Mốc Level Roles`,
-        value: `${levelMilestoneEmoji(5)} \`Lv.5\` → ${levelMilestoneEmoji(15)} \`Lv.15\` → ${levelMilestoneEmoji(20)} \`Lv.20\` → ${levelMilestoneEmoji(35)} \`Lv.35\` → ${levelMilestoneEmoji(45)} \`Lv.45\` → ${levelMilestoneEmoji(60)} \`Lv.60\` → ${levelMilestoneEmoji(80)} \`Lv.80\` → ${levelMilestoneEmoji(100)} \`Lv.100\``,
+        name: `${em('su_medal_role')} Mốc Level Roles & Đặc Quyền Discord`,
+        value: [
+          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp ở sảnh`,
+          `• ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Nhúng link, Đổi nick, Emoji ngoại`,
+          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Sticker ngoại, Voice msg, Gia Tộc`,
+          `• ${levelMilestoneEmoji(35)} \`Lv.35\` (+12% EXP, +10% LT): Public Thread, Stream Voice`,
+          `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15% EXP, +10% LT, +5% Pet): Soundboard, Activities`,
+          `• ${levelMilestoneEmoji(60)} \`Lv.60\` (+20% EXP, +15% LT, +8% Pet): Private Thread, Âm ngoại`,
+          `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30% EXP, +25% LT, +12% Pet): Priority, TTS, Poll`,
+          `• ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50% EXP/LT, +20% Pet): Full Voice, Quản lý Nick/Thread, Ghim & Miễn Slowmode`,
+        ].join('\n'),
         inline: false,
       },
     ],
