@@ -51,7 +51,7 @@ const CATEGORY_ALIASES = {
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
   subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường • Khám Phá Đại Lục',
-  version: '1.4',
+  version: '1.4.5',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -77,8 +77,8 @@ export const WIKI_CATEGORIES = {
         content: '• Trạng thái mặc định: Cấp 1 • 0 EXP • 0 Linh Thạch • 1 Slot Role.\n• Linh Thú khởi đầu: Hóa Thạch Nham Nham Thú (Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD) cấp sẵn để tham chiến.\n• Tích lũy EXP tự động khi đàm đạo (Chat) và tu luyện trong phòng thoại (Voice EXP 85–135 EXP / 5 phút, chấm công định kỳ mỗi 12 phút).',
       },
       {
-        heading: '2. Hệ Thống Lệnh Trọng Tâm (v1.3)',
-        content: '• /profile & /rank: Thẻ hồ sơ tu sĩ & cảnh giới.\n• /battle & /linhvuc: Thách đấu PvP 1v1 hoặc PvE Tự Do, kèm trang bị Linh Vực • Thần Thức • Thần Cảnh kích hoạt từ Hiệp 2.\n• /daily, /job, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, 6 Nghề Tu Tiên (tối đa 8 ca/ngày), Gacha Pháp Bảo/Linh Thú/Linh Vực, Tiên Bảo Các, Phân Rã & Tặng Quà.\n• /farm & /exchange: Canh tác Linh Điền • ấp trứng Linh Các theo thời gian thực và quy đổi Linh Quả Tiên Giới.\n• /coinflip, /blackjack, /slots, /crash: Các thức giải trí tiêu khiển bằng Linh Thạch.\n• /enchant, /nhiemvu & /top: Khắc Ấn D→S, 5 Nhiệm Vụ Ngày, 3 Hợp Đồng Tuần, Tháp Thí Luyện 200 Tầng & Bảng Xếp Hạng.\n• /inv, /phapbao, /linhthu, /roles, /equip, /unequip: Túi Đồ, Kho Pháp Bảo, Linh Thú, Role & Trang Bị.\n• /marry, /divorce, /giatoc, /wiki, /info, /updates: Tiên Lữ, Gia Tộc Lv.1–10, Cẩm Nang, Tra Cứu UID/Emoji & Nhật Ký Phiên Bản.',
+        heading: '2. Hệ Thống Lệnh Trọng Tâm (v1.4.5)',
+        content: '• /profile, /rank & /exp: Thẻ hồ sơ tu sĩ, cảnh giới & thống kê % Boost EXP Chat / Voice kèm EXP trung bình thực nhận.\n• /battle, /linhvuc, /party & /linhmach: Thách đấu PvP/PvE, trang bị Linh Vực • Thần Thức • Thần Cảnh (Đạo Áp Cấp 2) & lập Tổ Đội chiếm Linh Mạch.\n• /daily, /job, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, 6 Nghề Tu Tiên (tối đa 8 ca/ngày), Shop Ngày, Gacha, Phân Rã & Tặng Quà.\n• /farm, /exchange & /explorer: Nông trại thời gian thực & Khám phá Đại Lục Cửu Châu 12 địa danh.\n• /coinflip, /blackjack, /slots, /crash: Các thức giải trí tiêu khiển bằng Linh Thạch.\n• /enchant, /nhiemvu & /top: Khắc Ấn D→S (kèm Thiên Đạo Tuyệt Ấn Thạch), 5 Nhiệm Vụ Ngày, 3 Hợp Đồng Tuần, Tháp 200 Tầng & BXH.\n• /inv, /phapbao, /linhthu, /roles, /equip, /unequip: Túi Đồ, Kho Pháp Bảo, Linh Thú, Role & Trang Bị 1 chạm.\n• /marry, /divorce, /giatoc, /wiki, /info, /updates: Tiên Lữ, Gia Tộc Lv.1–10, Cẩm Nang 7 chuyên mục, Tra UID/Emoji & Nhật Ký.',
       },
     ],
     fields: [
@@ -88,12 +88,12 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Hệ Thống Lệnh (v1.3)`,
-        value: '• `/profile` • `/rank` • `/battle` • `/linhvuc` • `/top` — Hồ sơ, Đấu Trường, Linh Vực & BXH.\n• `/daily` • `/job` • `/farm` • `/exchange` • `/doiqua` — Linh Thạch, Nghề Nghiệp (8 ca/ngày) & Nông Trại.\n• `/roll` (`equipment`/`pet`/`role`/`domain`) • `/shop` • `/dismantle` • `/tangqua` — Triệu Hồi & Giao Thương.\n• `/coinflip` • `/blackjack` • `/slots` • `/crash` — Thức chơi Linh Thạch.\n• `/enchant` • `/nhiemvu` • `/inv` • `/phapbao` • `/linhthu` • `/roles` • `/equip` — Khắc Ấn D→S, 5 Nhiệm Vụ Ngày & Tháp 200 Tầng.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` • `/info` • `/updates` — Tiên Lữ, Gia Tộc, Tra UID/Emoji & Nhật Ký.',
+        name: `${em('su_pin_sigil')} Hệ Thống Lệnh (v1.4.5)`,
+        value: '• `/profile` • `/rank` • `/exp` • `/battle` • `/linhvuc` • `/top` — Hồ sơ, % Boost EXP, Đấu Trường & BXH.\n• `/party` • `/linhmach` • `/explorer` — Tổ Đội 3 người, Chiếm Linh Mạch & Thám Hiểm 12 Địa Danh.\n• `/daily` • `/job` • `/farm` • `/exchange` • `/doiqua` — Linh Thạch, Nghề Nghiệp (8 ca/ngày) & Nông Trại.\n• `/roll` • `/shop` *(kèm Shop Ngày)* • `/dismantle` • `/tangqua` — Triệu Hồi & Giao Thương.\n• `/coinflip` • `/blackjack` • `/slots` • `/crash` — Thức chơi Linh Thạch.\n• `/enchant` • `/nhiemvu` • `/inv` • `/phapbao` • `/linhthu` • `/roles` • `/equip` — Khắc Ấn D→S & Tháp 200 Tầng.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` • `/info` • `/updates` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
         inline: false,
       },
     ],
-    content: 'Hệ thống tu tiên SuMi Family v1.3 vận hành đồng bộ: Bồi dưỡng 90 Linh Thú & 165 Pháp Bảo, khai mở 30 Linh Vực • 15 Thần Thức • 15 Thần Cảnh, Khắc Ấn D→S, Nông Trại `/farm` và Tháp Thí Luyện 200 Tầng.',
+    content: 'Hệ thống tu tiên SuMi Family v1.4.5 vận hành đồng bộ: tra cứu Boost EXP `/exp`, bồi dưỡng 90 Linh Thú & 165 Pháp Bảo, khai mở Linh Vực • Đạo Áp, chiếm Linh Mạch `/linhmach`, thám hiểm `/explorer` và Tháp 200 Tầng.',
   },
 
   realms: {
@@ -124,7 +124,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
-        value: '• **Chat**: `20–30 EXP` / tin nhắn *(cooldown 45 giây)*.\n• **Voice**: `85–135 EXP` / `5 phút` hoạt động *(+20% • chấm công định kỳ mỗi 12 phút)*.\n• **Công thức lên cấp**: `60 × (Level ^ 1.45)` *(tối đa `500.000 EXP` tại Lv.100)*.\n• **Buff**: `Linh Hồn Tu Luyện` (+15%) • `Cửu Vĩ Yêu Hậu` (+80%).',
+        value: '• **Chat**: `20–30 EXP` / tin nhắn *(cooldown 45 giây)*.\n• **Voice**: `85–135 EXP` / `5 phút` hoạt động *(+20% • chấm công định kỳ mỗi 12 phút)*.\n• **Công thức lên cấp**: `60 × (Level ^ 1.45)` *(tối đa `500.000 EXP` tại Lv.100)*.\n• **Buff & Kiểm tra:** `Linh Hồn Tu Luyện` (+15%), `Cửu Vĩ Yêu Hậu` (+80%), Level Role, Tiên Lữ & Gia Tộc — xem nhanh bằng **`/exp`**!',
         inline: false,
       },
       {

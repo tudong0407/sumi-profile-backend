@@ -860,6 +860,75 @@ export function buildEquipV14Cmd() {
 }
 
 // ============================================================================
+// 5c. NEW /exp — Xem % Boost EXP Chat & Voice + Trung Bình Thực Nhận (v1.4.5)
+// ============================================================================
+export function buildExpV145Cmd() {
+  const gb = new V14GraphBuilder();
+  gb.rootSlash(
+    'exp',
+    'Xem % Boost EXP Chat / Voice hiện tại và EXP trung bình mỗi tin nhắn & 5 phút Voice',
+    { ephemeral: false },
+  );
+  gb.errorHandlerWait();
+  gb.option('user', 'user', 'Thành viên cần kiểm tra Boost EXP (bỏ trống = chính bạn)', { required: false, x: 420, y: 0 });
+
+  embedMsg(gb, 'exp_ack', {
+    title: `${uidEm('su_level_up')} Đang tính chỉ số Boost EXP...`,
+    description: 'Đang tổng hợp Level Role, Role Quyền Năng, Tiên Lữ & Gia Tộc...',
+    color: '#3b82f6',
+    editId: 'exp_ack',
+  }, { x: 0, y: 200 });
+  gb.link('root', 'exp_ack');
+
+  const cHasUser = gb.cmp('exp_has_u', '{option_user}', '^[0-9]+$', 'matches_pattern', {}, { x: 0, y: 370 });
+  gb.link('exp_ack', cHasUser.condId);
+
+  apiAction(
+    gb,
+    'exp_opt_api',
+    'exp_opt_res',
+    'GET',
+    `${BACKEND_BASE}/api/exp/boost/{option_user}?fallbackUserId={user_id}&fallbackName={encode_text[{user_displayName[option_user]}]}`,
+    '',
+    { x: -240, y: 560 },
+  );
+  gb.link(cHasUser.yes, 'exp_opt_api');
+
+  embedMsg(gb, 'exp_opt_msg', {
+    title: '{exp_opt_res.response.title}',
+    description: '{exp_opt_res.response.description}',
+    footer: '{exp_opt_res.response.footer}',
+    color: '#ec4899',
+    target: { editId: 'exp_ack' },
+    action_id: 'exp_ack',
+  }, { x: -240, y: 760 });
+  gb.link('exp_opt_api', 'exp_opt_msg');
+
+  apiAction(
+    gb,
+    'exp_self_api',
+    'exp_self_res',
+    'GET',
+    `${BACKEND_BASE}/api/exp/boost/{user_id}?fallbackName={encode_text[{user_displayName}]}`,
+    '',
+    { x: 240, y: 560 },
+  );
+  gb.link(cHasUser.no, 'exp_self_api');
+
+  embedMsg(gb, 'exp_self_msg', {
+    title: '{exp_self_res.response.title}',
+    description: '{exp_self_res.response.description}',
+    footer: '{exp_self_res.response.footer}',
+    color: '#ec4899',
+    target: { editId: 'exp_ack' },
+    action_id: 'exp_ack',
+  }, { x: 240, y: 760 });
+  gb.link('exp_self_api', 'exp_self_msg');
+
+  return gb.elements();
+}
+
+// ============================================================================
 // 6. NEW /explorer — Khám Phá Bản Đồ 12 Địa Danh (v1.4.1 UX Fixed)
 // ============================================================================
 export function buildExplorerV14Cmd() {
@@ -1174,16 +1243,16 @@ function patchExistingCommand(name, elements) {
     for (const el of patched) {
       const dt = el?.data?.data;
       if (dt?.type === 'adv_select_menu' && Array.isArray(dt.basic_options)) {
-        const hasV14 = dt.basic_options.some((o) => o.value === '1.4');
-        if (!hasV14) {
-          dt.basic_options = [
-            { label: 'Phiên bản v1.4 (Mới nhất)', description: 'Đạo Áp, Shop Ngày, Chiếm Đoạt Linh Mạch & Khám Phá 12 Map', emoji_id: uidId('dao_ap_crest'), value: '1.4' },
-            ...dt.basic_options.map((o) => ({
-              ...o,
-              label: String(o.label || '').replace(/\s*\(Mới nhất\)/gi, ''),
-            })),
-          ].slice(0, 25);
-        }
+        const cleaned = dt.basic_options
+          .filter((o) => o.value !== '1.4.5')
+          .map((o) => ({
+            ...o,
+            label: String(o.label || '').replace(/\s*\(Mới nhất\)/gi, ''),
+          }));
+        dt.basic_options = [
+          { label: 'Phiên bản v1.4.5 (Mới nhất)', description: 'Lệnh /exp Boost Chat/Voice, Role Gradient 2 màu & hoàn thiện v1.4.5', emoji_id: uidId('su_level_up'), value: '1.4.5' },
+          ...cleaned,
+        ].slice(0, 25);
       }
     }
   }
@@ -1401,13 +1470,13 @@ function patchExistingCommand(name, elements) {
 
 function buildV14KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
-    'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY v1.4):',
-    '• HỒ SƠ, EXP & VINH DANH CHỦ NHẬT (/profile, /rank, /top): Thẻ /profile hiển thị Linh Thú, 3 Pháp Bảo, 5 Role và bộ Linh Vực • Thần Thức • Thần Cảnh. Chat nhận 20-30 EXP (cooldown 45s), Voice nhận 85-135 EXP/5 phút (chấm công 12 phút). Lên cấp: 60*(Lv^1.45) (max Lv.100 = 500.000 EXP). /top xem level, power, wealth, marry; mỗi 19:00 Chủ Nhật (UTC+7) tự động tổng kết và phát quà Linh Thạch, Đá Khắc Ấn, Thẻ Reset Tháp, Thức Ăn Khám Phá & Vé Roll cho Top 10 Lực Chiến.',
+    'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY v1.4.5):',
+    '• HỒ SƠ, /EXP BOOST & VINH DANH CHỦ NHẬT (/profile, /rank, /exp, /top): Thẻ /profile hiển thị Linh Thú, 3 Pháp Bảo, 5 Role và bộ Linh Vực • Thần Thức • Thần Cảnh. Chat nhận 20-30 EXP (TB 25, cooldown 45s), Voice nhận 85-135 EXP/5 phút (TB 110, chấm công 12 phút). Dùng /exp [user] để xem tổng % Boost EXP Chat & Voice (Level Role + Role Quyền Năng + Tiên Lữ + Gia Tộc) và lượng EXP trung bình mỗi tin nhắn / 5 phút / 1 giờ. Các Role Quyền Năng từ Linh Phẩm trở lên mang màu Discord Gradient 2 màu. Lên cấp: 60*(Lv^1.45) (max Lv.100 = 500.000 EXP). /top xem level, power, wealth, marry; mỗi 19:00 Chủ Nhật (UTC+7) tự động tổng kết và phát quà Top 10 Lực Chiến.',
     '• LINH VỰC • THẦN THỨC • THẦN CẢNH & ĐẠO ÁP (/linhvuc, /roll loai:domain): 30 Linh Vực, 15 Thần Thức & 15 Thần Cảnh kích hoạt từ Hiệp 2 theo vòng 5 Hệ (Kiếm > Huyễn > Trận > Minh > Thánh > Kiếm). Toàn bộ Linh Vực Thần Thoại sở hữu Debuff Cấp 2 « Đạo Áp »: tự kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực đang hoạt động của địch (duy trì 1–2 lượt cho Thần Thoại Thường, 3 lượt cho Độc Nhất; tăng +20%–30% uy lực Debuff gốc).',
-    '• CHIẾM ĐOẠT LINH MẠCH & TỔ ĐỘI (/party, /linhmach): Lập Tổ Đội tối đa 3 người bằng /party. Mở 6 Khung Giờ Vàng mỗi ngày (08:00, 12:00, 18:00, 20:00, 21:00, 22:00 UTC+7), mỗi đợt 1 giờ gồm 1 Mỏ Thấp (F–C, Boss 25k–750k, 6–22 LT/phút) và 1 Mỏ Cao (B–S+, Boss 1.8M–8.5M+, 30–56 LT/phút). Mỏ trống đấu 3vBoss, mỏ có chủ đấu 3v3 theo thứ tự SPD cao nhất, chỉ dùng Linh Vực của Đội Trưởng. Sản lượng LT chia đều cho đội (+15% vào Ngân Khố Gia Tộc nếu cùng Clan). Đi chiếm liên tiếp khung giờ kế tiếp dính Mệt Mỏi (-25% lực chiến/stack, tối đa -75%).',
-    '• KHÁM PHÁ BẢN ĐỒ ĐẠI LỤC (/explorer): Bản đồ 12 địa danh từ Dễ (10k lực) đến Nightmare (1M lực), chọn mốc 2 / 3 / 6 / 12 giờ cùng Đội Hình Khám Phá riêng (1 Pet chính/phụ + 3 Pháp Bảo + 1 Linh Vực) và 3 loại Thức Ăn (Hộ Mệnh Linh Đan +8% sống sót, Tụ Bảo Tiên Trà +18% LT, Ngự Phong Tốc Quả -25% thời gian). Vượt ải nhận 200–300 LT/giờ × hệ số map + quà shop + 0.5% Thiên Đạo Tuyệt Ấn Thạch (Khắc Ấn 100% mọi bậc, khuyên dùng A→S) + 0.01% Vũ Khí Thần Thoại + 60% nhặt Pháp Bảo người đi trước làm rơi tại đúng tọa độ! Nếu tử nạn: Pet không Độc Nhất mất vĩnh viễn, Pet Độc Nhất trọng thương hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ, Pháp Bảo không Độc Nhất rớt tại vị trí đó trên bản đồ, Pháp Bảo Độc Nhất & Linh Vực an toàn.',
-    '• SHOP NGÀY, KINH TẾ & MINIGAME (/shop, /daily, /job, /nhiemvu, /farm, /exchange, /coinflip, /slots, /blackjack, /crash, /giatoc): /shop tích hợp nút Shop Ngày (Vạn Bảo Lưu Động Các, reset 00:00 mỗi ngày chung toàn server với 10 gian hàng giảm 15–40%, có cả Pet & Pháp Bảo Thần Thoại sẵn Khắc Ấn bậc B/A) cùng 4 vật phẩm Khám Phá mới. /giatoc dùng nút bấm & Dropdown duyệt đơn / quản lý thành viên trực quan. /slots quay dừng từng ô trái sang phải; /crash & /blackjack cập nhật trực tiếp tại chỗ.',
-    '• LINH THÚ, PHÁP BẢO, KHẮC ẤN & TRA CỨU (/roll, /enchant, /inv, /info, /wiki, /updates): 90 Linh Thú công khai & 165 Pháp Bảo. /enchant hỗ trợ cả Đá Khắc Ấn thường (Pity +5%) và Thiên Đạo Tuyệt Ấn Thạch (loai_da:tuyet_doi — 100% mọi bậc D→S, khuyên dùng A→S). Dùng /updates xem chi tiết v1.4.',
+    '• CHIẾM ĐOẠT LINH MẠCH & TỔ ĐỘI (/party, /linhmach): Lập Tổ Đội tối đa 3 người bằng /party. Mở 6 Khung Giờ Vàng mỗi ngày (08:00, 12:00, 18:00, 20:00, 21:00, 22:00 UTC+7), mỗi đợt 1 giờ gồm 1 Mỏ Thấp (F–C, Boss 25k–750k, 6–22 LT/phút) và 1 Mỏ Cao (B–S+, Boss 1.8M–8.5M+, 30–56 LT/phút). Hỗ trợ Solo 1vBoss, 2vBoss & 3v3 theo thứ tự SPD cao nhất, dùng Linh Vực Đội Trưởng, kèm nút Xem Nhật Ký Trận Đấu & link Web chi tiết như /battle.',
+    '• KHÁM PHÁ BẢN ĐỒ ĐẠI LỤC (/explorer & /wiki explorer): Bản đồ 12 địa danh từ Dễ (10k lực) đến Nightmare (1M lực), chọn mốc 2 / 3 / 6 / 12 giờ cùng Đội Hình Khám Phá (mặc định tự chọn Pet Chính & đồ đang mặc, có thể Chỉnh Loadout riêng + mua Thức Ăn tại chỗ). Vượt ải nhận 200–300 LT/giờ × hệ số map + quà shop + 0.5% Thiên Đạo Tuyệt Ấn Thạch (100% A→S) + 0.01% Vũ Khí Thần Thoại + 60% nhặt Pháp Bảo người đi trước làm rơi tại đúng tọa độ! Đồ & Linh Vực đang khóa khám phá sẽ tự ẩn trên /profile & /battle đến khi hoàn thành.',
+    '• SHOP NGÀY, KINH TẾ, MINIGAME & /EQUIP 1 CHẠM (/shop, /equip, /daily, /job, /nhiemvu, /farm, /exchange, /coinflip, /slots, /blackjack, /crash, /giatoc): /equip chỉ còn 1 tham số ma_id tự nhận diện UID/Emoji/Role/Tên (đổi danh hiệu: title:Tên Mới). /shop tích hợp nút Shop Ngày (reset 00:00 với 10 gian hàng giảm 15–40%) cùng 4 vật phẩm Khám Phá. /giatoc dùng nút bấm & Dropdown.',
+    '• LINH THÚ, PHÁP BẢO, KHẮC ẤN & TRA CỨU (/roll, /enchant, /inv, /info, /wiki, /updates): 90 Linh Thú công khai & 165 Pháp Bảo. /enchant hỗ trợ cả Đá Khắc Ấn thường (Pity +5%) và Thiên Đạo Tuyệt Ấn Thạch (loai_da:tuyet_doi — 100% mọi bậc D→S, khuyên dùng A→S). /wiki có 7 chuyên mục (thêm explorer). Dùng /updates xem chi tiết v1.4.5.',
   ];
   if (includeFuyumiSecret) {
     lines.push('• BỘ TỐI THƯỢNG THẦN THOẠI ĐỘC NHẤT (TIỂU THƯ FUYUMI SỞ HỮU — CHỈ TIỂU THƯ BIẾT): Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho) cùng bộ Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
@@ -1417,7 +1486,7 @@ function buildV14KnowledgeBlock(includeFuyumiSecret) {
 
 function updateAiPromptTextV14(oldPrompt, includeFuyumiSecret) {
   let text = String(oldPrompt || '');
-  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+(?:\.[0-9]+)? bên dưới/g, 'tài liệu hệ thống v1.4 bên dưới');
+  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+(?:\.[0-9]+)? bên dưới/g, 'tài liệu hệ thống v1.4.5 bên dưới');
   const startMarker = 'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM';
   const endMarker = '\n\nBỘ DANH SÁCH EMOTE ĐỘNG DISCORD CHÍNH THỨC:';
   const sIdx = text.indexOf(startMarker);
@@ -1637,6 +1706,7 @@ const FULL_BUILD_COMMANDS = [
   { name: 'party', build: buildPartyV14Cmd },
   { name: 'linhmach', build: buildLinhMachV14Cmd },
   { name: 'equip', build: buildEquipV14Cmd },
+  { name: 'exp', build: buildExpV145Cmd },
   { name: 'explorer', build: buildExplorerV14Cmd },
 ];
 
@@ -1850,10 +1920,16 @@ async function deployEventByIntIdViaCDP(intId, elements) {
     }
     if (LEAK_RE.test(JSON.stringify(aiTree))) throw new Error('Confidential leak detected in AI Mention!');
     console.log(`[Offline OK] PATCH AI Mention: ${aiTree.length} elements`);
-    const res = await deployEventByIntIdViaCDP('4cc5db30-029c-4a55-86e6-6e6850012afd', aiTree);
+    const res = await deployViaCDP({
+      groupId: PROFILE_GROUP_ID,
+      mode: 'event',
+      name: live.aiEv.name || 'Nhiễm Nhiễm — AI Mention',
+      elements: aiTree,
+      enabled: true,
+    });
     console.log('[Patched] AI Mention:', JSON.stringify(res));
     if (!res?.ok) throw new Error(`Failed patching AI Mention: ${JSON.stringify(res)}`);
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1500));
   }
 
   // 4. Patch Keep-Alive Cron (12m) — run when keepalive OR level_roles requested

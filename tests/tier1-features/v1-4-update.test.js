@@ -55,7 +55,7 @@ import {
   getUserBusyExplorationAssets,
 } from '../../src/services/explorerService.js';
 import { getProfileData } from '../../src/services/profileService.js';
-import { computeMissingLevelRoleIds, grantChatExp } from '../../src/services/expService.js';
+import { computeMissingLevelRoleIds, grantChatExp, getUserExpBoostSummary } from '../../src/services/expService.js';
 import { setActivePet, enchantTarget, dismantleTarget, equipTarget } from '../../src/services/inventoryService.js';
 import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
 import { challengeTower } from '../../src/services/questService.js';
@@ -67,7 +67,7 @@ import { assertPngValid } from '../helpers/pngValidator.js';
 const ARTIFACT_DIR = 'C:\\Users\\Fuyumi-ASUSF16\\.gemini\\antigravity\\brain\\6c4e030b-fb59-4575-8414-9779337f61d9';
 
 test('v1.4 [1a] Leaderboard hides Fuyumi from all 4 /top tabs & Sunday 19:00 UTC+7 settlement logic', async () => {
-  assert.equal(LATEST_VERSION, '1.4');
+  assert.equal(LATEST_VERSION, '1.4.5');
 
   // Window test: Sunday 2026-11-22 19:05 UTC+7 = 2026-11-22T12:05:00Z
   assert.equal(isSundayWeeklySettlementWindow(new Date('2026-11-22T12:05:00Z')), true);
@@ -692,6 +692,81 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
     assert.equal(inProgClaim.error, 'EXPEDITION_NOT_FINISHED');
     assert.ok(inProgClaim.title && !inProgClaim.title.includes('{'));
     assert.ok(inProgClaim.description && !inProgClaim.description.includes('{'));
+  } finally {
+    await cleanup();
+  }
+});
+
+test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog', async () => {
+  assert.equal(LATEST_VERSION, '1.4.5');
+  const ch145 = getChangelogPayload('1.4.5');
+  assert.equal(ch145.success, true);
+  assert.equal(ch145.version, '1.4.5');
+  assert.match(JSON.stringify(ch145), /\/exp/);
+
+  const noobId = '999900000000014501';
+  const boostId = '999900000000014502';
+  const cleanup = async () => {
+    if (!supabase) return;
+    await supabase.from('user_roles').delete().in('user_id', [noobId, boostId]);
+    await supabase.from('user_pets').delete().in('user_id', [noobId, boostId]);
+    await supabase.from('users').delete().in('user_id', [noobId, boostId]);
+  };
+  await cleanup();
+  try {
+    if (supabase) {
+      await supabase.from('users').insert([
+        { user_id: noobId, username: 'NewbieExp', level: 1, exp: 0, linh_thach: 0 },
+        {
+          user_id: boostId,
+          username: 'BoostedExp',
+          level: 60,
+          exp: 0,
+          linh_thach: 0,
+          marry_user_id: '999900000000014509',
+          marry_ring_id: 'ring_mythic',
+          marry_date: new Date().toISOString(),
+        },
+      ]);
+      await supabase.from('user_roles').insert({
+        user_id: boostId,
+        role_id: '1573577814437789797',
+        role_name: '« Hồng Trần Tiên Lữ »',
+        role_perk: 'Boost EXP',
+        is_permanent: true,
+        is_equipped: true,
+        equipped_slot: 1,
+      });
+    }
+
+    const noobRes = await getUserExpBoostSummary(noobId);
+    assert.equal(noobRes.success, true);
+    assert.equal(noobRes.chat_boost_pct, 0);
+    assert.equal(noobRes.voice_boost_pct, 0);
+    assert.equal(noobRes.chat_multiplier, 1);
+    assert.equal(noobRes.chat_exp_avg, 25);
+    assert.equal(noobRes.voice_exp_avg, 110);
+    assert.equal(noobRes.voice_exp_hour_avg, 1320);
+
+    // Fallback when primary userId is an unresolved BotGhost variable {option_user}
+    const fallbackRes = await getUserExpBoostSummary('{option_user}', { fallbackUserId: noobId });
+    assert.equal(fallbackRes.success, true);
+    assert.equal(fallbackRes.user_id, noobId);
+
+    if (supabase) {
+      // Lv.60 (+20%) + « Hồng Trần Tiên Lữ » (+25%) + ring_mythic (+20%) = +65% (1.65x)
+      const boostRes = await getUserExpBoostSummary(boostId);
+      assert.equal(boostRes.success, true);
+      assert.equal(boostRes.chat_boost_pct, 65);
+      assert.equal(boostRes.voice_boost_pct, 65);
+      assert.equal(boostRes.chat_multiplier, 1.65);
+      assert.equal(boostRes.chat_exp_avg, 41.3);
+      assert.equal(boostRes.voice_exp_avg, 181.5);
+      assert.equal(boostRes.voice_exp_hour_avg, 2178);
+      assert.equal(boostRes.breakdown.level_exp_pct, 20);
+      assert.equal(boostRes.breakdown.equipped_roles_exp_pct, 25);
+      assert.equal(boostRes.breakdown.marriage_exp_pct, 20);
+    }
   } finally {
     await cleanup();
   }

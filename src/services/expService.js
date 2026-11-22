@@ -8,6 +8,9 @@ import { supabase } from '../config/supabase.js';
 import {
   FUYUMI_USER_ID,
   LEVEL_ROLE_MILESTONES,
+  LEVEL_ROLE_BUFF_CONFIG,
+  ROLE_BUFF_CONFIG,
+  ROLE_BY_ID,
   STARTER_PET,
   getClanLevelConfig,
 } from '../data/catalog.js';
@@ -661,5 +664,167 @@ export async function processVoiceHeartbeat(opts = {}) {
     first_role_user_id: roleGrants[0]?.user_id || '',
     first_role_id: roleGrants[0]?.role_id || '',
     first_level_up_message: leveledUpUsers[0]?.level_up_message || '',
+  };
+}
+
+function fmtExpNum(v) {
+  const n = Number(v || 0);
+  if (Number.isInteger(n)) return n.toLocaleString('vi-VN');
+  return n.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/**
+ * Thống kê toàn bộ % Boost EXP (Chat & Voice) đang hiệu lực của thành viên (/exp)
+ * và tính EXP nhận được trung bình mỗi 1 tin nhắn (cooldown 45s) & mỗi 5 phút Voice.
+ */
+export async function getUserExpBoostSummary(rawUserId, opts = {}) {
+  const now = opts.now instanceof Date ? opts.now : new Date();
+  let cleanId = sanitizeUserId(rawUserId || '');
+  if (!cleanId || !/^[0-9]{17,20}$/.test(cleanId)) {
+    cleanId = sanitizeUserId(opts.fallbackUserId || '');
+  }
+  if (!cleanId || !/^[0-9]{17,20}$/.test(cleanId)) {
+    return {
+      success: false,
+      status: 400,
+      error: 'INVALID_USER_ID',
+      title: '⚠️ KHÔNG THỂ TRA CỨU EXP BOOST',
+      description: 'ID thành viên không hợp lệ. Vui lòng chọn đúng thành viên hoặc bỏ trống để xem của bản thân.',
+      footer: 'SuMi Family • Tu Tiên Giới v1.4.5',
+    };
+  }
+
+  const fallbackName = pickCleanDisplayValue(opts.username, opts.fallbackName);
+  const loaded = await loadOrInitUser(cleanId, { username: fallbackName });
+  const user = loaded.user || { user_id: cleanId, level: 1, exp: 0 };
+  const level = Math.max(1, Number(user.level || 1));
+  const currentExp = Math.max(0, Number(user.exp || 0));
+  const displayName = pickCleanDisplayValue(user.username, fallbackName) || `Tu Sĩ #${cleanId.slice(-4)}`;
+
+  const [rolesRes, clanRes] = await Promise.all([
+    supabase
+      ? supabase.from('user_roles').select('role_id, role_name, is_permanent, expires_at').eq('user_id', cleanId).eq('is_equipped', true)
+      : Promise.resolve({ data: [] }),
+    supabase && user.clan_id
+      ? supabase.from('clans').select('clan_id, clan_name, clan_tag, clan_level').eq('clan_id', user.clan_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const levelBuff = LEVEL_ROLE_BUFF_CONFIG.find((c) => level >= c.level) || null;
+  const nextLevelBuff = [...LEVEL_ROLE_BUFF_CONFIG].reverse().find((c) => c.level > level) || null;
+  const levelExpPct = Number(levelBuff?.expPct || 0);
+
+  const seenRoleIds = new Set();
+  const equippedRoleItems = [];
+  let equippedRolesExpPct = 0;
+  for (const r of (rolesRes?.data || [])) {
+    const rid = String(r.role_id || '').trim();
+    if (!rid || seenRoleIds.has(rid)) continue;
+    const isAlive = r.is_permanent || !r.expires_at || new Date(r.expires_at) > now;
+    if (!isAlive) continue;
+    seenRoleIds.add(rid);
+    const pct = Number(ROLE_BUFF_CONFIG[rid]?.expPct || 0);
+    equippedRolesExpPct += pct;
+    if (pct > 0) {
+      const meta = ROLE_BY_ID[rid];
+      equippedRoleItems.push({ role_id: rid, name: meta?.name || r.role_name || rid, expPct: pct });
+    }
+  }
+
+  let marriageExpPct = 0;
+  let marriageDetail = 'Chưa kết hôn (`/marry`)';
+  if (user.marry_user_id) {
+    const mBuffs = computeMarriageBuffs(user.marry_ring_id || 'ring_common', user.marry_date, now);
+    marriageExpPct = Number(mBuffs?.total_exp_bonus_pct || 0);
+    marriageDetail = `${mBuffs?.ring_name || 'Nhẫn Cưới'} • ${mBuffs?.married_days || 0} ngày${mBuffs?.is_anniversary_day ? ' • 🎉 Ngày Kỷ Niệm (+10%)' : ''}`;
+  }
+
+  let clanExpPct = 0;
+  let clanDetail = 'Chưa gia nhập Gia Tộc (`/giatoc`)';
+  const clanRow = clanRes?.data || null;
+  if (clanRow) {
+    const cfg = getClanLevelConfig(clanRow.clan_level);
+    clanExpPct = Number(cfg.expBonusPct || 0);
+    clanDetail = `[${clanRow.clan_tag}] ${clanRow.clan_name} *(Lv.${clanRow.clan_level})*`;
+  }
+
+  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct;
+  const totalVoiceBoostPct = totalChatBoostPct;
+  const chatMultiplier = Number((1 + totalChatBoostPct / 100).toFixed(2));
+  const voiceMultiplier = Number((1 + totalVoiceBoostPct / 100).toFixed(2));
+
+  const baseChatAvg = (CHAT_EXP_MIN + CHAT_EXP_MAX) / 2;
+  const baseVoiceAvg = (VOICE_EXP_MIN + VOICE_EXP_MAX) / 2;
+  const chatMin = Math.round(CHAT_EXP_MIN * chatMultiplier);
+  const chatMax = Math.round(CHAT_EXP_MAX * chatMultiplier);
+  const chatAvg = Number((baseChatAvg * chatMultiplier).toFixed(1));
+  const voiceMin = Math.round(VOICE_EXP_MIN * voiceMultiplier);
+  const voiceMax = Math.round(VOICE_EXP_MAX * voiceMultiplier);
+  const voiceAvg = Number((baseVoiceAvg * voiceMultiplier).toFixed(1));
+  const voiceHourAvg = Math.round(voiceAvg * (60 / VOICE_BLOCK_MINUTES));
+
+  const nextLevelExp = getExpForNextLevel(level);
+  const remainingExp = level >= 100 ? 0 : Math.max(0, nextLevelExp - currentExp);
+  const estMessages = remainingExp > 0 ? Math.ceil(remainingExp / Math.max(1, chatAvg)) : 0;
+  const estVoiceMinutes = remainingExp > 0 ? Math.ceil(remainingExp / Math.max(1, voiceAvg)) * VOICE_BLOCK_MINUTES : 0;
+
+  const realm = getRealmByLevel(level);
+  const rolesText = equippedRoleItems.length > 0
+    ? equippedRoleItems.map((x) => `${x.name} **(+${x.expPct}%)**`).join(', ')
+    : 'Chưa đeo Role cộng EXP *(xem `/shop` / `/roll loai:role`)*';
+
+  const desc = [
+    `• **Tu Sĩ:** **${displayName}** — ${realmEmoji(level)} **Lv.${level}** *(${realm.name})*`,
+    `• **Tổng Buff EXP Chat:** **+${totalChatBoostPct}%** *(Hệ số **${chatMultiplier}×**)*`,
+    `• **Tổng Buff EXP Voice:** **+${totalVoiceBoostPct}%** *(Hệ số **${voiceMultiplier}×**)*`,
+    '',
+    '**📊 EXP Trung Bình Thực Nhận Sau Khi Cộng Buff:**',
+    `• ${em('su_chat', '💬')} **1 Tin Nhắn Hợp Lệ** *(cooldown 45s • gốc 20–30, TB 25)*: **${chatMin} – ${chatMax} EXP** *(TB: **${fmtExpNum(chatAvg)} EXP / tin**)*`,
+    `• ${em('su_voice', '🎙️')} **5 Phút Voice** *(chấm công 12p • gốc 85–135, TB 110)*: **${voiceMin} – ${voiceMax} EXP** *(TB: **${fmtExpNum(voiceAvg)} EXP / 5 phút** ≈ **${voiceHourAvg.toLocaleString('vi-VN')} EXP / giờ**)*`,
+    '',
+    '**🧩 Chi Tiết Nguồn Buff Hiện Tại:**',
+    `• **Mốc Level Role:** ${levelBuff ? `${levelBuff.label} **(+${levelExpPct}%)**` : `**+0%** *(Cần **Lv.${nextLevelBuff?.level || 5}** để mở +${nextLevelBuff?.expPct || 3}%)*`}`,
+    `• **Role Quyền Năng Đang Đeo:** ${equippedRolesExpPct > 0 ? `**+${equippedRolesExpPct}%** (${rolesText})` : `**+0%** (${rolesText})`}`,
+    `• **Tiên Lữ Song Tu:** **+${marriageExpPct}%** *(${marriageDetail})*`,
+    `• **Gia Tộc:** **+${clanExpPct}%** *(${clanDetail})*`,
+    '',
+    level >= 100
+      ? `✨ **Đã đạt Cảnh Giới tối cao Lv.100!**`
+      : `⏳ **Tiến độ lên Lv.${level + 1}:** Còn **${remainingExp.toLocaleString('vi-VN')} EXP** *(≈ **${estMessages.toLocaleString('vi-VN')} tin nhắn** hoặc **${estVoiceMinutes.toLocaleString('vi-VN')} phút Voice**)*`,
+  ].join('\n');
+
+  return {
+    success: true,
+    user_id: cleanId,
+    username: displayName,
+    level,
+    exp: currentExp,
+    next_level_exp: nextLevelExp,
+    remaining_exp: remainingExp,
+    chat_boost_pct: totalChatBoostPct,
+    voice_boost_pct: totalVoiceBoostPct,
+    chat_multiplier: chatMultiplier,
+    voice_multiplier: voiceMultiplier,
+    chat_exp_min: chatMin,
+    chat_exp_max: chatMax,
+    chat_exp_avg: chatAvg,
+    voice_exp_min: voiceMin,
+    voice_exp_max: voiceMax,
+    voice_exp_avg: voiceAvg,
+    voice_exp_hour_avg: voiceHourAvg,
+    est_messages_to_next: estMessages,
+    est_voice_minutes_to_next: estVoiceMinutes,
+    breakdown: {
+      level_exp_pct: levelExpPct,
+      level_role_label: levelBuff?.label || null,
+      next_level_milestone: nextLevelBuff ? { level: nextLevelBuff.level, expPct: nextLevelBuff.expPct, label: nextLevelBuff.label } : null,
+      equipped_roles_exp_pct: equippedRolesExpPct,
+      equipped_exp_roles: equippedRoleItems,
+      marriage_exp_pct: marriageExpPct,
+      clan_exp_pct: clanExpPct,
+    },
+    title: `${em('su_level_up')} CHỈ SỐ BOOST EXP — ${displayName.toUpperCase()}`,
+    description: desc,
+    footer: 'SuMi Family • Tu Tiên Giới v1.4.5 • Công thức EXP cộng dồn Level + Role + Tiên Lữ + Gia Tộc',
   };
 }

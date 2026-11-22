@@ -5,9 +5,39 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.4';
+export const LATEST_VERSION = '1.4.5';
 
 export const CHANGELOGS = [
+  {
+    version: '1.4.5',
+    title: 'THỐNG KÊ BOOST /EXP, ROLE GRADIENT 2 MÀU & HOÀN THIỆN HỆ THỐNG v1.4.5',
+    released_at: '2026-11-22',
+    color: '#ec4899',
+    summary: 'Ra mắt lệnh /exp xem chi tiết % Boost Chat & Voice cùng sản lượng EXP trung bình mỗi tin nhắn / 5 phút Voice; nâng cấp Gradient 2 màu cho 19 Role Quyền Năng cao cấp; tối giản /equip còn 1 tham số ma_id; đồng bộ khóa đồ /profile ↔ /battle ↔ /explorer, Nhật Ký Web Linh Mạch & tự phục hồi Level Roles.',
+    sections: [
+      {
+        heading: `${em('su_level_up', '📈')} Lệnh Mới /exp & Sắc Màu Role Gradient 2 Màu`,
+        bullets: [
+          '**Lệnh Mới `/exp [user]`:** Thống kê tổng **% Boost EXP Chat & Voice** từ cả 4 nguồn *(Mốc Level Role + Role Quyền Năng đang đeo + Tiên Lữ `/marry` + Gia Tộc `/giatoc`)* và tính trực tiếp lượng EXP trung bình nhận được cho **1 tin nhắn (45s)**, **5 phút Voice**, **1 giờ Voice** & ước tính lên cấp kế tiếp.',
+          '**Role Quyền Năng Gradient 2 Màu:** Làm mới hiển thị Discord Role theo đẳng cấp — **8 Linh Phẩm** mang Gradient 2 sắc hài hòa tinh tế, **6 Tiên Phẩm** & **5 Thần Thoại** mang Gradient 2 màu tương phản rực rỡ *(giữ nguyên 21 Phàm Phẩm)*.',
+        ],
+      },
+      {
+        heading: `${em('su_crossed_swords', '⚔️')} Tối Giản /equip, Linh Mạch Solo/Team & Nhật Ký Web`,
+        bullets: [
+          '**`/equip <ma_id>` Tối Giản 1 Tham Số:** Bỏ chọn loại `loai`, chỉ cần nhập 1 mã UID, Emoji `/inv`, Role ID hoặc Tên là bot tự động nhận diện Pháp Bảo, Linh Vực / Thần Thức / Thần Cảnh, Linh Thú, Ảnh Nền, Khung Avatar hay Role *(đổi danh hiệu: `title:Tên Mới`)*.',
+          '**Chiến Báo `/linhmach` & Web Battle Logs:** Nâng cấp giao diện khung Solo (1vBOSS) cân xứng 2 bên, Duo (2vBOSS) & Trio (3v3), thêm nút **`Xem Nhật Ký Trận Đấu`** và trang Web chi tiết 3 phần + diễn biến Đạo Áp như `/battle`.',
+        ],
+      },
+      {
+        heading: `${em('explorer_world_map_v14', '🗺️')} Khám Phá /explorer, /wiki explorer & Tự Phục Hồi Level Role`,
+        bullets: [
+          '**Nâng Cấp `/explorer` & `/wiki chuyen_muc:explorer`:** Mặc định dùng Loadout **Pet Chính** cho mọi người chơi mới, giữ nút Chỉnh Loadout liên tiếp, ẩn nút Hồi Sinh khi chưa có Pet trọng thương, hỗ trợ mua thức ăn tại chỗ và chuyển Bản Đồ 4K & Đồ Rơi sang **`/wiki explorer`**.',
+          '**Đồng Bộ Khóa Đồ & Tự Phục Hồi Level Role:** Khóa chặt Pháp Bảo / Linh Vực đang đi thám hiểm đồng nhất giữa `/profile`, `/battle`, `/equip` & `/linhvuc`; tự động kiểm tra và cấp bù Level Role (`Lv.5–100`) trên Chat, Voice và Keep-Alive 12p.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.4',
     title: 'ĐẠO ÁP CỬU CHÂU, CHIẾM ĐOẠT LINH MẠCH & ĐẠI THÁM HIỂM v1.4',

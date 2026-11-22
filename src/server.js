@@ -21,7 +21,7 @@ import {
   renderBattleLogHtml,
   renderBattleCardQueued,
 } from './services/battleService.js';
-import { grantChatExp, handleVoiceExp, processVoiceHeartbeat } from './services/expService.js';
+import { grantChatExp, handleVoiceExp, processVoiceHeartbeat, getUserExpBoostSummary } from './services/expService.js';
 import {
   claimDaily,
   convertExpToLinhThach,
@@ -280,6 +280,7 @@ app.get('/', (req, res) => {
       exp_chat: 'POST /api/exp/chat',
       exp_voice: 'POST /api/exp/voice',
       exp_voice_heartbeat: 'POST /api/exp/voice-heartbeat',
+      exp_boost: 'GET /api/exp/boost/:userId',
       economy_daily: 'POST /api/economy/daily',
       economy_doiqua: 'POST /api/economy/doiqua',
       economy_roll: 'POST /api/economy/roll',
@@ -574,6 +575,30 @@ app.post('/api/exp/voice-heartbeat', requireBackendApiKey, async (req, res) => {
     return res.status(500).json({ success: false, error: 'VOICE_HEARTBEAT_FAILED', message: err.message });
   }
 });
+
+async function handleExpBoostReq(req, res) {
+  try {
+    const targetUserId = getCleanParam(req.params.userId) || getCleanParam(req.query.userId);
+    const fallbackUserId = getCleanParam(req.query.fallbackUserId);
+    const fallbackName = getCleanParam(req.query.fallbackName) || getCleanParam(req.query.username);
+    const result = await getUserExpBoostSummary(targetUserId || fallbackUserId, {
+      fallbackUserId,
+      fallbackName,
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] Lỗi xử lý /api/exp/boost:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'EXP_BOOST_FAILED',
+      title: '⚠️ LỖI TRA CỨU EXP BOOST',
+      description: err.message,
+    });
+  }
+}
+
+app.get('/api/exp/boost', handleExpBoostReq);
+app.get('/api/exp/boost/:userId', handleExpBoostReq);
 
 // ============================================================================
 // TRỤ CỘT 3: ĐẤU TRƯỜNG /BATTLE 1V1 & PvE TỰ DO
