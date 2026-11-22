@@ -565,7 +565,7 @@ export function validateGraph(elements, { forbidAdminOnSuMiCheck = false } = {})
     }
     if (n.type === 'condition') {
       if (!d || d.validated !== true) errs.push(`Condition ${id} not validated=true`);
-      const kids = (outEdges.get(id) || []).filter(x => x.type === 'step');
+      const kids = (outEdges.get(id) || []).filter(x => x.type === 'step' || x.type === 'custom');
       if (kids.length === 0) errs.push(`Condition ${id} has 0 step branches`);
       if (forbidAdminOnSuMiCheck && d?.condition_type === 'permissions') {
         const hasAdmin = kids.some(kEdge => (nodes.get(kEdge.target)?.data?.data?.permissions || []).includes('ADMINISTRATOR'));
