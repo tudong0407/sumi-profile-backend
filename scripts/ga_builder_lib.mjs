@@ -689,20 +689,16 @@ export async function ensureBuilderMounted() {
     return check;
   }
 
-  // Navigate to /dashboard/customevents via History API or location and open first event's builder
+  // Navigate to /dashboard/customcommands and open CommandBuilder cleanly
   await cdpEval(`(async () => {
-    window.history.pushState({}, '', '/dashboard/customevents');
+    window.history.pushState({}, '', '/dashboard/customcommands');
     window.dispatchEvent(new PopStateEvent('popstate'));
     await new Promise(r => setTimeout(r, 1500));
     for (let i = 0; i < 15; i++) {
-      const openBtn = [...document.querySelectorAll('button')].find(b => /Open builder/i.test(b.innerText || ''));
+      const openBtn = [...document.querySelectorAll('button')].find(b => /Open builder|Start building|Build a new command|New Command/i.test(b.innerText || ''));
       if (openBtn) {
         openBtn.click();
         return { clickedOpenBuilder: true };
-      }
-      const cards = [...document.querySelectorAll('div, h3, h4, span')].filter(el => el.textContent?.trim() === 'Automod Fubel v2' || /Automod/i.test(el.textContent?.trim() || ''));
-      if (cards.length > 0) {
-        cards[0].click();
       }
       await new Promise(r => setTimeout(r, 400));
     }
