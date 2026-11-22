@@ -5,9 +5,32 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.3';
+export const LATEST_VERSION = '1.3.1';
 
 export const CHANGELOGS = [
+  {
+    version: '1.3.1',
+    title: 'ĐỒNG BỘ HIỂN THỊ LINH VỰC, KHO LINH THÚ & SƠ ĐỒ NGŨ VỰC v1.3.1',
+    released_at: '2026-11-22',
+    color: '#ec4899',
+    summary: 'Hiển thị trực quan biểu tượng Linh Vực • Thần Thức • Thần Cảnh trên thẻ /profile & /battle, nâng cấp Sơ Đồ 5 Hệ Linh Vực trên /wiki và bổ sung huy hiệu Phẩm Chất & Ngũ Hành trong Kho Linh Thú.',
+    sections: [
+      {
+        heading: `${em('su_realm_star')} Giao Diện Linh Vực Trên /profile & /battle`,
+        bullets: [
+          '**Thẻ `/profile`:** Bổ sung khu vực **Linh Vực • Thần Thức • Thần Cảnh** cân xứng tại bảng phải với đầy đủ Logo riêng, Hệ Vực và Tổng Linh Mạch.',
+          '**Thẻ `/battle` & Nhật Ký:** Gắn huy hiệu **Linh Vực** kèm **2 icon Thần Thức / Thần Cảnh** ngay góc trên phải mỗi đấu sĩ cùng khung **Đối Đầu Linh Vực (Hiệp 2+)** tại cột giữa; bổ sung biểu tượng đồng bộ cho Thần Thức & Thần Cảnh trong Nhật Ký trận đấu.',
+        ],
+      },
+      {
+        heading: `${em('su_wiki_scroll')} Biểu Tượng Ngũ Đại Linh Vực & Kho Linh Thú`,
+        bullets: [
+          '**Cẩm Nang `/wiki battle`:** Tích hợp biểu tượng riêng cho 5 Hệ Linh Vực (`Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực`) và nâng cấp ảnh sơ đồ 3 cột trực quan.',
+          '**Kho Linh Thú (`/inv` & `/linhthu`):** Bổ sung biểu tượng & nhãn **Phẩm Chất** *(Phàm / Linh / Tiên / Thần Thoại / Tối Thượng)* cùng **Hệ Ngũ Hành** đồng bộ với Kho Pháp Bảo và kết quả `/roll`.',
+        ],
+      },
+    ],
+  },
   {
     version: '1.3',
     title: 'ĐẠI CẢI TỔ LÃNH ĐỊA, NÔNG TRẠI & BÁCH KHOA V1.3',

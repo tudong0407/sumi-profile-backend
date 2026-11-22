@@ -20,6 +20,7 @@ import {
   tierEmoji,
   realmEmoji,
   elementEmoji,
+  domainElementEmoji,
   itemEmoji,
   petEmoji,
   levelMilestoneEmoji,
@@ -45,7 +46,7 @@ const CATEGORY_ALIASES = {
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
   subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường',
-  version: '1.3.0',
+  version: '1.3.1',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -135,7 +136,7 @@ export const WIKI_CATEGORIES = {
     title: `${em('su_arena')} Đấu Trường, Ngũ Hành & Linh Vực`,
     icon: em('su_arena'),
     description: 'Quy tắc 1v1, Ngũ Hành Tương Khắc, Tứ Đại Dị Tố và hệ thống Linh Vực • Thần Thức • Thần Cảnh (từ Hiệp 2).',
-    image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.3`,
+    image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.3.1`,
     sections: [
       {
         heading: '1. Vòng Xoay Ngũ Hành',
@@ -163,7 +164,7 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (Hiệp 2+)`,
         value: [
-          '• **Tương Khắc Vực**: `Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực` (`-1` vs `-2 Linh Mạch`/hiệp).',
+          `• **Tương Khắc Vực**: ${domainElementEmoji('Kiếm Vực')} Kiếm Vực → ${domainElementEmoji('Huyễn Vực')} Huyễn Vực → ${domainElementEmoji('Trận Vực')} Trận Vực → ${domainElementEmoji('Minh Vực')} Minh Vực → ${domainElementEmoji('Thánh Vực')} Thánh Vực → Kiếm Vực (\`-1\` vs \`-2 Linh Mạch\`/hiệp).`,
           '• **Cơ chế Giằng Co**: Khi hai Linh Vực cùng hoạt động, đôi bên chỉ kích hoạt Buff sân nhà (những Linh Vực Thần Thoại có *Xuyên Kháng* vẫn áp đặt Debuff). Khi Linh Mạch địch cạn, toàn bộ Debuff khai mở hoàn toàn.',
           '• **Thần Thức / Thần Cảnh**: Thần Thức tăng trần Linh Mạch & Buff; Thần Cảnh tăng độ sâu Debuff & hiệu ứng khống chế (`/linhvuc`).',
         ].join('\n'),

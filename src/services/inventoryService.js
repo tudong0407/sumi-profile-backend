@@ -37,6 +37,7 @@ import {
   petEmoji,
   tierEmoji,
   roleTierEmoji,
+  elementEmoji,
   gradeEmoji,
   ringEmoji,
   domainEmoji,
@@ -316,14 +317,20 @@ export async function getInventory(userId, options = {}) {
   const SHOP_CONS_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
 
   const pets = sortPetList((petsRes.data || []).map((p) => {
+    const petMeta = PET_BY_TYPE[p.pet_type] || {};
     const grade = normalizeEnchantGrade(p.enchant_grade || 'D');
+    const elemName = p.element || petMeta.element || 'Thổ';
+    const rarityLabel = formatRarityLabel(p.pet_rarity || petMeta.rarity || 'Phàm Phẩm');
     return {
       ...p,
+      element: elemName,
+      rarity_label: rarityLabel,
       enchant_grade: grade,
       enchant_bonus_pct: getEnchantBonusPct(grade),
       grade_icon: gradeEmoji(grade),
       icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
-      tier_icon: tierEmoji((PET_BY_TYPE[p.pet_type]?.rarity_key) || 'common'),
+      tier_icon: tierEmoji(petMeta.rarity_key || 'common'),
+      element_icon: elementEmoji(elemName),
     };
   }), options.petSort || 'power_desc');
 
@@ -437,7 +444,10 @@ export async function getInventory(userId, options = {}) {
       let omitted = 0;
       for (const p of pets) {
         const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
-        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}`;
+        const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
+        const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
+        const elemIcon = p.element_icon || elementEmoji(elemName);
+        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}`;
         if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
         out.push(line);
         totalLen += line.length + 1;

@@ -2,7 +2,7 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { supabase } from '../../src/config/supabase.js';
-import { em } from '../../src/config/emojiHelper.js';
+import { em, domainElementEmoji } from '../../src/config/emojiHelper.js';
 import {
   PET_CATALOG,
   EQUIPMENT_CATALOG,
@@ -14,9 +14,14 @@ import {
   JOB_DAILY_LIMIT,
   FUYUMI_USER_ID,
 } from '../../src/data/catalog.js';
+import { LATEST_VERSION } from '../../src/data/changelogs.js';
 import { V13_PET_HAX, V13_EQUIP_HAX } from '../../src/services/battleEngine/v13HaxRegistry.js';
 import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
-import { ensureUserInitialized } from '../../src/services/profileService.js';
+import { ensureUserInitialized, getFuyumiProfileMock } from '../../src/services/profileService.js';
+import { renderProfileCard } from '../../src/canvas/profileRenderer.js';
+import { renderBattleCard } from '../../src/canvas/battleRenderer.js';
+import { renderElementalChart, renderWikiPetCard } from '../../src/canvas/wikiRenderer.js';
+import { assertPngValid } from '../helpers/pngValidator.js';
 import { rollGacha } from '../../src/services/economyService.js';
 import {
   getDomainInventory,
@@ -327,7 +332,7 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
 
     // Strict confidentiality check: no 40% winrate or house-edge disclosure in any user payload
     const combinedPayloads = JSON.stringify([cfWin, cfLose, slJackpot, bjStart, crStart]);
-    assert.ok(!/40%|house\s*edge|tỉ lệ.*40/i.test(combinedPayloads), 'Minigame payloads MUST NOT leak internal 40% calibration');
+    assert.ok(!/40%|45%|house\s*edge|tỉ lệ.*(40|45)/i.test(combinedPayloads), 'Minigame payloads MUST NOT leak internal winrate calibration');
   });
 
   it('5. Idle Farm (/farm: plant -> care -> harvest / wilt -> clear) & /exchange (slot unlock 4->6)', async () => {
@@ -411,5 +416,100 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
     const shift9 = await doJob(USER_V13_A, 'quet_san', { now: new Date(cursor) });
     assert.equal(shift9.success, false);
     assert.equal(shift9.error, 'JOB_DAILY_LIMIT_REACHED');
+  });
+
+  it('7. Update v1.3.1: zero "Độc quyền Fuyumi", 5 Vực emojis, Canvas Domain UI, KHO LINH THÚ rarity badges & 45% minigame calibration', async () => {
+    assert.equal(LATEST_VERSION, '1.3.1');
+
+    // 7A. No "Độc quyền Fuyumi" text in catalog, /info, battle logs, or pet detail card
+    const cuuVi = PET_CATALOG.find((p) => p.pet_type === 'cuu_vi_hong_ho');
+    assert.equal(cuuVi.is_exclusive_fuyumi, true);
+    assert.ok(!/độc quyền/i.test(cuuVi.hax_description || ''), 'Cửu Vĩ HAX description must not mention Độc quyền');
+
+    const petInfo = lookupInfo('cuu_vi_hong_ho', { requesterId: FUYUMI_USER_ID });
+    assert.equal(petInfo.success, true);
+    assert.ok(!/độc quyền/i.test(petInfo.description), '/info pet must not mention Độc quyền Fuyumi');
+    assert.ok(/ĐỘC NHẤT TOÀN SERVER/i.test(petInfo.description));
+
+    const domInfo = lookupInfo('domain_fuyumi_cuu_vi_hong_mong', { requesterId: FUYUMI_USER_ID });
+    assert.equal(domInfo.success, true);
+    assert.ok(!/độc quyền/i.test(domInfo.description), '/info domain must not mention Độc quyền Fuyumi');
+
+    const petCardPng = await renderWikiPetCard(cuuVi, { format: 'png' });
+    assertPngValid(petCardPng, 2000, 1000);
+
+    // 7B. /wiki battle contains all 5 Vực element emojis & updated v1.3.1 chart
+    const wikiBattle = await (await testServer.fetch('/api/wiki?category=battle')).json();
+    assert.equal(wikiBattle.version, '1.3.1');
+    assert.match(wikiBattle.data.image_url, /elements\.webp\?v=1\.3\.1/);
+    const domainField = wikiBattle.data.fields.find((f) => /Linh Vực/i.test(f.name));
+    assert.ok(domainField, 'Wiki battle should have Linh Vực field');
+    for (const vucEl of ['Kiếm Vực', 'Huyễn Vực', 'Trận Vực', 'Minh Vực', 'Thánh Vực']) {
+      const iconTag = domainElementEmoji(vucEl);
+      assert.ok(iconTag && domainField.value.includes(iconTag), `Expected emoji ${iconTag} for ${vucEl} in /wiki battle`);
+    }
+
+    // 7C. Production canvas renderers (profile, battle with & without domains, 3-column element+domain chart)
+    const fuyumiProf = getFuyumiProfileMock();
+    const profWithDomainPng = await renderProfileCard(fuyumiProf, { format: 'png' });
+    await assertPngValid(profWithDomainPng);
+    const profNoDomainPng = await renderProfileCard({ ...fuyumiProf, domain_loadout: {} }, { format: 'png' });
+    await assertPngValid(profNoDomainPng);
+
+    const chartPng = await renderElementalChart({ format: 'png' });
+    await assertPngValid(chartPng);
+
+    const batWithDomain = await simulateBattle(
+      fuyumiProf,
+      {
+        user_id: '888131000000000101',
+        username: 'LongUserNameTester_v131',
+        level: 85,
+        pet: { ...PET_CATALOG.find((p) => p.pet_type === 'van_kiem_de_ton_ho'), level: 85, star: 8, enchant_grade: 'A' },
+        domain_loadout: {
+          domain: DOMAIN_CATALOG.find((d) => d.domain_id === 'domain_unique_1'),
+          sense: DIVINE_SENSE_CATALOG.find((s) => s.sense_id === 'sense_unique_1'),
+          realm: DIVINE_REALM_CATALOG.find((r) => r.realm_id === 'realm_unique_1'),
+        },
+      },
+      { maxTurns: 12, preRender: false, skipQuestTracking: true, seed: 131 },
+    );
+    assert.ok(batWithDomain.combatants.attacker.domainLoadout?.domain?.domain_id === 'domain_fuyumi_cuu_vi_hong_mong');
+    assert.ok(!/độc quyền/i.test(batWithDomain.fullBattleLog), 'Battle log must not contain Độc quyền Fuyumi');
+    assert.ok(batWithDomain.fullBattleLog.includes('sense_fuyumi_thai_thuong_hong_ho'));
+    assert.ok(batWithDomain.fullBattleLog.includes('realm_fuyumi_van_co_tuyet_diet'));
+    await assertPngValid(await renderBattleCard(batWithDomain, { format: 'png' }));
+
+    const batNoDomain = await simulateBattle(
+      { user_id: '888131000000000102', username: 'NoDomA', level: 20, pet: { ...PET_CATALOG[0], level: 20 } },
+      { user_id: '888131000000000103', username: 'NoDomB', level: 20, pet: { ...PET_CATALOG[1], level: 20 } },
+      { maxTurns: 8, preRender: false, skipQuestTracking: true, seed: 132 },
+    );
+    await assertPngValid(await renderBattleCard(batNoDomain, { format: 'png' }));
+
+    // 7D. KHO LINH THÚ detailed list & minigame 45% cutoff boundary verification
+    if (!supabase) return;
+    await ensureUserInitialized(USER_V13_A, { username: 'V131Tester' });
+    await supabase.from('users').update({ linh_thach: 20000 }).eq('user_id', USER_V13_A);
+    const invPets = await (await testServer.fetch(`/api/inv/${USER_V13_A}?view=pets`)).json();
+    assert.equal(invPets.success, true);
+    assert.ok(Array.isArray(invPets.pets) && invPets.pets.length >= 1);
+    assert.ok(invPets.pets[0].tier_icon, 'Pet item must expose tier_icon');
+    assert.ok(invPets.pets[0].rarity_label, 'Pet item must expose rarity_label');
+    assert.ok(invPets.pets[0].element_icon, 'Pet item must expose element_icon');
+    assert.ok(invPets.summary_pets_detailed.includes(invPets.pets[0].rarity_label));
+    assert.ok(invPets.summary_pets_detailed.includes(invPets.pets[0].element_icon));
+
+    // Boundary check rng=0.42 (< 0.45) now wins on Coinflip, Slots, and Crash Step 3 (2.00x)
+    const cf42 = await playCoinflip(USER_V13_A, 100, 'heads', { bypassCooldown: true, rng: () => 0.42 });
+    assert.equal(cf42.won, true);
+    const sl42 = await playSlots(USER_V13_A, 100, { bypassCooldown: true, rng: () => 0.42 });
+    assert.equal(sl42.won, true);
+    const cr42 = await crashGame(USER_V13_A, 100, null, { bypassCooldown: true, autoCashout: 2.0, rng: () => 0.42 });
+    assert.equal(cr42.crashed, false);
+    assert.equal(cr42.payout, 200);
+    const wikiAll = await (await testServer.fetch('/api/wiki')).json();
+    const wikiAllStr = JSON.stringify(wikiAll);
+    assert.ok(!/45%|tỉ lệ thắng|house\s*edge|(?:coinflip|slots|blackjack|crash|minigame)[^.\n]{0,80}(?:40|45)%/i.test(wikiAllStr), 'Wiki must never mention minigame winrates');
   });
 });

@@ -19,6 +19,7 @@ import {
   em,
   tierEmoji,
   domainEmoji,
+  domainElementEmoji,
   senseEmoji,
   realmEmojiById,
 } from '../config/emojiHelper.js';
@@ -153,23 +154,24 @@ export async function getDomainInventory(userId, options = {}) {
       const eqTag = item.is_equipped ? ' **[Đang Dùng]**' : '';
       const qtyTag = toSupCount(item.quantity);
       const statNote = item.entity_kind === 'domain'
-        ? `${item.element} • ${item.base_energy >= 999 ? '∞' : item.base_energy} LM`
+        ? `${domainElementEmoji(item.element)} ${item.element} • ${item.base_energy >= 999 ? '∞' : item.base_energy} LM`
         : item.entity_kind === 'sense'
           ? `+${item.bonus_energy >= 999 ? '∞' : item.bonus_energy} LM`
           : `+${Math.round((item.debuff_boost_pct || 0) * 100)}% Debuff`;
-      lines.push(`• ${item.icon} ${item.tier_icon} **${item.name}**${qtyTag} (\`${item.entity_id}\`) — *${statNote}*${eqTag}`);
+      lines.push(`• ${item.icon} **${item.name}**${qtyTag} (\`${item.entity_id}\`) • ${item.tier_icon} ${item.rarity} — *${statNote}*${eqTag}`);
     }
     if (arr.length > 12) lines.push(`• *... và ${arr.length - 12} ${kindLabel} khác*`);
     return lines.join('\n');
   };
 
   const view = String(options.view || 'overview').toLowerCase();
+  const domainCycleDisplay = DOMAIN_ELEMENTS.cycle.map((el) => `${domainElementEmoji(el)} **${el}**`).join(' → ');
   const sections = [
     `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (KÍCH HOẠT TỪ HIỆP 2)**`,
-    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** *(${eqDomain.element})*` : '`Trống`'}`,
+    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** *(${domainElementEmoji(eqDomain.element)} ${eqDomain.element})*` : '`Trống`'}`,
     `• **Thần Thức:** ${eqSense ? `${eqSense.icon} **${eqSense.name}**` : '`Trống`'}`,
     `• **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}**` : '`Trống`'}`,
-    `• **Tổng Linh Mạch:** \`${totalLinhMach}\` • **Tương Khắc:** \`${DOMAIN_ELEMENTS.cycle.join(' → ')} → Kiếm Vực\``,
+    `• **Tổng Linh Mạch:** \`${totalLinhMach}\` • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
     '',
   ];
 

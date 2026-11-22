@@ -8,7 +8,7 @@ import {
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
 } from '../../data/catalog.js';
-import { em, petEmoji, domainEmoji } from '../../config/emojiHelper.js';
+import { em, petEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
 import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
@@ -600,8 +600,15 @@ function buildFullBattleLog({
     if (!dl.domain) return null;
     const d = dl.domain;
     const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (dl.sense?.bonus_energy || 0));
-    const extras = [dl.sense?.name, dl.realm?.name].filter(Boolean).join(' • ');
-    return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${d.element} • ${lm} Linh Mạch${extras ? ` • ${extras}` : ''})*`;
+    const domElIcon = domainElementEmoji(d.element, em('su_realm_star'));
+    const sensePart = dl.sense
+      ? `${senseEmoji(dl.sense.sense_id, em('su_sparkle'))} ${dl.sense.name}`.trim()
+      : null;
+    const realmPart = dl.realm
+      ? `${realmEmojiById(dl.realm.realm_id, em('su_arena'))} ${dl.realm.name}`.trim()
+      : null;
+    const extras = [sensePart, realmPart].filter(Boolean).join(' • ');
+    return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${domElIcon} ${d.element} • ${lm} Linh Mạch${extras ? ` • ${extras}` : ''})*`;
   };
 
   const makeHeaderLines = (compact = false) => [
@@ -1458,6 +1465,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     shield: c.shield || 0,
     critRate: c.critRate,
     equipment: c.equipment,
+    domainLoadout: c.domainLoadout || {},
     hax: c.hax,
   });
 

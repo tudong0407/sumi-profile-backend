@@ -12,6 +12,7 @@ import {
   getEnchantMultiplier,
 } from '../../src/data/catalog.js';
 import { ensureUserInitialized } from '../../src/services/profileService.js';
+import { LATEST_VERSION } from '../../src/data/changelogs.js';
 import {
   getGachaDismantleValue,
   getDismantleQuote,
@@ -207,7 +208,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     const blockedJson = await blockedInv.json();
     assert.equal(blockedJson.success, false);
     assert.equal(blockedJson.needs_update_ack, 'true');
-    assert.equal(blockedJson.update_version, '1.3');
+    assert.equal(blockedJson.update_version, LATEST_VERSION);
 
     const blockedJob = await testServer.fetch(`/api/job/status/${USER_V12_GATE}`);
     assert.equal((await blockedJob.json()).needs_update_ack, 'true');
@@ -234,7 +235,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     assert.equal(ackRes.status, 200);
     const ackJson = await ackRes.json();
     assert.equal(ackJson.success, true);
-    assert.equal(ackJson.acknowledged_version, '1.3');
+    assert.equal(ackJson.acknowledged_version, LATEST_VERSION);
 
     const openInv = await testServer.fetch(`/api/inv/${USER_V12_GATE}`);
     assert.equal(openInv.status, 200);
@@ -386,7 +387,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
     // Pre-render /health + exclusive /info/pet/cuu_vi_hong_ho vs /wiki 404
     const healthJson = await (await testServer.fetch('/health')).json();
-    assert.equal(healthJson.update_version, '1.3');
+    assert.equal(healthJson.update_version, LATEST_VERSION);
     assert.equal(healthJson.prerender.totalStaticCards, 218);
 
     const exclusiveInfoRes = await testServer.fetch('/api/info/pet/cuu_vi_hong_ho.webp');
@@ -398,7 +399,10 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
     const fuyumiLookup = lookupInfo('cuu_vi_hong_ho', { requesterId: FUYUMI_USER_ID });
     assert.equal(fuyumiLookup.success, true);
-    assert.match(fuyumiLookup.image_url, /\/api\/info\/pet\/cuu_vi_hong_ho\.webp\?v=1\.3$/);
+    assert.match(
+      fuyumiLookup.image_url,
+      new RegExp(`/api/info/pet/cuu_vi_hong_ho\\.webp\\?v=${LATEST_VERSION.replace(/\./g, '\\.')}$`),
+    );
 
     const strangerLookup = lookupInfo('cuu_vi_hong_ho', { requesterId: USER_V12_A });
     assert.equal(strangerLookup.success, false);

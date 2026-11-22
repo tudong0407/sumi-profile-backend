@@ -33,6 +33,7 @@ import {
   itemEmoji,
   ringEmoji,
   domainEmoji,
+  domainElementEmoji,
   senseEmoji,
   realmEmojiById,
   farmEmoji,
@@ -150,7 +151,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.25) : null;
     const gachaDismantle = GACHA_DISMANTLE_VALUES.pet[p.rarity_key] || 5;
     const sourceText = p.is_exclusive_fuyumi
-      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      ? 'Tối Thượng Thần Thoại • **ĐỘC NHẤT TOÀN SERVER (1 bản)**'
       : isShopSold
         ? `Cửa Hàng \`/shop\` (**${shopPrice.toLocaleString('vi-VN')} LT**) & Gacha \`/roll loai:pet\` (**${p.drop_rate}%** bậc ${p.rarity})`
         : `Độc quyền Gacha \`/roll loai:pet\` (**${p.drop_rate}%** bậc ${p.rarity})`;
@@ -176,7 +177,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: lines.join('\n'),
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: p.is_exclusive_fuyumi
-        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.3`
+        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.3.1`
         : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.3`,
       footer: `SuMi Family • Tra cứu UID: ${p.pet_type}`,
     };
@@ -327,10 +328,10 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const isInf = d.is_exclusive_fuyumi || d.base_energy >= 999;
     const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[d.rarity_key] || 6;
     const sourceText = d.is_exclusive_fuyumi
-      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      ? 'Tối Thượng Thần Thoại • **ĐỘC NHẤT TOÀN SERVER (1 bản)**'
       : `Gacha \`/roll loai:domain\` (**${d.drop_rate}%** bậc ${d.rarity})${d.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
     const lines = [
-      `• **Mã UID:** \`${d.domain_id}\` • **Hệ Vực:** **${d.element}**`,
+      `• **Mã UID:** \`${d.domain_id}\` • **Hệ Vực:** ${domainElementEmoji(d.element)} **${d.element}**`,
       `• **Phẩm chất:** ${tierEmoji(d.rarity_key)} **${d.rarity}** • **Linh Mạch Gốc:** \`${isInf ? '∞' : d.base_energy}\` (Kích hoạt từ Hiệp 2)`,
       `• ${em('su_sparkle')} **Buff phe mình:** ${d.buff_desc}`,
       `• ${em('su_thunder_hax')} **Debuff phe địch:** ${d.debuff_desc}`,
@@ -359,7 +360,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const isInf = s.is_exclusive_fuyumi || s.bonus_energy >= 999;
     const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[s.rarity_key] || 6;
     const sourceText = s.is_exclusive_fuyumi
-      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      ? 'Tối Thượng Thần Thoại • **ĐỘC NHẤT TOÀN SERVER (1 bản)**'
       : `Gacha \`/roll loai:domain\` (**${s.drop_rate}%** bậc ${s.rarity})${s.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
     return {
       success: true,
@@ -385,7 +386,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const r = matchedRealm;
     const dismantleVal = { common: 6, rare: 15, epic: 36, mythic: 85 }[r.rarity_key] || 6;
     const sourceText = r.is_exclusive_fuyumi
-      ? 'Độc quyền Cửu Vĩ Tiên Chủ Fuyumi (Không rơi công khai)'
+      ? 'Tối Thượng Thần Thoại • **ĐỘC NHẤT TOÀN SERVER (1 bản)**'
       : `Gacha \`/roll loai:domain\` (**${r.drop_rate}%** bậc ${r.rarity})${r.is_unique ? ' • **ĐỘC NHẤT TOÀN SERVER**' : ''}`;
     return {
       success: true,

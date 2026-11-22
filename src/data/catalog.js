@@ -246,8 +246,8 @@ export const PET_CATALOG = [
   { pet_type: 'nguyet_than_cuu_vy_bach', pet_name: 'Nguyệt Thần Bạch Vĩ Hồ', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 530, base_def: 470, base_spd: 560, hax_skill: 'Thời Không Hoán Ảnh', hax_description: '1 lần/trận khi HP < 35%, giải hiệu ứng xấu, hồi 30% HP & thêm 1 lượt.', image_file: 'pets/nguyet_than_cuu_vy_bach.png', is_starter: false, is_exclusive_fuyumi: false },
   ...V13_NEW_PETS,
 
-  // Độc Quyền Tiểu Thư Fuyumi
-  { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc. Độc quyền Tiểu thư Fuyumi.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
+  // Bộ Tối Thượng Thần Thoại Độc Nhất
+  { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
   is_unique: Boolean(p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)),

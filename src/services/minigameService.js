@@ -16,7 +16,7 @@ export const MINIGAME_COOLDOWN_MS = 5000;
 
 const CRASH_LADDER = [1.00, 1.35, 1.75, 2.00, 2.60, 3.50, 5.00];
 // Survival probability from start through each step index 1..6 (Step 3 = 2.00x)
-const CRASH_STEP_REACH_PROB = [1.0, 0.58, 0.48, 0.40, 0.30, 0.22, 0.16];
+const CRASH_STEP_REACH_PROB = [1.0, 0.63, 0.53, 0.45, 0.34, 0.25, 0.18];
 
 const SLOT_SYMBOLS = [
   { id: 'slot_fox', label: 'Cửu Vĩ Kim Hồ', jackpot4: 5.0 },
@@ -112,14 +112,9 @@ function slotIcon(id) {
 function pickDistinctSymbols(count, rng, excludeIds = new Set()) {
   const pool = SLOT_SYMBOLS.filter((s) => !excludeIds.has(s.id));
   const out = [];
-  const used = new Set();
-  while (out.length < count && used.size < pool.length) {
-    const idx = Math.floor(rng() * pool.length);
-    const sym = pool[idx];
-    if (!used.has(sym.id)) {
-      used.add(sym.id);
-      out.push(sym);
-    }
+  while (out.length < count && pool.length > 0) {
+    const idx = Math.floor(rng() * pool.length) % pool.length;
+    out.push(pool.splice(idx, 1)[0]);
   }
   return out;
 }
@@ -158,7 +153,7 @@ export async function playCoinflip(userId, rawBet, rawChoice = 'heads', options 
     const playerChoice = (choiceNorm === 'tails' || choiceNorm === 'up' || choiceNorm === 'úp' || choiceNorm === 'lien') ? 'tails' : 'heads';
     const oppositeSide = playerChoice === 'heads' ? 'tails' : 'heads';
 
-    const win = rng() < 0.40;
+    const win = rng() < 0.45;
     const outcome = win ? playerChoice : oppositeSide;
     const payout = win ? check.bet * 2 : 0;
     const netDelta = payout - check.bet;
@@ -255,7 +250,7 @@ export async function playSlots(userId, rawBet, options = {}) {
       reels = shuffleArr([mainSym, mainSym, mainSym, filler], rng);
       multiplier = 2.5;
       tierLabel = 'TAM LIÊN HỢP BẢO (1:2.5)';
-    } else if (roll < 0.40) {
+    } else if (roll < 0.45) {
       // Two pairs = 1:2
       const [symA, symB] = pickDistinctSymbols(2, rng);
       reels = shuffleArr([symA, symA, symB, symB], rng);
@@ -358,11 +353,11 @@ function formatHand(cards, hideSecond = false) {
 
 function drawBiasedCard(deck, rng, biasMode = 'normal') {
   if (deck.length === 0) return { rank: '7', suit: '♠', val: 7, label: '7♠' };
-  if (biasMode === 'dealer_strong' && rng() < 0.28) {
+  if (biasMode === 'dealer_strong' && rng() < 0.08) {
     const idx = deck.findIndex((c) => c.val >= 9);
     if (idx !== -1) return deck.splice(idx, 1)[0];
   }
-  if (biasMode === 'player_stiff' && rng() < 0.25) {
+  if (biasMode === 'player_stiff' && rng() < 0.06) {
     const idx = deck.findIndex((c) => c.val >= 4 && c.val <= 7);
     if (idx !== -1) return deck.splice(idx, 1)[0];
   }

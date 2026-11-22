@@ -14,7 +14,13 @@ import {
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
-import { normalizeEnchantGrade, ENCHANT_GRADES } from '../data/catalog.js';
+import {
+  normalizeEnchantGrade,
+  ENCHANT_GRADES,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
+} from '../data/catalog.js';
 
 const RENDER_SCALE = 2;
 
@@ -39,6 +45,81 @@ function drawProfileGradeBadge(ctx, gradeBadges, rawGrade, x, y, size = 18) {
   ctx.textBaseline = 'middle';
   ctx.fillText(grade, x + size / 2, y + size / 2 + 0.5);
   ctx.restore();
+}
+
+function resolveProfileDomainLoadout(raw = {}) {
+  const d = typeof raw.domain === 'string'
+    ? DOMAIN_BY_ID[raw.domain]
+    : (raw.domain || (raw.domain_id ? DOMAIN_BY_ID[raw.domain_id] : null));
+  const s = typeof raw.sense === 'string'
+    ? DIVINE_SENSE_BY_ID[raw.sense]
+    : (raw.sense || (raw.sense_id ? DIVINE_SENSE_BY_ID[raw.sense_id] : null));
+  const r = typeof raw.realm === 'string'
+    ? DIVINE_REALM_BY_ID[raw.realm]
+    : (raw.realm || (raw.realm_id ? DIVINE_REALM_BY_ID[raw.realm_id] : null));
+  return { domain: d || null, sense: s || null, realm: r || null };
+}
+
+function getProfileSlotColors(rarity) {
+  if (!rarity) {
+    return {
+      borderGrad: ['rgba(100, 116, 139, 0.4)', 'rgba(148, 163, 184, 0.4)'],
+      glow: 'rgba(148, 163, 184, 0.25)',
+      blur: 4,
+      text: '#cbd5e1',
+      bg1: 'rgba(30, 41, 59, 0.4)',
+      bg2: 'rgba(15, 23, 42, 0.4)',
+    };
+  }
+  const r = String(rarity).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (r.includes('toi thuong') || r.includes('supreme')) {
+    return {
+      borderGrad: ['#ec4899', '#fbbf24'],
+      glow: '#ec4899',
+      blur: 9,
+      text: '#fbcfe8',
+      bg1: 'rgba(236, 72, 153, 0.28)',
+      bg2: 'rgba(251, 191, 36, 0.18)',
+    };
+  }
+  if (r.includes('than thoai') || r.includes('mythic')) {
+    return {
+      borderGrad: ['#ff0055', '#ffd700'],
+      glow: '#ff0055',
+      blur: 8,
+      text: '#ffd700',
+      bg1: 'rgba(255, 0, 85, 0.22)',
+      bg2: 'rgba(251, 191, 36, 0.16)',
+    };
+  }
+  if (r.includes('tien pham') || r.includes('epic')) {
+    return {
+      borderGrad: ['#9333ea', '#c084fc'],
+      glow: 'rgba(168, 85, 247, 0.65)',
+      blur: 6,
+      text: '#e9d5ff',
+      bg1: 'rgba(147, 51, 234, 0.2)',
+      bg2: 'rgba(192, 132, 252, 0.12)',
+    };
+  }
+  if (r.includes('linh pham') || r.includes('rare')) {
+    return {
+      borderGrad: ['#2563eb', '#60a5fa'],
+      glow: 'rgba(59, 130, 246, 0.55)',
+      blur: 5,
+      text: '#93c5fd',
+      bg1: 'rgba(37, 99, 235, 0.18)',
+      bg2: 'rgba(96, 165, 250, 0.1)',
+    };
+  }
+  return {
+    borderGrad: ['rgba(71, 85, 105, 0.5)', 'rgba(148, 163, 184, 0.5)'],
+    glow: 'rgba(148, 163, 184, 0.2)',
+    blur: 3,
+    text: '#cbd5e1',
+    bg1: 'rgba(51, 65, 85, 0.25)',
+    bg2: 'rgba(30, 41, 59, 0.2)',
+  };
 }
 
 /**
@@ -76,6 +157,7 @@ export async function renderProfileCard(data, options = {}) {
     married: data.married || null,
     pet: data.pet || null,
     roles: Array.isArray(data.equipped_roles) ? data.equipped_roles : [],
+    domainLoadout: resolveProfileDomainLoadout(data.domain_loadout || data.domainLoadout || {}),
   };
 
   const isOwner = profile.userId === '757091869183311872';
@@ -106,6 +188,11 @@ export async function renderProfileCard(data, options = {}) {
   const gemSource = equipGem?.image_url || gemFallback;
   const soulSource = equipSoul?.image_url || soulFallback;
 
+  const dl = profile.domainLoadout;
+  const domainAsset = dl.domain?.domain_id ? `domains/${dl.domain.domain_id}.png` : null;
+  const senseAsset = dl.sense?.sense_id ? `domains/${dl.sense.sense_id}.png` : null;
+  const realmAsset = dl.realm?.realm_id ? `domains/${dl.realm.realm_id}.png` : null;
+
   const petIconRel = petType && petType !== 'cuu_vi_hong_ho'
     ? (resolveAssetPath(`pets/icons/${petType}.png`) ? `pets/icons/${petType}.png` : 'badges/su_fox_mascot.png')
     : 'badges/su_fox_mascot.png';
@@ -120,6 +207,7 @@ export async function renderProfileCard(data, options = {}) {
 
   const [
     bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg,
+    domainImg, senseImg, realmImg,
     icoClan, icoRing, icoLinhThach, icoPaw, icoPetMini, icoFox, icoBolt, icoSwords, icoShield, icoSparkle, icoGemSlot,
     gD, gC, gB, gA, gS,
   ] = await Promise.all([
@@ -129,6 +217,9 @@ export async function renderProfileCard(data, options = {}) {
     weaponSource ? loadImageSafe(weaponSource, 2000, weaponFallback) : null,
     gemSource ? loadImageSafe(gemSource, 2000, gemFallback) : null,
     soulSource ? loadImageSafe(soulSource, 2000, soulFallback) : null,
+    domainAsset ? loadImageSafe(domainAsset, 2000, null) : null,
+    senseAsset ? loadImageSafe(senseAsset, 2000, null) : null,
+    realmAsset ? loadImageSafe(realmAsset, 2000, null) : null,
     loadBadgeImage('badges/su_clan_castle.png'),
     loadBadgeImage(ringFile),
     loadBadgeImage('badges/su_linhthach.png'),
@@ -791,58 +882,6 @@ export async function renderProfileCard(data, options = {}) {
       { key: 'soul', label: 'CHIẾN HỒN', badgeImg: icoFox },
     ];
 
-    function getEquipColors(rarity) {
-      if (!rarity) {
-        return {
-          borderGrad: ['rgba(100, 116, 139, 0.4)', 'rgba(148, 163, 184, 0.4)'],
-          glow: 'rgba(148, 163, 184, 0.25)',
-          blur: 4,
-          text: '#cbd5e1',
-          bg1: 'rgba(30, 41, 59, 0.4)',
-          bg2: 'rgba(15, 23, 42, 0.4)',
-        };
-      }
-      const r = String(rarity).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (r.includes('than thoai') || r.includes('mythic')) {
-        return {
-          borderGrad: ['#ff0055', '#ffd700'],
-          glow: '#ff0055',
-          blur: 8,
-          text: '#ffd700',
-          bg1: 'rgba(255, 0, 85, 0.22)',
-          bg2: 'rgba(251, 191, 36, 0.16)',
-        };
-      }
-      if (r.includes('tien pham') || r.includes('epic')) {
-        return {
-          borderGrad: ['#9333ea', '#c084fc'],
-          glow: 'rgba(168, 85, 247, 0.65)',
-          blur: 6,
-          text: '#e9d5ff',
-          bg1: 'rgba(147, 51, 234, 0.2)',
-          bg2: 'rgba(192, 132, 252, 0.12)',
-        };
-      }
-      if (r.includes('linh pham') || r.includes('rare')) {
-        return {
-          borderGrad: ['#2563eb', '#60a5fa'],
-          glow: 'rgba(59, 130, 246, 0.55)',
-          blur: 5,
-          text: '#93c5fd',
-          bg1: 'rgba(37, 99, 235, 0.18)',
-          bg2: 'rgba(96, 165, 250, 0.1)',
-        };
-      }
-      return {
-        borderGrad: ['rgba(71, 85, 105, 0.5)', 'rgba(148, 163, 184, 0.5)'],
-        glow: 'rgba(148, 163, 184, 0.2)',
-        blur: 3,
-        text: '#cbd5e1',
-        bg1: 'rgba(51, 65, 85, 0.25)',
-        bg2: 'rgba(30, 41, 59, 0.2)',
-      };
-    }
-
     const itemImgMap = {
       weapon: weaponImg,
       gem: gemImg,
@@ -858,7 +897,7 @@ export async function renderProfileCard(data, options = {}) {
       drawRoundRect(ctx, sx, sy, slotW, equipH, 7);
 
       if (item) {
-        const colors = getEquipColors(item.rarity);
+        const colors = getProfileSlotColors(item.rarity);
         // Nền slot
         const sBg = ctx.createLinearGradient(sx, sy, sx + slotW, sy + equipH);
         sBg.addColorStop(0, colors.bg1);
@@ -974,7 +1013,7 @@ export async function renderProfileCard(data, options = {}) {
   ctx.restore();
 
   // ----------------------------------------------------------------------------
-  // BẢNG 6B: ROLES QUYỀN NĂNG ĐANG TRANG BỊ (NHỎ LẠI 20%: rolesW = 392, rolesX = 558)
+  // BẢNG 6B: ROLES QUYỀN NĂNG (TRÊN) + LINH VỰC • THẦN THỨC • THẦN CẢNH (DƯỚI)
   // ----------------------------------------------------------------------------
   const rolesX = 558;
   const rolesW = 392;
@@ -985,42 +1024,43 @@ export async function renderProfileCard(data, options = {}) {
   ctx.fill();
   const rolesBorder = ctx.createLinearGradient(rolesX, bottomY, rolesX + rolesW, bottomY + bottomH);
   rolesBorder.addColorStop(0, 'rgba(168, 85, 247, 0.55)');
-  rolesBorder.addColorStop(1, 'rgba(59, 130, 246, 0.4)');
+  rolesBorder.addColorStop(1, 'rgba(236, 72, 153, 0.45)');
   ctx.strokeStyle = rolesBorder;
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   // Tiêu đề Roles Header
-  drawIconText(ctx, icoSparkle, 'ROLES QUYỀN NĂNG', rolesX + 14, bottomY + 20, {
-    iconSize: 15,
+  drawIconText(ctx, icoSparkle, 'ROLES QUYỀN NĂNG', rolesX + 14, bottomY + 17, {
+    iconSize: 14,
     gap: 6,
-    font: `bold 12.5px ${FONT_FAMILY}`,
+    font: `bold 12px ${FONT_FAMILY}`,
     fillStyle: '#c084fc',
   });
 
-  ctx.font = `11px ${FONT_FAMILY}`;
+  ctx.font = `10.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#94a3b8';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`Slot: ${profile.maxSlots}/5`, rolesX + rolesW - 14, bottomY + 20);
+  ctx.fillText(`Slot: ${profile.maxSlots}/5`, rolesX + rolesW - 14, bottomY + 17);
   ctx.textAlign = 'left';
 
-  // 5 Slots Role vừa khít rolesW = 392 (pad=14, gap=8 -> slotW=178, fullSlotW=364)
-  const slotW = 178;
-  const fullSlotW = 364;
+  // 5 Slots Role gọn 32px/hàng (y = bottomY + 28..132) để dành phần đáy cho Linh Vực • Thần Thức • Thần Cảnh
+  const rSlotW = 178;
+  const rFullSlotW = 364;
+  const rSlotH = 32;
   const roleSlotsLayout = [
-    { slot: 1, x: rolesX + 14, y: bottomY + 38, w: slotW, h: 50 },
-    { slot: 2, x: rolesX + 200, y: bottomY + 38, w: slotW, h: 50 },
-    { slot: 3, x: rolesX + 14, y: bottomY + 96, w: slotW, h: 50 },
-    { slot: 4, x: rolesX + 200, y: bottomY + 96, w: slotW, h: 50 },
-    { slot: 5, x: rolesX + 14, y: bottomY + 154, w: fullSlotW, h: 50 },
+    { slot: 1, x: rolesX + 14, y: bottomY + 28, w: rSlotW, h: rSlotH },
+    { slot: 2, x: rolesX + 200, y: bottomY + 28, w: rSlotW, h: rSlotH },
+    { slot: 3, x: rolesX + 14, y: bottomY + 64, w: rSlotW, h: rSlotH },
+    { slot: 4, x: rolesX + 200, y: bottomY + 64, w: rSlotW, h: rSlotH },
+    { slot: 5, x: rolesX + 14, y: bottomY + 100, w: rFullSlotW, h: rSlotH },
   ];
 
-  roleSlotsLayout.forEach(layout => {
+  roleSlotsLayout.forEach((layout) => {
     const isUnlocked = layout.slot <= profile.maxSlots;
-    const roleItem = profile.roles.find(r => r.slot === layout.slot);
+    const roleItem = profile.roles.find((r) => r.slot === layout.slot);
 
-    drawRoundRect(ctx, layout.x, layout.y, layout.w, layout.h, 8);
+    drawRoundRect(ctx, layout.x, layout.y, layout.w, layout.h, 7);
 
     if (!isUnlocked) {
       ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
@@ -1030,8 +1070,8 @@ export async function renderProfileCard(data, options = {}) {
       ctx.stroke();
 
       drawAutoFitSingleLineText(ctx, `[${layout.slot}] Chưa mở (/equip)`, layout.x + 10, layout.y + layout.h / 2, layout.w - 18, {
-        maxFont: 10.5,
-        minFont: 7.5,
+        maxFont: 9.8,
+        minFont: 7.0,
         weight: '',
         align: 'left',
         color: '#64748b',
@@ -1053,24 +1093,24 @@ export async function renderProfileCard(data, options = {}) {
       ctx.stroke();
 
       ctx.fillStyle = '#fde047';
-      ctx.font = `bold 10px ${FONT_FAMILY}`;
+      ctx.font = `bold 9.5px ${FONT_FAMILY}`;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`[${layout.slot}]`, layout.x + 7, layout.y + 16);
+      ctx.fillText(`[${layout.slot}]`, layout.x + 7, layout.y + 10.5);
 
-      drawAutoFitSingleLineText(ctx, roleItem.name, layout.x + 25, layout.y + 16, layout.w - 31, {
-        maxFont: 10.5,
-        minFont: 6.0,
+      drawAutoFitSingleLineText(ctx, roleItem.name, layout.x + 24, layout.y + 10.5, layout.w - 30, {
+        maxFont: 9.8,
+        minFont: 6.2,
         weight: 'bold',
         align: 'left',
         color: '#ffffff',
       });
 
       const cleanPerkRaw = stripLeadingEmojis(roleItem.perk || 'Quyền Năng Tiên Giới');
-      drawAutoFitIconText(ctx, icoSparkle, cleanPerkRaw, layout.x + 25, layout.y + 35, layout.w - 31, {
-        iconSize: 11,
+      drawAutoFitIconText(ctx, icoSparkle, cleanPerkRaw, layout.x + 24, layout.y + 23.5, layout.w - 30, {
+        iconSize: 10,
         gap: 4,
-        maxFont: 9.5,
+        maxFont: 8.8,
         minFont: 6.0,
         weight: '',
         color: roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd',
@@ -1083,12 +1123,177 @@ export async function renderProfileCard(data, options = {}) {
       ctx.stroke();
 
       drawAutoFitSingleLineText(ctx, `[${layout.slot}] Trống (/equip role)`, layout.x + 10, layout.y + layout.h / 2, layout.w - 18, {
-        maxFont: 10.5,
-        minFont: 7.5,
+        maxFont: 9.8,
+        minFont: 7.0,
         weight: '',
         align: 'left',
         color: '#94a3b8',
       });
+    }
+  });
+
+  // Đường phân cách + Header LINH VỰC • THẦN THỨC • THẦN CẢNH
+  ctx.beginPath();
+  ctx.moveTo(rolesX + 14, bottomY + 136);
+  ctx.lineTo(rolesX + rolesW - 14, bottomY + 136);
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.25)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const domHeaderY = bottomY + 144;
+  drawIconText(ctx, icoFox, 'LINH VỰC • THẦN THỨC • THẦN CẢNH', rolesX + 14, domHeaderY, {
+    iconSize: 13,
+    gap: 5,
+    font: `bold 11px ${FONT_FAMILY}`,
+    fillStyle: '#f472b6',
+  });
+
+  if (dl.domain) {
+    const lmTotal = dl.domain.base_energy >= 999 ? '∞' : (dl.domain.base_energy + (dl.sense?.bonus_energy || 0));
+    const domTag = `${dl.domain.element} • ${lmTotal} Mạch`;
+    ctx.font = `bold 9px ${FONT_FAMILY}`;
+    const dw = ctx.measureText(domTag).width + 12;
+    const dx = rolesX + rolesW - 14 - dw;
+    drawRoundRect(ctx, dx, domHeaderY - 8, dw, 16, 5);
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.25)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(244, 114, 182, 0.7)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#fbcfe8';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(domTag, dx + dw / 2, domHeaderY);
+  } else {
+    ctx.font = `9.5px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Chưa khai mở', rolesX + rolesW - 14, domHeaderY);
+  }
+
+  // 3 Thẻ Linh Vực / Thần Thức / Thần Cảnh ngang hàng với 3 Pháp Bảo (sy = bottomY + 157, h = 68)
+  const domEquipY = bottomY + 157;
+  const domEquipH = 68;
+  const domPadX = 14;
+  const domGap = 7;
+  const domSlotW = Math.floor((rolesW - domPadX * 2 - domGap * 2) / 3); // 116
+  const domDefs = [
+    {
+      label: 'LINH VỰC',
+      badgeImg: icoFox,
+      item: dl.domain,
+      img: domainImg,
+      sub: dl.domain ? (dl.domain.element || 'Linh Vực') : 'Trống',
+    },
+    {
+      label: 'THẦN THỨC',
+      badgeImg: icoSparkle,
+      item: dl.sense,
+      img: senseImg,
+      sub: dl.sense ? `+${dl.sense.bonus_energy >= 999 ? '∞' : dl.sense.bonus_energy} Linh Mạch` : 'Trống',
+    },
+    {
+      label: 'THẦN CẢNH',
+      badgeImg: icoBolt,
+      item: dl.realm,
+      img: realmImg,
+      sub: dl.realm ? `+${Math.round((dl.realm.debuff_boost_pct || 0) * 100)}% Áp Chế` : 'Trống',
+    },
+  ];
+
+  domDefs.forEach((cfg, idx) => {
+    const sx = rolesX + domPadX + idx * (domSlotW + domGap);
+    const sy = domEquipY;
+    const item = cfg.item;
+
+    drawRoundRect(ctx, sx, sy, domSlotW, domEquipH, 7);
+    if (item) {
+      const colors = getProfileSlotColors(item.rarity || 'Thần Thoại');
+      const sBg = ctx.createLinearGradient(sx, sy, sx + domSlotW, sy + domEquipH);
+      sBg.addColorStop(0, colors.bg1);
+      sBg.addColorStop(1, colors.bg2);
+      ctx.fillStyle = sBg;
+      ctx.fill();
+
+      ctx.save();
+      ctx.shadowColor = colors.glow;
+      ctx.shadowBlur = colors.blur;
+      const sBorder = ctx.createLinearGradient(sx, sy, sx + domSlotW, sy + domEquipH);
+      sBorder.addColorStop(0, colors.borderGrad[0]);
+      sBorder.addColorStop(1, colors.borderGrad[1]);
+      ctx.strokeStyle = sBorder;
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+      ctx.restore();
+
+      const cleanName = sanitizeText(item.name || '').replace(/[«»]/g, '').trim();
+      const thumbSize = 30;
+      const thumbX = sx + 7;
+      const thumbY = sy + 7;
+
+      if (cfg.img) {
+        ctx.save();
+        drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
+        ctx.clip();
+        ctx.drawImage(cfg.img, 0, 0, cfg.img.width, cfg.img.height, thumbX, thumbY, thumbSize, thumbSize);
+        ctx.restore();
+
+        ctx.save();
+        drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
+        ctx.strokeStyle = colors.borderGrad[0];
+        ctx.lineWidth = 1.2;
+        ctx.shadowColor = colors.glow;
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+        ctx.restore();
+      } else if (cfg.badgeImg) {
+        drawRoundRect(ctx, thumbX, thumbY, thumbSize, thumbSize, 5);
+        ctx.fillStyle = 'rgba(15, 10, 28, 0.85)';
+        ctx.fill();
+        ctx.drawImage(cfg.badgeImg, thumbX + 6, thumbY + 6, thumbSize - 12, thumbSize - 12);
+      }
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+      ctx.fillStyle = colors.text;
+      ctx.fillText(cfg.label, thumbX + thumbSize + 5, thumbY + 9);
+
+      drawAutoFitSingleLineText(ctx, cfg.sub, thumbX + thumbSize + 5, thumbY + 22, domSlotW - (thumbSize + 16), {
+        maxFont: 8.0,
+        minFont: 6.0,
+        weight: 'bold',
+        align: 'left',
+        color: '#e2e8f0',
+      });
+
+      drawAutoFitSingleLineText(ctx, cleanName, sx + domSlotW / 2, sy + 52, domSlotW - 8, {
+        maxFont: 9.5,
+        minFont: 6.0,
+        weight: 'bold',
+        align: 'center',
+        color: '#ffffff',
+      });
+    } else {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      drawIconText(ctx, cfg.badgeImg, cfg.label, sx + domSlotW / 2, sy + 20, {
+        iconSize: 11,
+        gap: 4,
+        align: 'center',
+        font: `bold 8.8px ${FONT_FAMILY}`,
+        fillStyle: '#64748b',
+      });
+      ctx.font = `9.5px ${FONT_FAMILY}`;
+      ctx.fillStyle = '#475569';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('— Trống —', sx + domSlotW / 2, sy + 48);
     }
   });
   ctx.restore();

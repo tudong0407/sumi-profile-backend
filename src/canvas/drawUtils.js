@@ -9,7 +9,7 @@ const PROJECT_ROOT = path.resolve(__dirname, '../../');
 const ASSETS_DIR = path.join(PROJECT_ROOT, 'assets');
 const FONTS_DIR = path.join(ASSETS_DIR, 'fonts');
 
-export const FONT_FAMILY = '"Be Vietnam Pro", "DejaVu Sans", "Segoe UI", "Noto Color Emoji", "Segoe UI Emoji", Arial, sans-serif';
+export const FONT_FAMILY = '"Be Vietnam Pro", "DejaVu Sans", "Segoe UI", "Segoe UI Symbol", "Noto Color Emoji", "Segoe UI Emoji", Arial, sans-serif';
 
 // Đăng ký font tiếng Việt chuẩn cho Linux container & môi trường Render
 try {

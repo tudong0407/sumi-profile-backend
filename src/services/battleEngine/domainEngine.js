@@ -7,6 +7,7 @@
  */
 
 import { V13_DOMAIN_ELEMENTS } from '../../data/v13ExpansionCatalog.js';
+import { em, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 
 function getEquipDomainBonuses(combatant) {
   let extraEnergy = 0;
@@ -253,12 +254,15 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       if (!side.hasDomain) continue;
       side.activated = true;
       const eLabel = side.indestructible ? '∞' : side.maxEnergy;
-      const extras = [side.sense?.name, side.realm?.name].filter(Boolean).join(' + ');
+      const domElIcon = domainElementEmoji(side.domain.element, em('su_realm_star'));
+      const senseTxt = side.sense ? `${senseEmoji(side.sense.sense_id, em('su_sparkle'))} ${side.sense.name}`.trim() : null;
+      const realmTxt = side.realm ? `${realmEmojiById(side.realm.realm_id, em('su_arena'))} ${side.realm.name}`.trim() : null;
+      const extras = [senseTxt, realmTxt].filter(Boolean).join(' • ');
       events.push({
         actor: owner.id,
         action: 'domain_open',
-        skill: `Khai Mở Linh Vực: ${side.domain.name}`,
-        desc: `${owner.name} triển khai **${side.domain.name}** (${side.domain.element} • ${eLabel} Linh Mạch${extras ? ` • ${extras}` : ''})!`,
+        skill: `Khai Mở Linh Vực: ${domElIcon} ${side.domain.name}`,
+        desc: `${owner.name} triển khai ${domElIcon} **${side.domain.name}** (${side.domain.element} • ${eLabel} Linh Mạch${extras ? ` • ${extras}` : ''})!`,
       });
     }
   }
@@ -297,18 +301,22 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
     if (!sideB.indestructible) sideB.energy = Math.max(0, sideB.energy - drainB);
 
     if (counter.aCountersB) {
+      const eA = domainElementEmoji(sideA.domain.element, em('su_realm_star'));
+      const eB = domainElementEmoji(sideB.domain.element, em('su_realm_star'));
       events.push({
         actor: attacker.id,
         action: 'domain_clash',
-        skill: `Khắc Chế Hệ Vực (${sideA.domain.element} ▸ ${sideB.domain.element})`,
-        desc: `${sideA.domain.name} áp chế ${sideB.domain.name} (${sideA.indestructible ? '∞' : `${sideA.energy}/${sideA.maxEnergy}`} vs ${sideB.energy}/${sideB.maxEnergy} Linh Mạch)!`,
+        skill: `Khắc Chế Hệ Vực (${eA} ${sideA.domain.element} ▸ ${eB} ${sideB.domain.element})`,
+        desc: `${eA} ${sideA.domain.name} áp chế ${eB} ${sideB.domain.name} (${sideA.indestructible ? '∞' : `${sideA.energy}/${sideA.maxEnergy}`} vs ${sideB.energy}/${sideB.maxEnergy} Linh Mạch)!`,
       });
     } else if (counter.bCountersA) {
+      const eB = domainElementEmoji(sideB.domain.element, em('su_realm_star'));
+      const eA = domainElementEmoji(sideA.domain.element, em('su_realm_star'));
       events.push({
         actor: defender.id,
         action: 'domain_clash',
-        skill: `Khắc Chế Hệ Vực (${sideB.domain.element} ▸ ${sideA.domain.element})`,
-        desc: `${sideB.domain.name} áp chế ${sideA.domain.name} (${sideB.indestructible ? '∞' : `${sideB.energy}/${sideB.maxEnergy}`} vs ${sideA.energy}/${sideA.maxEnergy} Linh Mạch)!`,
+        skill: `Khắc Chế Hệ Vực (${eB} ${sideB.domain.element} ▸ ${eA} ${sideA.domain.element})`,
+        desc: `${eB} ${sideB.domain.name} áp chế ${eA} ${sideA.domain.name} (${sideB.indestructible ? '∞' : `${sideB.energy}/${sideB.maxEnergy}`} vs ${sideA.energy}/${sideA.maxEnergy} Linh Mạch)!`,
       });
     }
 

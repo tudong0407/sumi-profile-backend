@@ -17,6 +17,7 @@ import {
   sanitizeText,
   loadBadgeImage,
   drawIconText,
+  drawAutoFitSingleLineText,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -181,177 +182,329 @@ export async function renderElementalChart(options = {}) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
+  const [
+    kiemImg, huyenImg, tranImg, minhImg, thanhImg, honDonImg, senseImg, realmImg,
+  ] = await Promise.all([
+    loadImageSafe('domains/domain_unique_1.png', 2000, null),
+    loadImageSafe('domains/domain_unique_2.png', 2000, null),
+    loadImageSafe('domains/domain_unique_3.png', 2000, null),
+    loadImageSafe('domains/domain_unique_4.png', 2000, null),
+    loadImageSafe('domains/domain_unique_5.png', 2000, null),
+    loadImageSafe('domains/domain_fuyumi_cuu_vi_hong_mong.png', 2000, null),
+    loadImageSafe('domains/sense_unique_1.png', 2000, null),
+    loadImageSafe('domains/realm_unique_1.png', 2000, null),
+  ]);
+
   drawCelestialBackground(ctx, 'rgba(244, 114, 182, 0.18)');
 
   // Header
   ctx.save();
-  ctx.font = `bold 22px ${FONT_FAMILY}`;
+  ctx.font = `bold 20px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.shadowColor = 'rgba(244, 114, 182, 0.55)';
   ctx.shadowBlur = 10;
-  ctx.fillText('VÒNG XOAY TƯƠNG KHẮC NGŨ HÀNH & CÁC HỆ ĐẶC THÙ', LOGICAL_W / 2, 28);
+  ctx.fillText('VÒNG XOAY TƯƠNG KHẮC NGŨ HÀNH LINH THÚ & NGŨ ĐẠI LINH VỰC', LOGICAL_W / 2, 26);
   ctx.shadowBlur = 0;
 
-  ctx.font = `12px ${FONT_FAMILY}`;
+  ctx.font = `11.5px ${FONT_FAMILY}`;
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillText('Ma trận khắc chế 9 nguyên tố Đấu Trường Linh Thú • SuMi Family', LOGICAL_W / 2, 58);
+  ctx.fillText('Ma trận khắc chế 9 nguyên tố Linh Thú • Vòng xoay 5 Hệ Linh Vực (Hiệp 2+) • Thần Thức & Thần Cảnh', LOGICAL_W / 2, 54);
   ctx.restore();
 
-  // ============================================================================
-  // KHUNG TRÁI: VÒNG XOAY NGŨ HÀNH (KIM -> MỘC -> THỔ -> THỦY -> HỎA -> KIM)
-  // ============================================================================
-  const leftX = 34;
-  const panelY = 86;
-  const leftW = 474;
-  const panelH = 376;
+  function drawChartArrow(x1, y1, x2, y2, cx, cy, color = '#fbbf24') {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 7;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo(cx, cy, x2, y2);
+    ctx.stroke();
 
+    const angle = Math.atan2(y2 - cy, x2 - cx);
+    const headLen = 9.5;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const panelY = 82;
+  const panelH = 380;
+  const colW = 304;
+  const orbitR = 96;
+  const nodeR = 29;
+
+  // ============================================================================
+  // CỘT 1: VÒNG XOAY NGŨ HÀNH LINH THÚ (x = 28, w = 304)
+  // ============================================================================
+  const col1X = 28;
   ctx.save();
-  drawRoundRect(ctx, leftX, panelY, leftW, panelH, 16);
+  drawRoundRect(ctx, col1X, panelY, colW, panelH, 16);
   ctx.fillStyle = 'rgba(18, 14, 34, 0.78)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(251, 191, 36, 0.42)';
   ctx.lineWidth = 1.4;
   ctx.stroke();
 
-  ctx.font = `bold 14px ${FONT_FAMILY}`;
+  ctx.font = `bold 13px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fde047';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('NGŨ HÀNH TƯƠNG KHẮC', leftX + leftW / 2, panelY + 14);
+  ctx.fillText('1. NGŨ HÀNH LINH THÚ', col1X + colW / 2, panelY + 14);
 
-  // Vòng tròn tâm ngũ giác
-  const centerX = leftX + leftW / 2;
-  const centerY = panelY + 196;
-  const orbitR = 112;
-  const nodeR = 34;
-
-  // Vòng quỹ đạo mờ
+  const c1X = col1X + colW / 2;
+  const c1Y = panelY + 188;
   ctx.beginPath();
-  ctx.arc(centerX, centerY, orbitR, 0, Math.PI * 2);
+  ctx.arc(c1X, c1Y, orbitR, 0, Math.PI * 2);
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([5, 6]);
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([4, 5]);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // 5 đỉnh theo chiều kim đồng hồ: Kim -> Mộc -> Thổ -> Thủy -> Hỏa -> Kim
-  const cycle = [
-    { name: 'KIM', sub: 'Metal', color: '#fbbf24', bg: '#451a03', icon: '⚔️' },
-    { name: 'MỘC', sub: 'Wood', color: '#4ade80', bg: '#052e16', icon: '🌿' },
-    { name: 'THỔ', sub: 'Earth', color: '#f59e0b', bg: '#431407', icon: '🪨' },
-    { name: 'THỦY', sub: 'Water', color: '#38bdf8', bg: '#082f49', icon: '💧' },
-    { name: 'HỎA', sub: 'Fire', color: '#f87171', bg: '#450a0a', icon: '🔥' },
-  ];
-
-  const pts = cycle.map((el, i) => {
+  const petCycle = [
+    { name: 'KIM', sub: 'METAL', color: '#fbbf24', bg: '#451a03' },
+    { name: 'MỘC', sub: 'WOOD', color: '#4ade80', bg: '#052e16' },
+    { name: 'THỔ', sub: 'EARTH', color: '#f59e0b', bg: '#431407' },
+    { name: 'THỦY', sub: 'WATER', color: '#38bdf8', bg: '#082f49' },
+    { name: 'HỎA', sub: 'FIRE', color: '#f87171', bg: '#450a0a' },
+  ].map((el, i) => {
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-    return {
-      ...el,
-      angle,
-      x: centerX + orbitR * Math.cos(angle),
-      y: centerY + orbitR * Math.sin(angle),
-    };
+    return { ...el, angle, x: c1X + orbitR * Math.cos(angle), y: c1Y + orbitR * Math.sin(angle) };
   });
 
-  // Vẽ 5 mũi tên cong theo chiều kim đồng hồ
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i];
-    const b = pts[(i + 1) % pts.length];
+  for (let i = 0; i < petCycle.length; i += 1) {
+    const a = petCycle[i];
+    const b = petCycle[(i + 1) % petCycle.length];
     const midAngle = a.angle + Math.PI / 5;
-    const ctrlR = orbitR + 24;
-    const cx = centerX + ctrlR * Math.cos(midAngle);
-    const cy = centerY + ctrlR * Math.sin(midAngle);
-
-    // Điểm đầu/cuối cách tâm hình tròn nodeR + 6px
-    const startAng = Math.atan2(cy - a.y, cx - a.x);
-    const endAng = Math.atan2(cy - b.y, cx - b.x);
-    const sx = a.x + (nodeR + 6) * Math.cos(startAng);
-    const sy = a.y + (nodeR + 6) * Math.sin(startAng);
-    const ex = b.x + (nodeR + 8) * Math.cos(endAng);
-    const ey = b.y + (nodeR + 8) * Math.sin(endAng);
-
-    drawCurvedArrow(ctx, sx, sy, ex, ey, cx, cy, a.color);
+    const cx = c1X + (orbitR + 20) * Math.cos(midAngle);
+    const cy = c1Y + (orbitR + 20) * Math.sin(midAngle);
+    const sAng = Math.atan2(cy - a.y, cx - a.x);
+    const eAng = Math.atan2(cy - b.y, cx - b.x);
+    drawChartArrow(
+      a.x + (nodeR + 5) * Math.cos(sAng),
+      a.y + (nodeR + 5) * Math.sin(sAng),
+      b.x + (nodeR + 7) * Math.cos(eAng),
+      b.y + (nodeR + 7) * Math.sin(eAng),
+      cx, cy, a.color,
+    );
   }
 
-  // Tâm vòng xoay: +30% / -20%
-  drawRoundRect(ctx, centerX - 64, centerY - 28, 128, 56, 12);
-  ctx.fillStyle = 'rgba(15, 11, 28, 0.90)';
+  drawRoundRect(ctx, c1X - 52, c1Y - 23, 104, 46, 10);
+  ctx.fillStyle = 'rgba(15, 11, 28, 0.92)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.1;
   ctx.stroke();
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `bold 12px ${FONT_FAMILY}`;
+  ctx.font = `bold 10px ${FONT_FAMILY}`;
   ctx.fillStyle = '#4ade80';
-  ctx.fillText('Thuận khắc: +30%', centerX, centerY - 10);
+  ctx.fillText('Khắc: +30% DMG', c1X, c1Y - 8);
   ctx.fillStyle = '#fb7185';
-  ctx.fillText('Bị khắc: -20%', centerX, centerY + 11);
+  ctx.fillText('Bị khắc: -20%', c1X, c1Y + 9);
 
-  // Vẽ 5 quả cầu Ngũ Hành
-  for (const p of pts) {
+  for (const p of petCycle) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(p.x, p.y, nodeR, 0, Math.PI * 2);
-    const orbGrad = ctx.createRadialGradient(p.x - 8, p.y - 8, 4, p.x, p.y, nodeR);
+    const orbGrad = ctx.createRadialGradient(p.x - 6, p.y - 6, 3, p.x, p.y, nodeR);
     orbGrad.addColorStop(0, p.bg);
     orbGrad.addColorStop(1, '#090714');
     ctx.fillStyle = orbGrad;
     ctx.fill();
 
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 2.8;
+    ctx.lineWidth = 2.4;
     ctx.shadowColor = p.color;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = 10;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `bold 15px ${FONT_FAMILY}`;
+    ctx.font = `bold 13px ${FONT_FAMILY}`;
     ctx.fillStyle = p.color;
-    ctx.fillText(p.name, p.x, p.y - 6);
+    ctx.fillText(p.name, p.x, p.y - 5);
 
-    ctx.font = `10px ${FONT_FAMILY}`;
+    ctx.font = `8.5px ${FONT_FAMILY}`;
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText(p.sub.toUpperCase(), p.x, p.y + 12);
+    ctx.fillText(p.sub, p.x, p.y + 10);
     ctx.restore();
   }
 
-  // Thanh chú thích ngắn dưới vòng ngũ hành
-  ctx.font = `bold 12px ${FONT_FAMILY}`;
-  ctx.fillStyle = '#e2e8f0';
-  ctx.textAlign = 'center';
-  ctx.fillText('Kim  →  Mộc  →  Thổ  →  Thủy  →  Hỏa  →  Kim', leftX + leftW / 2, panelY + panelH - 22);
+  drawRoundRect(ctx, col1X + 14, panelY + 324, colW - 28, 42, 9);
+  ctx.fillStyle = 'rgba(15, 11, 28, 0.85)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.32)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.font = `bold 10.5px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#fde047';
+  ctx.fillText('Kim → Mộc → Thổ → Thủy → Hỏa → Kim', c1X, panelY + 345);
   ctx.restore();
 
   // ============================================================================
-  // KHUNG PHẢI: TỨ ĐẠI DỊ TỐ ĐẶC THÙ (LÔI, ÁM <-> QUANG, HỖN ĐỘN / HƯ KHÔNG)
+  // CỘT 2: VÒNG XOAY NGŨ ĐẠI LINH VỰC (x = 348, w = 304) — ICON PNG TRỰC QUAN
   // ============================================================================
-  const rightX = 526;
-  const rightW = 440;
-
+  const col2X = 348;
   ctx.save();
-  drawRoundRect(ctx, rightX, panelY, rightW, panelH, 16);
+  drawRoundRect(ctx, col2X, panelY, colW, panelH, 16);
+  ctx.fillStyle = 'rgba(18, 14, 34, 0.82)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.52)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  ctx.font = `bold 13px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#f472b6';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('2. NGŨ ĐẠI LINH VỰC (HIỆP 2+)', col2X + colW / 2, panelY + 14);
+
+  const c2X = col2X + colW / 2;
+  const c2Y = panelY + 184;
+  ctx.beginPath();
+  ctx.arc(c2X, c2Y, orbitR, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.16)';
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([4, 5]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const domCycle = [
+    { name: 'KIẾM VỰC', color: '#fbbf24', img: kiemImg },
+    { name: 'HUYỄN VỰC', color: '#e879f9', img: huyenImg },
+    { name: 'TRẬN VỰC', color: '#4ade80', img: tranImg },
+    { name: 'MINH VỰC', color: '#818cf8', img: minhImg },
+    { name: 'THÁNH VỰC', color: '#38bdf8', img: thanhImg },
+  ].map((el, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    return { ...el, angle, x: c2X + orbitR * Math.cos(angle), y: c2Y + orbitR * Math.sin(angle) };
+  });
+
+  for (let i = 0; i < domCycle.length; i += 1) {
+    const a = domCycle[i];
+    const b = domCycle[(i + 1) % domCycle.length];
+    const midAngle = a.angle + Math.PI / 5;
+    const cx = c2X + (orbitR + 20) * Math.cos(midAngle);
+    const cy = c2Y + (orbitR + 20) * Math.sin(midAngle);
+    const sAng = Math.atan2(cy - a.y, cx - a.x);
+    const eAng = Math.atan2(cy - b.y, cx - b.x);
+    drawChartArrow(
+      a.x + (nodeR + 5) * Math.cos(sAng),
+      a.y + (nodeR + 5) * Math.sin(sAng),
+      b.x + (nodeR + 7) * Math.cos(eAng),
+      b.y + (nodeR + 7) * Math.sin(eAng),
+      cx, cy, a.color,
+    );
+  }
+
+  drawRoundRect(ctx, c2X - 54, c2Y - 23, 108, 46, 10);
+  ctx.fillStyle = 'rgba(15, 11, 28, 0.94)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold 10px ${FONT_FAMILY}`;
+  ctx.fillStyle = '#4ade80';
+  ctx.fillText('Khắc: -1 Mạch', c2X, c2Y - 8);
+  ctx.fillStyle = '#fb7185';
+  ctx.fillText('Bị khắc: -2 Mạch', c2X, c2Y + 9);
+
+  for (const d of domCycle) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, nodeR - 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#090714';
+    ctx.fill();
+    ctx.clip();
+    if (d.img) {
+      ctx.drawImage(d.img, d.x - (nodeR - 2), d.y - (nodeR - 2), (nodeR - 2) * 2, (nodeR - 2) * 2);
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, nodeR - 2, 0, Math.PI * 2);
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 2.4;
+    ctx.shadowColor = d.color;
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.font = `bold 8.5px ${FONT_FAMILY}`;
+    const lw = ctx.measureText(d.name).width + 10;
+    drawRoundRect(ctx, d.x - lw / 2, d.y + 18, lw, 15, 5);
+    ctx.fillStyle = 'rgba(12, 9, 24, 0.94)';
+    ctx.fill();
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(d.name, d.x, d.y + 25.5);
+  }
+
+  const b2Y = panelY + 324;
+  drawRoundRect(ctx, col2X + 14, b2Y, colW - 28, 42, 9);
+  ctx.fillStyle = 'rgba(15, 11, 28, 0.88)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(244, 114, 182, 0.45)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  if (honDonImg) {
+    ctx.save();
+    drawRoundRect(ctx, col2X + 20, b2Y + 6, 30, 30, 6);
+    ctx.clip();
+    ctx.drawImage(honDonImg, col2X + 20, b2Y + 6, 30, 30);
+    ctx.restore();
+  }
+  drawAutoFitSingleLineText(ctx, 'Kiếm → Huyễn → Trận → Minh → Thánh', col2X + 56, b2Y + 14, colW - 76, {
+    maxFont: 9.8, minFont: 7.5, weight: 'bold', align: 'left', color: '#fbcfe8',
+  });
+  drawAutoFitSingleLineText(ctx, 'Vực Thần Thoại: Xuyên Kháng 56%–60% Debuff', col2X + 56, b2Y + 29, colW - 76, {
+    maxFont: 8.8, minFont: 7.0, weight: 'bold', align: 'left', color: '#fde047',
+  });
+  ctx.restore();
+
+  // ============================================================================
+  // CỘT 3: TỨ ĐẠI DỊ TỐ ĐẶC THÙ & THẦN THỨC / THẦN CẢNH (x = 668, w = 304)
+  // ============================================================================
+  const col3X = 668;
+  ctx.save();
+  drawRoundRect(ctx, col3X, panelY, colW, panelH, 16);
   ctx.fillStyle = 'rgba(18, 14, 34, 0.78)';
   ctx.fill();
   ctx.strokeStyle = 'rgba(168, 85, 247, 0.45)';
   ctx.lineWidth = 1.4;
   ctx.stroke();
 
-  ctx.font = `bold 14px ${FONT_FAMILY}`;
+  ctx.font = `bold 13px ${FONT_FAMILY}`;
   ctx.fillStyle = '#e879f9';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('TỨ ĐẠI DỊ TỐ ĐẶC THÙ', rightX + rightW / 2, panelY + 14);
+  ctx.fillText('3. DỊ TỐ & THẦN THỨC / CẢNH', col3X + colW / 2, panelY + 14);
 
   const specials = [
     {
       title: 'HỆ LÔI (THUNDER)',
-      badge: '+30% vs Thủy & Kim',
+      badge: '+30% vs Thủy/Kim',
       badgeColor: '#facc15',
       border: 'rgba(250, 204, 21, 0.55)',
       bg: 'rgba(113, 63, 18, 0.25)',
@@ -361,7 +514,7 @@ export async function renderElementalChart(options = {}) {
       ],
     },
     {
-      title: 'ÁM  ↔  QUANG (TƯƠNG SÁT)',
+      title: 'ÁM ↔ QUANG',
       badge: '+25% Lưỡng Cực',
       badgeColor: '#c084fc',
       border: 'rgba(192, 132, 252, 0.55)',
@@ -379,55 +532,90 @@ export async function renderElementalChart(options = {}) {
       bg: 'rgba(157, 23, 77, 0.28)',
       lines: [
         '• Đứng ngoài vòng khắc chế — không bị hệ nào khắc.',
-        '• +20% sát thương chuẩn xuyên giáp • Giảm 15% DMG nhận vào.',
+        '• +20% sát thương chuẩn xuyên giáp • -15% ST nhận.',
       ],
     },
   ];
 
-  const cardX = rightX + 18;
-  const cardW = rightW - 36;
-  const cardH = 96;
+  const cardX = col3X + 14;
+  const cardW = colW - 28;
+  const cardH = 74;
   specials.forEach((sp, idx) => {
-    const cy = panelY + 48 + idx * (cardH + 12);
-    drawRoundRect(ctx, cardX, cy, cardW, cardH, 12);
+    const cy = panelY + 42 + idx * (cardH + 8);
+    drawRoundRect(ctx, cardX, cy, cardW, cardH, 10);
     ctx.fillStyle = sp.bg;
     ctx.fill();
     ctx.strokeStyle = sp.border;
-    ctx.lineWidth = 1.3;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Title
-    ctx.font = `bold 13.5px ${FONT_FAMILY}`;
+    ctx.font = `bold 11.5px ${FONT_FAMILY}`;
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(sp.title, cardX + 14, cy + 22);
+    ctx.fillText(sp.title, cardX + 10, cy + 18);
 
-    // Pill bên phải
-    ctx.font = `bold 10.5px ${FONT_FAMILY}`;
-    const bw = ctx.measureText(sp.badge).width + 18;
-    const bx = cardX + cardW - bw - 12;
-    drawRoundRect(ctx, bx, cy + 11, bw, 22, 6);
-    ctx.fillStyle = 'rgba(15, 12, 28, 0.85)';
+    ctx.font = `bold 8.8px ${FONT_FAMILY}`;
+    const bw = ctx.measureText(sp.badge).width + 12;
+    const bx = cardX + cardW - bw - 8;
+    drawRoundRect(ctx, bx, cy + 8, bw, 18, 5);
+    ctx.fillStyle = 'rgba(15, 12, 28, 0.88)';
     ctx.fill();
     ctx.strokeStyle = sp.badgeColor;
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = sp.badgeColor;
     ctx.textAlign = 'center';
-    ctx.fillText(sp.badge, bx + bw / 2, cy + 22);
+    ctx.fillText(sp.badge, bx + bw / 2, cy + 17);
 
-    // Body lines
     ctx.textAlign = 'left';
-    ctx.font = `12px ${FONT_FAMILY}`;
+    ctx.font = `9.5px ${FONT_FAMILY}`;
     ctx.fillStyle = '#e2e8f0';
-    sp.lines.forEach((line, li) => {
-      ctx.fillText(truncateText(ctx, line, cardW - 28), cardX + 14, cy + 50 + li * 22);
-    });
+    ctx.fillText(truncateText(ctx, sp.lines[0], cardW - 20), cardX + 10, cy + 40);
+    ctx.fillText(truncateText(ctx, sp.lines[1], cardW - 20), cardX + 10, cy + 57);
+  });
+
+  // Thẻ 4: Thần Thức & Thần Cảnh kèm icon PNG
+  const scY = panelY + 42 + 3 * (cardH + 8);
+  const scH = 78;
+  drawRoundRect(ctx, cardX, scY, cardW, scH, 10);
+  ctx.fillStyle = 'rgba(30, 58, 138, 0.28)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  if (senseImg) {
+    ctx.save();
+    drawRoundRect(ctx, cardX + 10, scY + 9, 26, 26, 5);
+    ctx.clip();
+    ctx.drawImage(senseImg, cardX + 10, scY + 9, 26, 26);
+    ctx.restore();
+  }
+  if (realmImg) {
+    ctx.save();
+    drawRoundRect(ctx, cardX + 10, scY + 43, 26, 26, 5);
+    ctx.clip();
+    ctx.drawImage(realmImg, cardX + 10, scY + 43, 26, 26);
+    ctx.restore();
+  }
+
+  drawAutoFitSingleLineText(ctx, 'THẦN THỨC (+1..+6 Linh Mạch)', cardX + 42, scY + 15, cardW - 50, {
+    maxFont: 10.2, minFont: 8.0, weight: 'bold', align: 'left', color: '#38bdf8',
+  });
+  drawAutoFitSingleLineText(ctx, 'Tăng trần Linh Mạch, Buff sân nhà & Kháng khắc hệ', cardX + 42, scY + 29, cardW - 50, {
+    maxFont: 9.0, minFont: 7.2, align: 'left', color: '#e2e8f0',
+  });
+
+  drawAutoFitSingleLineText(ctx, 'THẦN CẢNH (+8%..+28% Áp Chế)', cardX + 42, scY + 49, cardW - 50, {
+    maxFont: 10.2, minFont: 8.0, weight: 'bold', align: 'left', color: '#fb7185',
+  });
+  drawAutoFitSingleLineText(ctx, 'Tăng độ sâu Debuff & cắt trần HP / Khiên / Hồi máu', cardX + 42, scY + 63, cardW - 50, {
+    maxFont: 9.0, minFont: 7.2, align: 'left', color: '#e2e8f0',
   });
   ctx.restore();
 
-  await drawFooter(ctx, 'SuMi Family • Bảng Tương Khắc Ngũ Hành & Dị Tố');
+  await drawFooter(ctx, 'SuMi Family • Sơ Đồ Ngũ Hành Linh Thú & Ngũ Đại Linh Vực');
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
 }
 
@@ -814,7 +1002,7 @@ export async function renderWikiPetCard(petData, options = {}) {
   const py = 90;
   const petDropRate = petData.drop_rate ?? (petData.is_exclusive_fuyumi ? 0 : petData.rarity_key === 'mythic' ? 0.5 : petData.rarity_key === 'epic' ? 14 : petData.rarity_key === 'rare' ? 25 : 60.5);
   const pills = [
-    { text: petData.is_exclusive_fuyumi ? `${petData.rarity} (Độc Quyền)` : `${petData.rarity} (${petDropRate}%)`, color: rarityStyle.primary, bg: rarityStyle.bgTint },
+    { text: petData.is_exclusive_fuyumi ? `${petData.rarity} • Độc Nhất` : `${petData.rarity} (${petDropRate}%)`, color: rarityStyle.primary, bg: rarityStyle.bgTint },
     { text: `Hệ ${petData.element}`, color: elemMeta.color, bg: 'rgba(30, 27, 75, 0.72)' },
     { text: `Chiến lực Lv.1: ${(petData.base_power || 0).toLocaleString('vi-VN')}`, color: '#fde047', bg: 'rgba(120, 53, 15, 0.45)' },
   ];

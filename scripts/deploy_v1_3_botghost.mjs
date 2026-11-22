@@ -963,14 +963,20 @@ function patchSpecificCommand(name, tree) {
   if (name === 'updates') {
     const root = patched.find((n) => n.id === 'root');
     if (root?.data) {
-      root.data.description = 'Xem bản cập nhật mới nhất (v1.3) và chọn xem lại lịch sử các phiên bản cũ qua menu';
+      root.data.description = 'Xem bản cập nhật mới nhất (v1.3.1) và chọn xem lại lịch sử các phiên bản cũ qua menu';
     }
     const sel = patched.find((n) => n.id === 'sel_upds_ver');
     if (sel?.data?.data) {
-      sel.data.data.placeholder = 'Chọn phiên bản cập nhật để xem chi tiết (v1.3 / v1.2 / v1.1)...';
+      sel.data.data.placeholder = 'Chọn phiên bản cập nhật để xem chi tiết (v1.3.1 / v1.3 / v1.2 / v1.1)...';
       sel.data.data.basic_options = [
         {
-          label: 'Phiên bản v1.3 (Mới nhất)',
+          label: 'Phiên bản v1.3.1 (Mới nhất)',
+          description: 'Linh Vực trên /profile & /battle, Emoji 5 Vực, Sơ đồ /wiki 3 cột & Kho Linh Thú',
+          emoji_id: uidId('su_realm_star'),
+          value: '1.3.1',
+        },
+        {
+          label: 'Phiên bản v1.3',
           description: 'Linh Vực, 50 Pet, 100 Pháp Bảo, 4 Minigame, Nông Trại /farm & /exchange',
           emoji_id: uidId('domain_unique_1'),
           value: '1.3',
@@ -1105,8 +1111,8 @@ function patchSpecificCommand(name, tree) {
     const catMap = Object.fromEntries(wikiData.categories.map((c) => [c.id, c]));
     const msgHome = patched.find((n) => n.id === 'msg_wiki_home');
     if (msgHome?.data?.data?.message?.embeds?.[0]) {
-      msgHome.data.data.message.embeds[0].title = `${uidEm('su_wiki_scroll')} CẨM NANG TU TIÊN SUMI FAMILY v1.3`;
-      msgHome.data.data.message.embeds[0].description = 'Hệ thống tu tiên SuMi Family v1.3: Cảnh Giới, EXP Chat/Voice, 90 Linh Thú, 165 Pháp Bảo, 30 Linh Vực / 15 Thần Thức / 15 Thần Cảnh, Khắc Ấn D→S, Nông Trại `/farm`, `/exchange`, 4 Minigame, `/job` 8 ca/ngày & 5 Nhiệm Vụ Ngày. Dùng `/info <mã>` để tra chi tiết từng bảo vật.';
+      msgHome.data.data.message.embeds[0].title = `${uidEm('su_wiki_scroll')} CẨM NANG TU TIÊN SUMI FAMILY v1.3.1`;
+      msgHome.data.data.message.embeds[0].description = 'Hệ thống tu tiên SuMi Family v1.3.1: Cảnh Giới, EXP Chat/Voice, 90 Linh Thú, 165 Pháp Bảo, 30 Linh Vực / 15 Thần Thức / 15 Thần Cảnh, Khắc Ấn D→S, Nông Trại `/farm`, `/exchange`, 4 Minigame, `/job` 8 ca/ngày & 5 Nhiệm Vụ Ngày. Dùng `/info <mã>` để tra chi tiết từng bảo vật.';
     }
     const syncPairs = [
       ['msg_wiki_overview_leaf', 'overview'],
@@ -1122,6 +1128,7 @@ function patchSpecificCommand(name, tree) {
       if (node?.data?.data?.message?.embeds?.[0] && cat) {
         node.data.data.message.embeds[0].title = cat.title;
         node.data.data.message.embeds[0].description = cat.content;
+        if (cat.image_url) node.data.data.message.embeds[0].image = { url: cat.image_url };
         if (Array.isArray(cat.fields)) node.data.data.message.embeds[0].fields = cat.fields;
       }
     }
@@ -1145,27 +1152,27 @@ function patchSpecificCommand(name, tree) {
 // ============================================================================
 function buildV13KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
-    'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY v1.3):',
-    '• HỒ SƠ & EXP (/profile, /rank, /top): Chat nhận 20-30 EXP (cooldown 45s), Voice nhận 85-135 EXP/5 phút (có chấm công định kỳ nền mỗi 12 phút, chỉ tính khi có >= 2 người không AFK/mute và không bị Cách Ly/Locked XP). Lên cấp: 60*(Lv^1.45) (max Lv.100 = 500.000 EXP), lên cấp mới thưởng LT mỗi mốc Lv (mỗi Lv chỉ nhận 1 lần duy nhất). /top bang_xep_hang xem level, power, wealth, marry.',
+    'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY v1.3.1):',
+    '• HỒ SƠ & EXP (/profile, /rank, /top): Thẻ /profile hiển thị đầy đủ Linh Thú, 3 Pháp Bảo, 5 Role và bộ Linh Vực • Thần Thức • Thần Cảnh đang trang bị. Chat nhận 20-30 EXP (cooldown 45s), Voice nhận 85-135 EXP/5 phút (có chấm công định kỳ nền mỗi 12 phút, chỉ tính khi có >= 2 người không AFK/mute và không bị Cách Ly/Locked XP). Lên cấp: 60*(Lv^1.45) (max Lv.100 = 500.000 EXP), lên cấp mới thưởng LT mỗi mốc Lv (mỗi Lv chỉ nhận 1 lần duy nhất). /top bang_xep_hang xem level, power, wealth, marry.',
     '• 7 CẢNH GIỚI & SLOT ROLE: I. Luyện Khí (Lv.1-19: 1 slot), II. Trúc Cơ (Lv.20-39: 2 slot), III. Kim Đan (Lv.40-59: 3 slot), IV. Nguyên Anh (Lv.60-79: 4 slot), V. Hóa Thần (Lv.80-89: 5 slot), VI. Đại Thừa (Lv.90-99: 5 slot), VII. Hỗn Độn Chúa Tể (Lv.100: 5 slot).',
     '• 8 LEVEL ROLES (Tự động nhận + Buff nội tại cộng dồn): Lv.5 (+3% EXP), Lv.15 (+5% EXP), Lv.20 (+8% EXP, +5% Daily LT), Lv.35 (+12% EXP, +10% Daily LT), Lv.45 (+15% EXP, +10% Daily LT, +5% Pet), Lv.60 (+20% EXP, +15% Daily LT, +8% Pet), Lv.80 (+30% EXP, +25% Daily LT, +12% Pet), Lv.100 (+50% EXP, +50% Daily LT, +20% Pet).',
     '• LINH VỰC • THẦN THỨC • THẦN CẢNH (/linhvuc, /roll loai:domain): Kho 30 Linh Vực (5 Độc Nhất Thần Thoại, 10 Thần Thoại thường, 15 Tiên/Linh/Phàm), 15 Thần Thức & 15 Thần Cảnh (gồm các bản Độc Nhất toàn server). Tự kích hoạt đấu Linh Vực từ Hiệp 2 trở đi: KHÔNG cộng thẳng ATK/DEF/SPD mà buff HAX/Xuyên Giáp cho phe mình & áp debuff lên phe địch khi còn Linh Mạch. 5 hệ Linh Vực tương khắc vòng tròn: Kiếm Vực > Huyễn Vực > Trận Vực > Minh Vực > Thánh Vực > Kiếm Vực (-1 Linh Mạch cho bên thắng hệ vs -2 cho bên bị khắc). Thần Thức tăng giới hạn Linh Mạch, Thần Cảnh cường hóa hoặc thêm loại debuff.',
-    '• ĐẤU TRƯỜNG 1v1 (/battle [doi_thu]): Tối đa 20 hiệp, ảnh Chiến Báo & nút xem Chi tiết Log (gồm log Linh Vực từ hiệp 2). Bỏ trống doi_thu để đấu PvE Tự Do (+10 LT thắng / -5 LT thua, tối đa 25 trận có thưởng/ngày); thách đấu người chơi là PvP. Ngũ Hành: Kim > Mộc > Thổ > Thủy > Hỏa > Kim (+30% thắng hệ, -20% thua hệ). Dị tố: Lôi khắc Thủy & Kim (+30%), Ám <-> Quang (+25%), Hỗn Độn/Hư Không (+20% xuyên giáp, -15% nhận DMG).',
-    '• LINH THÚ, PHÁP BẢO & GACHA (/roll, /enchant, /dismantle, /linhthu, /phapbao): Tổng cộng 90 Linh Thú công khai (13 Phàm, 13 Linh, 14 Tiên, 50 Thần Thoại gồm 10 bản Độc Nhất toàn server) & 165 Pháp Bảo (57 Vũ Khí, 54 Bảo Ngọc, 54 Chiến Hồn, gồm 39 Độc Nhất toàn server). /roll <loai: equipment|pet|domain|role> [so_luot: 1|10] [dung_ve]: 50 LT/lượt (450/10 lượt) cho Pháp Bảo/Pet/Role, 60 LT/lượt (540/10 lượt) cho Linh Vực. Quay trùng Pet/Pháp Bảo cộng số lượng +1 & tự kế thừa Tư Chất cao nhất max(D..S). /enchant nâng bậc Khắc Ấn D→C→B→A→S (+40% chỉ số bậc S, Pity +5%/lần trượt).',
+    '• ĐẤU TRƯỜNG 1v1 (/battle [doi_thu]): Tối đa 30 hiệp, ảnh Chiến Báo (hiển thị cả Linh Vực kèm 2 biểu tượng Thần Thức / Thần Cảnh & khung Đối Đầu Linh Vực ở cột giữa) và nút xem Chi tiết Log. Bỏ trống doi_thu để đấu PvE Tự Do (+10 LT thắng / -5 LT thua, tối đa 25 trận có thưởng/ngày); thách đấu người chơi là PvP. Ngũ Hành: Kim > Mộc > Thổ > Thủy > Hỏa > Kim (+30% thắng hệ, -20% thua hệ). Dị tố: Lôi khắc Thủy & Kim (+30%), Ám <-> Quang (+25%), Hỗn Độn/Hư Không (+20% xuyên giáp, -15% nhận DMG).',
+    '• LINH THÚ, PHÁP BẢO & GACHA (/roll, /enchant, /dismantle, /linhthu, /phapbao): Tổng cộng 90 Linh Thú công khai (13 Phàm, 13 Linh, 14 Tiên, 50 Thần Thoại gồm 10 bản Độc Nhất toàn server) & 165 Pháp Bảo (57 Vũ Khí, 54 Bảo Ngọc, 54 Chiến Hồn, gồm 39 Độc Nhất toàn server). /roll <loai: equipment|pet|domain|role> [so_luot: 1|10] [dung_ve]: 50 LT/lượt (450/10 lượt) cho Pháp Bảo/Pet/Role, 60 LT/lượt (540/10 lượt) cho Linh Vực. Quay trùng Pet/Pháp Bảo cộng số lượng +1 & tự kế thừa Tư Chất cao nhất max(D..S). /enchant nâng bậc Khắc Ấn D→C→B→A→S (+40% chỉ số bậc S, Pity +5%/lần trượt). Kho Linh Thú chi tiết (/inv & /linhthu) hiển thị đủ huy hiệu Phẩm Chất & Ngũ Hành.',
     '• MINIGAME TIÊN GIỚI (/coinflip, /blackjack, /slots, /crash): Cược 10 – 10.000 LT/ván (cooldown 5s). /coinflip trả thưởng 1:2, /blackjack đấu Xì Dách 21 điểm (Rút / Dừng / Gấp Đôi) trả thưởng 1:2, /slots 4 ô (tối đa 1:5), /crash Phi Kiếm Độ Kiếp rút đúng lúc trước khi Thiên Lôi nổ.',
     '• NÔNG TRẠI & ĐỔI QUÀ (/farm, /exchange): Mặc định 4 ô (2 Linh Điền + 2 Linh Thú Các), mở khóa tối đa 6 ô qua /exchange (farm_slot_unlock). Mua hạt giống hoặc trứng (chu kỳ 6h / 12h / 24h), quay lại tưới nước/cho ăn đúng khung giờ để tránh héo và thu hoạch lãi Linh Thạch + Linh Quả Tiên Giới (farm_essence). Dùng /exchange để đổi Linh Quả sang Túi 500 LT, Đá Khắc Ấn, Đá Sao, Vé Gacha, Thẻ Reset Tháp hoặc mở ô #5/#6.',
     '• KINH TẾ, VIỆC LÀM, NHIỆM VỤ & THÁP 200 TẦNG (/daily, /job, /nhiemvu, /shop, /doiqua, /tangqua): /job tối đa 8 ca/ngày (hồi chiêu 1 giờ, thưởng 35–75 LT & 18–32 EXP tùy nghề). /nhiemvu có 5 Nhiệm Vụ Ngày (Điểm danh /daily 15 LT, 150 EXP 20 LT, 3 trận thắng 25 LT, 2 ca /job 20 LT, 1 lượt /farm hoặc Minigame 20 LT) + Thưởng Hoàn Tất 5/5 (+115 LT, +1 Vé Pháp Bảo, +1 Đá Sao, +1 Đá Khắc Ấn), Khế Ước Tuần (+500 LT, +3 Đá Khắc Ấn), và Tháp Thí Luyện 200 Tầng (5 lượt/ngày). /shop bán Nhẫn Cưới 4 cấp, 26 Pet Phàm/Linh, 44 Pháp Bảo Phàm/Linh, 21 Role Đơn, 8 Vật Phẩm (gồm Vé Linh Vực 60 LT & Lệnh Bài Khung 800 LT), 20 Background.',
-    '• TÚI ĐỒ, TRA CỨU & CẬP NHẬT (/inv, /info, /wiki, /updates, /roles, /equip, /unequip, /marry, /giatoc): /inv khôi phục icon Lệnh Bài Khung trước Ảnh Nền, hiển thị số lượng nhỏ (⁰⁰¹, ⁰⁰³), món đang trang bị đứng đầu trước dấu |, cùng Linh Vực đang kích hoạt và Linh Quả. Tất cả Emoji trong server đều đặt đúng tên UID (vd: han_bang_ky_lan, enchant_stone, frame_unlock_token) để copy thẳng vào /info, /equip, /enchant, /linhvuc, /dismantle. Dùng /updates (có s) xem chi tiết bản v1.3.',
+    '• TÚI ĐỒ, TRA CỨU & CẬP NHẬT (/inv, /info, /wiki, /updates, /roles, /equip, /unequip, /marry, /giatoc): /inv khôi phục icon Lệnh Bài Khung trước Ảnh Nền, hiển thị số lượng nhỏ (⁰⁰¹, ⁰⁰³), món đang trang bị đứng đầu trước dấu |, cùng Linh Vực đang kích hoạt và Linh Quả. Tất cả Emoji trong server đều đặt đúng tên UID (vd: han_bang_ky_lan, enchant_stone, frame_unlock_token) để copy thẳng vào /info, /equip, /enchant, /linhvuc, /dismantle. Dùng /updates (có s) xem chi tiết bản v1.3.1.',
   ];
   if (includeFuyumiSecret) {
-    lines.push('• ĐẶC QUYỀN TỐI CAO CỦA TIỂU THƯ FUYUMI (CHỈ TIỂU THƯ BIẾT): Tiểu thư sở hữu bộ Độc Tôn tối thượng gồm Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho) cùng bộ Linh Vực Cửu Vĩ Hồng Mông (domain_fuyumi_cuu_vi_hong_mong), Thần Thức Thái Thượng Hồng Hồ (sense_fuyumi_thai_thuong_hong_ho) và Thần Cảnh Vạn Cổ Tuyệt Diệt (realm_fuyumi_van_co_tuyet_diet) miễn nhiễm khống chế, Mê Hoặc & debuff Linh Vực địch.');
+    lines.push('• BỘ TỐI THƯỢNG THẦN THOẠI ĐỘC NHẤT (TIỂU THƯ FUYUMI SỞ HỮU — CHỈ TIỂU THƯ BIẾT): Tiểu thư sở hữu bộ Độc Nhất Tối Thượng gồm Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho) cùng bộ Linh Vực Cửu Vĩ Hồng Mông (domain_fuyumi_cuu_vi_hong_mong), Thần Thức Thái Thượng Hồng Hồ (sense_fuyumi_thai_thuong_hong_ho) và Thần Cảnh Vạn Cổ Tuyệt Diệt (realm_fuyumi_van_co_tuyet_diet) miễn nhiễm khống chế, Mê Hoặc & debuff Linh Vực địch.');
   }
   return lines.join('\n');
 }
 
 function updateAiPromptText(oldPrompt, includeFuyumiSecret) {
   let text = String(oldPrompt || '');
-  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+ bên dưới/g, 'tài liệu hệ thống v1.3 bên dưới');
+  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+(?:\.[0-9]+)? bên dưới/g, 'tài liệu hệ thống v1.3.1 bên dưới');
   const startMarker = 'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM';
   const endMarker = '\n\nBỘ DANH SÁCH EMOTE ĐỘNG DISCORD CHÍNH THỨC:';
   const sIdx = text.indexOf(startMarker);

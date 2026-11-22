@@ -172,6 +172,21 @@ export function domainEmoji(domainId, fallback = '') {
   return em(domainEmojiKey(domainId), fallback);
 }
 
+export function domainElementEmojiKey(element) {
+  const raw = String(element || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+  if (raw.includes('kiem')) return 'domain_unique_1';
+  if (raw.includes('huyen')) return 'domain_unique_2';
+  if (raw.includes('tran')) return 'domain_unique_3';
+  if (raw.includes('minh')) return 'domain_unique_4';
+  if (raw.includes('thanh')) return 'domain_unique_5';
+  if (raw.includes('hon don')) return 'domain_fuyumi_cuu_vi_hong_mong';
+  return 'su_realm_star';
+}
+
+export function domainElementEmoji(element, fallback = '') {
+  return em(domainElementEmojiKey(element), fallback || em('su_realm_star'));
+}
+
 export function senseEmojiKey(senseId) {
   return senseId ? String(senseId).trim() : '';
 }

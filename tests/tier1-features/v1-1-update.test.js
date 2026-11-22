@@ -17,6 +17,7 @@ import { rollGacha, convertExpToLinhThach } from '../../src/services/economyServ
 import { buyShopItem } from '../../src/services/shopService.js';
 import { challengeTower, resetTowerAttempts } from '../../src/services/questService.js';
 import { ensureUserInitialized } from '../../src/services/profileService.js';
+import { LATEST_VERSION } from '../../src/data/changelogs.js';
 import { renderProfileCard } from '../../src/canvas/profileRenderer.js';
 import { renderBattleCard } from '../../src/canvas/battleRenderer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
@@ -437,7 +438,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     const updRes = await testServer.fetch('/api/update');
     assert.equal(updRes.status, 200);
     const updJson = await updRes.json();
-    assert.equal(updJson.version, '1.3');
+    assert.equal(updJson.version, LATEST_VERSION);
     const updMissing = await testServer.fetch('/api/update/9.9');
     assert.equal(updMissing.status, 404);
 

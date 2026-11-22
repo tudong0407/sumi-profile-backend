@@ -20,7 +20,16 @@ import {
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
-import { FUYUMI_USER_ID, normalizeRarityKey, normalizeEnchantGrade, ENCHANT_GRADES } from '../data/catalog.js';
+import {
+  FUYUMI_USER_ID,
+  normalizeRarityKey,
+  normalizeEnchantGrade,
+  ENCHANT_GRADES,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
+} from '../data/catalog.js';
+import { getDomainElementCounterResult } from '../services/battleEngine/domainEngine.js';
 
 const LOGICAL_W = 1000;
 const LOGICAL_H = 500;
@@ -129,6 +138,160 @@ function resolveElementMatchupDisplay(matchup) {
     return { dir: 'left', subText: `+${pct}% Sát Thương`, color: '#38bdf8' };
   }
   return { dir: 'neutral', subText: 'Ngũ Hành Cân Bằng', color: '#cbd5e1' };
+}
+
+function resolveBattleDomainLoadout(fighter, sideSummary = null) {
+  const raw = fighter?.domainLoadout || fighter?.domain_loadout || {};
+  const d = typeof raw.domain === 'string'
+    ? DOMAIN_BY_ID[raw.domain]
+    : (raw.domain || (sideSummary?.domainId ? DOMAIN_BY_ID[sideSummary.domainId] : null));
+  const s = typeof raw.sense === 'string'
+    ? DIVINE_SENSE_BY_ID[raw.sense]
+    : (raw.sense || null);
+  const r = typeof raw.realm === 'string'
+    ? DIVINE_REALM_BY_ID[raw.realm]
+    : (raw.realm || null);
+  return { domain: d || null, sense: s || null, realm: r || null };
+}
+
+function drawCornerDomainBadge(ctx, dl, domImgs, boxX, boxY, boxW, boxH) {
+  const domain = dl?.domain || null;
+  const sense = dl?.sense || null;
+  const realm = dl?.realm || null;
+  const [dImg, sImg, rImg] = domImgs || [];
+
+  ctx.save();
+  drawRoundRect(ctx, boxX, boxY, boxW, boxH, 9);
+  if (!domain) {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.48)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold 8px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('LINH VỰC', boxX + boxW / 2, boxY + 19);
+    ctx.font = `8.5px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#475569';
+    ctx.fillText('Chưa khai mở', boxX + boxW / 2, boxY + 36);
+    ctx.restore();
+    return;
+  }
+
+  const rar = RARITY_ACCENTS[normalizeRarityKey(domain.rarity || 'mythic')] || RARITY_ACCENTS.mythic;
+  const bgG = ctx.createLinearGradient(boxX, boxY, boxX + boxW, boxY + boxH);
+  bgG.addColorStop(0, rar.slotBg[0]);
+  bgG.addColorStop(1, rar.slotBg[1]);
+  ctx.fillStyle = bgG;
+  ctx.fill();
+
+  ctx.save();
+  ctx.shadowColor = rar.slotGlow;
+  ctx.shadowBlur = 7;
+  const brG = ctx.createLinearGradient(boxX, boxY, boxX + boxW, boxY + boxH);
+  brG.addColorStop(0, rar.slotBorder[0]);
+  brG.addColorStop(1, rar.slotBorder[1]);
+  ctx.strokeStyle = brG;
+  ctx.lineWidth = 1.3;
+  ctx.stroke();
+  ctx.restore();
+
+  // Icon chính Linh Vực (42x42)
+  const iconSize = 42;
+  const iconX = boxX + 6;
+  const iconY = boxY + 5;
+  if (dImg) {
+    ctx.save();
+    drawRoundRect(ctx, iconX, iconY, iconSize, iconSize, 7);
+    ctx.clip();
+    ctx.drawImage(dImg, iconX, iconY, iconSize, iconSize);
+    ctx.restore();
+    ctx.save();
+    drawRoundRect(ctx, iconX, iconY, iconSize, iconSize, 7);
+    ctx.strokeStyle = rar.slotBorder[0];
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 2 icon tròn nhỏ Thần Thức (dưới trái, viền lam) & Thần Cảnh (dưới phải, viền đỏ hồng)
+  const subSize = 18;
+  const subY = iconY + iconSize - subSize + 4;
+  if (sense && sImg) {
+    const sx = iconX - 3;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sx + subSize / 2, subY + subSize / 2, subSize / 2 + 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#0b0718';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(sx + subSize / 2, subY + subSize / 2, subSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(sImg, sx, subY, subSize, subSize);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(sx + subSize / 2, subY + subSize / 2, subSize / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.3;
+    ctx.shadowColor = '#38bdf8';
+    ctx.shadowBlur = 4;
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (realm && rImg) {
+    const rx = iconX + iconSize - subSize + 3;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(rx + subSize / 2, subY + subSize / 2, subSize / 2 + 1.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#0b0718';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(rx + subSize / 2, subY + subSize / 2, subSize / 2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(rImg, rx, subY, subSize, subSize);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(rx + subSize / 2, subY + subSize / 2, subSize / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#fb7185';
+    ctx.lineWidth = 1.3;
+    ctx.shadowColor = '#fb7185';
+    ctx.shadowBlur = 4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Nhãn LINH VỰC + Hệ Vực + Tổng Linh Mạch
+  const txtX = iconX + iconSize + 7;
+  const txtW = boxX + boxW - txtX - 5;
+  const lmTotal = domain.base_energy >= 999 ? '∞' : (Number(domain.base_energy || 3) + Number(sense?.bonus_energy || 0));
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold 7.8px ${FONT_FAMILY}`;
+  ctx.fillStyle = rar.text;
+  ctx.fillText('LINH VỰC', txtX, boxY + 13);
+
+  drawAutoFitSingleLineText(ctx, domain.element || 'Linh Vực', txtX, boxY + 27, txtW, {
+    maxFont: 9.8,
+    minFont: 7.0,
+    weight: 'bold',
+    align: 'left',
+    color: '#ffffff',
+  });
+
+  drawAutoFitSingleLineText(ctx, `${lmTotal} Linh Mạch`, txtX, boxY + 42, txtW, {
+    maxFont: 8.5,
+    minFont: 6.5,
+    weight: 'bold',
+    align: 'left',
+    color: '#fde68a',
+  });
+  ctx.restore();
 }
 
 function drawCounterArrow(ctx, cx, cy, dir, color) {
@@ -253,26 +416,38 @@ export async function renderBattleCard(battleResult, options = {}) {
   const atk = frame && frame.attackerHp !== undefined ? { ...atkRaw, displayHp: frame.attackerHp } : { ...atkRaw, displayHp: atkRaw.finalHp };
   const def = frame && frame.defenderHp !== undefined ? { ...defRaw, displayHp: frame.defenderHp } : { ...defRaw, displayHp: defRaw.finalHp };
 
+  const atkDomainLoadout = resolveBattleDomainLoadout(atk, battleResult?.domainSummary?.attacker);
+  const defDomainLoadout = resolveBattleDomainLoadout(def, battleResult?.domainSummary?.defender);
+  atk.domainLoadout = atkDomainLoadout;
+  def.domainLoadout = defDomainLoadout;
+
   const atkWon = battleResult?.winnerRole
     ? battleResult.winnerRole === 'attacker'
     : String(battleResult?.winner?.id) === String(atk.id);
   const winnerCombatant = atkWon ? atk : def;
   const winnerPetType = winnerCombatant.petType || 'hoa_thach_nham_nham';
 
-  // Tải song song avatar, ảnh pet, 6 icon trang bị và mini icon Pet thắng cuộc (LRU cache)
+  // Tải song song avatar, ảnh pet, 6 icon trang bị, 6 icon Linh Vực/Thần Thức/Thần Cảnh và mini icon Pet thắng cuộc
   const loadEquipIcons = (eq) => Promise.all([
     eq?.weapon?.item_id ? loadImageSafe(`items/${eq.weapon.item_id}.png`, 2000, null) : null,
     eq?.gem?.item_id ? loadImageSafe(`items/${eq.gem.item_id}.png`, 2000, null) : null,
     eq?.soul?.item_id ? loadImageSafe(`items/${eq.soul.item_id}.png`, 2000, null) : null,
   ]);
+  const loadDomainIcons = (dl) => Promise.all([
+    dl?.domain?.domain_id ? loadImageSafe(`domains/${dl.domain.domain_id}.png`, 2000, null) : null,
+    dl?.sense?.sense_id ? loadImageSafe(`domains/${dl.sense.sense_id}.png`, 2000, null) : null,
+    dl?.realm?.realm_id ? loadImageSafe(`domains/${dl.realm.realm_id}.png`, 2000, null) : null,
+  ]);
 
-  const [atkAv, defAv, atkPetImg, defPetImg, atkEqImgs, defEqImgs, winnerPetMiniIcon, gD, gC, gB, gA, gS] = await Promise.all([
+  const [atkAv, defAv, atkPetImg, defPetImg, atkEqImgs, defEqImgs, atkDomImgs, defDomImgs, winnerPetMiniIcon, gD, gC, gB, gA, gS] = await Promise.all([
     loadImageSafe(atk.avatarUrl, 2500, atk.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(def.avatarUrl, 2500, def.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     loadImageSafe(resolvePetAsset(atk.petType), 2500, 'pets/hoa_thach_nham_nham.png'),
     loadImageSafe(resolvePetAsset(def.petType), 2500, 'pets/hoa_thach_nham_nham.png'),
     loadEquipIcons(atk.equipment),
     loadEquipIcons(def.equipment),
+    loadDomainIcons(atkDomainLoadout),
+    loadDomainIcons(defDomainLoadout),
     loadBadgeImage(resolvePetMiniIconAsset(winnerPetType)),
     loadBadgeImage('badges/grade_d.png'),
     loadBadgeImage('badges/grade_c.png'),
@@ -319,7 +494,7 @@ export async function renderBattleCard(battleResult, options = {}) {
   // ============================================================================
   // LỚP 2: HAI KHUNG ĐẤU SĨ NỚI RỘNG (w=360, h=456)
   // ============================================================================
-  function drawFighterPanel(fighter, avImg, petImg, eqImgs, isWinner, x, side) {
+  function drawFighterPanel(fighter, avImg, petImg, eqImgs, domImgs, isWinner, x, side) {
     const y = 22;
     const w = 360;
     const h = 456;
@@ -347,7 +522,14 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.stroke();
     ctx.shadowBlur = 0;
 
-    // Header: Avatar khử răng cưa viền đồng bộ tỷ lệ mảnh + Tên người chơi + Trạng thái
+    // Header: Góc trên phải đặt Linh Vực + 2 icon nhỏ Thần Thức / Thần Cảnh
+    const domBoxW = 120;
+    const domBoxH = 54;
+    const domBoxX = x + w - 16 - domBoxW;
+    const domBoxY = y + 11;
+    drawCornerDomainBadge(ctx, fighter.domainLoadout, domImgs, domBoxX, domBoxY, domBoxW, domBoxH);
+
+    // Avatar khử răng cưa viền đồng bộ tỷ lệ mảnh + Tên người chơi + Trạng thái
     const avCx = x + 42;
     const avCy = y + 39;
     drawAntiAliasedAvatarWithBorder(ctx, avImg, avCx, avCy, 24, {
@@ -359,9 +541,10 @@ export async function renderBattleCard(battleResult, options = {}) {
       showAura: true,
     });
 
-    drawAutoFitSingleLineText(ctx, fighter.name, x + 76, y + 27, w - 92, {
-      maxFont: 15.5,
-      minFont: 9.5,
+    const nameMaxW = Math.max(80, domBoxX - (x + 74) - 8);
+    drawAutoFitSingleLineText(ctx, fighter.name, x + 74, y + 26, nameMaxW, {
+      maxFont: 15,
+      minFont: 8.5,
       weight: 'bold',
       align: 'left',
       color: '#ffffff',
@@ -369,9 +552,9 @@ export async function renderBattleCard(battleResult, options = {}) {
 
     // Badge Trạng thái
     const statusText = !isFinal ? 'ĐANG GIAO CHIẾN' : (isWinner ? 'CHIẾN THẮNG' : 'THẤT BẠI');
-    ctx.font = `bold 10px ${FONT_FAMILY}`;
-    const stW = ctx.measureText(statusText).width + 16;
-    drawRoundRect(ctx, x + 76, y + 40, stW, 20, 6);
+    ctx.font = `bold 9.8px ${FONT_FAMILY}`;
+    const stW = Math.min(nameMaxW, ctx.measureText(statusText).width + 16);
+    drawRoundRect(ctx, x + 74, y + 40, stW, 19, 6);
     if (!isFinal) {
       ctx.fillStyle = 'rgba(236, 72, 153, 0.22)';
       ctx.fill();
@@ -386,7 +569,7 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.fillStyle = !isFinal ? '#fbcfe8' : (isWinner ? '#fde047' : '#94a3b8');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(statusText, x + 76 + stW / 2, y + 50);
+    ctx.fillText(statusText, x + 74 + stW / 2, y + 49.5);
 
     // Khung ảnh Linh Thú lớn sắc nét
     const petBoxX = x + 16;
@@ -637,19 +820,19 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.restore();
   }
 
-  drawFighterPanel(atk, atkAv, atkPetImg, atkEqImgs, atkWon, 22, 'left');
-  drawFighterPanel(def, defAv, defPetImg, defEqImgs, !atkWon, 618, 'right');
+  drawFighterPanel(atk, atkAv, atkPetImg, atkEqImgs, atkDomImgs, atkWon, 22, 'left');
+  drawFighterPanel(def, defAv, defPetImg, defEqImgs, defDomImgs, !atkWon, 618, 'right');
 
   // ============================================================================
-  // LỚP 3: CỘT GIỮA — CHỮ VS METALLIC, MŨI TÊN XUNG KHẮC & WINNER / ĐANG GIAO CHIẾN
+  // LỚP 3: CỘT GIỮA — CHỮ VS METALLIC, NGŨ HÀNH, ĐỐI ĐẦU LINH VỰC & WINNER
   // ============================================================================
   const midX = 392;
   const midW = 216;
   const midCx = midX + midW / 2; // 500
 
   ctx.save();
-  // Chữ VS mới canh giữa hình kèm 2 đường kẻ ngang thuôn nhọn
-  const vsCy = 178;
+  // Chữ VS đẩy lên cân đối cùng khung Đối Đầu Linh Vực
+  const vsCy = 104;
   const drawTaperLine = (x1, x2, fadeLeftToRight) => {
     ctx.save();
     ctx.beginPath();
@@ -673,8 +856,8 @@ export async function renderBattleCard(battleResult, options = {}) {
   drawTaperLine(398, 446, true);
   drawTaperLine(554, 602, false);
 
-  ctx.font = `italic 900 54px ${FONT_FAMILY}`;
-  const vsGrad = ctx.createLinearGradient(midCx - 35, vsCy - 26, midCx + 35, vsCy + 26);
+  ctx.font = `italic 900 50px ${FONT_FAMILY}`;
+  const vsGrad = ctx.createLinearGradient(midCx - 35, vsCy - 24, midCx + 35, vsCy + 24);
   vsGrad.addColorStop(0, '#fff2da');
   vsGrad.addColorStop(0.5, '#ffc48e');
   vsGrad.addColorStop(1, '#e38d58');
@@ -686,12 +869,12 @@ export async function renderBattleCard(battleResult, options = {}) {
   ctx.fillText('VS', midCx, vsCy + 1);
   ctx.shadowBlur = 0;
 
-  // Hệ xung khắc có mũi tên chỉ thẳng vào bên bị khắc
+  // Khung 1: Hệ xung khắc Ngũ Hành Linh Thú (y = 148, h = 62)
   const adv = resolveElementMatchupDisplay(battleResult?.elementMatchup);
   const advBoxX = 396;
-  const advBoxY = 236;
+  const advBoxY = 148;
   const advBoxW = 208;
-  const advBoxH = 66;
+  const advBoxH = 62;
   drawRoundRect(ctx, advBoxX, advBoxY, advBoxW, advBoxH, 10);
   ctx.fillStyle = 'rgba(18, 14, 34, 0.90)';
   ctx.fill();
@@ -701,7 +884,7 @@ export async function renderBattleCard(battleResult, options = {}) {
 
   const leftElem = sanitizeText(atk.element || 'Thổ');
   const rightElem = sanitizeText(def.element || 'Thổ');
-  const elemRowY = advBoxY + 23;
+  const elemRowY = advBoxY + 22;
   drawAutoFitSingleLineText(ctx, leftElem, midCx - 24, elemRowY, 72, {
     maxFont: 11.5,
     minFont: 7.5,
@@ -718,13 +901,153 @@ export async function renderBattleCard(battleResult, options = {}) {
     color: adv.dir === 'left' ? '#ffffff' : '#cbd5e1',
   });
 
-  drawAutoFitSingleLineText(ctx, adv.subText, midCx, advBoxY + 48, advBoxW - 20, {
-    maxFont: 10.5,
-    minFont: 8.0,
+  drawAutoFitSingleLineText(ctx, adv.subText, midCx, advBoxY + 45, advBoxW - 18, {
+    maxFont: 10.2,
+    minFont: 7.8,
     weight: 'bold',
     align: 'center',
     color: adv.color,
   });
+
+  // Khung 2: ĐỐI ĐẦU LINH VỰC (HIỆP 2+) tại y = 222, h = 136
+  const domBoxX = 396;
+  const domBoxY = 222;
+  const domBoxW = 208;
+  const domBoxH = 136;
+  const leftDom = atkDomainLoadout.domain;
+  const rightDom = defDomainLoadout.domain;
+  const dSum = battleResult?.domainSummary || {};
+  const dAtkSum = dSum.attacker || {};
+  const dDefSum = dSum.defender || {};
+  const beforeTurn2 = !isFinal && Number(frame?.currentTurn || 1) < 2;
+
+  drawRoundRect(ctx, domBoxX, domBoxY, domBoxW, domBoxH, 11);
+  ctx.fillStyle = 'rgba(18, 14, 34, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = (leftDom || rightDom) ? 'rgba(236, 72, 153, 0.65)' : 'rgba(148, 163, 184, 0.28)';
+  ctx.lineWidth = 1.3;
+  ctx.stroke();
+
+  ctx.font = `bold 9.5px ${FONT_FAMILY}`;
+  ctx.fillStyle = (leftDom || rightDom) ? '#fde047' : '#94a3b8';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ĐỐI ĐẦU LINH VỰC (HIỆP 2+)', midCx, domBoxY + 16);
+
+  if (!leftDom && !rightDom) {
+    ctx.font = `bold 10.5px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('Chưa Khai Mở Linh Vực', midCx, domBoxY + 64);
+    drawRoundRect(ctx, domBoxX + 14, domBoxY + 94, domBoxW - 28, 26, 6);
+    ctx.fillStyle = 'rgba(30, 41, 59, 0.45)';
+    ctx.fill();
+    drawAutoFitSingleLineText(ctx, 'Săn Linh Vực tại /roll loai:domain', midCx, domBoxY + 107, domBoxW - 36, {
+      maxFont: 8.8, minFont: 7.0, align: 'center', color: '#64748b',
+    });
+  } else {
+    const dIconSize = 36;
+    const dLeftX = domBoxX + 14;
+    const dRightX = domBoxX + domBoxW - 14 - dIconSize;
+    const dIconY = domBoxY + 30;
+
+    const drawMiniCenterDomainIcon = (img, ix, borderCol) => {
+      if (img) {
+        ctx.save();
+        drawRoundRect(ctx, ix, dIconY, dIconSize, dIconSize, 6);
+        ctx.clip();
+        ctx.drawImage(img, ix, dIconY, dIconSize, dIconSize);
+        ctx.restore();
+        drawRoundRect(ctx, ix, dIconY, dIconSize, dIconSize, 6);
+        ctx.strokeStyle = borderCol;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      } else {
+        drawRoundRect(ctx, ix, dIconY, dIconSize, dIconSize, 6);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.font = `8px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.fillText('Trống', ix + dIconSize / 2, dIconY + dIconSize / 2);
+      }
+    };
+
+    drawMiniCenterDomainIcon(atkDomImgs[0], dLeftX, '#ec4899');
+    drawMiniCenterDomainIcon(defDomImgs[0], dRightX, '#38bdf8');
+
+    const counter = (leftDom && rightDom)
+      ? getDomainElementCounterResult(leftDom.element, rightDom.element)
+      : { aCountersB: Boolean(leftDom && !rightDom), bCountersA: Boolean(!leftDom && rightDom) };
+    const domDir = counter.aCountersB ? 'right' : counter.bCountersA ? 'left' : 'neutral';
+    const domArrowColor = domDir === 'right' ? '#4ade80' : domDir === 'left' ? '#38bdf8' : '#cbd5e1';
+
+    const formatMach = (domObj, senseObj, sideSum, showEnd) => {
+      if (!domObj) return '0';
+      if (domObj.base_energy >= 999 || sideSum?.startEnergy >= 999) return '∞';
+      const maxE = sideSum?.startEnergy || (Number(domObj.base_energy || 3) + Number(senseObj?.bonus_energy || 0));
+      if (!showEnd) return `${maxE}/${maxE}`;
+      const curE = sideSum?.endEnergy !== undefined ? sideSum.endEnergy : maxE;
+      return `${curE}/${maxE}`;
+    };
+    const leftM = formatMach(leftDom, atkDomainLoadout.sense, dAtkSum, isFinal && !beforeTurn2);
+    const rightM = formatMach(rightDom, defDomainLoadout.sense, dDefSum, isFinal && !beforeTurn2);
+
+    drawCounterArrow(ctx, midCx, dIconY + 11, beforeTurn2 ? 'neutral' : domDir, domArrowColor);
+    drawAutoFitSingleLineText(ctx, `${leftM} vs ${rightM} Mạch`, midCx, dIconY + 27, 104, {
+      maxFont: 9.5,
+      minFont: 7.2,
+      weight: 'bold',
+      align: 'center',
+      color: '#fbcfe8',
+    });
+
+    const domElemRowY = domBoxY + 82;
+    drawAutoFitSingleLineText(ctx, leftDom?.element || 'Trống', midCx - 18, domElemRowY, 76, {
+      maxFont: 9.5,
+      minFont: 7.0,
+      weight: 'bold',
+      align: 'right',
+      color: domDir === 'right' ? '#ffffff' : '#cbd5e1',
+    });
+    drawCounterArrow(ctx, midCx, domElemRowY, beforeTurn2 ? 'neutral' : domDir, domArrowColor);
+    drawAutoFitSingleLineText(ctx, rightDom?.element || 'Trống', midCx + 18, domElemRowY, 76, {
+      maxFont: 9.5,
+      minFont: 7.0,
+      weight: 'bold',
+      align: 'left',
+      color: domDir === 'left' ? '#ffffff' : '#cbd5e1',
+    });
+
+    const statusPillText = (() => {
+      if (beforeTurn2) return 'Kích hoạt từ Hiệp 2...';
+      if (leftDom && !rightDom) return 'Phe Công Đơn Phương Áp Chế';
+      if (!leftDom && rightDom) return 'Phe Thủ Đơn Phương Áp Chế';
+      if (leftDom.element === 'Hỗn Độn Vực' && rightDom.element !== 'Hỗn Độn Vực') return 'Xuyên Vực 100% • Khóa Debuff Địch';
+      if (rightDom.element === 'Hỗn Độn Vực' && leftDom.element !== 'Hỗn Độn Vực') return 'Xuyên Vực 100% • Khóa Debuff Công';
+      if (isFinal && dDefSum.endEnergy === 0 && (dAtkSum.endEnergy > 0 || leftM === '∞')) return 'Vỡ Vực Thủ • Khai Mở Toàn Debuff';
+      if (isFinal && dAtkSum.endEnergy === 0 && (dDefSum.endEnergy > 0 || rightM === '∞')) return 'Vỡ Vực Công • Khai Mở Toàn Debuff';
+      if (counter.aCountersB) return 'Vực Công Áp Chế (-1 vs -2 Mạch)';
+      if (counter.bCountersA) return 'Vực Thủ Áp Chế (-2 vs -1 Mạch)';
+      return 'Giằng Co Cân Bằng (-1 Mạch/Hiệp)';
+    })();
+
+    drawRoundRect(ctx, domBoxX + 10, domBoxY + 98, domBoxW - 20, 26, 6);
+    ctx.fillStyle = 'rgba(236, 72, 153, 0.18)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(244, 114, 182, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    drawAutoFitSingleLineText(ctx, statusPillText, midCx, domBoxY + 111, domBoxW - 28, {
+      maxFont: 9.0,
+      minFont: 6.8,
+      weight: 'bold',
+      align: 'center',
+      color: '#fbcfe8',
+    });
+  }
 
   // Khung đáy giữa: ĐANG GIAO CHIẾN (mid frame) hoặc WINNER (final frame)
   const winX = 394;
