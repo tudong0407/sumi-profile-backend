@@ -1,4 +1,5 @@
 import { getProfileData } from '../profileService.js';
+import { getUserBusyExplorationAssets } from '../explorerService.js';
 import {
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
@@ -97,9 +98,20 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const petMult = pet.enchant_applied ? 1.0 : getEnchantMultiplier(enchantGrade);
 
   const equip = pet.equipment || profile?.equipment || {};
-  const weapon = enrichEquipItem(equip.weapon, 'weapon');
-  const gem = enrichEquipItem(equip.gem, 'gem');
-  const soul = enrichEquipItem(equip.soul, 'soul');
+  let weapon = enrichEquipItem(equip.weapon, 'weapon');
+  let gem = enrichEquipItem(equip.gem, 'gem');
+  let soul = enrichEquipItem(equip.soul, 'soul');
+
+  // Khóa tài sản đang đi khám phá (/explorer): loại trừ trang bị & Linh Vực đang xuất hành để không bị dùng song song!
+  let busyExp = null;
+  if (/^[0-9]{15,22}$/.test(id)) {
+    busyExp = await getUserBusyExplorationAssets(id);
+    if (busyExp?.isExploring) {
+      if (weapon && busyExp.busyEquipIds.has(weapon.item_id)) weapon = null;
+      if (gem && busyExp.busyEquipIds.has(gem.item_id)) gem = null;
+      if (soul && busyExp.busyEquipIds.has(soul.item_id)) soul = null;
+    }
+  }
 
   let bonusAtk = 0;
   let bonusDef = 0;
@@ -150,7 +162,14 @@ export async function compileCombatant(userOrId, role = 'attacker') {
 
   const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
   const petHaxDesc = catalogPet?.hax_description || pet.hax_desc || pet.hax_description || null;
-  const domainLoadout = resolveDomainLoadout(profile);
+  const rawDomainLoadout = resolveDomainLoadout(profile);
+  const domainLoadout = busyExp?.isExploring
+    ? {
+        domain: rawDomainLoadout.domain && busyExp.busyDomainIds.has(rawDomainLoadout.domain.domain_id) ? null : rawDomainLoadout.domain,
+        sense: rawDomainLoadout.sense && busyExp.busyDomainIds.has(rawDomainLoadout.sense.sense_id) ? null : rawDomainLoadout.sense,
+        realm: rawDomainLoadout.realm && busyExp.busyDomainIds.has(rawDomainLoadout.realm.realm_id) ? null : rawDomainLoadout.realm,
+      }
+    : rawDomainLoadout;
 
   return {
     id,

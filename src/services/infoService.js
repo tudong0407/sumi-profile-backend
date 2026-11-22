@@ -15,6 +15,7 @@ import {
   GACHA_ROLE_CATALOG,
   LEVEL_ROLE_MILESTONES,
   SHOP_CONSUMABLES,
+  ALL_CONSUMABLES,
   MARRY_RINGS,
   BACKGROUND_CATALOG,
   AVATAR_FRAMES,
@@ -24,6 +25,7 @@ import {
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
 import { GACHA_DISMANTLE_VALUES, normalizeEmojiAwareQuery } from './inventoryService.js';
+import { LATEST_VERSION } from '../data/changelogs.js';
 import {
   em,
   tierEmoji,
@@ -85,7 +87,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   let matchedExchange = EXCHANGE_ITEMS.find((ex) => ex.exchange_id.toLowerCase() === qLower);
   let matchedRole = GACHA_ROLE_CATALOG.find((r) => r.role_id === cleanMention);
   let matchedLvlRole = LEVEL_ROLE_MILESTONES.find((m) => m.roleId === cleanMention);
-  let matchedCons = SHOP_CONSUMABLES.find((c) => c.item_id.toLowerCase() === qLower);
+  let matchedCons = ALL_CONSUMABLES.find((c) => c.item_id.toLowerCase() === qLower);
   let matchedRing = MARRY_RINGS.find((r) => r.item_id.toLowerCase() === qLower);
   let matchedBg = BACKGROUND_CATALOG.find((b) => b.bg_id.toLowerCase() === qLower);
   let matchedFrame = AVATAR_FRAMES.find((f) => f.frame_id.toLowerCase() === qLower || `frame_${f.frame_id}`.toLowerCase() === qLower);
@@ -177,7 +179,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: lines.join('\n'),
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: p.is_exclusive_fuyumi
-        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=1.3.1`
+        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}`
         : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.3`,
       footer: `SuMi Family • Tra cứu UID: ${p.pet_type}`,
     };
@@ -337,6 +339,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• ${em('su_thunder_hax')} **Debuff phe địch:** ${d.debuff_desc}`,
       d.enemy_active_debuff_pierce > 0 ? `• **Xuyên Kháng Lãnh Địa:** Gây \`${Math.round(d.enemy_active_debuff_pierce * 100)}%\` Debuff xuyên qua Lãnh Vực địch` : null,
       d.enemy_buff_suppression > 0 ? `• **Áp Chế Sân Địch:** Giảm \`${Math.round(d.enemy_buff_suppression * 100)}%\` hiệu lực Buff của Lãnh Vực đối phương` : null,
+      d.dao_ap ? `• ${em('dao_ap_crest', '⚡')} **Debuff Cấp 2 « Đạo Áp » (${d.dao_ap.durationTurns} hiệp):** Kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực địch — ${d.dao_ap.label}` : null,
       `• **Nguồn sở hữu:** ${sourceText}`,
       d.is_exclusive_fuyumi ? null : `• **Thu hồi (\`/linhvuc hanh_dong:dismantle\`):** **${dismantleVal}** ${lt}`,
       `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${d.domain_id}\` để kích hoạt.*`,

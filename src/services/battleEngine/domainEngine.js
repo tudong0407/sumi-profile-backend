@@ -1,12 +1,16 @@
 /**
  * src/services/battleEngine/domainEngine.js
  * Hệ thống Lãnh Địa (Linh Vực • Thần Thức • Thần Cảnh) kích hoạt từ Hiệp 2 trong mọi trận đấu.
- * - KHÔNG buff ATK/DEF/SPD thô: chỉ cường hóa Buff cơ chế (Xuyên Giáp, Xuyên Khiên, Xác suất/Uy lực HAX, Hút Máu, Né, Thanh Tẩy, Kháng ST Chuẩn/Phản/Khống)
- *   và áp Debuff (Giảm Giáp, Trừ Trần HP, Khóa Hồi Máu, Đốt HP, Bào Mòn Khiên, Trừ Chính Xác, Dễ Bạo Kích, Khóa HAX).
- * - Đấu Linh Mạch từ Hiệp 2: 5 Hệ Vực khắc vòng tròn (Kiếm -> Huyễn -> Trận -> Minh -> Thánh -> Kiếm) + Hỗn Độn Vực (Fuyumi) khắc toàn bộ & bất hoại.
+ * v1.4 Nâng cấp:
+ * - Debuff Cấp 2 « Đạo Áp » cho toàn bộ 16 Linh Vực Thần Thoại & Tối Thượng:
+ *   Chỉ kích hoạt ở đầu hiệp kế tiếp sau khi đánh vỡ Linh Vực đang hoạt động của đối thủ
+ *   (KHÔNG kích nếu địch vốn không mang Linh Vực). Duy trì 1-2 lượt (Thần Thoại Thường)
+ *   hoặc tối đa 3 lượt (Thần Thoại Độc Nhất & Tối Thượng), mạnh hơn debuff gốc +20%..+30%.
+ * - Hook chuẩn `drainEnemyDomainEnergy()` cho tương lai gắn Vũ Khí / Pet có HAX bào mòn Linh Mạch địch.
  */
 
 import { V13_DOMAIN_ELEMENTS } from '../../data/v13ExpansionCatalog.js';
+import { V14_DAO_AP_CONFIG } from '../../data/v14ExpansionCatalog.js';
 import { em, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 
 function getEquipDomainBonuses(combatant) {
@@ -39,6 +43,11 @@ function getEquipDomainBonuses(combatant) {
   return { extraEnergy, buffBonusPct, debuffBonusPct, drainResistChance: Math.min(0.95, drainResistChance) };
 }
 
+function getDaoApConfigForDomain(domain) {
+  if (!domain) return null;
+  return domain.dao_ap || V14_DAO_AP_CONFIG[domain.domain_id] || null;
+}
+
 export function createDomainCombatSide(combatant) {
   const loadout = combatant?.domainLoadout || {};
   const domain = loadout.domain || null;
@@ -59,6 +68,9 @@ export function createDomainCombatSide(combatant) {
       eqBonuses,
       appliedMaxHpCutPct: 0,
       originalMaxHp: Number(combatant?.maxHp || 0),
+      daoApArmed: false,
+      daoApActiveTurns: 0,
+      daoApUsed: false,
     };
   }
 
@@ -79,6 +91,9 @@ export function createDomainCombatSide(combatant) {
     eqBonuses,
     appliedMaxHpCutPct: 0,
     originalMaxHp: Number(combatant?.maxHp || 0),
+    daoApArmed: false,
+    daoApActiveTurns: 0,
+    daoApUsed: false,
   };
 }
 
@@ -107,22 +122,73 @@ export function getDomainElementCounterResult(elemA, elemB) {
   };
 }
 
-function combineModifierMaps(baseMap = {}, extraMap = {}, scale = 1.0) {
+/**
+ * Helper chuẩn hóa cho tương lai: bất kỳ Vũ Khí / Linh Thú nào có HAX bào mòn Linh Mạch đối thủ
+ * đều gọi hàm này để giảm energy đối phương và tự động kích chờ « Đạo Áp » nếu vừa đánh vỡ Vực địch!
+ */
+export function drainEnemyDomainEnergy(sourceSide, targetSide, amount, { sourceLabel = 'Phá Vực HAX', events = null, ownerId = null, targetName = '' } = {}) {
+  const drain = Math.max(0, Math.floor(Number(amount) || 0));
+  if (!targetSide?.hasDomain || !targetSide.activated || targetSide.indestructible || targetSide.energy <= 0 || drain <= 0) {
+    return { drained: 0, brokeEnemyDomain: false };
+  }
+  const prevEnergy = targetSide.energy;
+  targetSide.energy = Math.max(0, prevEnergy - drain);
+  const actualDrained = prevEnergy - targetSide.energy;
+  const brokeEnemyDomain = prevEnergy > 0 && targetSide.energy === 0;
+
+  if (Array.isArray(events) && actualDrained > 0) {
+    events.push({
+      actor: ownerId || 'system',
+      action: 'domain_erode',
+      skill: `${sourceLabel} (-${actualDrained} Linh Mạch Địch)`,
+    });
+  }
+
+  if (brokeEnemyDomain) {
+    if (Array.isArray(events)) {
+      events.push({
+        actor: ownerId || 'system',
+        action: 'domain_break',
+        skill: `Vỡ Linh Vực (${targetSide.domain.name})`,
+        desc: `${targetSide.domain.name}${targetName ? ` của ${targetName}` : ''} đã bị đánh vỡ hoàn toàn!`,
+      });
+    }
+    armDaoApIfEligible(sourceSide, targetSide);
+  }
+
+  return { drained: actualDrained, brokeEnemyDomain };
+}
+
+/**
+ * Ghi nhận chờ kích hoạt « Đạo Áp » vào hiệp kế tiếp khi Linh Vực Thần Thoại còn đứng vững
+ * vừa đánh vỡ một Linh Vực đang tồn tại của đối thủ.
+ */
+function armDaoApIfEligible(winnerSide, brokenEnemySide) {
+  if (!winnerSide?.hasDomain || !winnerSide.activated || winnerSide.energy <= 0) return false;
+  if (!brokenEnemySide?.hasDomain || !brokenEnemySide.activated || brokenEnemySide.energy > 0) return false;
+  if (winnerSide.daoApUsed || winnerSide.daoApArmed || winnerSide.daoApActiveTurns > 0) return false;
+  const cfg = getDaoApConfigForDomain(winnerSide.domain);
+  if (!cfg) return false;
+  winnerSide.daoApArmed = true;
+  return true;
+}
+
+function combineModifierMaps(baseMap = {}, extraMap = {}, scale = 1.0, daoApBaseScale = 1.0) {
   const out = {};
   if (scale <= 0) return out;
-  const addEntry = (k, val) => {
+  const addEntry = (k, val, mult) => {
     const n = Number(val) || 0;
     if (n <= 0) return;
     if (k === 'cleansePerTurn') {
       out[k] = (out[k] || 0) + Math.max(1, Math.round(n));
     } else {
-      out[k] = (out[k] || 0) + n * scale;
+      out[k] = (out[k] || 0) + n * mult;
     }
   };
-  for (const [k, v] of Object.entries(baseMap || {})) addEntry(k, v);
-  for (const [k, v] of Object.entries(extraMap || {})) addEntry(k, v);
+  for (const [k, v] of Object.entries(baseMap || {})) addEntry(k, v, scale * daoApBaseScale);
+  for (const [k, v] of Object.entries(extraMap || {})) addEntry(k, v, scale);
 
-  // An toàn biên độ thực chiến
+  // An toàn biên độ thực chiến (nới trần nhẹ để Đạo Áp +20..30% thể hiện rõ nhưng không vỡ game)
   if (out.defPiercePct) out.defPiercePct = Math.min(0.75, out.defPiercePct);
   if (out.shieldPiercePct) out.shieldPiercePct = Math.min(0.80, out.shieldPiercePct);
   if (out.haxProcBonusPct) out.haxProcBonusPct = Math.min(0.55, out.haxProcBonusPct);
@@ -135,15 +201,15 @@ function combineModifierMaps(baseMap = {}, extraMap = {}, scale = 1.0) {
   if (out.critResistPct) out.critResistPct = Math.min(0.65, out.critResistPct);
   if (out.reflectResistPct) out.reflectResistPct = Math.min(0.80, out.reflectResistPct);
 
-  if (out.defReductionPct) out.defReductionPct = Math.min(0.65, out.defReductionPct);
-  if (out.accuracyDownPct) out.accuracyDownPct = Math.min(0.40, out.accuracyDownPct);
-  if (out.healReductionPct) out.healReductionPct = Math.min(0.85, out.healReductionPct);
-  if (out.dotMaxHpPct) out.dotMaxHpPct = Math.min(0.18, out.dotMaxHpPct);
-  if (out.critTakenBonusPct) out.critTakenBonusPct = Math.min(0.50, out.critTakenBonusPct);
-  if (out.shieldDecayPct) out.shieldDecayPct = Math.min(0.50, out.shieldDecayPct);
-  if (out.haxFailPct) out.haxFailPct = Math.min(0.35, out.haxFailPct);
-  if (out.maxHpCutPct) out.maxHpCutPct = Math.min(0.45, out.maxHpCutPct);
-  if (out.enemyShieldCapReductionPct) out.enemyShieldCapReductionPct = Math.min(0.55, out.enemyShieldCapReductionPct);
+  if (out.defReductionPct) out.defReductionPct = Math.min(0.75, out.defReductionPct);
+  if (out.accuracyDownPct) out.accuracyDownPct = Math.min(0.48, out.accuracyDownPct);
+  if (out.healReductionPct) out.healReductionPct = Math.min(0.90, out.healReductionPct);
+  if (out.dotMaxHpPct) out.dotMaxHpPct = Math.min(0.22, out.dotMaxHpPct);
+  if (out.critTakenBonusPct) out.critTakenBonusPct = Math.min(0.58, out.critTakenBonusPct);
+  if (out.shieldDecayPct) out.shieldDecayPct = Math.min(0.58, out.shieldDecayPct);
+  if (out.haxFailPct) out.haxFailPct = Math.min(0.42, out.haxFailPct);
+  if (out.maxHpCutPct) out.maxHpCutPct = Math.min(0.48, out.maxHpCutPct);
+  if (out.enemyShieldCapReductionPct) out.enemyShieldCapReductionPct = Math.min(0.62, out.enemyShieldCapReductionPct);
 
   return out;
 }
@@ -156,6 +222,9 @@ export function resolveSideModifiers(mySide, enemySide) {
       maxEnergy: mySide?.maxEnergy || 0,
       isDominating: false,
       pierceRatio: 0,
+      daoApActive: false,
+      daoApTurnsLeft: 0,
+      daoApScale: 1.0,
       buffs: {},
       debuffsOnEnemy: {},
     };
@@ -182,6 +251,10 @@ export function resolveSideModifiers(mySide, enemySide) {
   const realmDebuffBoost = Number(mySide.realm?.debuff_boost_pct || 0) + Number(mySide.eqBonuses?.debuffBonusPct || 0);
   const debuffScale = pierceRatio > 0 ? pierceRatio * (1 + realmDebuffBoost) : 0;
 
+  const daoApCfg = getDaoApConfigForDomain(mySide.domain);
+  const daoApActive = Boolean(!enemyStanding && daoApCfg && mySide.daoApActiveTurns > 0);
+  const daoApBaseScale = daoApActive ? Number(daoApCfg.scaleFactor || 1.25) : 1.0;
+
   return {
     active: true,
     domainName: mySide.domain.name,
@@ -192,9 +265,12 @@ export function resolveSideModifiers(mySide, enemySide) {
     maxEnergy: mySide.maxEnergy,
     isDominating: !enemyStanding,
     pierceRatio,
-    buffs: combineModifierMaps(mySide.domain.buffs, null, buffScale),
+    daoApActive,
+    daoApTurnsLeft: daoApActive ? mySide.daoApActiveTurns : 0,
+    daoApScale: daoApBaseScale,
+    buffs: combineModifierMaps(mySide.domain.buffs, null, buffScale, 1.0),
     debuffsOnEnemy: debuffScale > 0
-      ? combineModifierMaps(mySide.domain.debuffs, mySide.realm?.extra_debuffs, debuffScale)
+      ? combineModifierMaps(mySide.domain.debuffs, mySide.realm?.extra_debuffs, debuffScale, daoApBaseScale)
       : {},
   };
 }
@@ -203,7 +279,6 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
   const atkMod = resolveSideModifiers(domainState.attacker, domainState.defender);
   const defMod = resolveSideModifiers(domainState.defender, domainState.attacker);
 
-  // Mỗi bên giữ cả buff của bản thân lẫn debuff đang gánh từ Vực đối thủ để haxEngine/battleService đọc O(1)
   attacker.domainRuntime = {
     own: atkMod,
     incomingDebuffs: defMod.debuffsOnEnemy || {},
@@ -217,7 +292,7 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
     [defender, atkMod, domainState.defender, attacker.name],
     [attacker, defMod, domainState.attacker, defender.name],
   ]) {
-    const targetCut = Math.min(0.45, Number(enemyMod.debuffsOnEnemy?.maxHpCutPct || 0));
+    const targetCut = Math.min(0.48, Number(enemyMod.debuffsOnEnemy?.maxHpCutPct || 0));
     if (targetCut > victimSide.appliedMaxHpCutPct && victim.currentHp > 0) {
       victimSide.appliedMaxHpCutPct = targetCut;
       const newMax = Math.max(200, Math.floor(victimSide.originalMaxHp * (1 - targetCut)));
@@ -227,8 +302,10 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
         events.push({
           actor: victim.id,
           action: 'domain_hp_cut',
-          skill: `Thần Cảnh Áp Chế (-${Math.round(targetCut * 100)}% Trần HP Tối Đa)`,
-          desc: `Linh Vực & Thần Cảnh từ ${casterName} ép giảm trần máu của ${victim.name} xuống còn ${newMax.toLocaleString('vi-VN')} HP!`,
+          skill: enemyMod.daoApActive
+            ? `${em('dao_ap_crest', '⚡')} Đạo Áp Cắt Trần HP (-${Math.round(targetCut * 100)}% HP Tối Đa)`
+            : `Thần Cảnh Áp Chế (-${Math.round(targetCut * 100)}% Trần HP Tối Đa)`,
+          desc: `Linh Vực từ ${casterName} ép giảm trần máu của ${victim.name} xuống còn ${newMax.toLocaleString('vi-VN')} HP!`,
         });
       }
     }
@@ -247,7 +324,42 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
 
   if (!sideA.hasDomain && !sideB.hasDomain) return events;
 
-  // 1. Kích hoạt lần đầu tại Hiệp 2 (chưa trừ điểm ở thời điểm mở màn Hiệp 2; bắt đầu đấu trừ năng lượng từ Hiệp 2 -> hết)
+  // 0. Cập nhật vòng đời « Đạo Áp » đầu hiệp:
+  //    - Giảm lượt Đạo Áp đã chạy xong từ hiệp trước
+  //    - Nếu vừa phá Vực địch ở hiệp trước (daoApArmed = true), chính thức khai mở « Đạo Áp » ngay đầu hiệp này!
+  for (const [side, enemySide, owner, enemyOwner] of [
+    [sideA, sideB, attacker, defender],
+    [sideB, sideA, defender, attacker],
+  ]) {
+    if (side.daoApActiveTurns > 0) {
+      side.daoApActiveTurns = Math.max(0, side.daoApActiveTurns - 1);
+      if (side.daoApActiveTurns === 0) {
+        events.push({
+          actor: owner.id,
+          action: 'dao_ap_end',
+          skill: `Dư Chấn Đạo Áp tan dần (${side.domain?.name || 'Linh Vực'})`,
+        });
+      }
+    }
+
+    if (side.daoApArmed && side.hasDomain && side.energy > 0 && (!enemySide.hasDomain || enemySide.energy === 0)) {
+      const cfg = getDaoApConfigForDomain(side.domain);
+      side.daoApArmed = false;
+      side.daoApUsed = true;
+      if (cfg) {
+        side.daoApActiveTurns = cfg.durationTurns;
+        const crest = em('dao_ap_crest', '⚡');
+        events.push({
+          actor: owner.id,
+          action: 'dao_ap_activate',
+          skill: `${crest} KHAI MỞ ĐẠO ÁP — ${cfg.label} (${cfg.durationTurns} hiệp)`,
+          desc: `${crest} Linh Vực **${side.domain.name}** của ${owner.name} nghiền nát tàn tích Vực địch, giáng **Đạo Áp Cấp 2** (+${Math.round((cfg.scaleFactor - 1) * 100)}% uy lực) lên ${enemyOwner.name} trong **${cfg.durationTurns} hiệp**!`,
+        });
+      }
+    }
+  }
+
+  // 1. Kích hoạt lần đầu tại Hiệp 2
   if (turnNumber === 2 && !domainState.activatedAtTurn2) {
     domainState.activatedAtTurn2 = true;
     for (const [side, owner] of [[sideA, attacker], [sideB, defender]]) {
@@ -272,6 +384,8 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
   const bUp = sideB.hasDomain && sideB.activated && sideB.energy > 0;
 
   if (aUp && bUp) {
+    const prevA = sideA.energy;
+    const prevB = sideB.energy;
     const counter = getDomainElementCounterResult(sideA.domain.element, sideB.domain.element);
     let drainA = 1;
     let drainB = 1;
@@ -287,7 +401,6 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       drainB = sideB.indestructible ? 0 : 1;
     }
 
-    // Kháng hao tổn khắc hệ từ Thần Thức / Bảo Ngọc (không kháng được Hỗn Độn Vực Fuyumi)
     if (drainA > 1 && !sideB.indestructible) {
       const resistChance = Math.min(0.95, Number(sideA.sense?.clash_resist_chance || 0) + Number(sideA.eqBonuses?.drainResistChance || 0));
       if (resistChance > 0 && rng() < resistChance) drainA = 1;
@@ -320,11 +433,16 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       });
     }
 
-    if (sideA.energy === 0 && !sideA.indestructible) {
+    const aBroke = prevA > 0 && sideA.energy === 0 && !sideA.indestructible;
+    const bBroke = prevB > 0 && sideB.energy === 0 && !sideB.indestructible;
+
+    if (aBroke) {
       events.push({ actor: attacker.id, action: 'domain_break', skill: `Vỡ Linh Vực (${sideA.domain.name})`, desc: `${sideA.domain.name} đã cạn Linh Mạch và tan vỡ!` });
+      armDaoApIfEligible(sideB, sideA);
     }
-    if (sideB.energy === 0 && !sideB.indestructible) {
+    if (bBroke) {
       events.push({ actor: defender.id, action: 'domain_break', skill: `Vỡ Linh Vực (${sideB.domain.name})`, desc: `${sideB.domain.name} đã cạn Linh Mạch và tan vỡ!` });
+      armDaoApIfEligible(sideA, sideB);
     }
   } else if (aUp || bUp) {
     const activeSide = aUp ? sideA : sideB;
@@ -332,6 +450,8 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
     if (!activeSide.indestructible) {
       activeSide.energy = Math.max(0, activeSide.energy - 1);
       if (activeSide.energy === 0) {
+        activeSide.daoApActiveTurns = 0;
+        activeSide.daoApArmed = false;
         events.push({ actor: owner.id, action: 'domain_break', skill: `Vỡ Linh Vực (${activeSide.domain.name})`, desc: `${activeSide.domain.name} đã cạn Linh Mạch!` });
       }
     }
@@ -340,18 +460,22 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
   // 3. Đồng bộ Buff/Debuff & áp Debuff giảm trần HP nếu có
   syncDomainModifiersAndMaxHp(attacker, defender, domainState, events);
 
-  // 4. Hiệu ứng đầu hiệp từ Debuff Linh Vực / Thần Cảnh (DoT, Bào Mòn Khiên, Thanh Tẩy Sân Nhà) & Hư Không Phá Vực Cung
-  for (const [enemySide, owner, enemyOwner] of [[sideB, attacker, defender], [sideA, defender, attacker]]) {
+  // 4. Hiệu ứng đầu hiệp (DoT, Bào Mòn Khiên, Thanh Tẩy Sân Nhà) & Vũ Khí phá Linh Mạch (hook drainEnemyDomainEnergy)
+  for (const [mySide, enemySide, owner, enemyOwner] of [
+    [sideA, sideB, attacker, defender],
+    [sideB, sideA, defender, attacker],
+  ]) {
     if (
       owner.equipment?.weapon?.item_id === 'weapon_mythic_22'
       && (owner.state?.haxLockedTurns || 0) === 0
       && (turnNumber % 3 === 0)
-      && enemySide.hasDomain
-      && enemySide.energy > 0
-      && !enemySide.indestructible
     ) {
-      enemySide.energy = Math.max(0, enemySide.energy - 1);
-      events.push({ actor: owner.id, action: 'domain_erode', skill: 'Xuyên Vực Tiễn (-1 Linh Mạch Địch)' });
+      drainEnemyDomainEnergy(mySide, enemySide, 1, {
+        sourceLabel: 'Xuyên Vực Tiễn',
+        events,
+        ownerId: owner.id,
+        targetName: enemyOwner.name,
+      });
     }
 
     const mods = owner.domainRuntime?.own;
@@ -380,7 +504,9 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       events.push({
         actor: owner.id,
         action: 'domain_dot',
-        skill: `Linh Vực Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`,
+        skill: mods.daoApActive
+          ? `${em('dao_ap_crest', '⚡')} Đạo Áp Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`
+          : `Linh Vực Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`,
       });
     }
   }

@@ -348,9 +348,19 @@ export const SHOP_CONSUMABLES = [
   { item_id: 'enchant_stone', name: 'Đá Khắc Ấn', category: 'consumable', price: 150, daily_limit: 5, max_stack: 99, icon: em('enchant_stone', '🔮'), description: 'Đá Khắc Ấn dùng để cường hóa Phẩm Chất D→C→B→A→S cho Linh Thú & Pháp Bảo (/enchant). Giới hạn mua 5/ngày trong Shop; săn thêm tại Boss Tháp mỗi 5 tầng.' },
   { item_id: 'title_rename_card', name: 'Thẻ Đổi Danh Hiệu Tu Tiên', category: 'consumable', price: 300, icon: em('title_rename_card'), description: 'Đổi danh hiệu hiển thị tùy chỉnh trên /profile.' },
   { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản', category: 'consumable', price: 800, icon: em('frame_unlock_token'), description: 'Mở khóa khung viền Avatar đặc biệt trên /profile & /rank.' },
+  { item_id: 'food_survival_pill', name: 'Hộ Mệnh Linh Đan', category: 'consumable', price: 180, daily_limit: 10, max_stack: 99, icon: em('food_survival_pill', '💊'), description: 'Thức ăn khám phá Loại A (/explorer): Tăng +8% tỉ lệ sống sót cho Linh Thú trong suốt chuyến thám hiểm.' },
+  { item_id: 'food_yield_tea', name: 'Tụ Bảo Tiên Trà', category: 'consumable', price: 220, daily_limit: 10, max_stack: 99, icon: em('food_yield_tea', '🍵'), description: 'Thức ăn khám phá Loại B (/explorer): Tăng +18% tổng sản lượng Linh Thạch thu hoạch nếu sống sót trở về.' },
+  { item_id: 'food_speed_fruit', name: 'Ngự Phong Tốc Quả', category: 'consumable', price: 250, daily_limit: 10, max_stack: 99, icon: em('food_speed_fruit', '🍑'), description: 'Thức ăn khám phá Loại C (/explorer): Rút gọn 25% thời gian di chuyển của chuyến khám phá.' },
+  { item_id: 'explorer_revive_elixir', name: 'Cửu Chuyển Hoàn Hồn Lộ', category: 'consumable', price: 2500, daily_limit: 3, max_stack: 10, icon: em('explorer_revive_elixir', '🧪'), description: 'Linh dược hồi sinh chuyên dụng: Hồi phục hoàn toàn Linh Thú Độc Nhất bị trọng thương khi khám phá (/explorer).' },
+];
+
+export const SPECIAL_CONSUMABLES = [
+  { item_id: 'enchant_stone_absolute', name: 'Thiên Đạo Tuyệt Ấn Thạch', category: 'consumable', price: 0, max_stack: 50, icon: em('enchant_stone_absolute', '💎'), description: 'Đá Khắc Ấn Tuyệt Đối (rơi 0.5% từ /explorer): Đảm bảo nâng bậc Khắc Ấn thành công 100% ở mọi bậc D→S (khuyến cáo giữ dùng cho bậc A → S).' },
 ];
 
 export const SHOP_CONSUMABLE_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
+export const ALL_CONSUMABLES = [...SHOP_CONSUMABLES, ...SPECIAL_CONSUMABLES];
+export const ALL_CONSUMABLE_BY_ID = Object.fromEntries(ALL_CONSUMABLES.map((c) => [c.item_id, c]));
 
 /**
  * Khung viền Avatar có thể mở khóa qua Lệnh Bài Khung Viền Độc Bản

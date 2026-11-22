@@ -5,9 +5,40 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.3.1';
+export const LATEST_VERSION = '1.4';
 
 export const CHANGELOGS = [
+  {
+    version: '1.4',
+    title: 'ĐẠO ÁP CỬU CHÂU, CHIẾM ĐOẠT LINH MẠCH & ĐẠI THÁM HIỂM v1.4',
+    released_at: '2026-11-22',
+    color: '#ec4899',
+    summary: 'Khai mở Đạo Áp (Debuff Cấp 2 cho 16 Linh Vực Thần Thoại), Shop Ngày giảm giá 15–40%, Chiếm Đoạt Linh Mạch Tổ Đội 3 người (/party & /linhmach), Khám Phá Đại Lục 12 địa danh (/explorer), Vinh Danh Top 10 Lực Chiến 19:00 Chủ Nhật và tái cấu trúc UI Component V2.',
+    sections: [
+      {
+        heading: `${em('dao_ap_crest', '⚡')} Đạo Áp Cấp 2, Top Lực Chiến & Nâng Cấp UI Component V2`,
+        bullets: [
+          '**Debuff Cấp 2 « Đạo Áp »:** Toàn bộ **16 Linh Vực Thần Thoại** sở hữu Đạo Áp khai mở ở hiệp kế tiếp sau khi đánh vỡ Linh Vực địch (`1–2` lượt Thần Thoại Thường / `3` lượt Độc Nhất, tăng mạnh `+20%–30%` hiệu lực Debuff gốc).',
+          '**Vinh Danh 19:00 Chủ Nhật (`/top`):** Tự động tổng kết **Top 10 Lực Chiến** vào 19:00 Chủ Nhật hàng tuần kèm quà Linh Thạch, Thẻ Reset Tháp, Đá Khắc Ấn, Lương Thảo Khám Phá & Vé Roll.',
+          '**Trải Nghiệm Mượt Mà:** `/slots` dừng từng ô từ trái sang phải; `/crash` & `/blackjack` cập nhật trực tiếp tại chỗ giữ nguyên nút bấm; `/giatoc` chuyển sang bảng **Component V2 + Nút & Dropdown** duyệt đơn/quản lý thành viên cực gọn.',
+        ],
+      },
+      {
+        heading: `${em('vein_mine_sp', '⛰️')} Shop Ngày, Tổ Đội /party & Chiếm Đoạt Linh Mạch (/linhmach)`,
+        bullets: [
+          `**Shop Ngày (${em('daily_shop_emblem', '🏮')} Vạn Bảo Lưu Động Các — \`/shop\`):** Reset 00:00 mỗi ngày chung toàn server với 10 gian hàng giảm **15%–40%**, có cả **Linh Thú & Pháp Bảo Thần Thoại** *(sẵn Khắc Ấn bậc B/A)* và 4 vật phẩm Khám Phá mới.`,
+          '**Chiếm Đoạt Linh Mạch (`/party` & `/linhmach`):** Mở vào **6 Khung Giờ Vàng** (`08h, 12h, 18h, 20h, 21h, 22h` UTC+7, mỗi đợt 1 giờ với 1 Mỏ Thấp `F–C` & 1 Mỏ Cao `B–S+`), đấu Tổ Đội tối đa **3 người** (3vBoss / 3v3 theo thứ tự SPD, dùng Linh Vực Đội Trưởng), sản lượng `6–56 LT/phút` chia đều đội (`+15%` Ngân Khố Tộc nếu cùng Gia Tộc), kèm ảnh Chiến Báo Tổ Đội 3 người!',
+        ],
+      },
+      {
+        heading: `${em('explorer_world_map_v14', '🗺️')} Khám Phá Đại Lục Cửu Châu (/explorer) & Đá Khắc Ấn Tuyệt Đối`,
+        bullets: [
+          '**Bản Đồ 12 Địa Danh (`10k → 1M` Lực, Dễ → Nightmare):** Chọn mốc `2 / 3 / 6 / 12` giờ, trang bị **Loadout Khám Phá** riêng *(Pet chính hoặc Pet phụ + 3 Pháp Bảo + 1 Linh Vực)* kèm 3 loại Thức Ăn (`Hộ Mệnh Linh Đan`, `Tụ Bảo Tiên Trà`, `Ngự Phong Tốc Quả`).',
+          `**Sống Sót, Tử Nạn & Nhặt Đồ Rơi 60%:** Vượt ải nhận \`200–300 LT/giờ\` + vật phẩm + cơ hội rơi ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(0.5% — Khắc Ấn 100% mọi bậc, khuyên dùng A→S)* & Vũ Khí Thần Thoại *(0.01%)*. Nếu tử nạn, Pet Độc Nhất hồi sinh bằng ${em('explorer_revive_elixir', '🧪')} **Cửu Chuyển Hoàn Hồn Lộ**, còn Pháp Bảo không Độc Nhất rớt tại tọa độ Map chờ tu sĩ đi sau nhặt với tỉ lệ **60%**!`,
+        ],
+      },
+    ],
+  },
   {
     version: '1.3.1',
     title: 'ĐỒNG BỘ HIỂN THỊ LINH VỰC, KHO LINH THÚ & SƠ ĐỒ NGŨ VỰC v1.3.1',

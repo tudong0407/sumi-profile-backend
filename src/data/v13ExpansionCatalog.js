@@ -10,6 +10,8 @@
  * (không áp dụng giới hạn này đối với bộ Độc Tôn của Tiểu thư Fuyumi).
  */
 
+import { V14_DAO_AP_CONFIG } from './v14ExpansionCatalog.js';
+
 const CARD_STYLE_DIRECTIVE =
   '2D xianxia dark fantasy digital illustration icon, glowing ethereal energy particles, crisp ornate edges, rich depth and specular highlights, centered composition on clean dark slate vignette background suitable for both 128x128 Discord emoji and portrait card, no text, no watermark';
 
@@ -357,6 +359,7 @@ export const V13_DOMAINS = RAW_DOMAINS.map((d) => ({
   ...d,
   is_domain: true,
   category: 'domain',
+  dao_ap: V14_DAO_AP_CONFIG[d.domain_id] || null,
   visual_prompt: buildDomainPrompt('Linh Vực (Domain Crest)', d.element, d.scene, Boolean(d.is_exclusive_fuyumi)),
 }));
 

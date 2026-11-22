@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../config/supabase.js';
+import { getUserBusyExplorationAssets } from './explorerService.js';
 import {
   DOMAIN_CATALOG,
   DOMAIN_BY_ID,
@@ -336,6 +337,10 @@ export async function dismantleDomainEntity(userId, rawTarget) {
     }
     if (row.is_equipped && row.quantity <= 1) {
       return { success: false, status: 400, error: 'EQUIPPED_PROTECTED', message: `Vui lòng tháo **${resolved.meta.name}** ra trước khi phân giải bản cuối cùng.` };
+    }
+    const busyExp = await getUserBusyExplorationAssets(cleanId);
+    if (busyExp?.isExploring && busyExp.busyDomainIds.has(resolved.meta.id) && row.quantity <= 1) {
+      return { success: false, status: 400, error: 'DOMAIN_BUSY_EXPLORING', message: `🧭 **${resolved.meta.name}** đang được trang bị trong chuyến Khám Phá (\`/explorer\`) — không thể phân giải lúc này!` };
     }
 
     const dismantleCount = row.is_equipped ? (row.quantity - 1) : row.quantity;

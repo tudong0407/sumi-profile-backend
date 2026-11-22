@@ -1142,6 +1142,35 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const isFreePve = safeOptions.mode === 'pve_free' || defenderUserOrId === 'pve_free' || !defenderUserOrId;
   const mode = safeOptions.mode || (isFreePve ? 'pve_free' : 'pvp');
 
+  // Chặn nếu Linh Thú chính của người khiêu chiến đang bận đi Khám Phá (/explorer) hoặc Trọng Thương!
+  const rawAttackerId = typeof attackerUserOrId === 'string'
+    ? attackerUserOrId
+    : (attackerUserOrId?.user_id || attackerUserOrId?.userId || '');
+  if (supabase && /^[0-9]{15,22}$/.test(String(rawAttackerId)) && !safeOptions.skipExplorerPetCheck) {
+    const { data: activePetRow } = await supabase
+      .from('user_pets')
+      .select('pet_name, status')
+      .eq('user_id', String(rawAttackerId))
+      .eq('is_active', true)
+      .maybeSingle();
+    if (activePetRow?.status === 'exploring') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_BUSY_EXPLORING',
+        message: `🧭 Linh Thú chính **${activePetRow.pet_name}** của bạn hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên không thể tham gia PvP/PvE!\n• Bạn có thể dùng \`/linhthu\` chuyển sang một **Linh Thú phụ đang rảnh** làm Pet chính để tiếp tục chiến đấu bình thường.`,
+      };
+    }
+    if (activePetRow?.status === 'injured') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_INJURED',
+        message: `🩹 Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** sau chuyến khám phá! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi sang Linh Thú khác.`,
+      };
+    }
+  }
+
   if (safeOptions.enforceCooldown === true) {
     const rawCdUid = typeof attackerUserOrId === 'string'
       ? attackerUserOrId

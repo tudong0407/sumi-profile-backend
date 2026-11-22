@@ -46,6 +46,7 @@ import {
   farmEmoji,
 } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
+import { getUserBusyExplorationAssets } from './explorerService.js';
 
 const RARITY_RANK = { supreme: 5, mythic: 4, epic: 3, rare: 2, common: 1 };
 
@@ -447,7 +448,8 @@ export async function getInventory(userId, options = {}) {
         const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
         const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
         const elemIcon = p.element_icon || elementEmoji(elemName);
-        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}`;
+        const statusTag = p.status === 'exploring' ? ' *[🧭 Đang Khám Phá]*' : p.status === 'injured' ? ' *[🩹 Trọng Thương]*' : '';
+        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
         if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
         out.push(line);
         totalLen += line.length + 1;
@@ -1700,7 +1702,7 @@ export async function dismantleTarget(userId, payload = {}) {
 
         for (const p of matchedPets) {
           const qty = Math.max(1, Number(p.quantity) || 1);
-          const isBaseProtected = Boolean(p.is_active || p.pet_type === 'hoa_thach_nham_nham' || p.pet_type === 'cuu_vi_hong_ho');
+          const isBaseProtected = Boolean(p.is_active || p.status === 'exploring' || p.status === 'injured' || p.pet_type === 'hoa_thach_nham_nham' || p.pet_type === 'cuu_vi_hong_ho');
           if (isAllDup || isBaseProtected || remainingPetRows <= 1) {
             const extraCopies = Math.max(0, qty - 1);
             if (extraCopies > 0) {
@@ -1788,10 +1790,18 @@ export async function dismantleTarget(userId, payload = {}) {
           matchedPet.pet_type === 'hoa_thach_nham_nham'
           || matchedPet.pet_type === 'cuu_vi_hong_ho'
           || matchedPet.is_active
+          || matchedPet.status === 'exploring'
+          || matchedPet.status === 'injured'
           || allUserPets.length <= 1
         );
 
         if (qty <= 1) {
+          if (matchedPet.status === 'exploring') {
+            return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', remove_role_id: '', remove_role_csv: '', message: `🧭 Không thể phân rã **${matchedPet.pet_name}** khi đang đi Khám Phá Bản Đồ (\`/explorer\`)!` };
+          }
+          if (matchedPet.status === 'injured') {
+            return { success: false, status: 400, error: 'PET_INJURED', remove_role_id: '', remove_role_csv: '', message: `🩹 Không thể phân rã **${matchedPet.pet_name}** khi đang Trọng Thương!` };
+          }
           if (matchedPet.pet_type === 'hoa_thach_nham_nham') {
             return { success: false, status: 400, error: 'STARTER_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú khởi đầu **Hóa Thạch Nham Nham Thú**!' };
           }
@@ -1871,6 +1881,22 @@ export async function setActivePet(userId, petIdentifier) {
 
   if (!target) {
     return { success: false, status: 404, error: 'PET_NOT_FOUND', message: `Bạn không sở hữu Linh Thú '${petIdentifier}'.` };
+  }
+  if (target.status === 'exploring') {
+    return {
+      success: false,
+      status: 400,
+      error: 'PET_BUSY_EXPLORING',
+      message: `🧭 Linh Thú **${target.pet_name}** hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên chưa thể chọn làm Linh Thú xuất trận! Hãy chọn một Linh Thú khác đang rảnh.`,
+    };
+  }
+  if (target.status === 'injured') {
+    return {
+      success: false,
+      status: 400,
+      error: 'PET_INJURED',
+      message: `🩹 Linh Thú Độc Nhất **${target.pet_name}** đang bị **Trọng Thương**! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` để hồi sinh trước khi xuất trận.`,
+    };
   }
 
   await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
@@ -2043,10 +2069,12 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
     });
     if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
-    const [{ data: userPets }, { data: userItems }, { data: stoneRow }] = await Promise.all([
+    const [{ data: userPets }, { data: userItems }, { data: stoneRow }, { data: absStoneRow }, busyExp] = await Promise.all([
       supabase.from('user_pets').select('*').eq('user_id', cleanId),
       supabase.from('user_pet_items').select('*').eq('user_id', cleanId),
       supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'enchant_stone').maybeSingle(),
+      supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'enchant_stone_absolute').maybeSingle(),
+      getUserBusyExplorationAssets(cleanId),
     ]);
 
     const pets = userPets || [];
@@ -2099,6 +2127,16 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
       };
     }
 
+    // Chặn khắc ấn tài sản đang bận đi Khám Phá (/explorer)
+    if (busyExp?.isExploring) {
+      if (matchedKind === 'pet' && String(targetRow.pet_id) === String(busyExp.busyPetId)) {
+        return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', message: `🧭 Linh Thú **${targetName}** đang đi Khám Phá Bản Đồ — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
+      }
+      if (matchedKind === 'item' && busyExp.busyEquipIds.has(String(targetRow.item_id))) {
+        return { success: false, status: 400, error: 'ITEM_BUSY_EXPLORING', message: `🧭 Pháp Bảo **${targetName}** đang được trang bị cho chuyến Khám Phá — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
+      }
+    }
+
     const currentGrade = normalizeEnchantGrade(targetRow.enchant_grade || 'D');
     const pityCount = Math.max(0, Number(targetRow.enchant_pity) || 0);
     const quote = getEnchantUpgradeQuote(currentGrade, pityCount);
@@ -2110,6 +2148,64 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
         error: 'ALREADY_MAX_GRADE',
         enchant_grade: currentGrade,
         message: `${targetIcon} ${gradeEmoji('S')} **${targetName}** đã đạt Phẩm Chất Khắc Ấn tối thượng **Hạng S (+40% chỉ số)** rồi!`,
+      };
+    }
+
+    // Hỗ trợ dùng Thiên Đạo Tuyệt Ấn Thạch (enchant_stone_absolute — 100% mọi bậc D->S, khuyến cáo giữ dùng A->S!)
+    const wantAbsolute = Boolean(
+      options.useAbsoluteStone
+      || options.use_absolute
+      || ['absolute', 'tuyet_doi', '100', 'true', 'yes'].includes(String(options.stoneType || options.loai_da || options.da_tuyet_doi || '').trim().toLowerCase()),
+    );
+    const ownedAbsStones = Number(absStoneRow?.quantity || 0);
+
+    if (wantAbsolute) {
+      if (ownedAbsStones < 1) {
+        return {
+          success: false,
+          status: 400,
+          error: 'NO_ABSOLUTE_STONE',
+          message: `Bạn hiện không có ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** nào trong túi! *(Rơi 0.5% khi đi khám phá \`/explorer\`)*`,
+        };
+      }
+      const newGrade = quote.to;
+      const remainingAbs = ownedAbsStones - 1;
+      const nowIso = new Date().toISOString();
+      const dbTasks = [
+        supabase.from('user_inventory').update({ quantity: remainingAbs, updated_at: nowIso }).eq('user_id', cleanId).eq('item_id', 'enchant_stone_absolute'),
+      ];
+      if (matchedKind === 'pet') {
+        dbTasks.push(supabase.from('user_pets').update({ enchant_grade: newGrade, enchant_pity: 0 }).eq('pet_id', targetRow.pet_id));
+      } else {
+        dbTasks.push(supabase.from('user_pet_items').update({ enchant_grade: newGrade, enchant_pity: 0 }).eq('id', targetRow.id));
+      }
+      await Promise.all(dbTasks);
+
+      const oldBonus = getEnchantBonusPct(currentGrade);
+      const newBonus = getEnchantBonusPct(newGrade);
+      const advisory = currentGrade !== 'A'
+        ? `\n• 💡 *Khuyến cáo: ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** cực hiếm (0.5%) — lần sau đạo hữu nên ưu tiên giữ lại để đột phá bậc **A → S** nhé!*`
+        : '';
+
+      return {
+        success: true,
+        upgraded: true,
+        used_absolute_stone: true,
+        target_type: matchedKind,
+        target_id: matchedKind === 'pet' ? targetRow.pet_type : targetRow.item_id,
+        target_name: targetName,
+        old_grade: currentGrade,
+        new_grade: newGrade,
+        enchant_grade: newGrade,
+        enchant_bonus_pct: newBonus,
+        pity_count: 0,
+        applied_rate_pct: 100,
+        remaining_absolute_stones: remainingAbs,
+        message: [
+          `${em('enchant_stone_absolute', '💎')} **THIÊN ĐẠO TUYỆT ẤN — ĐỘT PHÁ 100% THÀNH CÔNG!**`,
+          `• ${targetIcon} **${targetName}**: ${gradeEmoji(currentGrade)} **Hạng ${currentGrade}** (+${oldBonus}%) → ${gradeEmoji(newGrade)} **Hạng ${newGrade}** (**+${newBonus}% chỉ số gốc**)!`,
+          `• Tiêu hao: **-1** ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(còn ${remainingAbs})* — Miễn phí Linh Thạch!`,
+        ].join('\n') + advisory,
       };
     }
 

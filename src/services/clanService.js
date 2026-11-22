@@ -873,3 +873,351 @@ export async function getClanWarStatus(userId, opts = {}) {
     message: summaryWar,
   };
 }
+
+// ============================================================================
+// v1.4 INTERACTIVE COMPONENT V2 UI PANEL (/giatoc Buttons & Dropdowns)
+// ============================================================================
+
+const clanUiMemorySelections = new Map();
+
+async function saveClanUiSelection(userId, patch) {
+  const rec = {
+    user_id: userId,
+    view_mode: patch.view_mode || 'overview',
+    selected_target_id: patch.selected_target_id ?? null,
+    selected_slot_index: patch.selected_slot_index ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  clanUiMemorySelections.set(userId, rec);
+  if (supabase) {
+    try {
+      await supabase.from('clan_ui_selections').upsert(rec, { onConflict: 'user_id' });
+    } catch { /* non-blocking fallback to memory */ }
+  }
+  return rec;
+}
+
+async function loadClanUiSelection(userId) {
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from('clan_ui_selections')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (data) return data;
+    } catch { /* fallback */ }
+  }
+  return clanUiMemorySelections.get(userId) || null;
+}
+
+/**
+ * Tộc Trưởng nhường chức Tộc Trưởng cho 1 thành viên khác trong cùng Gia Tộc.
+ */
+export async function transferClanLeader(leaderId, targetUserId) {
+  const cleanLeader = sanitizeUserId(leaderId);
+  const cleanTarget = sanitizeUserId(targetUserId);
+  if (!cleanLeader || !cleanTarget) {
+    return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  }
+  if (cleanLeader === cleanTarget) {
+    return { success: false, status: 400, error: 'SELF_TRANSFER', message: 'Bạn đang là Tộc Trưởng rồi!' };
+  }
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const { data: clan } = await supabase.from('clans').select('*').eq('leader_id', cleanLeader).maybeSingle();
+  if (!clan) {
+    return { success: false, status: 403, error: 'NOT_CLAN_LEADER', message: 'Chỉ Tộc Trưởng mới có quyền nhường vị!' };
+  }
+
+  const { data: member } = await supabase
+    .from('users')
+    .select('user_id, username, clan_id')
+    .eq('user_id', cleanTarget)
+    .maybeSingle();
+
+  if (!member || member.clan_id !== clan.clan_id) {
+    return { success: false, status: 404, error: 'TARGET_NOT_IN_CLAN', message: 'Người này không phải thành viên trong Gia Tộc của bạn.' };
+  }
+
+  await supabase
+    .from('clans')
+    .update({ leader_id: cleanTarget, updated_at: new Date().toISOString() })
+    .eq('clan_id', clan.clan_id);
+
+  return {
+    success: true,
+    clan_id: clan.clan_id,
+    new_leader_id: cleanTarget,
+    message: `👑 Tộc Trưởng <@${cleanLeader}> đã chính thức truyền ấn tín Gia Tộc **${clan.clan_name}** cho **${member.username}** (<@${cleanTarget}>)!`,
+  };
+}
+
+/**
+ * Lấy dữ liệu giao diện Component V2 cho /giatoc (overview | requests | members | treasury | war | top).
+ */
+export async function getClanUiPanel(userId, rawView = 'overview', opts = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const view = String(rawView || 'overview').trim().toLowerCase();
+  if (view === 'top') {
+    const lb = await getClanLeaderboard(10);
+    return {
+      success: true,
+      view: 'top',
+      has_clan: true,
+      title: `${em('su_clan_castle')} BẢNG XẾP HẠNG GIA TỘC`,
+      description: lb.summary_leaderboard || lb.message,
+      entries: lb.clans || [],
+    };
+  }
+
+  const info = await getClanInfo(cleanId, null, opts);
+  if (!info.success) return info;
+
+  if (!info.has_clan) {
+    const lb = await getClanLeaderboard(10);
+    const joinList = (lb.clans || []).slice(0, 10).map((c, idx) =>
+      `\`#${idx + 1}\` **${c.clan_name}** (\`${c.clan_id}\`) • Lv.${c.clan_level} • ${c.member_count}/${c.max_members} TV`
+    ).join('\n');
+    return {
+      success: true,
+      view: 'no_clan',
+      has_clan: false,
+      is_leader: false,
+      title: `${em('su_clan_castle')} TRUNG TÂM GIA TỘC SUMI`,
+      description: `${info.message}\n\n**Top Gia Tộc Đang Tuyển Thành Viên:**\n${joinList || '• Chưa có Gia Tộc nào.'}`,
+      dropdown_items: (lb.clans || []).slice(0, 15).map((c, idx) => ({
+        slot: idx + 1,
+        id: c.clan_id,
+        label: `#${idx + 1} ${c.clan_name} (Lv.${c.clan_level})`,
+      })),
+    };
+  }
+
+  const clan = info.clan;
+  const isLeader = clan.leader_id === cleanId;
+
+  if (view === 'requests') {
+    const { data: reqs } = await supabase
+      .from('clan_join_requests')
+      .select('id, user_id, created_at')
+      .eq('clan_id', clan.clan_id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(15);
+
+    const rows = reqs || [];
+    const uids = rows.map((r) => r.user_id);
+    const { data: users } = uids.length
+      ? await supabase.from('users').select('user_id, username, level').in('user_id', uids)
+      : { data: [] };
+    const uMap = new Map((users || []).map((u) => [u.user_id, u]));
+
+    const lines = rows.map((r, idx) => {
+      const u = uMap.get(r.user_id);
+      return `• **#${idx + 1}** — **${u?.username || r.user_id}** (<@${r.user_id}>) • Lv.${u?.level || 1}`;
+    });
+
+    await saveClanUiSelection(cleanId, { view_mode: 'requests', selected_target_id: null, selected_slot_index: null });
+
+    return {
+      success: true,
+      view: 'requests',
+      has_clan: true,
+      is_leader: isLeader,
+      pending_count: rows.length,
+      title: `📥 DUYỆT ĐƠN XIN GIA NHẬP — ${clan.clan_name.toUpperCase()} (${rows.length})`,
+      description: rows.length > 0
+        ? [
+            isLeader
+              ? 'Chọn số thứ tự ứng viên ở **Dropdown bên dưới** để hiện nút **Duyệt / Từ Chối**:'
+              : '*(Chỉ Tộc Trưởng mới có quyền duyệt đơn gia nhập)*',
+            '',
+            ...lines,
+          ].join('\n')
+        : '• Hiện không có đơn xin gia nhập nào đang chờ duyệt.',
+      dropdown_items: rows.map((r, idx) => {
+        const u = uMap.get(r.user_id);
+        return { slot: idx + 1, id: r.user_id, label: `#${idx + 1} ${u?.username || r.user_id} (Lv.${u?.level || 1})` };
+      }),
+    };
+  }
+
+  if (view === 'members') {
+    const { data: members } = await supabase
+      .from('users')
+      .select('user_id, username, level, exp')
+      .eq('clan_id', clan.clan_id)
+      .order('level', { ascending: false })
+      .order('exp', { ascending: false })
+      .limit(15);
+
+    const rows = members || [];
+    const lines = rows.map((m, idx) =>
+      `• **#${idx + 1}** — ${m.user_id === clan.leader_id ? '👑 ' : ''}**${m.username}** (<@${m.user_id}>) • Lv.${m.level}`
+    );
+
+    await saveClanUiSelection(cleanId, { view_mode: 'members', selected_target_id: null, selected_slot_index: null });
+
+    return {
+      success: true,
+      view: 'members',
+      has_clan: true,
+      is_leader: isLeader,
+      member_count: rows.length,
+      title: `📋 DANH SÁCH THÀNH VIÊN — ${clan.clan_name.toUpperCase()} (${rows.length})`,
+      description: [
+        isLeader
+          ? 'Chọn thành viên ở **Dropdown bên dưới** để quản lý (**Kick** / **Nhường Tộc Trưởng**):'
+          : 'Danh sách thành viên tiêu biểu trong Gia Tộc:',
+        '',
+        ...(lines.length > 0 ? lines : ['• Chưa có thành viên.']),
+      ].join('\n'),
+      dropdown_items: rows.map((m, idx) => ({
+        slot: idx + 1,
+        id: m.user_id,
+        label: `#${idx + 1} ${m.username} (Lv.${m.level})`,
+      })),
+    };
+  }
+
+  if (view === 'war') {
+    const warRes = await getClanWarStatus(cleanId, opts);
+    return {
+      success: true,
+      view: 'war',
+      has_clan: true,
+      is_leader: isLeader,
+      title: `${em('su_crossed_swords')} CHIẾN SỰ GIA TỘC — ${clan.clan_name.toUpperCase()}`,
+      description: warRes.summary_war || warRes.message,
+      has_pending_war: Boolean(warRes.war?.status === 'pending' && warRes.war?.target_clan_id === clan.clan_id),
+    };
+  }
+
+  // Default: Overview
+  await saveClanUiSelection(cleanId, { view_mode: 'overview', selected_target_id: null, selected_slot_index: null });
+  return {
+    success: true,
+    view: 'overview',
+    has_clan: true,
+    is_leader: isLeader,
+    clan_id: clan.clan_id,
+    clan_name: clan.clan_name,
+    pending_count: info.pending_requests_count || 0,
+    title: `${em('su_clan_castle')} TỔNG QUAN GIA TỘC ${clan.clan_name.toUpperCase()}`,
+    description: info.message,
+  };
+}
+
+/**
+ * Khi Tộc Trưởng/thành viên chọn 1 mục trong Dropdown (/giatoc) -> lưu lựa chọn & trả card xác nhận có nút Duyệt/Từ Chối hoặc Kick/Nhường Tộc Trưởng.
+ */
+export async function selectClanUiSlot(userId, rawView, rawSlotOrId) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const view = String(rawView || 'requests').trim().toLowerCase();
+  const panel = await getClanUiPanel(cleanId, view);
+  if (!panel.success) return panel;
+
+  const rawVal = String(rawSlotOrId || '').trim();
+  const items = panel.dropdown_items || [];
+  let picked = null;
+  if (/^\d{1,2}$/.test(rawVal)) {
+    const idx = parseInt(rawVal, 10) - 1;
+    picked = items[idx] || null;
+  } else {
+    picked = items.find((it) => String(it.id) === rawVal) || null;
+  }
+
+  if (!picked) {
+    return {
+      success: false,
+      status: 404,
+      error: 'SLOT_NOT_FOUND',
+      message: `Không tìm thấy mục #${rawVal} trong danh sách hiện tại. Hãy bấm làm mới rồi chọn lại!`,
+    };
+  }
+
+  await saveClanUiSelection(cleanId, {
+    view_mode: view,
+    selected_target_id: String(picked.id),
+    selected_slot_index: picked.slot,
+  });
+
+  if (view === 'requests') {
+    return {
+      success: true,
+      view: 'request_selected',
+      selected_target_id: picked.id,
+      title: `📥 XỬ LÝ ĐƠN GIA NHẬP — ${picked.label}`,
+      description: [
+        `• **Ứng viên đang chọn:** <@${picked.id}> (${picked.label})`,
+        `• Bấm **[✅ Duyệt Vào Tộc]** để kết nạp hoặc **[❌ Từ Chối]** để hủy đơn.`,
+      ].join('\n'),
+    };
+  }
+
+  if (view === 'members') {
+    return {
+      success: true,
+      view: 'member_selected',
+      selected_target_id: picked.id,
+      title: `👤 QUẢN LÝ THÀNH VIÊN — ${picked.label}`,
+      description: [
+        `• **Thành viên đang chọn:** <@${picked.id}> (${picked.label})`,
+        `• Tộc Trưởng có thể bấm **[👢 Trục Xuất (Kick)]** hoặc **[👑 Nhường Tộc Trưởng]** bên dưới.`,
+      ].join('\n'),
+    };
+  }
+
+  // view === 'no_clan': selected a clan to request join
+  const joinRes = await requestJoinClan(cleanId, picked.id);
+  return {
+    ...joinRes,
+    view: 'join_submitted',
+    title: `${em('su_clan_castle')} XIN GIA NHẬP GIA TỘC`,
+    description: joinRes.message,
+  };
+}
+
+/**
+ * Thực thi nút bấm hành động trên đối tượng đã chọn ở Dropdown /giatoc.
+ */
+export async function executeClanUiAction(userId, rawAction) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+
+  const action = String(rawAction || '').trim().toLowerCase();
+  const sel = await loadClanUiSelection(cleanId);
+  const targetId = sel?.selected_target_id || null;
+
+  if (action === 'approve' || action === 'reject') {
+    if (!targetId) {
+      return { success: false, status: 400, error: 'NO_SELECTION', message: 'Chưa chọn ứng viên nào từ Dropdown!' };
+    }
+    return respondJoinRequest(cleanId, targetId, action === 'approve' ? 'approve' : 'reject');
+  }
+  if (action === 'kick') {
+    if (!targetId) {
+      return { success: false, status: 400, error: 'NO_SELECTION', message: 'Chưa chọn thành viên nào từ Dropdown!' };
+    }
+    return kickClanMember(cleanId, targetId);
+  }
+  if (action === 'transfer_leader') {
+    if (!targetId) {
+      return { success: false, status: 400, error: 'NO_SELECTION', message: 'Chưa chọn thành viên nào từ Dropdown!' };
+    }
+    return transferClanLeader(cleanId, targetId);
+  }
+  if (action === 'upgrade') return upgradeClan(cleanId);
+  if (action === 'leave') return leaveClan(cleanId);
+  if (action === 'war_accept') return respondClanWar(cleanId, 'accept');
+  if (action === 'war_reject') return respondClanWar(cleanId, 'reject');
+
+  return { success: false, status: 400, error: 'UNKNOWN_ACTION', message: `Hành động '${action}' không hợp lệ.` };
+}

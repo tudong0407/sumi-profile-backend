@@ -29,7 +29,7 @@ import {
   sendGift,
   cleanupExpiredRoles,
 } from './services/economyService.js';
-import { getServerLeaderboard } from './services/leaderboardService.js';
+import { getServerLeaderboard, settleWeeklyPowerLeaderboard } from './services/leaderboardService.js';
 import {
   getQuestStatus,
   claimDailyQuests,
@@ -89,7 +89,40 @@ import {
   declareClanWar,
   respondClanWar,
   getClanWarStatus,
+  transferClanLeader,
+  getClanUiPanel,
+  selectClanUiSlot,
+  executeClanUiAction,
 } from './services/clanService.js';
+import {
+  getDailyShopCatalog,
+  buyDailyShopSlot,
+} from './services/dailyShopService.js';
+import {
+  getPartyStatus,
+  inviteToParty,
+  respondPartyInvite,
+  leaveOrDisbandParty,
+  kickPartyMember,
+  transferPartyLeader,
+} from './services/partyService.js';
+import {
+  getSpiritVeinsOverview,
+  challengeSpiritVein,
+  settleExpiredSpiritVeins,
+} from './services/spiritVeinService.js';
+import { getCachedTeamBattle } from './services/battleEngine/teamBattleService.js';
+import { renderTeamBattleCard } from './canvas/teamBattleRenderer.js';
+import {
+  getExplorerHub,
+  getExplorerLoadoutEditor,
+  saveExplorerLoadout,
+  selectExplorerPlanStep,
+  startExpedition,
+  claimExpedition,
+  reviveInjuredUniquePet,
+  getExplorerMapBoard,
+} from './services/explorerService.js';
 import {
   getDomainInventory,
   equipDomainEntity,
@@ -1157,6 +1190,8 @@ app.post('/api/enchant', requireBackendApiKey, requireUpdateAck, async (req, res
     const result = await enchantTarget(body.userId, {
       targetType: body.targetType || body.loai || body.category || '',
       targetId: body.targetId || body.mucTieu || body.maId || '',
+      stoneType: getCleanParam(body.stoneType, body.loaiDa || body.daTuyetDoi) || '',
+      useAbsoluteStone: Boolean(body.useAbsoluteStone || body.use_absolute),
       username: getCleanParam(body.username),
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
@@ -1801,6 +1836,330 @@ app.post('/api/exchange/buy', requireBackendApiKey, requireUpdateAck, async (req
   } catch (err) {
     console.error('[Server] /api/exchange/buy error:', err);
     return res.status(500).json({ success: false, error: 'EXCHANGE_BUY_FAILED', message: err.message });
+  }
+});
+
+// ============================================================================
+// v1.4 ROUTES: WEEKLY LEADERBOARD, CLAN V2, DAILY SHOP, PARTY, SPIRIT VEINS, EXPLORER
+// ============================================================================
+
+app.post('/api/leaderboard/weekly-settle', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await settleWeeklyPowerLeaderboard({
+      force: Boolean(body.force),
+      dryRun: Boolean(body.dryRun),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/leaderboard/weekly-settle error:', err);
+    return res.status(500).json({ success: false, error: 'WEEKLY_SETTLE_FAILED', message: err.message });
+  }
+});
+
+// Clan Component V2 Interactive Routes
+app.get('/api/clan/panel/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getClanUiPanel(req.params.userId, req.query.view || 'overview', {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/panel error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_PANEL_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/ui/select', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await selectClanUiSlot(body.userId, body.view || 'requests', body.slot || body.targetId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/ui/select error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_UI_SELECT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/ui/action', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await executeClanUiAction(body.userId, body.action);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/ui/action error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_UI_ACTION_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/clan/transfer-leader', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await transferClanLeader(body.leaderId || body.userId, body.targetUserId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/clan/transfer-leader error:', err);
+    return res.status(500).json({ success: false, error: 'CLAN_TRANSFER_FAILED', message: err.message });
+  }
+});
+
+// Daily Shop (Server-Wide)
+app.get('/api/shop/daily', async (req, res) => {
+  try {
+    const result = await getDailyShopCatalog(req.query.userId || null, {
+      username: getCleanParam(req.query.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/shop/daily error:', err);
+    return res.status(500).json({ success: false, error: 'DAILY_SHOP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/shop/daily/buy', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await buyDailyShopSlot(body.userId, body.slotIndex ?? body.slot, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/shop/daily/buy error:', err);
+    return res.status(500).json({ success: false, error: 'DAILY_SHOP_BUY_FAILED', message: err.message });
+  }
+});
+
+// Party System (/party)
+app.get('/api/party/status/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getPartyStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/status error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/party/invite', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await inviteToParty(body.userId || body.leaderId, body.targetUserId || body.target, {
+      username: getCleanParam(body.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/invite error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_INVITE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/party/respond', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await respondPartyInvite(body.userId, body.decision || 'accept', body.inviteId || null);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/respond error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_RESPOND_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/party/leave', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await leaveOrDisbandParty(body.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/leave error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_LEAVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/party/kick', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await kickPartyMember(body.userId || body.leaderId, body.targetUserId || body.target);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/kick error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_KICK_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/party/transfer', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await transferPartyLeader(body.userId || body.leaderId, body.targetUserId || body.target);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/party/transfer error:', err);
+    return res.status(500).json({ success: false, error: 'PARTY_TRANSFER_FAILED', message: err.message });
+  }
+});
+
+// Spirit Veins (/linhmach) & Team Battle Canvas
+app.get('/api/vein/overview', async (req, res) => {
+  try {
+    const result = await getSpiritVeinsOverview(req.query.userId || null, {
+      forceOpen: req.query.force === '1',
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/vein/overview error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_OVERVIEW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/vein/challenge', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await challengeSpiritVein(body.userId, body.tierGroup || body.group || 'low', {
+      forceOpen: Boolean(body.forceOpen),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/vein/challenge error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_CHALLENGE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/vein/settle-expired', requireBackendApiKey, async (req, res) => {
+  try {
+    const settled = await settleExpiredSpiritVeins();
+    return res.json({ success: true, settled_count: settled.length, settled });
+  } catch (err) {
+    console.error('[Server] /api/vein/settle-expired error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_SETTLE_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/vein/battle/:battleId', async (req, res) => {
+  try {
+    const raw = String(req.params.battleId || '');
+    const isPng = raw.endsWith('.png');
+    const cleanBid = raw.replace(/\.(webp|png)$/i, '');
+    const report = getCachedTeamBattle(cleanBid);
+    if (!report) {
+      return res.status(404).json({ success: false, error: 'TEAM_BATTLE_NOT_FOUND', message: 'Chiến báo tổ đội đã hết hạn lưu tạm (30 phút).' });
+    }
+    const buf = await renderTeamBattleCard(report, { format: isPng ? 'png' : 'webp' });
+    res.setHeader('Content-Type', isPng ? 'image/png' : 'image/webp');
+    res.setHeader('Cache-Control', 'public, max-age=1800');
+    return res.send(buf);
+  } catch (err) {
+    console.error('[Server] /api/vein/battle error:', err);
+    return res.status(500).json({ success: false, error: 'TEAM_BATTLE_RENDER_FAILED', message: err.message });
+  }
+});
+
+// Explorer Map Exploration (/explorer)
+app.get('/api/explorer/map.webp', (req, res) => {
+  const mapPath = path.join(PROJECT_ROOT, 'assets', 'maps', 'explorer_world_map_v14.webp');
+  res.setHeader('Content-Type', 'image/webp');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  return res.sendFile(mapPath);
+});
+
+app.get('/api/explorer/hub/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getExplorerHub(req.params.userId, {
+      username: getCleanParam(req.query.username),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/hub error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_HUB_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/explorer/loadout/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getExplorerLoadoutEditor(req.params.userId, req.query.tab || 'pet');
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/loadout GET error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_LOADOUT_GET_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/loadout', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await saveExplorerLoadout(body.userId, {
+      slotType: body.slotType,
+      slotValue: body.slotValue,
+      petId: body.petId,
+      weaponId: body.weaponId,
+      gemId: body.gemId,
+      soulId: body.soulId,
+      domainId: body.domainId,
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/loadout POST error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_LOADOUT_SAVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/select-step', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await selectExplorerPlanStep(body.userId, body.step || 'duration', body.value);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/select-step error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_STEP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/start', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await startExpedition(body.userId, {
+      durationHours: body.durationHours,
+      mapId: body.mapId,
+      foodId: body.foodId,
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/start error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_START_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/claim', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await claimExpedition(body.userId, {});
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/claim error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_CLAIM_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/revive', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await reviveInjuredUniquePet(body.userId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/revive error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_REVIVE_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/explorer/map-board', async (req, res) => {
+  try {
+    const result = await getExplorerMapBoard(req.query.userId || null);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/map-board error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_MAP_BOARD_FAILED', message: err.message });
   }
 });
 

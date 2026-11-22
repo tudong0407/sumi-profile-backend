@@ -644,6 +644,30 @@ export async function challengeTower(userId, options = {}) {
     });
     if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
+    // Chặn leo tháp nếu Linh Thú chính đang đi Khám Phá (/explorer) hoặc Trọng Thương
+    const { data: activePetRow } = await supabase
+      .from('user_pets')
+      .select('pet_name, status')
+      .eq('user_id', cleanId)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (activePetRow?.status === 'exploring') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_BUSY_EXPLORING',
+        message: `🧭 Linh Thú chính **${activePetRow.pet_name}** đang đi **Khám Phá Bản Đồ** (\`/explorer\`), tạm khóa leo Tháp Thí Luyện! Hãy đổi sang Linh Thú phụ khác bằng \`/linhthu\` để tiếp tục leo tháp.`,
+      };
+    }
+    if (activePetRow?.status === 'injured') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_INJURED',
+        message: `🩹 Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** — hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi Linh Thú khác.`,
+      };
+    }
+
     const state = await loadNormalizedQuestRow(cleanId, now);
     if (state.tower_floor >= TOWER_MAX_FLOOR) {
       return {

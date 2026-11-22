@@ -221,6 +221,18 @@
     "animated": true,
     "tag": "<a:cuu_vi_hong_ho:1573411004727951400>"
   },
+  "daily_shop_emblem": {
+    "id": "1573966019691544616",
+    "name": "daily_shop_emblem",
+    "animated": false,
+    "tag": "<:daily_shop_emblem:1573966019691544616>"
+  },
+  "dao_ap_crest": {
+    "id": "1573966009755242610",
+    "name": "dao_ap_crest",
+    "animated": false,
+    "tag": "<:dao_ap_crest:1573966009755242610>"
+  },
   "dia_long_nham_vuong": {
     "id": "1573659896325472356",
     "name": "dia_long_nham_vuong",
@@ -437,11 +449,47 @@
     "animated": true,
     "tag": "<a:enchant_stone:1573719323610980423>"
   },
+  "enchant_stone_absolute": {
+    "id": "1573965916776046642",
+    "name": "enchant_stone_absolute",
+    "animated": false,
+    "tag": "<:enchant_stone_absolute:1573965916776046642>"
+  },
+  "explorer_revive_elixir": {
+    "id": "1573965904960688160",
+    "name": "explorer_revive_elixir",
+    "animated": false,
+    "tag": "<:explorer_revive_elixir:1573965904960688160>"
+  },
+  "explorer_world_map_v14": {
+    "id": "1573965861591715900",
+    "name": "explorer_world_map_v14",
+    "animated": false,
+    "tag": "<:explorer_world_map_v14:1573965861591715900>"
+  },
   "farm_essence": {
     "id": "1573802317738938439",
     "name": "farm_essence",
     "animated": false,
     "tag": "<:farm_essence:1573802317738938439>"
+  },
+  "food_speed_fruit": {
+    "id": "1573965895422705744",
+    "name": "food_speed_fruit",
+    "animated": false,
+    "tag": "<:food_speed_fruit:1573965895422705744>"
+  },
+  "food_survival_pill": {
+    "id": "1573965871087485050",
+    "name": "food_survival_pill",
+    "animated": false,
+    "tag": "<:food_survival_pill:1573965871087485050>"
+  },
+  "food_yield_tea": {
+    "id": "1573965883770933279",
+    "name": "food_yield_tea",
+    "animated": false,
+    "tag": "<:food_yield_tea:1573965883770933279>"
   },
   "fox_MamaHug": {
     "id": "1571059228670562334",
@@ -3394,6 +3442,54 @@
     "name": "van_nhac_than_ngu",
     "animated": false,
     "tag": "<:van_nhac_than_ngu:1573799842289946664>"
+  },
+  "vein_mine_a": {
+    "id": "1573965983356424244",
+    "name": "vein_mine_a",
+    "animated": false,
+    "tag": "<:vein_mine_a:1573965983356424244>"
+  },
+  "vein_mine_b": {
+    "id": "1573965973252476980",
+    "name": "vein_mine_b",
+    "animated": false,
+    "tag": "<:vein_mine_b:1573965973252476980>"
+  },
+  "vein_mine_c": {
+    "id": "1573965964339449936",
+    "name": "vein_mine_c",
+    "animated": false,
+    "tag": "<:vein_mine_c:1573965964339449936>"
+  },
+  "vein_mine_d": {
+    "id": "1573965953820004352",
+    "name": "vein_mine_d",
+    "animated": false,
+    "tag": "<:vein_mine_d:1573965953820004352>"
+  },
+  "vein_mine_e": {
+    "id": "1573965938611453963",
+    "name": "vein_mine_e",
+    "animated": false,
+    "tag": "<:vein_mine_e:1573965938611453963>"
+  },
+  "vein_mine_f": {
+    "id": "1573965923730198638",
+    "name": "vein_mine_f",
+    "animated": false,
+    "tag": "<:vein_mine_f:1573965923730198638>"
+  },
+  "vein_mine_s": {
+    "id": "1573965990465638440",
+    "name": "vein_mine_s",
+    "animated": false,
+    "tag": "<:vein_mine_s:1573965990465638440>"
+  },
+  "vein_mine_sp": {
+    "id": "1573966001123360839",
+    "name": "vein_mine_sp",
+    "animated": false,
+    "tag": "<:vein_mine_sp:1573966001123360839>"
   },
   "viem_nguc_khuyen": {
     "id": "1573412273869950976",

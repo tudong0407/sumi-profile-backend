@@ -232,32 +232,38 @@ export async function playSlots(userId, rawBet, options = {}) {
     let multiplier = 0;
     let tierLabel = 'Chưa Trúng Thưởng';
 
-    if (roll < 0.005) {
-      // 4x Jackpot Cửu Vĩ Kim Hồ = 1:5
+    if (roll < 0.002) {
+      // 0.2%: 4x Jackpot Cửu Vĩ Kim Hồ = 1:5
       const fox = SLOT_SYMBOLS[0];
       reels = [fox, fox, fox, fox];
       multiplier = 5.0;
       tierLabel = 'ĐẠI JACKPOT TỨ QUÝ CỬU VĨ (1:5)';
-    } else if (roll < 0.015) {
-      // 4x Cực Phẩm Linh Thạch = 1:4
+    } else if (roll < 0.006) {
+      // 0.4%: 4x Cực Phẩm Linh Thạch = 1:4
       const jade = SLOT_SYMBOLS[1];
       reels = [jade, jade, jade, jade];
       multiplier = 4.0;
       tierLabel = 'TỨ QUÝ LINH THẠCH (1:4)';
-    } else if (roll < 0.085) {
-      // 3-of-a-kind = 1:2.5
+    } else if (roll < 0.012) {
+      // 0.6%: 4x Tiên Kiếm / Kim Đan = 1:3
+      const midSym = rng() < 0.5 ? SLOT_SYMBOLS[2] : SLOT_SYMBOLS[3];
+      reels = [midSym, midSym, midSym, midSym];
+      multiplier = 3.0;
+      tierLabel = `TỨ QUÝ ${midSym.label.toUpperCase()} (1:3)`;
+    } else if (roll < 0.02) {
+      // 0.8%: 3-of-a-kind = 1:2.5
       const [mainSym, filler] = pickDistinctSymbols(2, rng);
       reels = shuffleArr([mainSym, mainSym, mainSym, filler], rng);
       multiplier = 2.5;
       tierLabel = 'TAM LIÊN HỢP BẢO (1:2.5)';
-    } else if (roll < 0.45) {
-      // Two pairs = 1:2
+    } else if (roll < 0.50) {
+      // 48%: Two pairs = 1:2
       const [symA, symB] = pickDistinctSymbols(2, rng);
       reels = shuffleArr([symA, symA, symB, symB], rng);
       multiplier = 2.0;
       tierLabel = 'SONG ĐÔI CÁT TƯỜNG (1:2)';
     } else {
-      // Lose: 4 distinct or single pair (AABC / ABCD) - guaranteed zero winning pattern
+      // 50% Lose: 4 distinct or single pair (AABC / ABCD) - guaranteed zero winning pattern
       const [s1, s2, s3, s4] = pickDistinctSymbols(4, rng);
       reels = rng() < 0.45 ? shuffleArr([s1, s1, s2, s3], rng) : [s1, s2, s3, s4];
       multiplier = 0;
@@ -275,8 +281,32 @@ export async function playSlots(userId, rawBet, options = {}) {
     ]);
 
     const spinGif = minigameEmoji('slot_spin', '🎰');
-    const reelBar = reels.map((s) => slotIcon(s.id)).join('  |  ');
+    const reelIcons = reels.map((s) => slotIcon(s.id));
+    const reelBar = reelIcons.join('  |  ');
     const lt = em('su_linhthach');
+
+    const makeRevealFrame = (revealedCount) => {
+      const cells = reelIcons.map((ic, idx) => (idx < revealedCount ? ic : spinGif));
+      const statusText = revealedCount === 0
+        ? '*Cả 4 cuộn bảo vật đang xoay nhanh...*'
+        : `*Đã khóa ô #${revealedCount}/4 — các cuộn còn lại đang dừng dần...*`;
+      return {
+        title: `${spinGif} MÁY QUAY TỨ BẢO TIÊN GIỚI (${revealedCount}/4 Ô)...`,
+        description: [
+          `**[ ${cells.join('  |  ')} ]**`,
+          `• **Tu Sĩ:** **${user.username}** • **Đặt Cược:** **${check.bet.toLocaleString('vi-VN')}** ${lt}`,
+          `• ${statusText}`,
+        ].join('\n'),
+        color: '#a855f7',
+      };
+    };
+
+    const revealFrames = [
+      makeRevealFrame(0),
+      makeRevealFrame(1),
+      makeRevealFrame(2),
+      makeRevealFrame(3),
+    ];
 
     return {
       success: true,
@@ -289,15 +319,11 @@ export async function playSlots(userId, rawBet, options = {}) {
       payout,
       net_delta: netDelta,
       linh_thach: nextBal,
-      spin_embed: {
-        title: `${spinGif} MÁY QUAY TỨ BẢO TIÊN GIỚI (4 Ô)...`,
-        description: [
-          `**[ ${spinGif}  |  ${spinGif}  |  ${spinGif}  |  ${spinGif} ]**`,
-          `• **Tu Sĩ:** **${user.username}** • **Đặt Cược:** **${check.bet.toLocaleString('vi-VN')}** ${lt}`,
-          `• *Các cuộn bảo vật đang xoay...*`,
-        ].join('\n'),
-        color: '#a855f7',
-      },
+      spin_embed: revealFrames[0],
+      frame_1_embed: revealFrames[1],
+      frame_2_embed: revealFrames[2],
+      frame_3_embed: revealFrames[3],
+      reveal_frames: revealFrames,
       result_embed: {
         title: won
           ? `${minigameEmoji('slot_fox', '🦊')} KẾT QUẢ TỨ BẢO — ${tierLabel}`
@@ -691,7 +717,7 @@ function buildCrashEmbed(session, username, balance, stateTag = 'flying') {
   }
 
   return {
-    title: `${flyGif} PHI KIẾM ĐỘ KIẾM ĐANG BAY — ${curMult.toFixed(2)}×`,
+    title: `${flyGif} PHI KIẾM ĐỘ KIẾP ĐANG BAY — ${curMult.toFixed(2)}×`,
     description: [
       `• **Tu Sĩ:** **${username}** • **Đặt Cược:** **${session.bet.toLocaleString('vi-VN')}** ${lt}`,
       `• **Hệ Số Hiện Tại:** \`${curMult.toFixed(2)}×\` → **Có thể rút ngay:** **${curPayout.toLocaleString('vi-VN')}** ${lt}`,

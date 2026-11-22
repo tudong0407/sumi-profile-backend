@@ -1,0 +1,444 @@
+/**
+ * src/data/v14ExpansionCatalog.js
+ * Danh mục mở rộng & Cấu hình chuẩn cho Bản Cập Nhật SuMi Family v1.4:
+ * - 16 Linh Vực Thần Thoại / Tối Thượng với Debuff Cấp 2 « Đạo Áp » (+20%..+30% mạnh hơn debuff gốc, tối đa 1-3 lượt)
+ * - 5 Vật Phẩm Mới (3 Thức Ăn Khám Phá, 1 Lọ Cửu Chuyển Hoàn Hồn Lộ, 1 Thiên Đạo Tuyệt Ấn Thạch 100% mọi bậc - khuyên dùng A->S)
+ * - 8 Hạng Mỏ & Boss Linh Mạch (F -> S+) cho Khung Giờ Vàng (08, 12, 18, 20, 21, 22h UTC+7)
+ * - 12 Địa Danh Bản Đồ Khám Phá Đại Lục SuMi (10k -> 1M lực chiến, Dễ -> Nightmare)
+ * - 16 Prompt Họa Sĩ Vẽ Tay Thực Tế (Master Human Painter Style — zero AI plastic gloss)
+ */
+
+export const V14_EXPLORER_MAPS = [
+  {
+    map_id: 'map_01_truc_lam',
+    order: 1,
+    name: 'Thanh Trúc Linh Lâm',
+    difficulty: 'Dễ',
+    recommended_power: 10000,
+    reward_multiplier: 1.00,
+    coords: { x: 14, y: 78 },
+    description: 'Rừng trúc xanh mướt ngoại ô Tông Môn, linh khí ôn hòa phù hợp cho Linh Thú mới nhập môn rèn luyện.',
+  },
+  {
+    map_id: 'map_02_bach_hoa',
+    order: 2,
+    name: 'Bách Hoa Tiên Cốc',
+    difficulty: 'Dễ',
+    recommended_power: 25000,
+    reward_multiplier: 1.05,
+    coords: { x: 26, y: 84 },
+    description: 'Thung lũng đào hoa và bạch liên quanh năm nở rộ, ẩn chứa nhiều thảo dược và tinh hoa linh thạch sơ cấp.',
+  },
+  {
+    map_id: 'map_03_nguyet_ho',
+    order: 3,
+    name: 'Nguyệt Ảnh Linh Hồ',
+    difficulty: 'Thường',
+    recommended_power: 55000,
+    reward_multiplier: 1.10,
+    coords: { x: 16, y: 54 },
+    description: 'Mặt hồ hình trăng khuyết phản chiếu tinh tú cổ xưa, ban đêm thỉnh thoảng xuất hiện thủy yêu tuần tra.',
+  },
+  {
+    map_id: 'map_04_thach_mon',
+    order: 4,
+    name: 'Cổ Thạch Kiếm Môn',
+    difficulty: 'Thường',
+    recommended_power: 100000,
+    reward_multiplier: 1.15,
+    coords: { x: 32, y: 58 },
+    description: 'Cổng đá cổ tích tụ kiếm khí ngàn năm của các bậc kiếm tu tiền bối, dễ rơi vỡ nếu thực lực chưa vững.',
+  },
+  {
+    map_id: 'map_05_huyen_vu',
+    order: 5,
+    name: 'Huyền Vụ Mê Trận',
+    difficulty: 'Trung Bình',
+    recommended_power: 180000,
+    reward_multiplier: 1.20,
+    coords: { x: 49, y: 51 },
+    description: 'Mê cung sương mù giữa trung tâm đại lục với các trụ ngọc trận pháp tự xoay chuyển.',
+  },
+  {
+    map_id: 'map_06_hoa_diem',
+    order: 6,
+    name: 'Xích Diễm Dung Cốc',
+    difficulty: 'Trung Bình',
+    recommended_power: 280000,
+    reward_multiplier: 1.25,
+    coords: { x: 74, y: 74 },
+    description: 'Hẻm núi dung nham rực lửa dưới lòng đất, nơi hỏa tinh và bảo thạch quý hiếm kết tinh.',
+  },
+  {
+    map_id: 'map_07_bang_tuyet',
+    order: 7,
+    name: 'Vạn Niên Hàn Băng Đỉnh',
+    difficulty: 'Khó',
+    recommended_power: 400000,
+    reward_multiplier: 1.30,
+    coords: { x: 20, y: 24 },
+    description: 'Đỉnh tuyết vĩnh cửu rét buốt thấu xương, bão tuyết có thể đóng băng kinh mạch của Linh Thú yếu.',
+  },
+  {
+    map_id: 'map_08_loi_trach',
+    order: 8,
+    name: 'Cửu Thiên Lôi Trạch',
+    difficulty: 'Khó',
+    recommended_power: 540000,
+    reward_multiplier: 1.35,
+    coords: { x: 48, y: 26 },
+    description: 'Đầm lầy cao nguyên quanh năm mây đen sấm sét giăng kín, thử thách khắc nghiệt cho đội hình tầm cao.',
+  },
+  {
+    map_id: 'map_09_u_minh',
+    order: 9,
+    name: 'Hoàng Tuyền U Minh Hải',
+    difficulty: 'Rất Khó',
+    recommended_power: 680000,
+    reward_multiplier: 1.40,
+    coords: { x: 84, y: 54 },
+    description: 'Vùng biển tối tăm lạnh lẽo với những vách đá treo đèn lồng xương trắng, ẩn giấu nhiều tàn bảo cổ đại.',
+  },
+  {
+    map_id: 'map_10_kiem_trung',
+    order: 10,
+    name: 'Thái Cổ Thần Kiếm Trủng',
+    difficulty: 'Hiểm Ác',
+    recommended_power: 800000,
+    reward_multiplier: 1.45,
+    coords: { x: 63, y: 18 },
+    description: 'Đại hạp cốc nơi hàng trăm cự kiếm cổ đại cắm sâu vào vách núi, tàn dư kiếm ý chém nát hộ thân.',
+  },
+  {
+    map_id: 'map_11_hu_khong',
+    order: 11,
+    name: 'Hư Không Tinh Hà Liệt Phùng',
+    difficulty: 'Tuyệt Cảnh',
+    recommended_power: 900000,
+    reward_multiplier: 1.50,
+    coords: { x: 80, y: 28 },
+    description: 'Quần đảo vỡ lơ lửng bên rìa vết nứt tinh hà đen thẫm, trọng lực hỗn loạn nhưng rơi cực nhiều kỳ trân.',
+  },
+  {
+    map_id: 'map_12_hon_don',
+    order: 12,
+    name: 'Hỗn Độn Thần Ma Cấm Địa',
+    difficulty: 'Nightmare',
+    recommended_power: 1000000,
+    reward_multiplier: 1.60,
+    coords: { x: 91, y: 14 },
+    description: 'Thánh điện phế tích cực Đông Bắc bị mây đen Hỗn Độn bao phủ — nơi chôn vùi vô số thần binh của kẻ thất bại.',
+  },
+];
+
+export const V14_EXPLORER_MAP_BY_ID = Object.fromEntries(V14_EXPLORER_MAPS.map((m) => [m.map_id, m]));
+
+export const V14_CONSUMABLES = [
+  {
+    item_id: 'food_survival_pill',
+    name: 'Hộ Mệnh Linh Đan',
+    category: 'food_survival',
+    shop_price: 180,
+    sell_in_shop: true,
+    effect: { survival_bonus: 0.08 },
+    description: 'Thức ăn khám phá Loại A: Tăng +8% tỉ lệ sống sót cho Linh Thú trong suốt chuyến thám hiểm.',
+  },
+  {
+    item_id: 'food_yield_tea',
+    name: 'Tụ Bảo Tiên Trà',
+    category: 'food_yield',
+    shop_price: 220,
+    sell_in_shop: true,
+    effect: { yield_bonus: 0.18 },
+    description: 'Thức ăn khám phá Loại B: Tăng +18% tổng sản lượng Linh Thạch thu hoạch nếu trở về an toàn.',
+  },
+  {
+    item_id: 'food_speed_fruit',
+    name: 'Ngự Phong Tốc Quả',
+    category: 'food_speed',
+    shop_price: 250,
+    sell_in_shop: true,
+    effect: { duration_reduction: 0.25 },
+    description: 'Thức ăn khám phá Loại C: Rút gọn 25% thời gian di chuyển của chuyến khám phá (vẫn giữ nguyên mốc thưởng).',
+  },
+  {
+    item_id: 'explorer_revive_elixir',
+    name: 'Cửu Chuyển Hoàn Hồn Lộ',
+    category: 'revive_elixir',
+    shop_price: 2500,
+    sell_in_shop: true,
+    effect: { revive_unique_pet: true },
+    description: 'Linh dược hồi sinh chuyên dụng: Hồi phục hoàn toàn cho Linh Thú Độc Nhất đang trọng thương sau khi tử nạn ở /explorer.',
+  },
+  {
+    item_id: 'enchant_stone_absolute',
+    name: 'Thiên Đạo Tuyệt Ấn Thạch',
+    category: 'enchant_absolute',
+    shop_price: 0,
+    sell_in_shop: false,
+    effect: { guaranteed_enchant: true, recommended_from_grade: 'A' },
+    description: 'Đá Khắc Ấn Tuyệt Đối (tỉ lệ rơi 0.5% ở /explorer): Đảm bảo nâng bậc Khắc Ấn thành công 100% ở mọi bậc D→S (khuyến cáo giữ dùng cho bậc A → S).',
+  },
+];
+
+export const V14_SPIRIT_VEIN_TIERS = [
+  {
+    tier_code: 'F',
+    tier_group: 'low',
+    boss_id: 'vein_mine_f',
+    boss_name: 'Thạch Linh Thủ Mộ Giả',
+    boss_power: 25000,
+    lt_per_min: 6,
+    element: 'Thổ',
+    stats: { atk: 420, def: 620, spd: 210, hp: 14000 },
+    domain_id: null,
+  },
+  {
+    tier_code: 'E',
+    tier_group: 'low',
+    boss_id: 'vein_mine_e',
+    boss_name: 'Hắc Giáp Nham Khôi',
+    boss_power: 90000,
+    lt_per_min: 10,
+    element: 'Kim',
+    stats: { atk: 1250, def: 1450, spd: 680, hp: 38000 },
+    domain_id: null,
+  },
+  {
+    tier_code: 'D',
+    tier_group: 'low',
+    boss_id: 'vein_mine_d',
+    boss_name: 'Thanh Mộc Cổ Mãng',
+    boss_power: 280000,
+    lt_per_min: 15,
+    element: 'Mộc',
+    stats: { atk: 3200, def: 2900, spd: 2100, hp: 98000 },
+    domain_id: 'domain_common_3',
+  },
+  {
+    tier_code: 'C',
+    tier_group: 'low',
+    boss_id: 'vein_mine_c',
+    boss_name: 'Huyết Hỏa Địa Long',
+    boss_power: 750000,
+    lt_per_min: 22,
+    element: 'Hỏa',
+    stats: { atk: 7800, def: 6400, spd: 5200, hp: 230000 },
+    domain_id: 'domain_rare_4',
+  },
+  {
+    tier_code: 'B',
+    tier_group: 'high',
+    boss_id: 'vein_mine_b',
+    boss_name: 'Tử Lôi Trấn Mạch Tôn',
+    boss_power: 1800000,
+    lt_per_min: 30,
+    element: 'Lôi',
+    stats: { atk: 18500, def: 14000, spd: 14200, hp: 520000 },
+    domain_id: 'domain_epic_1',
+  },
+  {
+    tier_code: 'A',
+    tier_group: 'high',
+    boss_id: 'vein_mine_a',
+    boss_name: 'U Minh Huyền Quy Vương',
+    boss_power: 3200000,
+    lt_per_min: 40,
+    element: 'Thủy',
+    stats: { atk: 27000, def: 31000, spd: 19500, hp: 960000 },
+    domain_id: 'domain_epic_4',
+  },
+  {
+    tier_code: 'S',
+    tier_group: 'high',
+    boss_id: 'vein_mine_s',
+    boss_name: 'Thái Cổ Tinh Thần Cự Thú',
+    boss_power: 5200000,
+    lt_per_min: 48,
+    element: 'Quang',
+    stats: { atk: 44000, def: 41000, spd: 34000, hp: 1550000 },
+    domain_id: 'domain_mythic_9',
+  },
+  {
+    tier_code: 'S+',
+    tier_group: 'high',
+    boss_id: 'vein_mine_sp',
+    boss_name: 'Hỗn Nguyên Địa Mạch Ma Tôn',
+    boss_power: 8500000,
+    lt_per_min: 56,
+    element: 'Ám',
+    stats: { atk: 72000, def: 65000, spd: 54000, hp: 2600000 },
+    domain_id: 'domain_mythic_7',
+  },
+];
+
+/**
+ * Debuff Cấp 2 « Đạo Áp » cho toàn bộ 16 Linh Vực Thần Thoại & Tối Thượng.
+ * Chỉ kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực đang hoạt động của đối thủ.
+ * Giá trị mạnh hơn Debuff Cấp 1 của chính Linh Vực đó đúng +20%..+30% (theo scaleFactor 1.22..1.30).
+ */
+export const V14_DAO_AP_CONFIG = {
+  domain_mythic_1: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Vạn Kiếm Quy Khư (-40% Giáp, -28% Khiên/hiệp)' },
+  domain_mythic_2: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tru Tiên Kiếm Ý (-38% Giáp, +30% ST Bạo Kích)' },
+  domain_mythic_3: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Mộng Điệp Trụy Tâm (-33% Chính Xác, -25% HAX)' },
+  domain_mythic_4: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Kính Hoa Đoạn Mạch (-27% Chính Xác, -37% Khiên tạo)' },
+  domain_mythic_5: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tinh Đẩu Trấn Phong (-45% Hồi Máu, -28% Giáp)' },
+  domain_mythic_6: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Lưỡng Nghi Bế Linh (-42% Khiên tạo, -22% HAX)' },
+  domain_mythic_7: { durationTurns: 1, scaleFactor: 1.25, label: 'Đạo Áp • Lục Đạo Luân Hồi (12.5% DoT/hiệp, -44% Hồi Máu)' },
+  domain_mythic_8: { durationTurns: 2, scaleFactor: 1.22, label: 'Đạo Áp • Tinh Hải Thực Hồn (-17% Trần HP, 8.5% DoT/hiệp)' },
+  domain_mythic_9: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Đại Nhật Phán Quyết (+35% Bạo Kích nhận, -30% Giáp)' },
+  domain_mythic_10: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Cửu Tiêu Tịnh Diệt (-40% Hồi Máu, -30% Khiên/hiệp)' },
+  domain_unique_1: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hỗn Nguyên Trảm Đạo (-45% Giáp, -32% Khiên/hiệp)' },
+  domain_unique_2: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Bỉ Ngạn Huyễn Thệ (-35% Chính Xác, -28% HAX)' },
+  domain_unique_3: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Tiên Thiên Phong Thần (-49% Hồi Máu, -45% Khiên tạo)' },
+  domain_unique_4: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Vĩnh Dạ Phệ Linh (13.4% DoT/hiệp, -19% Trần HP)' },
+  domain_unique_5: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hồng Mông Thần Phạt (+38% Bạo Kích nhận, -33% Giáp)' },
+  domain_fuyumi_cuu_vi_hong_mong: { durationTurns: 3, scaleFactor: 1.30, label: 'Đạo Áp • Cửu Vĩ Hồng Mông Tuyệt Thế (-65% Giáp, 15.6% DoT, -78% Hồi Máu, -32.5% Trần HP)' },
+};
+
+export const V14_ARTIST_PROMPTS = [
+  {
+    uid: 'explorer_world_map_v14',
+    section: 'map',
+    name: 'Đại Lục Tu Tiên Cửu Châu SuMi (12 Địa Danh)',
+    dimensions: '3840x2160 (4K 16:9)',
+    role: 'Bản Đồ Khám Phá Cố Định (/explorer)',
+    visual_prompt:
+      'Masterpiece ultra-detailed 4K panoramic fantasy cartography map of an ancient East Asian xianxia cultivation continent, painstakingly hand-painted over dozens of hours by a master traditional illustrator using archival sepia dip-pen ink, layered watercolor wash, gouache highlights, and mineral gold leaf on large aged ivory cotton parchment with authentic weathered edges, subtle paper grain, and delicate hand-drawn compass rose and silk cloud scrolls in the corners. Top-down isometric bird\'s-eye illustrated map with rich hand-painted terrain and clear geographical spacing connecting exactly 12 distinct, individually numbered and clearly labeled landmarks with elegant traditional Vietnamese calligraphy cartouche ribbons beside each landmark marker (1 through 12, moving organically from peaceful southwestern lowlands to perilous northeastern forbidden peaks): (1) Bottom-left lush emerald bamboo forest & wooden pavilion labeled "1. Thanh Trúc Linh Lâm"; (2) Lower-south blossoming peach-and-lotus valley labeled "2. Bách Hoa Tiên Cốc"; (3) Mid-left tranquil crescent moon spirit lake with stone lantern bridge labeled "3. Nguyệt Ảnh Linh Hồ"; (4) Center-west weathered mountain pass with ancient stone sword-archway labeled "4. Cổ Thạch Kiếm Môn"; (5) Dead-center misty labyrinth of carved jade array pillars labeled "5. Huyền Vụ Mê Trận"; (6) Lower-right volcanic caldera glowing with hand-painted vermilion magma rivers labeled "6. Xích Diễm Dung Cốc"; (7) Upper-left towering snow-draped glacial mountain spires labeled "7. Vạn Niên Hàn Băng Đỉnh"; (8) Upper-center storm-wreathed highland marsh crackling with delicate inked violet-gold thunderclouds labeled "8. Cửu Thiên Lôi Trạch"; (9) Far-right ghostly dark-teal sea with pale bone-white lantern cliffs labeled "9. Hoàng Tuyền U Minh Hải"; (10) Far-north colossal canyon filled with hundreds of weathered ancient giant swords thrust into rock labeled "10. Thái Cổ Thần Kiếm Trủng"; (11) Upper-east floating shattered archipelago bordering a star-dusted ink-black sky rift labeled "11. Hư Không Tinh Hà Liệt Phùng"; (12) Extreme top-right ominous primordial obsidian-and-crimson ruined sanctum swirling with ancient ink clouds labeled "12. Hỗn Độn Thần Ma Cấm Địa". Winding dotted ink trails connect the 12 sites across painted mountain ranges, rivers, and sea waves. Tactile fine-art brushwork, visible ink hatching, authentic mineral pigment granulation, museum-grade fantasy atlas aesthetic, zero 3D CGI render look, zero plastic AI gloss, crisp legible landmark spacing. --ar 16:9',
+  },
+  {
+    uid: 'food_survival_pill',
+    section: 'consumable',
+    name: 'Hộ Mệnh Linh Đan (Thức Ăn Loại A: +8% Sống Sót)',
+    dimensions: '1024x1024',
+    role: 'Thức Ăn Khám Phá + Shop Thường/Ngày',
+    visual_prompt:
+      'Hand-painted traditional xianxia botanical & alchemy bookplate illustration of a single precious emerald-and-gold longevity spirit pill resting inside a small hand-carved celadon porcelain dish with two fresh ginseng leaves and warm drifting herbal steam, painted with layered gouache, delicate gongbi ink contours, and fine mineral gold brushwork on a clean matte deep-ink charcoal background. Rich natural matte-and-satin glaze texture, visible fine sable brushstrokes, warm candlelight rim, centered game icon composition readable at 128x128, zero plastic AI sheen, zero 3D CGI glow, no text, no watermark.',
+  },
+  {
+    uid: 'food_yield_tea',
+    section: 'consumable',
+    name: 'Tụ Bảo Tiên Trà (Thức Ăn Loại B: +18% Hiệu Suất LT)',
+    dimensions: '1024x1024',
+    role: 'Thức Ăn Khám Phá + Shop Thường/Ngày',
+    visual_prompt:
+      'Hand-painted traditional fine-art illustration of an heirloom dark-clay xianxia teacup brimming with luminous amber-gold immortal spirit tea, delicate dried osmanthus petals floating on the surface, resting on a weathered carved sandalwood coaster beside three raw translucent spirit-stone shards. Painted by a human master artist in layered gouache and translucent watercolor washes with crisp hand-inked lines, authentic ceramic craquelure texture, organic warm tea steam wisps, centered icon composition on clean dark slate background, zero glossy AI airbrushing, no text, no watermark.',
+  },
+  {
+    uid: 'food_speed_fruit',
+    section: 'consumable',
+    name: 'Ngự Phong Tốc Quả (Thức Ăn Loại C: -25% Thời Gian Đi)',
+    dimensions: '1024x1024',
+    role: 'Thức Ăn Khám Phá + Shop Thường/Ngày',
+    visual_prompt:
+      'Hand-painted traditional Chinese gongbi & gouache illustration of a mythical wind-spirit peach fruit with translucent jade-cyan skin transitioning to pale silver-gold at the tip, winged delicate spirit leaves curling around its woody stem as soft ink-drawn breeze swirls lift tiny fallen blossoms. Visible delicate hand-painted pigment texture, authentic botanical shading, natural soft studio lighting on clean dark charcoal background, readable silhouette for Discord emoji and inventory icon, zero plastic CGI shine, no text, no watermark.',
+  },
+  {
+    uid: 'explorer_revive_elixir',
+    section: 'consumable',
+    name: 'Cửu Chuyển Hoàn Hồn Lộ (Elixir Hồi Sinh Pet Độc Nhất)',
+    dimensions: '1024x1024',
+    role: 'Linh Dược Hồi Sinh Pet Độc Nhất',
+    visual_prompt:
+      'Hand-painted museum-quality fantasy still-life illustration of an ornate hand-blown gourd-shaped crystal apothecary phial sealed with red-wax talisman cord and aged gold filigree, containing swirling warm rose-amber and pearl-white phoenix soul nectar that softly illuminates the hand-painted glass imperfections. Crafted in traditional oil-and-gouache impasto with fine dip-pen linework, tangible weight and glass refraction painted by hand, centered icon composition on clean matte obsidian background, zero artificial neon CGI look, no text, no watermark.',
+  },
+  {
+    uid: 'enchant_stone_absolute',
+    section: 'consumable',
+    name: 'Thiên Đạo Tuyệt Ấn Thạch (Đá Khắc Ấn Tuyệt Đối 100%)',
+    dimensions: '1024x1024',
+    role: 'Rơi 0.5% /explorer — 100% mọi bậc (khuyên dùng A→S)',
+    visual_prompt:
+      'Hand-painted fine-art relic illustration of an ancient hexagonal sovereign sealing stone carved from deep imperial midnight-jade and inlaid with hammered antique gold astronomical runes along its chiseled facets, emitting subtle hand-painted warm golden ink-wash embers from a hairline central sigil. Painted with rich gouache, dry-brush mineral pigment grain, and delicate gold-leaf texture by a master human concept artist, dramatic natural directional lighting on a clean matte dark slate background, strong silhouette for 128x128 emoji, zero plastic AI sheen, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_f',
+    section: 'boss',
+    name: 'Cấp F — Thạch Linh Thủ Mộ Giả (25k • 6 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Thấp Cấp F',
+    visual_prompt:
+      'Hand-painted traditional ink-and-gouache fantasy illustration of an ancient moss-covered stone guardian golem emerging from a cracked bronze-veined spirit boulder, dim teal spirit crystals embedded in its weathered rock shoulders. Visible expressive dry-brush strokes, authentic stone grit texture, natural overcast mountain lighting, centered bust emblem composition on dark matte slate background, zero 3D render look, zero AI plastic gloss, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_e',
+    section: 'boss',
+    name: 'Cấp E — Hắc Giáp Nham Khôi (90k • 10 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Thấp Cấp E',
+    visual_prompt:
+      'Hand-painted traditional oil and ink illustration of a heavy iron-basalt armored earth sentinel with scarred obsidian pauldrons and glowing amber fissures radiating from raw spirit ore beneath its chestplate. Expressive hand-painted impasto strokes, scratched metallic patina, atmospheric cave dust painted organically, centered boss portrait emblem on dark matte background, zero glossy CGI aesthetic, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_d',
+    section: 'boss',
+    name: 'Cấp D — Thanh Mộc Cổ Mãng (280k • 15 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Thấp Cấp D',
+    visual_prompt:
+      'Hand-painted Chinese gongbi & watercolor fine-art illustration of an ancient gnarled emerald forest python coiled around a glowing spirit-jade root monolith, bark-like scales and luminous lichen whiskers rendered with painstaking fine brushwork. Natural misty forest rim lighting, authentic mineral green and ochre pigments, centered boss crest on dark slate background, zero digital airbrush smoothness, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_c',
+    section: 'boss',
+    name: 'Cấp C — Huyết Hỏa Địa Long (750k • 22 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Thấp Cấp C',
+    visual_prompt:
+      'Hand-painted traditional oil-on-linen concept art of a fierce subterranean crimson-scaled earth drake rising from cracked magma veins, painted with bold vermilion, burnt sienna, and charcoal ink brushwork, drifting hand-dabbed soot embers and warm lava bounce light along its horned jawline. Rich painterly canvas grain, dramatic classical lighting, centered boss icon composition on dark obsidian background, zero CGI neon bloom, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_b',
+    section: 'boss',
+    name: 'Cấp B — Tử Lôi Trấn Mạch Tôn (1.8M • 30 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Cao Cấp B',
+    visual_prompt:
+      'Hand-painted traditional xianxia gouache & ink-wash portrait of a solemn ancient thunder-vein sovereign spirit clad in weathered indigo-violet ceremonial armor, wielding a bronze lightning-ringed halberd as jagged hand-inked silver-violet thunderbolts arc behind its cloud collar. Tangible brushwork, authentic mineral pigment depth, dramatic storm-lit chiaroscuro on clean dark background, zero plastic AI sheen, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_a',
+    section: 'boss',
+    name: 'Cấp A — U Minh Huyền Quy Vương (3.2M • 40 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Cao Cấp A',
+    visual_prompt:
+      'Hand-painted master-illustrator oil and ink painting of a colossal mythic Black Tortoise sovereign whose jagged obsidian shell carries a miniature sunken spirit-crystal mountain and spectral pale-jade mist, entwined with an ancient coiled spirit serpent. Intricate hand-etched shell cracks, muted abyssal teal and bone-ivory palette, museum-grade fantasy brushwork on dark matte background, zero artificial 3D polish, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_s',
+    section: 'boss',
+    name: 'Cấp S — Thái Cổ Tinh Thần Cự Thú (5.2M • 48 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Cao Cấp S',
+    visual_prompt:
+      'Hand-painted classical fine-art fantasy illustration of a primordial astral lion-dragon colossus forged from dark starlight basalt and antique hammered gold celestial rings hovering behind its mane, constellations hand-stippled in pale gold leaf across its fur. Masterful expressive oil brushstrokes, rich atmospheric depth, noble imposing composition centered on deep charcoal background, zero AI glossy sheen, no text, no watermark.',
+  },
+  {
+    uid: 'vein_mine_sp',
+    section: 'boss',
+    name: 'Cấp S+ — Hỗn Nguyên Địa Mạch Ma Tôn (8.5M+ • 56 LT/p)',
+    dimensions: '1024x1024',
+    role: 'Boss Mỏ Linh Mạch Tối Thượng S+',
+    visual_prompt:
+      'Masterpiece hand-painted oil-and-ink dark xianxia boss illustration of an overwhelming Primordial Spirit-Vein Demon Sovereign crowned with shattered imperial jade horns and floating broken golden dao chains, robes of ink-black cloud silk torn by raw crimson-gold earth-vein fissures. Painstaking traditional brushwork, dramatic Rembrandt-like rim illumination, tactile pigment impasto and ink splatter energy, terrifying ancient majesty centered on dark matte obsidian background, zero glossy CGI look, no text, no watermark.',
+  },
+  {
+    uid: 'dao_ap_crest',
+    section: 'system',
+    name: 'Ấn Ký « Đạo Áp » (Debuff Cấp 2 Linh Vực Thần Thoại)',
+    dimensions: '1024x1024',
+    role: 'Biểu Tượng Chiến Báo & /info Đạo Áp',
+    visual_prompt:
+      'Hand-painted traditional ink-and-gold emblem of a shattered rival spirit seal being crushed beneath a descending imperial crimson-and-gold celestial mountain sigil, swirling ink-wash shockwaves and delicate gold-leaf fracture lines radiating outward. Crisp readable badge silhouette for 128x128 Discord emoji and battle card icon, layered gouache and authentic calligraphy brushwork on clean dark matte background, zero plastic CGI glow, no text, no watermark.',
+  },
+  {
+    uid: 'daily_shop_emblem',
+    section: 'system',
+    name: 'Vạn Bảo Lưu Động Các (Biểu Tượng Shop Ngày)',
+    dimensions: '1024x1024',
+    role: 'Biểu Tượng Tab Shop Ngày (/shop)',
+    visual_prompt:
+      'Hand-painted traditional xianxia storybook illustration of a miniature ornate wooden floating merchant lantern-pavilion hung with warm glowing red-gold paper lanterns, brass abacus charm, and rolled silk treasure scrolls peeking from a lacquered chest. Warm inviting candlelight gouache brushwork, fine hand-inked architectural details, cozy handmade charm readable as a 128x128 Discord icon on clean dark slate background, zero glossy AI render look, no text, no watermark.',
+  },
+];

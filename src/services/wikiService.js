@@ -167,6 +167,15 @@ export const WIKI_CATEGORIES = {
           `• **Tương Khắc Vực**: ${domainElementEmoji('Kiếm Vực')} Kiếm Vực → ${domainElementEmoji('Huyễn Vực')} Huyễn Vực → ${domainElementEmoji('Trận Vực')} Trận Vực → ${domainElementEmoji('Minh Vực')} Minh Vực → ${domainElementEmoji('Thánh Vực')} Thánh Vực → Kiếm Vực (\`-1\` vs \`-2 Linh Mạch\`/hiệp).`,
           '• **Cơ chế Giằng Co**: Khi hai Linh Vực cùng hoạt động, đôi bên chỉ kích hoạt Buff sân nhà (những Linh Vực Thần Thoại có *Xuyên Kháng* vẫn áp đặt Debuff). Khi Linh Mạch địch cạn, toàn bộ Debuff khai mở hoàn toàn.',
           '• **Thần Thức / Thần Cảnh**: Thần Thức tăng trần Linh Mạch & Buff; Thần Cảnh tăng độ sâu Debuff & hiệu ứng khống chế (`/linhvuc`).',
+          `• ${em('dao_ap_crest', '⚡')} **Đạo Áp (Debuff Cấp 2):** Toàn bộ Linh Vực Thần Thoại khi đánh vỡ Linh Vực địch sẽ kích hoạt **Đạo Áp** ở hiệp kế tiếp (` + '`1–3 hiệp`' + `, mạnh hơn debuff gốc ` + '`+20%–30%`' + `).`,
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('vein_mine_sp', '⛰️')} Chiếm Đoạt Linh Mạch (/party • /linhmach) & Khám Phá (/explorer)`,
+        value: [
+          '• **Linh Mạch (6 Khung Giờ Vàng `08/12/18/20/21/22h`):** Mở 2 mỏ (`F–C` & `B–S+`), lập Tổ Đội 3 người (`/party`) đấu Boss/3v3 theo thứ tự SPD (dùng Linh Vực Đội Trưởng), hưởng `6–56 LT/phút` chia đều đội (`+15%` Ngân Khố Tộc nếu cùng Clan).',
+          `• **Khám Phá Bản Đồ (\`/explorer\`):** Đưa Pet chính/phụ + Loadout đi 12 địa danh (\`10k → 1M\`, \`2/3/6/12h\`) nhận \`200–300 LT/giờ\`, cơ hội rơi ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(0.5%)* & nhặt bảo vật rơi *(60%)*.`,
         ].join('\n'),
         inline: false,
       },
