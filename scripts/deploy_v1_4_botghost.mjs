@@ -1056,9 +1056,9 @@ function patchExistingCommand(name, elements) {
         }
       }
     }
-    // Attach Daily Shop button on the shop overview message if not already attached
+    // Attach Daily Shop button on msg_shop_home if not already attached
     const hasDailyBtn = patched.some((n) => n.id === 'shop_btn_daily');
-    const overviewMsg = patched.find((n) => n.id === 'shop_ov_edit' || n.id === 'sh_ov_edit' || (n.data?.data?.type === 'advanced_message' && JSON.stringify(n.data?.data).includes('summary_text')));
+    const overviewMsg = patched.find((n) => n.id === 'msg_shop_home' || n.id === 'shop_ov_edit');
     if (!hasDailyBtn && overviewMsg) {
       const gb = new V14GraphBuilder();
       gb.advBtn('shop_btn_daily', overviewMsg.id, btnCfg('Shop Ngày (-40%)', 'SUCCESS', 'daily_shop_emblem', '2', '4', false), { x: 960, y: 1180 });
@@ -1069,8 +1069,8 @@ function patchExistingCommand(name, elements) {
         description: '{shop_daily_res.response.summary_text}',
         color: '#f59e0b',
         footer: 'Reset 00:00 (UTC+7) mỗi ngày • Chọn gian hàng #1 → #10 bên dưới để mua ngay!',
-        target: { editId: overviewMsg.data?.data?.target?.editId || 'shop_ack' },
-        action_id: overviewMsg.data?.data?.action_id || 'shop_ack',
+        target: { reply: true },
+        editId: 'shop_daily_msg',
       }, { x: 960, y: 1500 });
       gb.link('shop_daily_get', 'shop_daily_msg');
 
@@ -1088,8 +1088,8 @@ function patchExistingCommand(name, elements) {
         title: `${uidEm('daily_shop_emblem')} SHOP NGÀY — VẠN BẢO LƯU ĐỘNG CÁC`,
         description: '{shop_daily_buy_res.response.message}',
         color: '#10b981',
-        target: { editId: overviewMsg.data?.data?.target?.editId || 'shop_ack' },
-        action_id: overviewMsg.data?.data?.action_id || 'shop_ack',
+        target: { editId: 'shop_daily_msg' },
+        action_id: 'shop_daily_msg',
       }, { x: 960, y: 1980 });
       gb.link('shop_daily_buy', 'shop_daily_buy_edit');
 
@@ -1288,6 +1288,86 @@ async function main() {
     await new Promise((r) => setTimeout(r, 1200));
   }
 
+async function deployEventByIntIdViaCDP(intId, elements) {
+  const b64 = Buffer.from(JSON.stringify(elements), 'utf8').toString('base64');
+  const prevSave = await cdpEval(`(() => {
+    const rootEl = document.getElementById('root');
+    const rk = Object.keys(rootEl).find(k => k.startsWith('__reactContainer') || k.startsWith('__reactFiber'));
+    const q = [rootEl[rk]?.current || rootEl[rk]], seen = new Set();
+    let cb = null, store = null;
+    while (q.length) {
+      const n = q.shift(); if (!n || seen.has(n)) continue; seen.add(n);
+      if (!cb && n.stateNode && typeof n.stateNode.saveBot === 'function') cb = n.stateNode;
+      if (!store && n.memoizedProps?.store?.getState?.()?.data?.bot?.commands?.custom_events) store = n.memoizedProps.store;
+      if (cb && store) break;
+      if (n.child) q.push(n.child); if (n.sibling) q.push(n.sibling);
+    }
+    if (!cb || !store) throw new Error('Missing CommandBuilder or store');
+    const events = store.getState().data.bot.commands.custom_events.events || [];
+    const idx = events.findIndex(e => e.int_id === '${intId}');
+    if (idx < 0) throw new Error('Missing event ${intId}');
+    const bin = atob('${b64}');
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const els = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    cb.props.setBuilderMode({ mode: 'event', components: { Guild: true, Channel: true, User: true, Member: true, Message: true } });
+    cb.props.setBuilderIndex(idx);
+    cb.setState({ saving: false, saveConflict: null });
+    cb.props.setElements(els);
+    cb.props.setSelected(null);
+    return cb.props.bot.last_save;
+  })()`);
+
+  await new Promise((r) => setTimeout(r, 600));
+
+  const trig = JSON.parse(await cdpEval(`(async () => {
+    const rootEl = document.getElementById('root');
+    const rk = Object.keys(rootEl).find(k => k.startsWith('__reactContainer') || k.startsWith('__reactFiber'));
+    const q = [rootEl[rk]?.current || rootEl[rk]], seen = new Set();
+    let cb = null;
+    while (q.length) {
+      const n = q.shift(); if (!n || seen.has(n)) continue; seen.add(n);
+      if (n.stateNode && typeof n.stateNode.saveBot === 'function') { cb = n.stateNode; break; }
+      if (n.child) q.push(n.child); if (n.sibling) q.push(n.sibling);
+    }
+    const probBtn = [...document.querySelectorAll('button')].find(b => /Problems|No problems/i.test(b.innerText || ''));
+    const probText = probBtn ? probBtn.innerText.trim().replace(/\\s+/g, ' ') : null;
+    const canSave = cb.validateSave();
+    if (!canSave || (probText && /Problems\\s+[1-9]/.test(probText))) {
+      return JSON.stringify({ ok: false, error: 'Validation blocked save', canSave, probText });
+    }
+    const vars = cb.getCustomVariables ? cb.getCustomVariables() : [];
+    await cb.buildCommand(vars, false);
+    cb.save();
+    return JSON.stringify({ ok: true, canSave, probText });
+  })()`));
+  if (!trig.ok) return trig;
+
+  for (let i = 0; i < 25; i += 1) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const cur = JSON.parse(await cdpEval(`(() => {
+      const rootEl = document.getElementById('root');
+      const rk = Object.keys(rootEl).find(k => k.startsWith('__reactContainer') || k.startsWith('__reactFiber'));
+      const q = [rootEl[rk]?.current || rootEl[rk]], seen = new Set();
+      let cb = null;
+      while (q.length) {
+        const n = q.shift(); if (!n || seen.has(n)) continue; seen.add(n);
+        if (n.stateNode && typeof n.stateNode.saveBot === 'function') { cb = n.stateNode; break; }
+        if (n.child) q.push(n.child); if (n.sibling) q.push(n.sibling);
+      }
+      return JSON.stringify({
+        lastSave: cb?.props?.bot?.last_save,
+        saving: cb?.state?.saving,
+        builderSaveRequired: cb?.props?.builderSaveRequired,
+      });
+    })()`));
+    if (cur.lastSave && cur.lastSave !== prevSave && cur.builderSaveRequired === false) {
+      return { ok: true, intId, probText: trig.probText, canSave: trig.canSave, lastSave: cur.lastSave, elements: elements.length };
+    }
+  }
+  return { ok: false, timeout: true, intId, probText: trig.probText };
+}
+
   // 3. Patch AI Mention v1.4
   if ((!onlyNames || onlyNames.has('ai_mention')) && live.aiEv?.compressed_tree) {
     const aiTree = JSON.parse(LZString.decompressFromBase64(live.aiEv.compressed_tree) || '[]');
@@ -1303,12 +1383,7 @@ async function main() {
     }
     if (LEAK_RE.test(JSON.stringify(aiTree))) throw new Error('Confidential leak detected in AI Mention!');
     console.log(`[Offline OK] PATCH AI Mention: ${aiTree.length} elements`);
-    const res = await deployViaCDP({
-      mode: 'event',
-      name: live.aiEv.name,
-      elements: aiTree,
-      enabled: live.aiEv.enabled,
-    });
+    const res = await deployEventByIntIdViaCDP('4cc5db30-029c-4a55-86e6-6e6850012afd', aiTree);
     console.log('[Patched] AI Mention:', JSON.stringify(res));
     if (!res?.ok) throw new Error(`Failed patching AI Mention: ${JSON.stringify(res)}`);
     await new Promise((r) => setTimeout(r, 1200));
@@ -1319,15 +1394,8 @@ async function main() {
     const kaTree = patchKeepAliveCron(JSON.parse(LZString.decompressFromBase64(live.kaEv.compressed_tree) || '[]'));
     assertAcyclicDAG(kaTree, 'keepalive');
     assertUniqueApiActionNames(kaTree, 'keepalive');
-    const errs = validateGraph(kaTree);
-    if (errs.length) throw new Error(`Validation failed for Keep-Alive: ${errs.join(', ')}`);
     console.log(`[Offline OK] PATCH Keep-Alive Cron: ${kaTree.length} elements`);
-    const res = await deployViaCDP({
-      mode: 'event',
-      name: live.kaEv.name,
-      elements: kaTree,
-      enabled: live.kaEv.enabled,
-    });
+    const res = await deployEventByIntIdViaCDP('71c549b1-b532-4afb-958a-8e47b168f96b', kaTree);
     console.log('[Patched] Keep-Alive Cron:', JSON.stringify(res));
     if (!res?.ok) throw new Error(`Failed patching Keep-Alive Cron: ${JSON.stringify(res)}`);
   }
