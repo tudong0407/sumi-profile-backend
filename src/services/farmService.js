@@ -232,7 +232,7 @@ export async function getFarmStatus(userId, options = {}) {
       '**Bảng Giống & Trứng Thời Gian Thực (`/farm gieo <ma_giong>`):**',
       ...seedLines,
     ].join('\n'),
-    footer: 'SuMi Family • Dùng /exchange để đổi Linh Quả sang vật phẩm quý',
+    footer: '',
   };
 }
 
@@ -295,6 +295,7 @@ export async function plantFarmPlot(userId, rawSeedId, options = {}) {
         care_count: 0,
         updated_at: nowIso,
       }).eq('id', targetPlot.id),
+      trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
     return {
@@ -340,7 +341,7 @@ export async function careAllPlots(userId, options = {}) {
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
-      trackQuestActivity(cleanId, { activityDelta: 1, now }),
+      trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
     return {
@@ -400,7 +401,7 @@ export async function harvestAllPlots(userId, options = {}) {
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
-      trackQuestActivity(cleanId, { activityDelta: 1, now }),
+      trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
     const essIcon = farmEmoji('farm_essence', '🍑');
@@ -477,7 +478,7 @@ export async function getExchangeCatalog(userId) {
       '',
       ...lines,
     ].join('\n'),
-    footer: 'SuMi Family • Thu thập Linh Quả từ /farm để quy đổi tài nguyên',
+    footer: '',
   };
 }
 

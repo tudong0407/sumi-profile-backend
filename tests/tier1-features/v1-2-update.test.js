@@ -108,19 +108,19 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     assert.equal(jsonCd.error, 'BATTLE_COOLDOWN');
     assert.ok(jsonCd.cooldown_seconds >= 1 && jsonCd.cooldown_seconds <= 5);
 
-    // Mid-turn 800x400 vs final 1400x700 WebP vs full 2000x1000 PNG
+    // Mid-turn 720x360 vs final 1250x625 WebP/PNG (v1.4.7 -10% render optimization)
     const midBuf = await (await testServer.fetch(`/api/battle/report/${json1.battleId}/1.webp`)).arrayBuffer();
-    await assertWebpDimensions(Buffer.from(midBuf), 800, 400);
+    await assertWebpDimensions(Buffer.from(midBuf), 720, 360);
 
     const lastIdx = json1.frameCount || 2;
     const finalBuf = await (await testServer.fetch(`/api/battle/report/${json1.battleId}/${lastIdx}.webp`)).arrayBuffer();
-    await assertWebpDimensions(Buffer.from(finalBuf), 1400, 700);
+    await assertWebpDimensions(Buffer.from(finalBuf), 1250, 625);
 
     const pngRes = await testServer.fetch(`/api/battle/report/${json1.battleId}.png`);
     assert.equal(pngRes.status, 200);
     const pngImg = await loadImage(Buffer.from(await pngRes.arrayBuffer()));
-    assert.equal(pngImg.width, 2000);
-    assert.equal(pngImg.height, 1000);
+    assert.equal(pngImg.width, 1250);
+    assert.equal(pngImg.height, 625);
 
     // renderBattleCardQueued deduplicates identical concurrent requests
     const dedupKey = `dedup-check-${json1.battleId}`;
@@ -279,8 +279,8 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     assert.equal((await infoEmojiRes.json()).id, 'hoa_thach_nham_nham');
   });
 
-  it('5. Pha 2C & 3B: 200-floor Tower with 3 Pháp Bảo + HAX, 6 Jobs cooldown/limit, Weekly contracts claim', async () => {
-    assert.equal(TOWER_MAX_FLOOR, 200);
+  it('5. Pha 2C & 3B: 500-floor Tower with 3 Pháp Bảo + HAX, 6 Jobs cooldown/limit, Weekly contracts claim', async () => {
+    assert.equal(TOWER_MAX_FLOOR, 500);
     assert.equal(JOBS_CATALOG.length, 6);
 
     const g199 = await buildTowerGuardian(199);

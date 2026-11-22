@@ -17,7 +17,7 @@ import {
   cleanupExpiredRoles,
   getDailyLtGiftLimitByLevel,
 } from '../../src/services/economyService.js';
-import { trackQuestActivity } from '../../src/services/questService.js';
+import { trackQuestActivity, DAILY_QUEST_REWARD_LT } from '../../src/services/questService.js';
 import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
 
 const USER_A = '999999999999999941';
@@ -203,7 +203,8 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(prematureClaim.status, 400);
 
-    // Challenge Tower floor 1 (Lv.40 user beats Floor 1 easily!)
+    // Challenge Tower floor 1 (Lv.5 pet beats Floor 1 cleanly)
+    await supabase.from('user_pets').update({ level: 5 }).eq('user_id', USER_B).eq('is_active', true);
     const towerRes = await testServer.fetch('/api/quest/tower', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -218,16 +219,29 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     assert.ok(tj.reward_linh_thach > 0);
     assert.equal(tj.attempts_used, 1);
 
-    // Complete all 5 daily quests deterministically (daily + 150 EXP + 2 extra wins + 2 jobs + 1 farm/mg activity)
+    // Complete all 5 daily quests deterministically (daily + 150 EXP + rotating pool activities)
     const vnToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
     await supabase.from('users').update({ last_daily: new Date().toISOString() }).eq('user_id', USER_B);
-    await trackQuestActivity(USER_B, { expDelta: 150, winDelta: 2, jobDelta: 2, activityDelta: 1 });
+    await trackQuestActivity(USER_B, {
+      expDelta: 150,
+      battleDelta: 3,
+      winDelta: 3,
+      jobDelta: 2,
+      towerDelta: 2,
+      rollDelta: 1,
+      farmDelta: 1,
+      minigameDelta: 2,
+      explorerDelta: 1,
+      craftDelta: 1,
+      shopDelta: 1,
+    });
     await supabase.from('user_quests').update({ job_date: vnToday, jobs_today: 2 }).eq('user_id', USER_B);
 
     const statusReady = await testServer.fetch(`/api/quest/status/${USER_B}`);
     const srj = await statusReady.json();
     assert.equal(srj.all_completed, true);
     assert.equal(srj.can_claim, true);
+    const expectedTotalLt = srj.quests.reduce((sum, q) => sum + Number(q.reward_lt || 0), 0) + DAILY_QUEST_REWARD_LT;
 
     const claimOk = await testServer.fetch('/api/quest/claim', {
       method: 'POST',
@@ -236,7 +250,7 @@ describe('Tier 1 - Phase 4+ Multi-Perk Roles, Role Gacha, Quests/Tower, Leaderbo
     });
     assert.equal(claimOk.status, 200);
     const cj = await claimOk.json();
-    assert.equal(cj.reward_linh_thach, 215); // 15+20+25+20+20 individual + 115 (5/5 bonus)
+    assert.equal(cj.reward_linh_thach, expectedTotalLt);
 
     // Double claim rejected
     const claimAgain = await testServer.fetch('/api/quest/claim', {

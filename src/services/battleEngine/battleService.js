@@ -14,6 +14,18 @@ import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
 import { trackQuestActivity } from '../questService.js';
+import {
+  BATTLE_LOG_TTL_MS,
+  getCachedTurnBuffer,
+  setCachedTurnBuffer,
+  saveBattleLogRecord,
+  loadBattleLogRecord,
+} from './battleLogStore.js';
+import {
+  renderExpiredBattleLogHtml,
+  renderInteractiveBattleLogPage,
+  stripDiscordTagsToHtml,
+} from './webBattleLogHtml.js';
 
 function getVietnamDateKey(date = new Date()) {
   const vnTime = new Date(date.getTime() + 7 * 3600 * 1000);
@@ -41,7 +53,7 @@ export const BATTLE_LOSS_LT = 5;
 export const BATTLE_COOLDOWN_MS = 5000;
 
 const BATTLE_CACHE_MAX = 120;
-const BATTLE_CACHE_TTL_MS = 30 * 60 * 1000;
+const BATTLE_CACHE_TTL_MS = BATTLE_LOG_TTL_MS;
 const MAX_CANVAS_CONCURRENT = 2;
 const battleReportCache = new Map();
 const latestBattleByChannel = new Map();
@@ -166,59 +178,49 @@ export function getCachedBattleReport(battleId) {
   return getCacheEntry(battleId)?.result || null;
 }
 
+export async function loadBattleReport(battleId) {
+  return getCacheEntry(battleId)?.result || await loadBattleLogRecord({ battleId, battleKind: '1v1' });
+}
+
 export function getCachedBattleFrame(battleId, frameIndex) {
   const entry = getCacheEntry(battleId);
-  if (!entry) return null;
-  return entry.frameBuffers?.get(Number(frameIndex)) || null;
+  const ram = entry?.frameBuffers?.get(Number(frameIndex));
+  if (ram) return ram;
+  return getCachedTurnBuffer(battleId, `frame:${frameIndex}`);
 }
 
 export function setCachedBattleFrame(battleId, frameIndex, buffer) {
   const entry = getCacheEntry(battleId);
-  if (!entry || !buffer) return;
-  entry.frameBuffers.set(Number(frameIndex), buffer);
+  if (entry && buffer) entry.frameBuffers.set(Number(frameIndex), buffer);
+  if (buffer) setCachedTurnBuffer(battleId, `frame:${frameIndex}`, buffer);
 }
 
-export function getBattleFrameMeta(battleId, frameIndex) {
+export function getBattleFrameMeta(battleId, frameIndex, cachedReport = null) {
   const entry = getCacheEntry(battleId);
-  if (!entry) return null;
+  const metaList = entry?.framesMeta || cachedReport?.framesMeta || [];
   const idx = Number(frameIndex);
-  const meta = (entry.framesMeta || []).find((f) => f.index === idx);
-  return meta || null;
+  return metaList.find((f) => f.index === idx) || null;
 }
 
-export function getBattleLogPayload({ battleId, channelId, userId } = {}) {
-  let targetBattleId = battleId && !/^\{/.test(String(battleId)) ? String(battleId).trim() : null;
-  let entry = targetBattleId ? getCacheEntry(targetBattleId) : null;
-
-  if (!entry && channelId && !/^\{/.test(String(channelId))) {
-    const chBid = latestBattleByChannel.get(String(channelId).trim());
-    if (chBid) {
-      targetBattleId = chBid;
-      entry = getCacheEntry(chBid);
-    }
+export async function getBattleLogPayload({ battleId, channelId, userId } = {}) {
+  const cleanId = battleId && !/^\{/.test(String(battleId)) ? String(battleId).trim() : null;
+  let r = cleanId ? getCacheEntry(cleanId)?.result : null;
+  if (!r) {
+    r = await loadBattleLogRecord({ battleId: cleanId, channelId, userId, battleKind: '1v1' });
   }
 
-  if (!entry && userId && !/^\{/.test(String(userId))) {
-    const uBid = latestBattleByUser.get(String(userId).trim());
-    if (uBid) {
-      targetBattleId = uBid;
-      entry = getCacheEntry(uBid);
-    }
-  }
-
-  if (!entry?.result) {
+  if (!r) {
     return {
       success: true,
       found: false,
       battleId: null,
       title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU`,
-      description: 'Nhật ký trận đấu này đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại. Hãy dùng `/battle` để mở trận đấu mới!',
-      footer: 'SuMi Family • Nhật Ký Đấu Trường',
+      description: 'Nhật ký trận đấu này đã quá hạn lưu trữ (tối đa 2 ngày) hoặc không tồn tại. Hãy dùng `/battle` để mở trận đấu mới!',
+      footer: '',
     };
   }
 
-  const r = entry.result;
-  const bid = r.battleId || targetBattleId;
+  const bid = r.battleId || cleanId;
   return {
     success: true,
     found: true,
@@ -226,204 +228,140 @@ export function getBattleLogPayload({ battleId, channelId, userId } = {}) {
     webLogUrl: r.webLogUrl || `${PUBLIC_BASE_URL}/api/battle/logs/${bid}/view`,
     title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU • ${r.winner.name} VS ${r.loser.name}`,
     description: r.fullBattleLog || r.discordReport || r.summary,
-    footer: `SuMi Family • ${r.turnCount} Hiệp • Mã trận: ${bid}`,
+    footer: '',
   };
 }
 
-function escapeHtml(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function buildFrameFromTurnSnapshot(r, snap) {
+  const atkHp = snap?.hpBars?.[0]?.hp ?? r.finalHp?.attacker ?? 0;
+  const defHp = snap?.hpBars?.[1]?.hp ?? r.finalHp?.defender ?? 0;
+  const isFinal = Boolean(snap?.isFinal) || Number(snap?.turn) >= Number(r.turnCount || 1);
+  return {
+    index: Number(snap?.turn || 0),
+    scale: 0.9,
+    isFinal,
+    currentTurn: Number(snap?.turn || 0),
+    totalTurns: Number(r.turnCount || 1),
+    turnLabel: Number(snap?.turn || 0) === 0
+      ? 'KHAI TRẬN • CHUẨN BỊ XUẤT CHIÊU'
+      : isFinal
+        ? `HIỆP ${snap.turn} • KẾT THÚC`
+        : `HIỆP ${snap.turn} / ${r.turnCount}`,
+    attackerHp: atkHp,
+    defenderHp: defHp,
+    domainAtkEnergy: snap?.domainAtkEnergy,
+    domainDefEnergy: snap?.domainDefEnergy,
+  };
 }
 
-function stripDiscordTagsToHtml(text) {
-  let s = escapeHtml(text);
-  // Convert Discord custom emoji <a:name:id> or <:name:id> to inline <img>
-  s = s.replace(/&lt;(a?):([a-zA-Z0-9_]+):([0-9]{15,22})&gt;/g, (_, anim, name, id) => {
-    const ext = anim === 'a' ? 'gif' : 'png';
-    return `<img class="d-emoji" src="https://cdn.discordapp.com/emojis/${id}.${ext}?size=48&quality=lossless" alt=":${name}:" title=":${name}:">`;
-  });
-  // Markdown links [label](url)
-  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  // Bold **...**
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  // Italic *...*
-  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  // Inline code `...`
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  return s;
-}
-
-export function renderBattleLogHtml(battleId) {
+export async function renderSingleBattleTurnOnDemand(battleId, rawTurn) {
   const cleanId = String(battleId || '').trim();
-  const entry = getCacheEntry(cleanId);
-  if (!entry?.result) {
+  const r = await loadBattleReport(cleanId);
+  if (!r) return null;
+
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [{ turn: Number(r.turnCount || 1), isFinal: true, hpBars: [{ hp: r.finalHp?.attacker ?? 0 }, { hp: r.finalHp?.defender ?? 0 }] }];
+
+  const targetTurn = Math.max(0, Math.min(Number(r.turnCount || 1), Number(rawTurn) || 0));
+  const cacheKey = `turn:${targetTurn}`;
+  const hit = getCachedTurnBuffer(cleanId, cacheKey);
+  if (hit) return hit;
+
+  const snap = snaps.find((s) => Number(s.turn) === targetTurn) || snaps[snaps.length - 1];
+  const frameObj = buildFrameFromTurnSnapshot(r, snap);
+  const buf = await renderBattleCardQueued(`battle:${cleanId}:${cacheKey}:webp`, r, {
+    scale: 0.9,
+    format: 'webp',
+    webpQuality: 74,
+    frame: frameObj,
+  });
+  if (buf) setCachedTurnBuffer(cleanId, cacheKey, buf);
+  return buf;
+}
+
+export async function renderAllBattleTurnsOnDemand(battleId) {
+  const cleanId = String(battleId || '').trim();
+  const r = await loadBattleReport(cleanId);
+  if (!r) return { success: false, found: false, rendered_count: 0, urls: [] };
+
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [{ turn: Number(r.turnCount || 1), isFinal: true }];
+
+  const urls = [];
+  for (const snap of snaps) {
+    const t = Number(snap.turn || 0);
+    await renderSingleBattleTurnOnDemand(cleanId, t);
+    urls.push(`/api/battle/logs/${encodeURIComponent(cleanId)}/turn/${t}.webp`);
+  }
+  return {
+    success: true,
+    found: true,
+    battle_id: cleanId,
+    rendered_count: urls.length,
+    total_turns: Number(r.turnCount || 1),
+    urls,
+  };
+}
+
+export async function renderBattleLogHtml(battleId) {
+  const cleanId = String(battleId || '').trim();
+  const r = await loadBattleReport(cleanId);
+  if (!r) {
     return {
       found: false,
-      html: `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nhật Ký Trận Đấu Đã Hết Hạn • SuMi Family</title>
-<style>body{background:#0f0a1c;color:#f5e9ff;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}.card{max-width:560px;background:#1a1230;border:1px solid #ec489955;border-radius:16px;padding:28px;text-align:center;box-shadow:0 12px 40px #0008}h1{color:#f472b6;font-size:1.35rem;margin-top:0}</style></head>
-<body><div class="card"><h1>📜 Nhật Ký Trận Đấu Không Còn Trong Bộ Nhớ Tạm</h1><p>Mã trận <code>${escapeHtml(cleanId)}</code> đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại.</p><p>Hãy gõ <code>/battle</code> hoặc <code>/nhiemvu hanh_dong:tower</code> trên Discord SuMi Family để mở trận mới nhé!</p></div></body></html>`,
+      html: renderExpiredBattleLogHtml(cleanId, false),
     };
   }
 
-  const r = entry.result;
-  const rawLines = r.untruncatedLogLines || (r.fullBattleLog || '').split('\n');
-  const linesHtml = rawLines
-    .map((line) => {
-      if (!line.trim()) return '<div class="spacer"></div>';
-      const isTurn = line.startsWith('• **H');
-      const isHeader = line.startsWith('**1.') || line.startsWith('**2.') || line.startsWith('**Diễn Biến') || line.startsWith('**Khai Trận');
-      const isResult = line.includes('**KẾT QUẢ:**');
-      const cls = isResult ? 'log-line result-line' : isHeader ? 'log-line section-title' : isTurn ? 'log-line turn-line' : 'log-line';
-      return `<div class="${cls}">${stripDiscordTagsToHtml(line)}</div>`;
-    })
-    .join('\n');
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [
+        {
+          turn: 0,
+          isFinal: false,
+          hpBars: [
+            { side: 'A', label: `${r.combatants?.attacker?.name || 'Công'} (${r.combatants?.attacker?.petName || 'Pet'})`, hp: r.initialHp?.attacker || 0, prevHp: r.initialHp?.attacker || 0, maxHp: r.initialHp?.attacker || 1, shield: 0 },
+            { side: 'B', label: `${r.combatants?.defender?.name || 'Thủ'} (${r.combatants?.defender?.petName || 'Pet'})`, hp: r.initialHp?.defender || 0, prevHp: r.initialHp?.defender || 0, maxHp: r.initialHp?.defender || 1, shield: 0 },
+          ],
+          events: ['• Khai trận đấu 1v1!'],
+        },
+        {
+          turn: Number(r.turnCount || 1),
+          isFinal: true,
+          hpBars: [
+            { side: 'A', label: `${r.combatants?.attacker?.name || 'Công'} (${r.combatants?.attacker?.petName || 'Pet'})`, hp: r.finalHp?.attacker ?? 0, prevHp: r.initialHp?.attacker || 0, maxHp: r.initialHp?.attacker || 1, shield: 0 },
+            { side: 'B', label: `${r.combatants?.defender?.name || 'Thủ'} (${r.combatants?.defender?.petName || 'Pet'})`, hp: r.finalHp?.defender ?? 0, prevHp: r.initialHp?.defender || 0, maxHp: r.initialHp?.defender || 1, shield: 0 },
+          ],
+          events: (r.untruncatedLogLines || []).filter((l) => l.startsWith('• **H')),
+        },
+      ];
 
-  const html = `<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Nhật Ký Trận Đấu #${escapeHtml(cleanId)} • ${escapeHtml(r.winner?.name)} vs ${escapeHtml(r.loser?.name)}</title>
-  <style>
-    :root { color-scheme: dark; }
-    body {
-      background: radial-gradient(circle at top, #23133d 0%, #0d0818 70%);
-      color: #f3e8ff;
-      font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
-      margin: 0;
-      padding: 24px 14px 48px;
-      line-height: 1.6;
-    }
-    .container {
-      max-width: 920px;
-      margin: 0 auto;
-      background: rgba(23, 15, 42, 0.92);
-      border: 1px solid rgba(236, 72, 153, 0.4);
-      border-radius: 18px;
-      padding: 24px 26px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
-    }
-    .header-bar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid rgba(236, 72, 153, 0.28);
-      padding-bottom: 14px;
-      margin-bottom: 18px;
-    }
-    h1 {
-      font-size: 1.3rem;
-      margin: 0;
-      color: #f9a8d4;
-      letter-spacing: 0.3px;
-    }
-    .badge {
-      background: rgba(236, 72, 153, 0.18);
-      border: 1px solid rgba(244, 114, 182, 0.45);
-      color: #fbcfe8;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .banner-wrap {
-      margin: 14px 0 22px;
-      text-align: center;
-    }
-    .banner-wrap img {
-      max-width: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(251, 191, 36, 0.35);
-      box-shadow: 0 8px 28px rgba(0,0,0,0.55);
-    }
-    .log-line {
-      padding: 4px 0;
-      font-size: 0.96rem;
-      word-break: break-word;
-    }
-    .section-title {
-      margin-top: 12px;
-      padding: 6px 10px;
-      background: rgba(168, 85, 247, 0.14);
-      border-left: 3px solid #ec4899;
-      border-radius: 6px;
-      color: #fde047;
-      font-size: 1.02rem;
-    }
-    .turn-line {
-      padding: 6px 10px;
-      margin: 4px 0;
-      background: rgba(255, 255, 255, 0.03);
-      border-radius: 8px;
-      border-left: 2px solid rgba(244, 114, 182, 0.35);
-    }
-    .result-line {
-      margin-top: 14px;
-      padding: 10px 14px;
-      background: linear-gradient(90deg, rgba(236,72,153,0.22), rgba(234,179,8,0.16));
-      border: 1px solid rgba(250, 204, 21, 0.45);
-      border-radius: 10px;
-      font-size: 1.05rem;
-    }
-    .spacer { height: 8px; }
-    code {
-      background: rgba(15, 23, 42, 0.75);
-      color: #67e8f9;
-      padding: 2px 7px;
-      border-radius: 5px;
-      font-size: 0.9em;
-    }
-    strong { color: #fff; }
-    em { color: #cbd5e1; }
-    a { color: #38bdf8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    img.d-emoji {
-      width: 20px;
-      height: 20px;
-      vertical-align: -4px;
-      margin: 0 2px;
-    }
-    .footer-meta {
-      margin-top: 20px;
-      padding-top: 12px;
-      border-top: 1px solid rgba(255,255,255,0.1);
-      color: #94a3b8;
-      font-size: 0.84rem;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header-bar">
-      <h1>📜 NHẬT KÝ TRẬN ĐẤU CHI TIẾT (FULL 100% HIỆP)</h1>
-      <span class="badge">${escapeHtml(r.turnCount)} Hiệp • Mã trận: ${escapeHtml(cleanId)}</span>
-    </div>
-    <div class="banner-wrap">
-      <img src="/api/battle/report/${encodeURIComponent(cleanId)}.png" alt="Battle Report Card" loading="lazy">
-    </div>
-    <div class="log-body">
-      ${linesHtml}
-    </div>
-    <div class="footer-meta">
-      <span>🦊 SuMi Family • Tu Tiên Giới Đấu Trường HAX v1.1</span>
-      <span>Chế độ: ${escapeHtml(r.opponent_tier_label || r.mode || '1v1')}</span>
-    </div>
-  </div>
-</body>
-</html>`;
+  const headerEndIdx = (r.untruncatedLogLines || []).findIndex((l) => l.startsWith('**Diễn Biến'));
+  const rosterHtmlLines = headerEndIdx > 0 ? r.untruncatedLogLines.slice(0, headerEndIdx) : [];
+  const winnerSummaryHtml = stripDiscordTagsToHtml(
+    `${em('su_winner_trophy')} **KẾT QUẢ:** **${r.winner?.name}** (${r.winner?.pet}) chiến thắng **${r.loser?.name}** (${r.loser?.pet}) sau **${r.turnCount} hiệp**!${r.reward_summary ? ` • ${r.reward_summary}` : ''}`,
+  );
+
+  const html = renderInteractiveBattleLogPage({
+    battleId: cleanId,
+    title: `${r.combatants?.attacker?.name || 'Phe Công'} vs ${r.combatants?.defender?.name || 'Phe Thủ'}`,
+    subtitle: `${r.opponent_tier_label || r.mode || '1v1'} • ${r.combatants?.attacker?.petName || ''} vs ${r.combatants?.defender?.petName || ''}`,
+    totalTurns: r.turnCount || 1,
+    expiresAtMs: r.expiresAtMs || ((r.createdAtMs || Date.now()) + BATTLE_LOG_TTL_MS),
+    renderAllUrl: `/api/battle/logs/${encodeURIComponent(cleanId)}/render-all`,
+    turnImageTemplate: `/api/battle/logs/${encodeURIComponent(cleanId)}/turn/{turn}.webp`,
+    snapshots: snaps,
+    rosterHtmlLines,
+    winnerSummaryHtml,
+    themeAccent: '#ec4899',
+  });
 
   return { found: true, html };
 }
 
-function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
+export function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
   const getHpAtEndOfTurn = (tNum) => {
     let found = null;
     for (const t of turns) {
@@ -439,7 +377,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     return [
       {
         index: 1,
-        scale: 0.8,
+        scale: 0.72,
         isFinal: false,
         currentTurn: 0,
         totalTurns: turnCount,
@@ -450,7 +388,7 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
       },
       {
         index: 2,
-        scale: 1.4,
+        scale: 1.25,
         isFinal: true,
         currentTurn: turnCount,
         totalTurns: turnCount,
@@ -462,72 +400,40 @@ function buildAdaptiveFrames(turns, turnCount, initialHp, finalHp, headline) {
     ];
   }
 
-  if (turnCount <= 4) {
-    const hp1 = getHpAtEndOfTurn(1);
-    return [
-      {
-        index: 1,
-        scale: 0.8,
-        isFinal: false,
-        currentTurn: 1,
-        totalTurns: turnCount,
-        turnLabel: `ĐANG GIAO CHIẾN • HIỆP 1/${turnCount}`,
-        title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP 1/${turnCount}...`,
-        attackerHp: hp1.attacker,
-        defenderHp: hp1.defender,
-      },
-      {
-        index: 2,
-        scale: 1.4,
-        isFinal: true,
-        currentTurn: turnCount,
-        totalTurns: turnCount,
-        turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
-        title: headline,
-        attackerHp: finalHp.attacker,
-        defenderHp: finalHp.defender,
-      },
-    ];
+  // Discord render: H1 -> H5 -> H10 -> H15 -> H20 -> Final (thắng sớm dừng sớm)
+  const milestones = [1, 5, 10, 15, 20].filter((m) => m < turnCount);
+  if (milestones.length === 0) milestones.push(1);
+  const frames = [];
+  let idx = 1;
+  for (const m of milestones) {
+    const hp = getHpAtEndOfTurn(m);
+    frames.push({
+      index: idx,
+      scale: 0.72,
+      isFinal: false,
+      currentTurn: m,
+      totalTurns: turnCount,
+      turnLabel: `ĐANG GIAO CHIẾN • HIỆP ${m}/${turnCount}`,
+      title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP ${m}/${turnCount}...`,
+      attackerHp: hp.attackerHp,
+      defenderHp: hp.defenderHp,
+    });
+    idx += 1;
   }
 
-  const midTurn = Math.ceil(turnCount / 2);
-  const hp1 = getHpAtEndOfTurn(1);
-  const hpMid = getHpAtEndOfTurn(midTurn);
-  return [
-    {
-      index: 1,
-      scale: 0.8,
-      isFinal: false,
-      currentTurn: 1,
-      totalTurns: turnCount,
-      turnLabel: `ĐANG GIAO CHIẾN • HIỆP 1/${turnCount}`,
-      title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP 1/${turnCount}...`,
-      attackerHp: hp1.attacker,
-      defenderHp: hp1.defender,
-    },
-    {
-      index: 2,
-      scale: 0.8,
-      isFinal: false,
-      currentTurn: midTurn,
-      totalTurns: turnCount,
-      turnLabel: `ĐANG GIAO CHIẾN • HIỆP ${midTurn}/${turnCount}`,
-      title: `${em('su_crossed_swords')} ĐẤU TRƯỜNG LINH THÚ 1V1 • HIỆP ${midTurn}/${turnCount}...`,
-      attackerHp: hpMid.attacker,
-      defenderHp: hpMid.defender,
-    },
-    {
-      index: 3,
-      scale: 1.4,
-      isFinal: true,
-      currentTurn: turnCount,
-      totalTurns: turnCount,
-      turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
-      title: headline,
-      attackerHp: finalHp.attacker,
-      defenderHp: finalHp.defender,
-    },
-  ];
+  frames.push({
+    index: idx,
+    scale: 1.25,
+    isFinal: true,
+    currentTurn: turnCount,
+    totalTurns: turnCount,
+    turnLabel: `HIỆP ${turnCount} • KẾT THÚC`,
+    title: headline,
+    attackerHp: finalHp.attacker,
+    defenderHp: finalHp.defender,
+  });
+
+  return frames;
 }
 
 function formatEquipDetailedLines(c, compact = false) {
@@ -1229,15 +1135,49 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     attackerFirst = getEffSpd(attacker) >= getEffSpd(defender);
   }
 
+  const formatDomainTurnInfo = () => {
+    const da = domainState.attacker;
+    const dd = domainState.defender;
+    if (!da.hasDomain && !dd.hasDomain) return '';
+    const fa = da.hasDomain ? `${da.domain.name}: ${da.indestructible ? '∞' : da.energy}/${da.indestructible ? '∞' : da.maxEnergy}` : 'Trống';
+    const fb = dd.hasDomain ? `${dd.domain.name}: ${dd.indestructible ? '∞' : dd.energy}/${dd.indestructible ? '∞' : dd.maxEnergy}` : 'Trống';
+    return `Linh Mạch: ${fa} vs ${fb}`;
+  };
+
+  const turnSnapshots = [
+    {
+      turn: 0,
+      isFinal: false,
+      domainAtkEnergy: domainState.attacker.energy,
+      domainDefEnergy: domainState.defender.energy,
+      domainLabel: formatDomainTurnInfo(),
+      hpBars: [
+        { side: 'A', label: `${attacker.name} (${attacker.petName})`, hp: attacker.currentHp, prevHp: initialHp.attacker, maxHp: initialHp.attacker, shield: attacker.shield || 0 },
+        { side: 'B', label: `${defender.name} (${defender.petName})`, hp: defender.currentHp, prevHp: initialHp.defender, maxHp: initialHp.defender, shield: defender.shield || 0 },
+      ],
+      events: battleStartEvents.length > 0
+        ? battleStartEvents.map((ev) => `• ${em('su_thunder_hax')} **${ev.actor === attacker.id ? attacker.petName : defender.petName}**: ${ev.skill}`)
+        : ['• Đôi bên chuẩn bị khai chiến!'],
+    },
+  ];
+
   let turnNumber = 0;
 
   while (attacker.currentHp > 0 && defender.currentHp > 0 && turnNumber < maxTurns) {
     turnNumber += 1;
+    const prevAtkHp = attacker.currentHp;
+    const prevDefHp = defender.currentHp;
+    const startTurnIdx = turns.length;
+    const turnDomLogLines = [];
 
     if (turnNumber >= 2) {
       const dEvs = processTurnDomainPhase(turnNumber, attacker, defender, domainState, rng) || [];
       if (dEvs.length > 0) {
         domainEvents.push(...dEvs.map((e) => ({ ...e, turn: turnNumber })));
+        for (const ev of dEvs) {
+          const petLabel = ev.actor === attacker.id ? attacker.petName : defender.petName;
+          turnDomLogLines.push(`• ${em('su_realm_star')} **[Linh Vực • ${petLabel}]** ${ev.skill}`);
+        }
       }
     }
 
@@ -1416,6 +1356,37 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         }
       }
     }
+
+    const thisTurnActions = turns.slice(startTurnIdx).map((t) => {
+      const actorObj = t.actor === 'attacker' ? attacker : defender;
+      const targetObj = t.actor === 'attacker' ? defender : attacker;
+      if (t.action === 'skip') {
+        return `• ${em('su_shield_def')} **${actorObj.petName}**: ${t.haxTriggered || 'Mất lượt'}`;
+      }
+      if (t.action === 'miss') {
+        return `• **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
+      }
+      const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
+      const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
+      return `• **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+    });
+
+    turnSnapshots.push({
+      turn: turnNumber,
+      isFinal: false,
+      domainAtkEnergy: domainState.attacker.energy,
+      domainDefEnergy: domainState.defender.energy,
+      domainLabel: formatDomainTurnInfo(),
+      hpBars: [
+        { side: 'A', label: `${attacker.name} (${attacker.petName})`, hp: attacker.currentHp, prevHp: prevAtkHp, maxHp: initialHp.attacker, shield: attacker.shield || 0 },
+        { side: 'B', label: `${defender.name} (${defender.petName})`, hp: defender.currentHp, prevHp: prevDefHp, maxHp: initialHp.defender, shield: defender.shield || 0 },
+      ],
+      events: [...turnDomLogLines, ...thisTurnActions],
+    });
+  }
+
+  if (turnSnapshots.length > 0) {
+    turnSnapshots[turnSnapshots.length - 1].isFinal = true;
   }
 
   const attackerWon = attacker.currentHp > defender.currentHp;
@@ -1524,9 +1495,17 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     defender: defender.currentHp,
   };
   const framesMeta = buildAdaptiveFrames(turns, turnNumber, initialHp, finalHp, headline);
-  const frame1 = framesMeta[0];
-  const frame2 = framesMeta[1] || frame1;
+  const frameAt = (pos) => framesMeta[pos] || framesMeta[framesMeta.length - 1];
+  const frameUrlFor = (idxNum) => `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${idxNum}.webp`;
+  const frame1 = frameAt(0);
+  const frame2 = frameAt(1);
+  const frame3 = frameAt(2);
+  const frame4 = frameAt(3);
+  const frame5 = frameAt(4);
+  const frame6 = frameAt(5);
   const frameLast = framesMeta[framesMeta.length - 1];
+  const nowCreatedMs = Date.now();
+  const expiresAtMs = nowCreatedMs + BATTLE_LOG_TTL_MS;
 
   const finalResult = {
     success: true,
@@ -1535,11 +1514,14 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     linh_thach_delta: rewardInfo.delta || 0,
     reward_summary: rewardInfo.reward_summary || '',
     battleId,
+    createdAtMs: nowCreatedMs,
+    expiresAtMs,
     turnCount: turnNumber,
     winnerRole: attackerWon ? 'attacker' : 'defender',
     winner,
     loser,
     turns,
+    turnSnapshots,
     initialHp,
     finalHp,
     combatants: {
@@ -1578,17 +1560,28 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     reportImageUrl,
     frameCount: framesMeta.length,
     hasFrame3: framesMeta.length >= 3,
-    frame1Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/1.webp`,
+    hasFrame4: framesMeta.length >= 4,
+    hasFrame5: framesMeta.length >= 5,
+    hasFrame6: framesMeta.length >= 6,
+    frame1Url: frameUrlFor(frame1.index),
     frame1Title: frame1.title,
-    frame2Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/2.webp`,
+    frame2Url: frameUrlFor(frame2.index),
     frame2Title: frame2.title,
-    frame3Url: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${frameLast.index}.webp`,
-    finalImageWebpUrl: `${PUBLIC_BASE_URL}/api/battle/report/${battleId}/${frameLast.index}.webp`,
+    frame3Url: frameUrlFor(frame3.index),
+    frame3Title: frame3.title,
+    frame4Url: frameUrlFor(frame4.index),
+    frame4Title: frame4.title,
+    frame5Url: frameUrlFor(frame5.index),
+    frame5Title: frame5.title,
+    frame6Url: frameUrlFor(frame6.index),
+    frame6Title: frame6.title,
+    finalImageWebpUrl: frameUrlFor(frameLast.index),
     framesMeta,
     fullBattleLog,
     discordReport: fullBattleLog,
     untruncatedLogLines: logBundle.untruncatedLogLines,
     webLogUrl: logBundle.webLogUrl,
+    footer: '',
   };
 
   const frameBuffers = new Map();
@@ -1600,6 +1593,16 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     frameBuffers,
   });
 
+  const persistLogTask = saveBattleLogRecord({
+    battleId,
+    battleKind: safeOptions.battleKind || (mode === 'tower' ? 'tower' : '1v1'),
+    channelId,
+    participantIds: [attacker.id, defender.id],
+    payload: finalResult,
+    nowMs: nowCreatedMs,
+  });
+
+  // CHỈ pre-render tối đa 2-6 khung Discord (KHÔNG pre-render toàn bộ hiệp web!).
   const preRenderTask = safeOptions.preRender !== false
     ? Promise.all(
       framesMeta.map(async (f) => {
@@ -1607,10 +1610,13 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           const buf = await renderBattleCardQueued(`battle:${battleId}:${f.index}:webp`, finalResult, {
             scale: f.scale,
             format: 'webp',
-            webpQuality: f.scale <= 1 ? 80 : 84,
+            webpQuality: f.scale <= 1 ? 72 : 75,
             frame: f,
           });
-          if (buf) frameBuffers.set(f.index, buf);
+          if (buf) {
+            frameBuffers.set(f.index, buf);
+            setCachedTurnBuffer(battleId, `frame:${f.index}`, buf);
+          }
         } catch (err) {
           console.warn(`[BattleService] Pre-render frame ${f.index} failed:`, err.message);
         }
@@ -1649,7 +1655,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     ? trackQuestActivity(attacker.id, { battleDelta: 1, winDelta: attackerWon ? 1 : 0 })
     : Promise.resolve();
 
-  const bgTasks = Promise.allSettled([preRenderTask, clanWarTask, questTrackTask]);
+  const bgTasks = Promise.allSettled([persistLogTask, preRenderTask, clanWarTask, questTrackTask]);
   if (safeOptions.awaitBackgroundTasks) {
     await bgTasks;
   } else {

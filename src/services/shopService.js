@@ -45,6 +45,7 @@ import {
   getMaxRoleSlotsByLevel,
   computeRoleBuffTotals,
 } from './profileService.js';
+import { trackQuestActivity } from './questService.js';
 
 function applyShopDiscount(price, discountPct) {
   const p = Number(price || 0);
@@ -519,8 +520,8 @@ export async function buyShopItem(userId, payload = {}) {
       tower_reset_card: {
         dateCol: 'tower_reset_buy_date',
         countCol: 'tower_reset_buys_today',
-        defaultDaily: 3,
-        defaultStack: 10,
+        defaultDaily: 5,
+        defaultStack: 15,
       },
       enchant_stone: {
         dateCol: 'enchant_stone_buy_date',
@@ -742,6 +743,8 @@ export async function buyShopItem(userId, payload = {}) {
         extraNote = `\n• Role đã được lưu vào \`/inv\`. Các Slot (${maxSlots}/${maxSlots}) đang đầy — hãy dùng \`/unequip\` rồi \`/equip loai:role ma_id:${it.role_id}\`.`;
       }
     }
+
+    await trackQuestActivity(cleanId, { shopDelta: 1, now });
 
     return {
       success: true,

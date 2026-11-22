@@ -67,7 +67,7 @@ import { assertPngValid } from '../helpers/pngValidator.js';
 const ARTIFACT_DIR = 'C:\\Users\\Fuyumi-ASUSF16\\.gemini\\antigravity\\brain\\6c4e030b-fb59-4575-8414-9779337f61d9';
 
 test('v1.4 [1a] Leaderboard hides Fuyumi from all 4 /top tabs & Sunday 19:00 UTC+7 settlement logic', async () => {
-  assert.equal(LATEST_VERSION, '1.4.5');
+  assert.equal(LATEST_VERSION, '1.4.7');
 
   // Window test: Sunday 2026-11-22 19:05 UTC+7 = 2026-11-22T12:05:00Z
   assert.equal(isSundayWeeklySettlementWindow(new Date('2026-11-22T12:05:00Z')), true);
@@ -242,7 +242,7 @@ test('v1.4 [2b] Spirit Veins Golden Hours, Fatigue, Leader-only Domain, SPD orde
   assert.equal(resBoss.leaderDomainA.domain_id, 'domain_fuyumi_cuu_vi_hong_mong', 'Must use ONLY Team Leader Domain');
 
   const pngBoss = await renderTeamBattleCard(resBoss, { format: 'png' });
-  assertPngValid(pngBoss, 2000, 1150);
+  assertPngValid(pngBoss, 1800, 1035);
 
   // Also test 3v3 PvP render
   const teamB = [
@@ -252,7 +252,7 @@ test('v1.4 [2b] Spirit Veins Golden Hours, Fatigue, Leader-only Domain, SPD orde
   ];
   const res3v3 = simulateTeamBattle(teamA, teamB, { mode: '3v3', veinLabel: 'LINH MẠCH HẠNG S • TRANH ĐOẠT TỔ ĐỘI 3v3', rng: () => 0.42 });
   const png3v3 = await renderTeamBattleCard(res3v3, { format: 'png' });
-  assertPngValid(png3v3, 2000, 1150);
+  assertPngValid(png3v3, 1800, 1035);
 
   // Save visual verification snapshots to artifact dir if it exists
   if (fs.existsSync(ARTIFACT_DIR)) {
@@ -493,15 +493,15 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
     rng: () => 0.42,
   });
   assert.ok(soloBattle.webLogUrl.includes(`/api/vein/battle/${soloBattle.battleId}/view`));
-  const logPayload = getTeamBattleLogPayload({ battleId: soloBattle.battleId });
+  const logPayload = await getTeamBattleLogPayload({ battleId: soloBattle.battleId });
   assert.equal(logPayload.found, true);
   assert.match(logPayload.description, /Hiệp 1/);
-  const htmlLog = renderTeamBattleLogHtml(soloBattle.battleId);
+  const htmlLog = await renderTeamBattleLogHtml(soloBattle.battleId);
   assert.equal(htmlLog.found, true);
   assert.match(htmlLog.html, /Cửu Vĩ Hồng Hồ/);
 
   const pngSolo = await renderTeamBattleCard(soloBattle, { format: 'png' });
-  assertPngValid(pngSolo, 2000, 1150);
+  assertPngValid(pngSolo, 1800, 1035);
 
   const ally2 = applyFatigueToCombatant({
     id: 'ally_duo_2',
@@ -521,7 +521,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
     rng: () => 0.42,
   });
   const pngDuo = await renderTeamBattleCard(duoBattle, { format: 'png' });
-  assertPngValid(pngDuo, 2000, 1150);
+  assertPngValid(pngDuo, 1800, 1035);
 
   const ally3 = applyFatigueToCombatant({
     id: 'ally_trio_3',
@@ -545,7 +545,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
     { mode: '3v3', veinLabel: 'LINH MẠCH HẠNG S • TRANH ĐOẠT TỔ ĐỘI 3v3', rng: () => 0.42 },
   );
   const png3v3 = await renderTeamBattleCard(team3v3Battle, { format: 'png' });
-  assertPngValid(png3v3, 2000, 1150);
+  assertPngValid(png3v3, 1800, 1035);
 
   if (fs.existsSync(ARTIFACT_DIR)) {
     fs.writeFileSync(path.join(ARTIFACT_DIR, 'prod_vein_solo_1vboss_v141.png'), pngSolo);
@@ -698,7 +698,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 });
 
 test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog', async () => {
-  assert.equal(LATEST_VERSION, '1.4.5');
+  assert.equal(LATEST_VERSION, '1.4.7');
   const ch145 = getChangelogPayload('1.4.5');
   assert.equal(ch145.success, true);
   assert.equal(ch145.version, '1.4.5');
@@ -744,7 +744,7 @@ test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog',
     assert.equal(noobRes.chat_boost_pct, 0);
     assert.equal(noobRes.voice_boost_pct, 0);
     assert.equal(noobRes.chat_multiplier, 1);
-    assert.equal(noobRes.chat_exp_avg, 25);
+    assert.equal(noobRes.chat_exp_avg, 29);
     assert.equal(noobRes.voice_exp_avg, 110);
     assert.equal(noobRes.voice_exp_hour_avg, 1320);
 
@@ -760,7 +760,7 @@ test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog',
       assert.equal(boostRes.chat_boost_pct, 65);
       assert.equal(boostRes.voice_boost_pct, 65);
       assert.equal(boostRes.chat_multiplier, 1.65);
-      assert.equal(boostRes.chat_exp_avg, 41.3);
+      assert.equal(boostRes.chat_exp_avg, 47.8);
       assert.equal(boostRes.voice_exp_avg, 181.5);
       assert.equal(boostRes.voice_exp_hour_avg, 2178);
       assert.equal(boostRes.breakdown.level_exp_pct, 20);

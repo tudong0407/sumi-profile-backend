@@ -5,194 +5,140 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.4.5';
+export const LATEST_VERSION = '1.4.7';
+export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
+export const BIG_UPDATE_ACK_REWARD_LT = 1500;
 
 export const CHANGELOGS = [
   {
-    version: '1.4.5',
-    title: 'THỐNG KÊ BOOST /EXP, ROLE GRADIENT 2 MÀU & HOÀN THIỆN HỆ THỐNG v1.4.5',
-    released_at: '2026-11-22',
+    version: '1.4.7',
+    title: 'CẬP NHẬT v1.4.7 — /AUTOSELL, THÁP 500 TẦNG, WEB LOGS & CÂN BẰNG',
+    released_at: '2026-11-23',
     color: '#ec4899',
-    summary: 'Ra mắt lệnh /exp xem chi tiết % Boost Chat & Voice cùng sản lượng EXP trung bình mỗi tin nhắn / 5 phút Voice; nâng cấp Gradient 2 màu cho 19 Role Quyền Năng cao cấp; tối giản /equip còn 1 tham số ma_id; đồng bộ khóa đồ /profile ↔ /battle ↔ /explorer, Nhật Ký Web Linh Mạch & tự phục hồi Level Roles.',
+    is_big_update: false,
+    ack_reward_lt: 800,
+    summary: 'Ra mắt /autosell cho /roll; tăng tốc render /battle & xem lại từng hiệp trên Web Logs (48h); nâng Tháp Thí Luyện lên 500 tầng (+Linh Vực từ F70); xoay vòng Daily Quest (+10% LT), Chat EXP +15% & thưởng +800 LT khi xác nhận bản cập nhật mới.',
     sections: [
       {
-        heading: `${em('su_level_up', '📈')} Lệnh Mới /exp & Sắc Màu Role Gradient 2 Màu`,
+        heading: `${em('su_gacha_dice', '🎲')} Lệnh Mới /autosell & Tối Ưu /battle + Web Logs`,
         bullets: [
-          '**Lệnh Mới `/exp [user]`:** Thống kê tổng **% Boost EXP Chat & Voice** từ cả 4 nguồn *(Mốc Level Role + Role Quyền Năng đang đeo + Tiên Lữ `/marry` + Gia Tộc `/giatoc`)* và tính trực tiếp lượng EXP trung bình nhận được cho **1 tin nhắn (45s)**, **5 phút Voice**, **1 giờ Voice** & ước tính lên cấp kế tiếp.',
-          '**Role Quyền Năng Gradient 2 Màu:** Làm mới hiển thị Discord Role theo đẳng cấp — **8 Linh Phẩm** mang Gradient 2 sắc hài hòa tinh tế, **6 Tiên Phẩm** & **5 Thần Thoại** mang Gradient 2 màu tương phản rực rỡ *(giữ nguyên 21 Phàm Phẩm)*.',
+          '**`/autosell [pham_pham] [linh_pham] [tien_pham] [giu_mon_moi]`:** Tự động bán Pháp Bảo, Linh Thú, Linh Vực & Role trùng phẩm chất ngay khi `/roll` *(tự kế thừa Khắc Ấn cao hơn trước khi bán; không bao giờ bán Thần Thoại)*.',
+          '**`/battle` Nhanh Hơn & Web Logs Theo Từng Hiệp (48h):** Giảm nhẹ `-10%` chất lượng để tăng tốc render; Discord hiển thị mốc **Hiệp `1 / 5 / 10 / 15 / 20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để render từng hiệp, theo dõi tụt HP & tua lại lượt trên web *(lưu 48 giờ)*.',
         ],
       },
       {
-        heading: `${em('su_crossed_swords', '⚔️')} Tối Giản /equip, Linh Mạch Solo/Team & Nhật Ký Web`,
+        heading: `${em('su_tower_boss', '🗼')} Tháp 500 Tầng, Daily Quest Xoay Vòng & Chat EXP +15%`,
         bullets: [
-          '**`/equip <ma_id>` Tối Giản 1 Tham Số:** Bỏ chọn loại `loai`, chỉ cần nhập 1 mã UID, Emoji `/inv`, Role ID hoặc Tên là bot tự động nhận diện Pháp Bảo, Linh Vực / Thần Thức / Thần Cảnh, Linh Thú, Ảnh Nền, Khung Avatar hay Role *(đổi danh hiệu: `title:Tên Mới`)*.',
-          '**Chiến Báo `/linhmach` & Web Battle Logs:** Nâng cấp giao diện khung Solo (1vBOSS) cân xứng 2 bên, Duo (2vBOSS) & Trio (3v3), thêm nút **`Xem Nhật Ký Trận Đấu`** và trang Web chi tiết 3 phần + diễn biến Đạo Áp như `/battle`.',
+          '**Tháp Thí Luyện 500 Tầng:** Buff nền **+10%**, random chiến lực **±12%/trận**, tăng giới hạn mua Thẻ Reset Tháp lên **5 lần/ngày** *(tối đa 15 thẻ)*; NPC bật **Linh Vực từ F70** *(+Thần Thức F150, +Thần Cảnh F250)*, tỉ lệ Thần Thoại tăng dần tới **100% từ F100+** & phân bậc Khắc Ấn `D → S`.',
+          '**Nhiệm Vụ Ngày Mới (+10% LT) & Chat EXP +15%:** 2 nhiệm vụ cố định + 3 nhiệm vụ xoay vòng từ 10 hoạt động *(mốc 5/5: `+130 LT` + quà)*; Chat EXP gốc tăng lên **23–35 EXP/tin**. Xác nhận bản cập nhật mới nhận ngay **+800 LT**!',
         ],
       },
       {
-        heading: `${em('explorer_world_map_v14', '🗺️')} Khám Phá /explorer, /wiki explorer & Tự Phục Hồi Level Role`,
+        heading: `${em('su_wiki_scroll', '📖')} Gọn Hơn Cho /wiki, /updates & Gỡ Footer Thừa`,
         bullets: [
-          '**Nâng Cấp `/explorer` & `/wiki chuyen_muc:explorer`:** Mặc định dùng Loadout **Pet Chính** cho mọi người chơi mới, giữ nút Chỉnh Loadout liên tiếp, ẩn nút Hồi Sinh khi chưa có Pet trọng thương, hỗ trợ mua thức ăn tại chỗ và chuyển Bản Đồ 4K & Đồ Rơi sang **`/wiki explorer`**.',
-          '**Đồng Bộ Khóa Đồ & Tự Phục Hồi Level Role:** Khóa chặt Pháp Bảo / Linh Vực đang đi thám hiểm đồng nhất giữa `/profile`, `/battle`, `/equip` & `/linhvuc`; tự động kiểm tra và cấp bù Level Role (`Lv.5–100`) trên Chat, Voice và Keep-Alive 12p.',
+          'Rút gọn toàn bộ `/wiki` & `/updates` súc tích, đồng bộ **165 Pháp Bảo** *(3 dropdown mỗi loại)* và **90 Linh Thú** *(5 dropdown trực tiếp)*, bổ sung các lệnh còn thiếu & gỡ toàn bộ footer không cần thiết.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.4.5',
+    title: 'THỐNG KÊ /EXP, GRADIENT ROLE & HOÀN THIỆN HỆ THỐNG v1.4.5',
+    released_at: '2026-11-22',
+    color: '#ec4899',
+    ack_reward_lt: 800,
+    summary: 'Ra mắt /exp xem % Boost Chat/Voice, nâng cấp Gradient 2 màu cho Role cao cấp, tối giản /equip còn 1 tham số ma_id & tự phục hồi Level Role.',
+    sections: [
+      {
+        heading: `${em('su_level_up', '📈')} Lệnh /exp, Gradient Role & /equip 1 Chạm`,
+        bullets: [
+          '**`/exp [user]` & Gradient Role:** Xem tổng % Boost Chat/Voice từ Level, Role, Tiên Lữ, Gia Tộc; cấp Gradient 2 màu cho Role Linh / Tiên / Thần Thoại.',
+          '**`/equip <ma_id>` & Đồng Bộ Tài Sản:** Tự nhận diện Pháp Bảo, Linh Vực, Pet, Ảnh Nền, Khung, Role qua 1 mã UID/Emoji; tự cấp bù Level Roles & đồng bộ Nhật Ký Web `/linhmach`.',
         ],
       },
     ],
   },
   {
     version: '1.4',
-    title: 'ĐẠO ÁP CỬU CHÂU, CHIẾM ĐOẠT LINH MẠCH & ĐẠI THÁM HIỂM v1.4',
+    title: 'ĐẠO ÁP CỬU CHÂU, CHIẾM LINH MẠCH & KHÁM PHÁ v1.4',
     released_at: '2026-11-22',
     color: '#ec4899',
-    summary: 'Khai mở Đạo Áp (Debuff Cấp 2 cho 16 Linh Vực Thần Thoại), Shop Ngày giảm giá 15–40%, Chiếm Đoạt Linh Mạch Tổ Đội 3 người (/party & /linhmach), Khám Phá Đại Lục 12 địa danh (/explorer), Vinh Danh Top 10 Lực Chiến 19:00 Chủ Nhật và tái cấu trúc UI Component V2.',
+    ack_reward_lt: 800,
+    summary: 'Mở Đạo Áp Cấp 2 cho Linh Vực Thần Thoại, Shop Ngày giảm giá 15–40%, Tổ Đội Chiếm Linh Mạch (/party, /linhmach) & Khám Phá 12 địa danh (/explorer).',
     sections: [
       {
-        heading: `${em('dao_ap_crest', '⚡')} Đạo Áp Cấp 2, Top Lực Chiến & Nâng Cấp UI Component V2`,
+        heading: `${em('dao_ap_crest', '⚡')} Đạo Áp, Shop Ngày, Linh Mạch & Khám Phá`,
         bullets: [
-          '**Debuff Cấp 2 « Đạo Áp »:** Toàn bộ **16 Linh Vực Thần Thoại** sở hữu Đạo Áp khai mở ở hiệp kế tiếp sau khi đánh vỡ Linh Vực địch (`1–2` lượt Thần Thoại Thường / `3` lượt Độc Nhất, tăng mạnh `+20%–30%` hiệu lực Debuff gốc).',
-          '**Vinh Danh 19:00 Chủ Nhật (`/top`):** Tự động tổng kết **Top 10 Lực Chiến** vào 19:00 Chủ Nhật hàng tuần kèm quà Linh Thạch, Thẻ Reset Tháp, Đá Khắc Ấn, Lương Thảo Khám Phá & Vé Roll.',
-          '**Trải Nghiệm Mượt Mà:** `/slots` dừng từng ô từ trái sang phải; `/crash` & `/blackjack` cập nhật trực tiếp tại chỗ giữ nguyên nút bấm; `/giatoc` chuyển sang bảng **Component V2 + Nút & Dropdown** duyệt đơn/quản lý thành viên cực gọn.',
-        ],
-      },
-      {
-        heading: `${em('vein_mine_sp', '⛰️')} Shop Ngày, Tổ Đội /party & Chiếm Đoạt Linh Mạch (/linhmach)`,
-        bullets: [
-          `**Shop Ngày (${em('daily_shop_emblem', '🏮')} Vạn Bảo Lưu Động Các — \`/shop\`):** Reset 00:00 mỗi ngày chung toàn server với 10 gian hàng giảm **15%–40%**, có cả **Linh Thú & Pháp Bảo Thần Thoại** *(sẵn Khắc Ấn bậc B/A)* và 4 vật phẩm Khám Phá mới.`,
-          '**Chiếm Đoạt Linh Mạch (`/party` & `/linhmach`):** Mở vào **6 Khung Giờ Vàng** (`08h, 12h, 18h, 20h, 21h, 22h` UTC+7, mỗi đợt 1 giờ với 1 Mỏ Thấp `F–C` & 1 Mỏ Cao `B–S+`), đấu Tổ Đội tối đa **3 người** (3vBoss / 3v3 theo thứ tự SPD, dùng Linh Vực Đội Trưởng), sản lượng `6–56 LT/phút` chia đều đội (`+15%` Ngân Khố Tộc nếu cùng Gia Tộc), kèm ảnh Chiến Báo Tổ Đội 3 người!',
-        ],
-      },
-      {
-        heading: `${em('explorer_world_map_v14', '🗺️')} Khám Phá Đại Lục Cửu Châu (/explorer) & Đá Khắc Ấn Tuyệt Đối`,
-        bullets: [
-          '**Bản Đồ 12 Địa Danh (`10k → 1M` Lực, Dễ → Nightmare):** Chọn mốc `2 / 3 / 6 / 12` giờ, trang bị **Loadout Khám Phá** riêng *(Pet chính hoặc Pet phụ + 3 Pháp Bảo + 1 Linh Vực)* kèm 3 loại Thức Ăn (`Hộ Mệnh Linh Đan`, `Tụ Bảo Tiên Trà`, `Ngự Phong Tốc Quả`).',
-          `**Sống Sót, Tử Nạn & Nhặt Đồ Rơi 60%:** Vượt ải nhận \`200–300 LT/giờ\` + vật phẩm + cơ hội rơi ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(0.5% — Khắc Ấn 100% mọi bậc, khuyên dùng A→S)* & Vũ Khí Thần Thoại *(0.01%)*. Nếu tử nạn, Pet Độc Nhất hồi sinh bằng ${em('explorer_revive_elixir', '🧪')} **Cửu Chuyển Hoàn Hồn Lộ**, còn Pháp Bảo không Độc Nhất rớt tại tọa độ Map chờ tu sĩ đi sau nhặt với tỉ lệ **60%**!`,
+          '**Đạo Áp & Shop Ngày:** Linh Vực Thần Thoại kích hoạt Đạo Áp khi phá Vực địch (`+20%–30%` hiệu lực); Shop Ngày reset `00:00` với 10 ô giảm `15%–40%`.',
+          '**`/party`, `/linhmach` & `/explorer`:** Lập tổ đội 3 người tranh mỏ Linh Mạch theo 6 khung giờ vàng; khám phá 12 địa danh (`2/3/6/12h`) săn Đá Khắc Ấn Tuyệt Đối `0.5%` & nhặt đồ rơi `60%`.',
+          '**Top Tuần & Minigame UI:** Tự tổng kết Top 10 Lực Chiến `19:00` Chủ Nhật; `/slots`, `/crash`, `/blackjack`, `/giatoc` cập nhật tại chỗ.',
         ],
       },
     ],
   },
   {
     version: '1.3.1',
-    title: 'ĐỒNG BỘ HIỂN THỊ LINH VỰC, KHO LINH THÚ & SƠ ĐỒ NGŨ VỰC v1.3.1',
+    title: 'HIỂN THỊ LINH VỰC & SƠ ĐỒ NGŨ VỰC v1.3.1',
     released_at: '2026-11-22',
     color: '#ec4899',
-    summary: 'Hiển thị trực quan biểu tượng Linh Vực • Thần Thức • Thần Cảnh trên thẻ /profile & /battle, nâng cấp Sơ Đồ 5 Hệ Linh Vực trên /wiki và bổ sung huy hiệu Phẩm Chất & Ngũ Hành trong Kho Linh Thú.',
+    ack_reward_lt: 800,
+    summary: 'Hiển thị biểu tượng Linh Vực • Thần Thức • Thần Cảnh trên /profile & /battle, nâng cấp sơ đồ Ngũ Vực trên /wiki.',
     sections: [
       {
-        heading: `${em('su_realm_star')} Giao Diện Linh Vực Trên /profile & /battle`,
+        heading: `${em('su_realm_star')} Giao Diện Linh Vực & Bách Khoa`,
         bullets: [
-          '**Thẻ `/profile`:** Bổ sung khu vực **Linh Vực • Thần Thức • Thần Cảnh** cân xứng tại bảng phải với đầy đủ Logo riêng, Hệ Vực và Tổng Linh Mạch.',
-          '**Thẻ `/battle` & Nhật Ký:** Gắn huy hiệu **Linh Vực** kèm **2 icon Thần Thức / Thần Cảnh** ngay góc trên phải mỗi đấu sĩ cùng khung **Đối Đầu Linh Vực (Hiệp 2+)** tại cột giữa; bổ sung biểu tượng đồng bộ cho Thần Thức & Thần Cảnh trong Nhật Ký trận đấu.',
-        ],
-      },
-      {
-        heading: `${em('su_wiki_scroll')} Biểu Tượng Ngũ Đại Linh Vực & Kho Linh Thú`,
-        bullets: [
-          '**Cẩm Nang `/wiki battle`:** Tích hợp biểu tượng riêng cho 5 Hệ Linh Vực (`Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực`) và nâng cấp ảnh sơ đồ 3 cột trực quan.',
-          '**Kho Linh Thú (`/inv` & `/linhthu`):** Bổ sung biểu tượng & nhãn **Phẩm Chất** *(Phàm / Linh / Tiên / Thần Thoại / Tối Thượng)* cùng **Hệ Ngũ Hành** đồng bộ với Kho Pháp Bảo và kết quả `/roll`.',
+          'Hiển thị huy hiệu Linh Vực • Thần Thức • Thần Cảnh trên thẻ `/profile`, `/battle`, `/inv`, `/linhthu` và sơ đồ 5 Hệ Vực trên `/wiki`.',
         ],
       },
     ],
   },
   {
     version: '1.3',
-    title: 'ĐẠI CẢI TỔ LÃNH ĐỊA, NÔNG TRẠI & BÁCH KHOA V1.3',
+    title: 'LÃNH ĐỊA LINH VỰC, NÔNG TRẠI & BÁCH KHOA v1.3',
     released_at: '2026-11-22',
     color: '#ec4899',
-    summary: 'Khai mở hệ thống Linh Vực • Thần Thức • Thần Cảnh, bổ sung 50 Linh Thú & 100 Pháp Bảo cân bằng (<= 15%), Nông Trại /farm & /exchange, 4 thức chơi Linh Thạch, chuẩn hóa Emoji UID và đồng bộ toàn bộ /wiki.',
+    ack_reward_lt: 800,
+    summary: 'Ra mắt Linh Vực (/linhvuc), 90 Linh Thú & 165 Pháp Bảo cân bằng <=15%, Nông Trại (/farm, /exchange) và 4 Minigame Linh Thạch.',
     sections: [
       {
-        heading: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (/linhvuc • /roll loai:domain)`,
+        heading: `${em('su_realm_star')} Linh Vực, Nông Trại & 4 Minigame`,
         bullets: [
-          '**30 Linh Vực, 15 Thần Thức & 15 Thần Cảnh** (kèm 5 Linh Vực Thần Thoại Độc Nhất Toàn Server) chính thức gia nhập đấu trường từ **Hiệp 2**.',
-          '**Cơ chế Chiến Thuật Tinh Tế:** Linh Vực không cộng thẳng chỉ số cơ bản mà cường hóa **Buff xuyên giáp/HAX** phe mình và **Debuff** đối phương theo vòng tương khắc **5 Hệ (`Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực`)**, tiêu hao `1` hoặc `2 Linh Mạch`/hiệp khi giằng co.',
-          '**Thần Thức** gia tăng giới hạn Linh Mạch & hiệu lực Buff; **Thần Cảnh** cường hóa Debuff & bổ sung hiệu ứng bất lợi mới.',
-        ],
-      },
-      {
-        heading: `${em('su_crossed_swords')} Mở Rộng 50 Linh Thú & 100 Pháp Bảo Mới (Cân Bằng <= 15%)`,
-        bullets: [
-          'Tổng cộng **90 Linh Thú tiêu chuẩn** *(gồm 10 Thần Thoại Độc Nhất + 40 Thần Thoại Tự Do)* & **165 Pháp Bảo Loadout** *(57 Vũ Khí / 54 Bảo Ngọc / 54 Chiến Hồn, gồm 39 Độc Nhất + 56 Thần Thoại Tự Do)* với nội tại HAX đa dạng và cân bằng biên độ **tối đa 15%** giữa Độc Nhất và Thường.',
-          'Chuẩn hóa **100% Emoji UID** cho toàn bộ Linh Thú, Pháp Bảo, Linh Vực, Vật Phẩm (nhận trực tiếp UID/Emoji trên `/info`, `/equip`, `/dismantle`, `/enchant`, `/linhvuc`) & khôi phục biểu tượng **Lệnh Bài Ảnh Nền** (`frame_unlock_token`) trên `/inv`.',
-        ],
-      },
-      {
-        heading: `${em('su_sprout')} Nông Trại (/farm • /exchange), Giải Trí & Kinh Tế Tu Tiên`,
-        bullets: [
-          '**Nông Trại Thời Gian Thực (`/farm` & `/exchange`):** Canh tác **Linh Điền** & ấp trứng **Linh Các** (`4 → 6 ô`, chu kỳ `6h/12h/24h`), chăm sóc đúng khung giờ để thu **Linh Thạch** & **Linh Quả Tiên Giới** (`farm_essence`) quy đổi Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset Tháp.',
-          '**4 Thức Chơi Linh Thạch (`10–10.000 LT`):** Ra mắt `/coinflip` *(1:2)*, `/blackjack` *(1:2)*, `/slots` *(4 ô, tối đa 1:5)* và `/crash` *(Ngự Kiếm)* kèm hiệu ứng hoạt ảnh trực quan.',
-          '**Nâng Cấp Nhiệm Vụ & Lao Động:** Giới hạn `/job` tăng lên **8 ca/ngày**; `/nhiemvu` mở rộng thành **5 Nhiệm Vụ Ngày** *(+15/+20/+25/+20/+20 LT)* + thưởng hoàn tất **5/5** hậu hĩnh hơn; đồng bộ dữ liệu `/wiki` *(Voice EXP 85–135/5p chấm công 12p)* và tri thức Bot Nhiễm Nhiễm theo văn phong trang trọng.',
+          '**`/linhvuc` & Mở Rộng Kho:** 30 Linh Vực, 15 Thần Thức, 15 Thần Cảnh vào trận từ Hiệp 2; mở rộng lên **90 Pet** & **165 Pháp Bảo** *(chuẩn hóa Emoji UID)*.',
+          '**`/farm`, `/exchange` & Minigame:** Trồng trọt/ấp trứng (`6h/12h/24h`) lấy Linh Quả đổi quà; ra mắt `/coinflip`, `/blackjack`, `/slots`, `/crash`; tăng `/job` lên `8 ca/ngày`.',
         ],
       },
     ],
   },
   {
     version: '1.2',
-    title: 'ĐẠI CẢI TỔ PHÁP ẤN & KINH TẾ TU TIÊN v1.2',
+    title: 'KHẮC ẤN D→S & KINH TẾ TU TIÊN v1.2',
     released_at: '2026-11-22',
     color: '#a855f7',
-    summary: 'Cường hóa Phẩm Chất D→S, Tháp 200 Tầng cân bằng, Nghề Tu Tiên (/job), Túi Đồ biểu tượng kèm số lượng, Chốt Gacha Thần Thoại 0.5% & Tăng tốc /battle.',
+    ack_reward_lt: 800,
+    summary: 'Mở Khắc Ấn D→S (/enchant), Tháp 200 tầng, 6 Nghề /job, Hợp Đồng Tuần & cộng dồn /inv.',
     sections: [
       {
-        heading: `${gradeEmoji('S')} Khắc Ấn Phẩm Chất D → C → B → A → S (/enchant)`,
+        heading: `${gradeEmoji('S')} Khắc Ấn D→S, Nghề & Cộng Dồn /inv`,
         bullets: [
-          'Mỗi Linh Thú & Pháp Bảo mới nhận đều ngẫu nhiên phẩm chất **D (`40%`, +0%) / C (`32%`, +6%) / B (`20%`, +14%) / A (`8%`, +24%)** — **0%** rơi thẳng **S**.',
-          `Dùng **Đá Khắc Ấn** ${em('enchant_stone')} (\`150 LT\` trong \`/shop\`, mua tối đa \`5/ngày\` + rơi ở **Boss Tháp mỗi 5 tầng**) qua \`/enchant\` để đột phá tới **Hạng S (+40% chỉ số gốc)**.`,
-          'Cơ chế **Pity (+5%/lần xịt)** đảm bảo càng ép càng dễ lên, rớt không tụt hạng!',
-        ],
-      },
-      {
-        heading: `${em('su_tower_boss', '🗼')} Tháp Thí Luyện 200 Tầng & Hợp Đồng Tuần`,
-        bullets: [
-          '**Tháp nâng lên 200 Tầng (`4 × 50`):** 1–50 Phàm → 51–100 Linh → 101–150 Tiên → 151–200 Thần Thoại. Toàn bộ NPC xoay vòng đủ **40 Linh Thú**, đeo **1–3 Pháp Bảo** & **kích hoạt 100% HAX**!',
-          '**Boss Tháp (mỗi 5 tầng):** Thưởng **`+1 Tinh Thạch` + `1 Đá Khắc Ấn`**; mốc 50/100/150/200 thưởng lớn tới `+5.000 LT + 25 Đá`.',
-          '**6 Nghề Tu Tiên (`/job`)** (hồi `1h/ca`, tối đa `6 ca/ngày`): Quét sân, Rửa bát, Tưới cây, Giao trà sữa, Câu cá, Tuần tra nhận Linh Thạch & EXP; kèm **3 Hợp Đồng Tuần** trong `/nhiemvu` (reset Thứ Hai `00:00`).',
-        ],
-      },
-      {
-        heading: `${em('su_wiki_scroll')} Lệnh Mới, Túi Đồ /inv & Cân Bằng Kinh Tế`,
-        bullets: [
-          '**Túi Đồ `/inv` Biểu Tượng & Cộng Dồn Khi `/roll` Trùng:** Hiển thị `<Emoji>⁰⁰¹` thoáng mắt (đồ đang trang bị xếp đầu trước dấu **`|`**), quay trùng tự cộng số lượng (`⁰⁰¹ → ⁰⁰²`) kèm **Kế Thừa Tư Chất Cao Nhất (`max(D..S)`)**; thêm Dropdown chuyển tab và lệnh `/roles` riêng. `/info`, `/equip`, `/dismantle`, `/enchant` nhận cả Emoji!',
-          '**`/updates` + Xác Nhận Lần Đầu:** Gõ `/updates` luôn mở bản mới nhất & có Dropdown chọn lại `v1.1` / `v1.2`. Lần đầu vào game sau cập nhật chỉ cần bấm Xác Nhận 1 lần.',
-          '**Cân Bằng Kinh Tế:** Chốt tỷ lệ **Thần Thoại `0.5%`** đều cả **3 Gacha (Pháp Bảo / Linh Thú / Role)**. Siết giá `/dismantle` chống farm Gacha, mở rã hàng loạt (`all_common/rare/epic`, `all_dup`) cho cả **Pet, Pháp Bảo & Role**.',
-          '**Tăng Tốc `/battle`:** Khắc phục triệt để lỗi treo `ĐANG TRIỆU HỒI...`, trả trận dưới `0.5s`, cooldown `5s/trận` mượt mà.',
+          '**`/enchant` & Hợp Đồng Tuần:** Cường hóa `D → S` (`+0%..+40%`, Pity `+5%`, dùng Đá Khắc Ấn); thêm 6 Nghề `/job` & 3 Hợp Đồng Tuần.',
+          '**`/inv` & Gacha `0.5%`:** Tự cộng dồn & giữ tư chất cao nhất khi `/roll` trùng; chốt tỉ lệ Thần Thoại `0.5%` và chống farm `/dismantle`.',
         ],
       },
     ],
   },
   {
     version: '1.1',
-    title: 'ĐẠI NÂNG CẤP TU TIÊN GIỚI v1.1 — HAX & ĐẤU TRƯỜNG',
+    title: 'HỆ THỐNG HAX, ĐẤU TRƯỜNG PVE & LỆNH TRA CỨU v1.1',
     released_at: '2026-11-21',
     color: '#ec4899',
-    summary: 'Mở rộng gấp đôi kho Linh Thú & Pháp Bảo, đại tu HAX Engine, bổ sung PvE Tự Do, Thẻ Reset Tháp và bộ lệnh tra cứu nhanh.',
+    ack_reward_lt: 800,
+    summary: 'Kích hoạt HAX Engine, bổ sung PvE Tự Do, Thẻ Reset Tháp, Voice EXP +20% và bộ lệnh /info, /phapbao, /linhthu.',
     sections: [
       {
-        heading: `${em('su_sparkle')} Tính Năng & Cơ Chế Mới`,
+        heading: `${em('su_sparkle')} HAX Engine, PvE Tự Do & Tra Cứu`,
         bullets: [
-          '**40 Linh Thú & 65 Pháp Bảo Loadout:** Thêm 20 Linh Thú mới + 20 Pháp Bảo mới (6 Thần Thoại mới không khóa Unique cho mọi người cùng săn).',
-          '**Thẻ Reset Lượt Đi Tháp (`200 LT`):** Bán trong `/shop` (giới hạn `3/ngày`, giữ tối đa `10` trong túi). Dùng qua `/nhiemvu hanh_dong:reset` để hồi `5/5` lượt Tháp.',
-          '**Đấu Trường PvE Tự Do (`/battle` bỏ trống đối thủ):** Đánh không giới hạn; `25` lượt nhận thưởng/ngày (Thắng `+10 LT`, Thua `-5 LT`, PvP tối đa `15/ngày`). Tháp Thắng cộng thêm `+10 LT`, Thua `-5 LT`.',
-          '**Thưởng Linh Thạch Lên Cấp (1 lần/cấp):** Vượt cấp mới nhận `+50` đến `+400 LT`/cấp + thưởng lớn tại mỗi mốc `10` cấp (chống đốt EXP `/doiqua` cày lại).',
-          '**Huy Hiệu Cấp Role 4 Bậc:** Phân biệt rõ Phàm / Linh / Tiên / Thần Thoại trên `/inv`, `/shop`, `/info` và `/wiki`.',
-          '**Hiển Thị Sao Linh Thú (`10★`) & Log Battle Chi Tiết:** Xem ngay số sao trên thẻ `/profile` & `/battle`, kèm log chi tiết HAX Vũ Khí/Pet.',
-        ],
-      },
-      {
-        heading: `${em('su_wiki_scroll')} Lệnh Mới & Nâng Cấp Lệnh`,
-        bullets: [
-          '`/info <ma_id>` — Tra cứu trực tiếp Linh Thú, Pháp Bảo, Role, Vật Phẩm, nguồn rơi & giá thu hồi.',
-          '`/phapbao` — Xem toàn bộ Pháp Bảo không bị cắt dòng, kèm Dropdown lọc & sắp xếp ở hàng trên cùng.',
-          '`/linhthu` — Thêm Dropdown sắp xếp theo Chiến Lực / Phẩm / Cấp / Sao ở hàng trên cùng.',
-          '`/dismantle` — Phá hàng loạt Pháp Bảo qua danh sách cách dấu phẩy hoặc `all_common` / `all_rare` / `all_epic` (tự động giữ lại món đang đeo).',
-          '`/updates` — Xem tóm tắt tính năng từng bản cập nhật qua Dropdown.',
-        ],
-      },
-      {
-        heading: `${em('su_thunder_hax')} Cân Bằng & Sửa Lỗi Quan Trọng`,
-        bullets: [
-          '**Cân bằng 20 Pet cũ & sửa 5 lỗi HAX Engine:** Kích hoạt HAX cho toàn bộ 65 Pháp Bảo; sửa Bạch Kim Hổ Tử (`35%` xuyên giáp), Kim Sí Điêu Hoàng (mù đúng 2 hiệp), Tru Tiên (xuyên khiên 3 lượt), Luân Hồi Bất Diệt Chiến Hồn.',
-          '**Sửa lỗi cấp Role Discord (Bug #7):** Đeo/quay Role nhận ngay Role thật trên Discord & cấp bù toàn bộ thành viên đang đeo.',
-          '**Sửa lỗi treo Voice không lên EXP & tăng +20% Voice EXP (`85–135 / 5p`):** Chấm công treo Voice định kỳ mỗi 12 phút không cần thoát phòng.',
-          '**Chống Lạm Dụng Gacha → Dismantle:** Món mua Shop hoàn 20–25% giá thực trả; món từ Gacha dùng bảng giá phân rã chuẩn chống farm vô hạn Linh Thạch.',
+          'Kích hoạt HAX cho toàn bộ Pháp Bảo & Linh Thú; thêm PvE Tự Do (`/battle` trống), thưởng lên cấp (`+50..+400 LT`) và tăng Voice EXP (`85–135 / 5p`).',
+          'Ra mắt `/info`, `/phapbao`, `/linhthu`, `/dismantle` hàng loạt & `/updates`.',
         ],
       },
     ],
@@ -200,6 +146,14 @@ export const CHANGELOGS = [
 ];
 
 export const CHANGELOG_BY_VERSION = Object.fromEntries(CHANGELOGS.map((c) => [c.version, c]));
+
+export function getUpdateAckReward(version = LATEST_VERSION) {
+  const entry = CHANGELOG_BY_VERSION[String(version || LATEST_VERSION).trim().toLowerCase().replace(/^v/, '')];
+  if (entry && Number.isFinite(Number(entry.ack_reward_lt))) {
+    return Math.max(0, Math.round(Number(entry.ack_reward_lt)));
+  }
+  return entry?.is_big_update ? BIG_UPDATE_ACK_REWARD_LT : DEFAULT_UPDATE_ACK_REWARD_LT;
+}
 
 export function getChangelogPayload(rawVersion = '') {
   const cleaned = String(rawVersion || '').trim().toLowerCase().replace(/^v/, '');
@@ -218,7 +172,7 @@ export function getChangelogPayload(rawVersion = '') {
       title: `${em('su_wiki_scroll')} Không tìm thấy phiên bản v${version}`,
       description: `Phiên bản \`${version}\` chưa tồn tại trong nhật ký.\n• Các phiên bản hiện có: ${available}\n• Dùng \`/updates\` để xem bản mới nhất **v${LATEST_VERSION}**.`,
       color: '#f43f5e',
-      footer: `SuMi Family • Phiên bản mới nhất v${LATEST_VERSION}`,
+      footer: '',
     };
   }
 
@@ -242,9 +196,11 @@ export function getChangelogPayload(rawVersion = '') {
     version: entry.version,
     latest_version: LATEST_VERSION,
     available_versions: CHANGELOGS.map((c) => c.version),
+    ack_reward_lt: getUpdateAckReward(entry.version),
+    is_big_update: Boolean(entry.is_big_update),
     title: `${em('su_level_up')} ${entry.title}`,
     description,
     color: entry.color,
-    footer: `SuMi Family • Nhật Ký Cập Nhật v${entry.version} (Mới nhất: v${LATEST_VERSION})`,
+    footer: '',
   };
 }

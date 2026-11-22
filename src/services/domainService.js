@@ -26,8 +26,9 @@ import {
 } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { normalizeEmojiAwareQuery } from './inventoryService.js';
+import { trackQuestActivity } from './questService.js';
 
-const DOMAIN_DISMANTLE_VALUES = {
+export const DOMAIN_DISMANTLE_VALUES = {
   common: 6,
   rare: 15,
   epic: 36,
@@ -207,7 +208,7 @@ export async function getDomainInventory(userId, options = {}) {
     counts: { domains: domains.length, senses: senses.length, realms: realms.length },
     title: `${em('su_realm_star')} LINH VỰC TIÊN GIỚI — ${user.username}`,
     description: sections.join('\n').slice(0, 4000),
-    footer: 'SuMi Family • Dùng /linhvuc trang_bi:<mã UID hoặc emoji> để khai mở hoặc thay đổi',
+    footer: '',
   };
 }
 
@@ -367,6 +368,7 @@ export async function dismantleDomainEntity(userId, rawTarget) {
     } else {
       ops.push(supabase.from('user_domains').delete().eq('id', row.id));
     }
+    ops.push(trackQuestActivity(cleanId, { craftDelta: 1 }));
     await Promise.all(ops);
 
     return {

@@ -5,12 +5,16 @@
 export {
   simulateBattle,
   getCachedBattleReport,
+  loadBattleReport,
   cacheBattleReport,
   getCachedBattleFrame,
   setCachedBattleFrame,
   getBattleFrameMeta,
   getBattleLogPayload,
   renderBattleLogHtml,
+  renderSingleBattleTurnOnDemand,
+  renderAllBattleTurnsOnDemand,
+  buildAdaptiveFrames,
   withCanvasRenderSlot,
   renderBattleCardQueued,
 } from './battleEngine/battleService.js';

@@ -6,12 +6,26 @@
  */
 
 import { supabase } from '../config/supabase.js';
-import { LATEST_VERSION, getChangelogPayload } from '../data/changelogs.js';
+import { LATEST_VERSION, getChangelogPayload, getUpdateAckReward } from '../data/changelogs.js';
 import { em } from '../config/emojiHelper.js';
-import { sanitizeUserId } from './profileService.js';
+import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
 
 const ackVersionCache = new Map();
 const MAX_ACK_CACHE = 2000;
+const ackLocks = new Map();
+
+async function withAckLock(userId, fn) {
+  const prev = ackLocks.get(userId) || Promise.resolve();
+  let release;
+  const cur = new Promise((res) => { release = res; });
+  ackLocks.set(userId, prev.then(() => cur));
+  await prev;
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
 
 function setAckCache(userId, version) {
   if (!userId) return;
@@ -77,24 +91,27 @@ export async function checkUpdateGate(userId) {
     }
 
     const logPayload = getChangelogPayload(LATEST_VERSION);
+    const rewardLt = getUpdateAckReward(LATEST_VERSION);
     return {
       blocked: true,
       user_version: userVer,
       latest_version: LATEST_VERSION,
+      ack_reward_lt: rewardLt,
       payload: {
         success: false,
         status: 200,
         error: 'UPDATE_ACK_REQUIRED',
         needs_update_ack: 'true',
         update_version: LATEST_VERSION,
-        update_title: `${em('su_sparkle')} CẬP NHẬT MỚI v${LATEST_VERSION} — VUI LÒNG ĐỌC & XÁC NHẬN`,
+        ack_reward_lt: rewardLt,
+        update_title: `${em('su_sparkle')} CẬP NHẬT MỚI v${LATEST_VERSION} — ĐỌC & NHẬN +${rewardLt.toLocaleString('vi-VN')} LT`,
         update_description: [
-          `Tiên Giới SuMi vừa nâng cấp lên **v${LATEST_VERSION}**! Hãy đọc tóm tắt bên dưới rồi bấm nút **Xác Nhận Cập Nhật** để mở khóa tiếp tục tu luyện.`,
+          `Tiên Giới SuMi vừa nâng cấp lên **v${LATEST_VERSION}**! Hãy đọc tóm tắt bên dưới rồi bấm nút **Xác Nhận Cập Nhật** để nhận ngay **+${rewardLt.toLocaleString('vi-VN')} Linh Thạch** và mở khóa tiếp tục tu luyện.`,
           '',
           logPayload.description,
         ].join('\n').slice(0, 3950),
-        message: `Tiên Giới đã cập nhật lên **v${LATEST_VERSION}**! Vui lòng bấm nút **Tôi Đã Đọc & Xác Nhận Cập Nhật** bên dưới để tiếp tục chơi.`,
-        footer: `SuMi Family • Xác nhận phiên bản v${LATEST_VERSION}`,
+        message: `Tiên Giới đã cập nhật lên **v${LATEST_VERSION}**! Hãy bấm nút **Tôi Đã Đọc & Xác Nhận Cập Nhật** để nhận **+${rewardLt.toLocaleString('vi-VN')} Linh Thạch** và tiếp tục chơi.`,
+        footer: '',
       },
     };
   } catch {
@@ -105,24 +122,88 @@ export async function checkUpdateGate(userId) {
 export async function acknowledgeUpdate(userId) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) {
-    return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+    return { success: false, status: 400, error: 'INVALID_USER_ID', needs_update_ack: 'false', message: 'ID người dùng không hợp lệ.' };
   }
 
-  setAckCache(cleanId, LATEST_VERSION);
-  if (supabase) {
-    await supabase
+  return withAckLock(cleanId, async () => {
+    const rewardLt = getUpdateAckReward(LATEST_VERSION);
+    const lt = em('su_linhthach');
+
+    if (!supabase) {
+      setAckCache(cleanId, LATEST_VERSION);
+      return {
+        success: true,
+        acknowledged_version: LATEST_VERSION,
+        needs_update_ack: 'false',
+        granted_lt: rewardLt,
+        already_acknowledged: false,
+        message: `${em('su_sparkle')} Đã xác nhận cập nhật **v${LATEST_VERSION}** & nhận thưởng **+${rewardLt.toLocaleString('vi-VN')}** ${lt}!`,
+      };
+    }
+
+    await ensureUserInitialized(cleanId);
+    const { data: user } = await supabase
+      .from('users')
+      .select('linh_thach, last_seen_update_version')
+      .eq('user_id', cleanId)
+      .maybeSingle();
+
+    const currentVer = String(user?.last_seen_update_version || '').trim();
+    const currentBal = Number(user?.linh_thach || 0);
+    if (currentVer === LATEST_VERSION) {
+      setAckCache(cleanId, LATEST_VERSION);
+      return {
+        success: true,
+        acknowledged_version: LATEST_VERSION,
+        needs_update_ack: 'false',
+        granted_lt: 0,
+        already_acknowledged: true,
+        linh_thach: currentBal,
+        message: `${em('su_sparkle')} Bạn đã xác nhận bản cập nhật **v${LATEST_VERSION}** trước đó rồi! *(Số dư: **${currentBal.toLocaleString('vi-VN')}** ${lt})*`,
+      };
+    }
+
+    const nextBal = currentBal + rewardLt;
+    const nowIso = new Date().toISOString();
+    const { data: updatedRows, error: updErr } = await supabase
       .from('users')
       .update({
         last_seen_update_version: LATEST_VERSION,
-        updated_at: new Date().toISOString(),
+        linh_thach: nextBal,
+        updated_at: nowIso,
       })
-      .eq('user_id', cleanId);
-  }
+      .eq('user_id', cleanId)
+      .or(`last_seen_update_version.is.null,last_seen_update_version.neq.${LATEST_VERSION}`)
+      .select('linh_thach, last_seen_update_version');
 
-  return {
-    success: true,
-    acknowledged_version: LATEST_VERSION,
-    needs_update_ack: 'false',
-    message: `${em('su_sparkle')} **Xác nhận cập nhật v${LATEST_VERSION} thành công!**\n• Toàn bộ lệnh tu luyện, Đấu Trường, Tháp 200 Tầng, \`/enchant\` và \`/job\` đã được mở khóa. Chúc đạo hữu tu luyện vui vẻ!`,
-  };
+    setAckCache(cleanId, LATEST_VERSION);
+
+    if (updErr) {
+      throw new Error(`Update ack failed: ${updErr.message}`);
+    }
+
+    const updatedRow = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
+    if (!updatedRow) {
+      return {
+        success: true,
+        acknowledged_version: LATEST_VERSION,
+        needs_update_ack: 'false',
+        granted_lt: 0,
+        already_acknowledged: true,
+        linh_thach: currentBal,
+        message: `${em('su_sparkle')} Bạn đã xác nhận bản cập nhật **v${LATEST_VERSION}** trước đó rồi!`,
+      };
+    }
+
+    const finalBal = Number(updatedRow.linh_thach ?? nextBal);
+    return {
+      success: true,
+      acknowledged_version: LATEST_VERSION,
+      needs_update_ack: 'false',
+      granted_lt: rewardLt,
+      already_acknowledged: false,
+      linh_thach: finalBal,
+      message: `${em('su_sparkle')} **Xác nhận cập nhật v${LATEST_VERSION} thành công & nhận thưởng +${rewardLt.toLocaleString('vi-VN')}** ${lt}!\n• Số dư hiện tại: **${finalBal.toLocaleString('vi-VN')} LT**. Toàn bộ lệnh tu luyện đã sẵn sàng — chúc đạo hữu tu luyện vui vẻ!`,
+    };
+  });
 }

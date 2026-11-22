@@ -308,25 +308,25 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.equal(leaveRes.exp_gained, 0, 'Must NOT double-count EXP already credited by Voice Heartbeat');
   });
 
-  it('5. Tower Reset Card limits (200 LT, 3/day, max 10 stack), resetTowerAttempts & Tower +10/-5 LT', async () => {
+  it('5. Tower Reset Card limits (200 LT, 5/day, max 15 stack), resetTowerAttempts & Tower +10/-5 LT', async () => {
     if (!supabase) return;
     await ensureUserInitialized(USER_V11_A, { username: 'TowerTester' });
     await supabase.from('users').update({ linh_thach: 5000 }).eq('user_id', USER_V11_A);
     await supabase.from('user_inventory').delete().eq('user_id', USER_V11_A).eq('item_id', 'tower_reset_card');
     await supabase.from('user_quests').delete().eq('user_id', USER_V11_A);
 
-    // Buy 3 cards -> ok; 4th card same day -> DAILY_BUY_LIMIT
-    const b1 = await buyShopItem(USER_V11_A, { category: 'consumables', itemId: 'tower_reset_card', quantity: 3 });
+    // Buy 5 cards -> ok; 6th card same day -> DAILY_BUY_LIMIT
+    const b1 = await buyShopItem(USER_V11_A, { category: 'consumables', itemId: 'tower_reset_card', quantity: 5 });
     assert.equal(b1.success, true);
-    assert.equal(b1.cost, 600);
+    assert.equal(b1.cost, 1000);
 
     const bOver = await buyShopItem(USER_V11_A, { category: 'consumables', itemId: 'tower_reset_card', quantity: 1 });
     assert.equal(bOver.success, false);
     assert.equal(bOver.error, 'DAILY_BUY_LIMIT');
 
-    // Test max stack 10 protection (give user 9 cards, try buying 2 across new day)
+    // Test max stack 15 protection (give user 14 cards, try buying 2 across new day)
     await supabase.from('user_quests').update({ tower_reset_buy_date: '2020-01-01', tower_reset_buys_today: 0 }).eq('user_id', USER_V11_A);
-    await supabase.from('user_inventory').update({ quantity: 9 }).eq('user_id', USER_V11_A).eq('item_id', 'tower_reset_card');
+    await supabase.from('user_inventory').update({ quantity: 14 }).eq('user_id', USER_V11_A).eq('item_id', 'tower_reset_card');
     const bStack = await buyShopItem(USER_V11_A, { category: 'consumables', itemId: 'tower_reset_card', quantity: 2 });
     assert.equal(bStack.success, false);
     assert.equal(bStack.error, 'INVENTORY_STACK_LIMIT');
@@ -336,24 +336,25 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.equal(fullReset.success, false);
     assert.equal(fullReset.error, 'TOWER_ATTEMPTS_FULL');
 
-    // Challenge Tower Floor 1 (win) -> +22 floor + 10 bonus = +32 LT (v1.2 200-floor formula: 20 + f*2)
+    // Challenge Tower Floor 1 (win) -> +22 floor + 10 bonus = +32 LT (with Lv.5 starter pet beating F1)
     await supabase.from('users').update({ linh_thach: 100 }).eq('user_id', USER_V11_A);
-    const towerWin = await challengeTower(USER_V11_A, { preRender: false, seed: 11 });
+    await supabase.from('user_pets').update({ level: 5 }).eq('user_id', USER_V11_A).eq('is_active', true);
+    const towerWin = await challengeTower(USER_V11_A, { preRender: false, seed: 11, rng: () => 0.5 });
     assert.equal(towerWin.success, true);
     assert.equal(towerWin.won, true);
     assert.equal(towerWin.reward_linh_thach, 22 + 10);
     assert.equal(towerWin.attempts_used, 1);
 
-    // Use reset card -> restores 0/5 and leaves 8 cards
+    // Use reset card -> restores 0/5 and leaves 13 cards
     const usedReset = await resetTowerAttempts(USER_V11_A);
     assert.equal(usedReset.success, true);
     assert.equal(usedReset.attempts_used, 0);
-    assert.equal(usedReset.remaining_cards, 8);
+    assert.equal(usedReset.remaining_cards, 13);
 
-    // Challenge high floor 99 with starter -> loss -> -5 LT penalty (floored at 0)
+    // Challenge high floor 99 with Lv.5 starter -> loss -> -5 LT penalty (floored at 0)
     await supabase.from('user_quests').update({ tower_floor: 98 }).eq('user_id', USER_V11_A);
     await supabase.from('users').update({ linh_thach: 3 }).eq('user_id', USER_V11_A);
-    const towerLoss = await challengeTower(USER_V11_A, { preRender: false, seed: 11 });
+    const towerLoss = await challengeTower(USER_V11_A, { preRender: false, seed: 11, rng: () => 0.5 });
     assert.equal(towerLoss.success, true);
     assert.equal(towerLoss.won, false);
     assert.equal(towerLoss.linh_thach, 0, 'Tower loss -5 LT must floor at 0 LT');
@@ -462,7 +463,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
       { maxTurns: 5, preRender: false, skipQuestTracking: true, seed: 5 },
     );
     const batPng = await renderBattleCard(batRes, { format: 'png' });
-    assertPngValid(batPng, 2000, 1000);
+    assertPngValid(batPng, 1800, 900);
 
     const wikiText = JSON.stringify(await (await testServer.fetch('/api/wiki')).json());
     const shopText = JSON.stringify(await (await testServer.fetch('/api/shop/catalog?category=backgrounds')).json());

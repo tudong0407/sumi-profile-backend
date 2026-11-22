@@ -50,6 +50,7 @@ import {
   computeRoleBuffTotals,
 } from './profileService.js';
 import { computeMarriageBuffs } from './marryService.js';
+import { trackQuestActivity } from './questService.js';
 
 export const VALID_EXPLORER_DURATIONS = [2, 3, 6, 12];
 export const EXPLORER_FOOD_EFFECTS = {
@@ -992,6 +993,8 @@ export async function startExpedition(userId, opts = {}) {
       mainPetNotice,
     ].filter(Boolean).join('\n');
 
+    await trackQuestActivity(cleanId, { explorerDelta: 1, now });
+
     return {
       success: true,
       expedition: exp,
@@ -1215,6 +1218,8 @@ export async function claimExpedition(userId, opts = {}) {
           : '',
       ].filter(Boolean);
 
+      await trackQuestActivity(cleanId, { explorerDelta: 1 });
+
       return {
         success: true,
         survived: true,
@@ -1352,6 +1357,8 @@ export async function claimExpedition(userId, opts = {}) {
         : '',
       `• 🛡️ **Linh Vực / Thần Thức / Thần Cảnh:** Hoàn toàn nguyên vẹn, đã thu hồi về kho.`,
     ].filter(Boolean);
+
+    await trackQuestActivity(cleanId, { explorerDelta: 1 });
 
     return {
       success: true,

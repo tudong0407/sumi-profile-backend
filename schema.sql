@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS users (
     voice_joined_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     total_voice_minutes INT DEFAULT 0 CHECK (total_voice_minutes >= 0),
     highest_level_claimed INTEGER NOT NULL DEFAULT 1,
+    autosell_config JSONB NOT NULL DEFAULT '{"common":false,"rare":false,"epic":false,"keep_new":false}'::jsonb,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -365,3 +366,18 @@ ON CONFLICT (user_id, equipped_slot) WHERE equipped_slot IS NOT NULL DO UPDATE S
     role_name = EXCLUDED.role_name,
     role_id = EXCLUDED.role_id,
     role_perk = EXCLUDED.role_perk;
+
+-- ------------------------------------------------------------------------------
+-- 11. BỔ SUNG v1.4.7: BATTLE_LOGS (48H TTL WEB BATTLE LOGS) & DAILY ROTATION
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS battle_logs (
+    battle_id TEXT PRIMARY KEY,
+    battle_kind TEXT NOT NULL DEFAULT '1v1',
+    channel_id TEXT,
+    participant_ids TEXT[] NOT NULL DEFAULT '{}',
+    payload JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '48 hours')
+);
+CREATE INDEX IF NOT EXISTS idx_battle_logs_expires_at ON battle_logs (expires_at);
+CREATE INDEX IF NOT EXISTS idx_battle_logs_participants ON battle_logs USING GIN (participant_ids);

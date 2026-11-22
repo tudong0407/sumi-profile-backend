@@ -365,11 +365,11 @@ function drawCounterArrow(ctx, cx, cy, dir, color) {
  */
 export async function renderBattleCard(battleResult, options = {}) {
   const rawScale = Number(options.scale);
-  const scale = Number.isFinite(rawScale) && rawScale >= 0.5 && rawScale <= 2.5 ? rawScale : 2;
+  const scale = Number.isFinite(rawScale) && rawScale >= 0.5 && rawScale <= 2.5 ? rawScale : 1.8;
   const canvasW = Math.round(LOGICAL_W * scale);
   const canvasH = Math.round(LOGICAL_H * scale);
   const format = options.format || 'png';
-  const webpQuality = options.webpQuality ?? 84;
+  const webpQuality = options.webpQuality ?? 75;
   const frame = options.frame || null;
   const isFinal = frame ? frame.isFinal !== false : true;
 
@@ -984,16 +984,22 @@ export async function renderBattleCard(battleResult, options = {}) {
     const domDir = counter.aCountersB ? 'right' : counter.bCountersA ? 'left' : 'neutral';
     const domArrowColor = domDir === 'right' ? '#4ade80' : domDir === 'left' ? '#38bdf8' : '#cbd5e1';
 
-    const formatMach = (domObj, senseObj, sideSum, showEnd) => {
+    const formatMach = (domObj, senseObj, sideSum, frameEnergy, showLive) => {
       if (!domObj) return '0';
-      if (domObj.base_energy >= 999 || sideSum?.startEnergy >= 999) return '∞';
+      if (domObj.base_energy >= 999 || sideSum?.startEnergy >= 999 || frameEnergy >= 999) return '∞';
       const maxE = sideSum?.startEnergy || (Number(domObj.base_energy || 3) + Number(senseObj?.bonus_energy || 0));
-      if (!showEnd) return `${maxE}/${maxE}`;
-      const curE = sideSum?.endEnergy !== undefined ? sideSum.endEnergy : maxE;
+      if (!showLive) return `${maxE}/${maxE}`;
+      const curE = frameEnergy !== undefined && frameEnergy !== null
+        ? frameEnergy
+        : (sideSum?.endEnergy !== undefined ? sideSum.endEnergy : maxE);
       return `${curE}/${maxE}`;
     };
-    const leftM = formatMach(leftDom, atkDomainLoadout.sense, dAtkSum, isFinal && !beforeTurn2);
-    const rightM = formatMach(rightDom, defDomainLoadout.sense, dDefSum, isFinal && !beforeTurn2);
+    const hasFrameDomain = frame && (frame.domainAtkEnergy !== undefined || frame.domainDefEnergy !== undefined);
+    const showDomainLive = !beforeTurn2 && (isFinal || hasFrameDomain);
+    const leftM = formatMach(leftDom, atkDomainLoadout.sense, dAtkSum, frame?.domainAtkEnergy, showDomainLive);
+    const rightM = formatMach(rightDom, defDomainLoadout.sense, dDefSum, frame?.domainDefEnergy, showDomainLive);
+    const curAtkE = frame?.domainAtkEnergy !== undefined ? frame.domainAtkEnergy : dAtkSum.endEnergy;
+    const curDefE = frame?.domainDefEnergy !== undefined ? frame.domainDefEnergy : dDefSum.endEnergy;
 
     drawCounterArrow(ctx, midCx, dIconY + 11, beforeTurn2 ? 'neutral' : domDir, domArrowColor);
     drawAutoFitSingleLineText(ctx, `${leftM} vs ${rightM} Mạch`, midCx, dIconY + 27, 104, {
@@ -1022,13 +1028,14 @@ export async function renderBattleCard(battleResult, options = {}) {
     });
 
     const statusPillText = (() => {
+      if (frame?.domainStatusText) return frame.domainStatusText;
       if (beforeTurn2) return 'Kích hoạt từ Hiệp 2...';
       if (leftDom && !rightDom) return 'Phe Công Đơn Phương Áp Chế';
       if (!leftDom && rightDom) return 'Phe Thủ Đơn Phương Áp Chế';
       if (leftDom.element === 'Hỗn Độn Vực' && rightDom.element !== 'Hỗn Độn Vực') return 'Xuyên Vực 100% • Khóa Debuff Địch';
       if (rightDom.element === 'Hỗn Độn Vực' && leftDom.element !== 'Hỗn Độn Vực') return 'Xuyên Vực 100% • Khóa Debuff Công';
-      if (isFinal && dDefSum.endEnergy === 0 && (dAtkSum.endEnergy > 0 || leftM === '∞')) return 'Vỡ Vực Thủ • Khai Mở Toàn Debuff';
-      if (isFinal && dAtkSum.endEnergy === 0 && (dDefSum.endEnergy > 0 || rightM === '∞')) return 'Vỡ Vực Công • Khai Mở Toàn Debuff';
+      if (showDomainLive && curDefE === 0 && (curAtkE > 0 || leftM === '∞')) return 'Vỡ Vực Thủ • Khai Mở Toàn Debuff';
+      if (showDomainLive && curAtkE === 0 && (curDefE > 0 || rightM === '∞')) return 'Vỡ Vực Công • Khai Mở Toàn Debuff';
       if (counter.aCountersB) return 'Vực Công Áp Chế (-1 vs -2 Mạch)';
       if (counter.bCountersA) return 'Vực Thủ Áp Chế (-2 vs -1 Mạch)';
       return 'Giằng Co Cân Bằng (-1 Mạch/Hiệp)';

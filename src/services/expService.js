@@ -29,8 +29,8 @@ import {
 } from './profileService.js';
 
 export const CHAT_COOLDOWN_MS = 45 * 1000;
-export const CHAT_EXP_MIN = 20;
-export const CHAT_EXP_MAX = 30;
+export const CHAT_EXP_MIN = 23;
+export const CHAT_EXP_MAX = 35;
 export const VOICE_BLOCK_MINUTES = 5;
 export const VOICE_EXP_MIN = 85;
 export const VOICE_EXP_MAX = 135;
@@ -690,7 +690,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
       error: 'INVALID_USER_ID',
       title: '⚠️ KHÔNG THỂ TRA CỨU EXP BOOST',
       description: 'ID thành viên không hợp lệ. Vui lòng chọn đúng thành viên hoặc bỏ trống để xem của bản thân.',
-      footer: 'SuMi Family • Tu Tiên Giới v1.4.5',
+      footer: '',
     };
   }
 
@@ -779,7 +779,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     `• **Tổng Buff EXP Voice:** **+${totalVoiceBoostPct}%** *(Hệ số **${voiceMultiplier}×**)*`,
     '',
     '**📊 EXP Trung Bình Thực Nhận Sau Khi Cộng Buff:**',
-    `• ${em('su_chat', '💬')} **1 Tin Nhắn Hợp Lệ** *(cooldown 45s • gốc 20–30, TB 25)*: **${chatMin} – ${chatMax} EXP** *(TB: **${fmtExpNum(chatAvg)} EXP / tin**)*`,
+    `• ${em('su_chat', '💬')} **1 Tin Nhắn Hợp Lệ** *(cooldown 45s • gốc 23–35, TB 29)*: **${chatMin} – ${chatMax} EXP** *(TB: **${fmtExpNum(chatAvg)} EXP / tin**)*`,
     `• ${em('su_voice', '🎙️')} **5 Phút Voice** *(chấm công 12p • gốc 85–135, TB 110)*: **${voiceMin} – ${voiceMax} EXP** *(TB: **${fmtExpNum(voiceAvg)} EXP / 5 phút** ≈ **${voiceHourAvg.toLocaleString('vi-VN')} EXP / giờ**)*`,
     '',
     '**🧩 Chi Tiết Nguồn Buff Hiện Tại:**',
@@ -825,6 +825,6 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     },
     title: `${em('su_level_up')} CHỈ SỐ BOOST EXP — ${displayName.toUpperCase()}`,
     description: desc,
-    footer: 'SuMi Family • Tu Tiên Giới v1.4.5 • Công thức EXP cộng dồn Level + Role + Tiên Lữ + Gia Tộc',
+    footer: '',
   };
 }

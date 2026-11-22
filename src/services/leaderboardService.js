@@ -430,7 +430,7 @@ export async function settleWeeklyPowerLeaderboard(opts = {}) {
       title: announcementTitle,
       description: announcementDesc.slice(0, 3900),
       color: '#f59e0b',
-      footer: 'SuMi Family • Vinh Danh Top Lực Chiến 19:00 Chủ Nhật',
+      footer: '',
     },
   };
 }

@@ -40,22 +40,22 @@ describe('Tier 1 - Pillar 3 Full HD+ Battle Report Image (2000x1000)', () => {
     assert.ok(json.combatants?.attacker && json.combatants?.defender);
     assert.ok(Array.isArray(json.highlights) && json.highlights.length > 0);
 
-    // Fetch cached PNG report
+    // Fetch cached PNG report (1.25x = 1250x625)
     const imgRes = await testServer.fetch(`/api/battle/report/${json.battleId}.png`);
     assert.equal(imgRes.status, 200);
     assert.ok(imgRes.headers.get('content-type')?.includes('image/png'));
     const buffer = Buffer.from(await imgRes.arrayBuffer());
-    assertPngValid(buffer, 2000, 1000);
+    assertPngValid(buffer, 1250, 625);
   });
 
-  it('2. GET /api/battle/report.png stateless endpoint renders 2000x1000 PNG for two beginners', async () => {
+  it('2. GET /api/battle/report.png stateless endpoint renders 1800x900 PNG for two beginners', async () => {
     const imgRes = await testServer.fetch(
       `/api/battle/report.png?attacker=${FIXTURE_USERS.hanabiraMei.userId}&defender=${FIXTURE_USERS.defaultUser.userId}&seed=7`
     );
     assert.equal(imgRes.status, 200);
     assert.ok(imgRes.headers.get('content-type')?.includes('image/png'));
     const buffer = Buffer.from(await imgRes.arrayBuffer());
-    assertPngValid(buffer, 2000, 1000);
+    assertPngValid(buffer, 1800, 900);
   });
 
   it('3. GET /api/battle/report/:unknown.png returns 404 cleanly', async () => {
@@ -65,7 +65,7 @@ describe('Tier 1 - Pillar 3 Full HD+ Battle Report Image (2000x1000)', () => {
     assert.equal(json.success, false);
   });
 
-  it('4. Mirror battle (attackerId === defenderId) reports winnerRole and renders 2000x1000 PNG cleanly', async () => {
+  it('4. Mirror battle (attackerId === defenderId) reports winnerRole and renders 1250x625 PNG cleanly', async () => {
     const simRes = await testServer.fetch('/api/battle/simulate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -80,6 +80,6 @@ describe('Tier 1 - Pillar 3 Full HD+ Battle Report Image (2000x1000)', () => {
     assert.ok(['attacker', 'defender'].includes(json.winnerRole), 'Must expose winnerRole for mirror matches');
     const imgRes = await testServer.fetch(`/api/battle/report/${json.battleId}.png`);
     assert.equal(imgRes.status, 200);
-    assertPngValid(Buffer.from(await imgRes.arrayBuffer()), 2000, 1000);
+    assertPngValid(Buffer.from(await imgRes.arrayBuffer()), 1250, 625);
   });
 });

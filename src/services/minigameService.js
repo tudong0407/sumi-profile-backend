@@ -162,7 +162,7 @@ export async function playCoinflip(userId, rawBet, rawChoice = 'heads', options 
     lastPlayMap.set(cleanId, Date.now());
     await Promise.all([
       supabase.from('users').update({ linh_thach: nextBal, updated_at: new Date().toISOString() }).eq('user_id', cleanId),
-      trackQuestActivity(cleanId, { activityDelta: 1 }),
+      trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
     const sideLabel = (s) => (s === 'heads' ? `${minigameEmoji('coin_heads', '🪙')} Ngửa (Tiên Ấn)` : `${minigameEmoji('coin_tails', '🌙')} Úp (Liên Ấn)`);
@@ -277,7 +277,7 @@ export async function playSlots(userId, rawBet, options = {}) {
     lastPlayMap.set(cleanId, Date.now());
     await Promise.all([
       supabase.from('users').update({ linh_thach: nextBal, updated_at: new Date().toISOString() }).eq('user_id', cleanId),
-      trackQuestActivity(cleanId, { activityDelta: 1 }),
+      trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
     const spinGif = minigameEmoji('slot_spin', '🎰');
@@ -508,7 +508,7 @@ export async function startBlackjack(userId, rawBet, options = {}) {
       session.finished = true;
       await Promise.all([
         supabase.from('users').update({ linh_thach: finalBal, updated_at: new Date().toISOString() }).eq('user_id', cleanId),
-        trackQuestActivity(cleanId, { activityDelta: 1 }),
+        trackQuestActivity(cleanId, { minigameDelta: 1 }),
       ]);
       return {
         success: true,
@@ -525,7 +525,7 @@ export async function startBlackjack(userId, rawBet, options = {}) {
     activeBlackjackSessions.set(cleanId, session);
     await Promise.all([
       supabase.from('users').update({ linh_thach: afterBetBal, updated_at: new Date().toISOString() }).eq('user_id', cleanId),
-      trackQuestActivity(cleanId, { activityDelta: 1 }),
+      trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
     return {
@@ -855,7 +855,7 @@ export async function crashGame(userId, rawActionOrBet, rawExtra = null, options
     lastPlayMap.set(cleanId, Date.now());
     await Promise.all([
       supabase.from('users').update({ linh_thach: afterBetBal, updated_at: new Date().toISOString() }).eq('user_id', cleanId),
-      trackQuestActivity(cleanId, { activityDelta: 1 }),
+      trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
     // If auto-cashout multiplier is supplied (e.g. muc_rut: 2.0)

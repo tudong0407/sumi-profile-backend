@@ -49,6 +49,117 @@ import {
   computeRoleBuffTotals,
 } from './profileService.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
+import { getGachaDismantleValue } from './inventoryService.js';
+import { DOMAIN_DISMANTLE_VALUES } from './domainService.js';
+import { trackQuestActivity } from './questService.js';
+
+export const DEFAULT_AUTOSELL_CONFIG = {
+  common: false,
+  rare: false,
+  epic: false,
+  keep_new: false,
+};
+
+export function normalizeAutoSellConfig(raw) {
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try { obj = JSON.parse(raw); } catch { obj = {}; }
+  }
+  if (!obj || typeof obj !== 'object') obj = {};
+  return {
+    common: Boolean(obj.common),
+    rare: Boolean(obj.rare),
+    epic: Boolean(obj.epic),
+    keep_new: Boolean(obj.keep_new),
+  };
+}
+
+function parseAutoSellToggle(val) {
+  if (val === undefined || val === null) return undefined;
+  if (typeof val === 'boolean') return val;
+  const s = String(val).trim().toLowerCase();
+  if (!s || /^\{/.test(s)) return undefined;
+  if (['yes', 'true', '1', 'on', 'bat', 'bật', 'co', 'có'].includes(s)) return true;
+  if (['no', 'false', '0', 'off', 'tat', 'tắt', 'khong', 'không'].includes(s)) return false;
+  return undefined;
+}
+
+function formatAutoSellStatusLines(cfg) {
+  const badge = (on) => (on ? '🟢 **BẬT** *(Tự bán)*' : '⚫ **TẮT** *(Giữ lại)*');
+  return [
+    `• ${tierEmoji('common')} **Phàm Phẩm** (\`pham_pham\`): ${badge(cfg.common)}`,
+    `• ${tierEmoji('rare')} **Linh Phẩm** (\`linh_pham\`): ${badge(cfg.rare)}`,
+    `• ${tierEmoji('epic')} **Tiên Phẩm** (\`tien_pham\`): ${badge(cfg.epic)}`,
+    `• ${tierEmoji('mythic')} **Thần Thoại:** 🔒 **Luôn Bảo Vệ** *(Không bao giờ tự bán)*`,
+    `• ${em('su_sparkle')} **Giữ Món Mới (\`giu_mon_moi\`):** ${cfg.keep_new ? '🟢 **BẬT** *(Giữ bản đầu tiên chưa sở hữu, chỉ bán khi trùng)*' : '⚫ **TẮT** *(Bán ngay cả khi chưa sở hữu)*'}`,
+  ].join('\n');
+}
+
+export async function getAutoSellConfig(userId, options = {}) {
+  return updateAutoSellConfig(userId, { ...options, viewOnly: true });
+}
+
+export async function updateAutoSellConfig(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) {
+    return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  }
+  return withLock(cleanId, async () => {
+    if (!supabase) {
+      return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+    }
+    const { user } = await ensureUserInitialized(cleanId, {
+      username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+      avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+    });
+    if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+    const cur = normalizeAutoSellConfig(user.autosell_config);
+    const pCommon = parseAutoSellToggle(options.common ?? options.pham_pham ?? options.phampham);
+    const pRare = parseAutoSellToggle(options.rare ?? options.linh_pham ?? options.linhpham);
+    const pEpic = parseAutoSellToggle(options.epic ?? options.tien_pham ?? options.tienpham);
+    const pKeepNew = parseAutoSellToggle(options.keep_new ?? options.keepNew ?? options.giu_mon_moi ?? options.giumonmoi);
+
+    const hasChange = !options.viewOnly && (
+      pCommon !== undefined || pRare !== undefined || pEpic !== undefined || pKeepNew !== undefined
+    );
+
+    const next = hasChange
+      ? {
+          common: pCommon !== undefined ? pCommon : cur.common,
+          rare: pRare !== undefined ? pRare : cur.rare,
+          epic: pEpic !== undefined ? pEpic : cur.epic,
+          keep_new: pKeepNew !== undefined ? pKeepNew : cur.keep_new,
+        }
+      : cur;
+
+    if (hasChange) {
+      const { error } = await supabase
+        .from('users')
+        .update({ autosell_config: next, updated_at: new Date().toISOString() })
+        .eq('user_id', cleanId);
+      if (error) throw new Error(`AutoSell update failed: ${error.message}`);
+    }
+
+    return {
+      success: true,
+      mode: hasChange ? 'updated' : 'view',
+      config: next,
+      title: `${em('su_gacha_dice')} CẤU HÌNH TỰ ĐỘNG BÁN KHI /ROLL`,
+      description: [
+        hasChange
+          ? 'Đã cập nhật quy tắc **AutoSell** áp dụng tự động cho cả **4 bể `/roll`** *(Pháp Bảo • Linh Thú • Linh Vực • Role)*:'
+          : 'Trạng thái **AutoSell** hiện tại của bạn khi quay `/roll` *(chỉ giữ bậc Thần Thoại & tự kế thừa Tư Chất cao hơn trước khi bán)*:',
+        '',
+        formatAutoSellStatusLines(next),
+        '',
+        '💡 *Cách đổi nhanh:* `/autosell pham_pham:Bật linh_pham:Bật giu_mon_moi:Tắt`',
+      ].join('\n'),
+      message: `${hasChange ? 'Đã cập nhật' : 'Trạng thái'} AutoSell: Phàm=${next.common ? 'BẬT' : 'TẮT'} • Linh=${next.rare ? 'BẬT' : 'TẮT'} • Tiên=${next.epic ? 'BẬT' : 'TẮT'} • Giữ món mới=${next.keep_new ? 'BẬT' : 'TẮT'}`,
+      footer: '',
+    };
+  });
+}
 
 export const DAILY_BASE_MIN = 40;
 export const DAILY_BASE_MAX = 60;
@@ -483,10 +594,18 @@ export async function rollGacha(userId, options = {}) {
     }
 
     const standardPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+    const autoSellCfg = normalizeAutoSellConfig(options.autosellOverride !== undefined ? options.autosellOverride : user.autosell_config);
+    const shouldAutoSellRarity = (rk) => {
+      const key = String(rk || '').toLowerCase();
+      if (key === 'mythic' || key === 'supreme') return false;
+      return Boolean(autoSellCfg[key]);
+    };
     const results = [];
     const addedDiscordRoleIds = new Set();
     let refundLinhThach = 0;
     let bonusStarStones = 0;
+    let autoSellCount = 0;
+    let autoSellLinhThach = 0;
 
     for (let i = 0; i < count; i += 1) {
       const rarityKey = rollRarityByRate(rng);
@@ -503,6 +622,25 @@ export async function rollGacha(userId, options = {}) {
           .select('*')
           .eq('user_id', cleanId);
         const existing = (userRoles || []).find((r) => r.role_id === picked.role_id);
+
+        if (shouldAutoSellRarity(picked.rarity_key) && (existing || !autoSellCfg.keep_new)) {
+          const sellLt = getGachaDismantleValue('role', picked.rarity_key, {
+            isPermanent: Boolean(durTier.isPermanent),
+            remDays: durTier.days || 7,
+          });
+          autoSellCount += 1;
+          autoSellLinhThach += sellLt;
+          results.push({
+            kind: 'autosell_role',
+            emoji: roleTierEmoji(picked.rarity_key, tierEmoji(picked.rarity_key)),
+            role_id: picked.role_id,
+            name: `${picked.name} (${durTier.label})`,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            duration: durTier.key,
+            sell_lt: sellLt,
+          });
+          continue;
+        }
 
         if (existing?.is_permanent) {
           const dupRefund = picked.rarity_key === 'mythic' ? 250 : picked.rarity_key === 'epic' ? 100 : picked.rarity_key === 'rare' ? 35 : 15;
@@ -632,6 +770,38 @@ export async function rollGacha(userId, options = {}) {
           .eq('item_id', picked.item_id)
           .maybeSingle();
 
+        if (shouldAutoSellRarity(picked.rarity_key) && (ownItem || !autoSellCfg.keep_new)) {
+          let prevGrade = null;
+          let upgradedGrade = false;
+          if (ownItem) {
+            prevGrade = String(ownItem.enchant_grade || 'D').toUpperCase();
+            upgradedGrade = (ENCHANT_GRADE_RANK[rolledGrade] ?? 0) > (ENCHANT_GRADE_RANK[prevGrade] ?? 0);
+            if (upgradedGrade) {
+              await supabase
+                .from('user_pet_items')
+                .update({ enchant_grade: rolledGrade })
+                .eq('id', ownItem.id);
+            }
+          }
+          const sellLt = getGachaDismantleValue('item', picked.rarity_key);
+          autoSellCount += 1;
+          autoSellLinhThach += sellLt;
+          results.push({
+            kind: 'autosell_item',
+            emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(rolledGrade),
+            enchant_grade: rolledGrade,
+            prev_grade: prevGrade,
+            grade_upgraded: upgradedGrade,
+            item_id: picked.item_id,
+            name: picked.item_name,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            slot: picked.item_type,
+            sell_lt: sellLt,
+          });
+          continue;
+        }
+
         if (ownItem) {
           const prevQty = Math.max(1, Number(ownItem.quantity) || 1);
           const nextQty = prevQty + 1;
@@ -732,6 +902,22 @@ export async function rollGacha(userId, options = {}) {
           .eq('entity_id', picked.id)
           .maybeSingle();
 
+        if (shouldAutoSellRarity(picked.rarity_key) && (ownDomain || !autoSellCfg.keep_new)) {
+          const sellLt = DOMAIN_DISMANTLE_VALUES[picked.rarity_key] || 6;
+          autoSellCount += 1;
+          autoSellLinhThach += sellLt;
+          results.push({
+            kind: 'autosell_domain',
+            emoji: dIcon,
+            entity_kind: entityKind,
+            entity_id: picked.id,
+            name: picked.name,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            sell_lt: sellLt,
+          });
+          continue;
+        }
+
         if (ownDomain) {
           const nextQty = Math.max(1, Number(ownDomain.quantity) || 1) + 1;
           await supabase
@@ -798,6 +984,38 @@ export async function rollGacha(userId, options = {}) {
           .eq('user_id', cleanId)
           .eq('pet_type', picked.pet_type)
           .maybeSingle();
+
+        if (shouldAutoSellRarity(picked.rarity_key) && (ownPet || !autoSellCfg.keep_new)) {
+          let prevGrade = null;
+          let upgradedGrade = false;
+          if (ownPet) {
+            prevGrade = String(ownPet.enchant_grade || 'D').toUpperCase();
+            upgradedGrade = (ENCHANT_GRADE_RANK[rolledGrade] ?? 0) > (ENCHANT_GRADE_RANK[prevGrade] ?? 0);
+            if (upgradedGrade) {
+              await supabase
+                .from('user_pets')
+                .update({ enchant_grade: rolledGrade })
+                .eq('pet_id', ownPet.pet_id);
+            }
+          }
+          const sellLt = getGachaDismantleValue('pet', picked.rarity_key);
+          autoSellCount += 1;
+          autoSellLinhThach += sellLt;
+          results.push({
+            kind: 'autosell_pet',
+            emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
+            grade_emoji: gradeEmoji(rolledGrade),
+            enchant_grade: rolledGrade,
+            prev_grade: prevGrade,
+            grade_upgraded: upgradedGrade,
+            pet_type: picked.pet_type,
+            name: picked.pet_name,
+            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            element: picked.element,
+            sell_lt: sellLt,
+          });
+          continue;
+        }
 
         if (ownPet) {
           const prevQty = Math.max(1, Number(ownPet.quantity) || 1);
@@ -866,8 +1084,9 @@ export async function rollGacha(userId, options = {}) {
     }
 
     let finalBalance = Number(user.linh_thach || 0);
-    if (refundLinhThach > 0) {
-      finalBalance += refundLinhThach;
+    const totalBonusLt = refundLinhThach + autoSellLinhThach;
+    if (totalBonusLt > 0) {
+      finalBalance += totalBonusLt;
       await supabase
         .from('users')
         .update({ linh_thach: finalBalance, updated_at: new Date().toISOString() })
@@ -891,6 +1110,10 @@ export async function rollGacha(userId, options = {}) {
       refund: 'Bồi thường',
     };
     const resultLines = results.map((r) => {
+      if (r.kind === 'autosell_item' || r.kind === 'autosell_pet' || r.kind === 'autosell_domain' || r.kind === 'autosell_role') {
+        const upgNote = r.grade_upgraded ? ` *(Kế thừa ${r.prev_grade} → ${r.enchant_grade}!)*` : '';
+        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — 💰 **[AutoSell +${r.sell_lt} LT]**${upgNote}`;
+      }
       if (r.kind === 'duplicate_domain') {
         return `• ${r.emoji || em('su_realm_star')} **${r.name}** (${r.rarity}) — Trùng +1 (Kho: **×${r.quantity}**)`;
       }
@@ -923,14 +1146,20 @@ export async function rollGacha(userId, options = {}) {
     const dupHeaderLine = (pool === 'role' || refundLinhThach > 0 || bonusStarStones > 0)
       ? `${em('pet_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
       : null;
+    const autoSellHeaderLine = autoSellCount > 0
+      ? `💰 **AutoSell tự bán (\`/autosell\`)**: \`${autoSellCount}\` món → **+${autoSellLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
+      : null;
     const fullMessage = [
       `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,
       `${em('su_linhthach')} **Số dư còn lại**: \`${finalBalance.toLocaleString('vi-VN')}\` Linh Thạch`,
       dupHeaderLine,
+      autoSellHeaderLine,
       `${em('su_sparkle')} **Kết quả**:`,
       summaryResults,
       footerNote,
     ].filter(Boolean).join('\n');
+
+    void trackQuestActivity(cleanId, { rollDelta: count });
 
     return {
       success: true,
@@ -940,6 +1169,8 @@ export async function rollGacha(userId, options = {}) {
       cost,
       gacha_discount_pct: gachaDiscountPct,
       refund_linh_thach: refundLinhThach,
+      autosell_count: autoSellCount,
+      autosell_linh_thach: autoSellLinhThach,
       bonus_star_stones: bonusStarStones,
       linh_thach: finalBalance,
       linh_thach_fmt: finalBalance.toLocaleString('vi-VN'),
@@ -949,6 +1180,7 @@ export async function rollGacha(userId, options = {}) {
       results,
       summary_results: summaryResults,
       message: fullMessage,
+      footer: '',
     };
   });
 }

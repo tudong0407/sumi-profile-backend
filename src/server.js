@@ -14,13 +14,17 @@ import {
 import {
   simulateBattle,
   getCachedBattleReport,
+  loadBattleReport,
   getCachedBattleFrame,
   setCachedBattleFrame,
   getBattleFrameMeta,
   getBattleLogPayload,
   renderBattleLogHtml,
+  renderSingleBattleTurnOnDemand,
+  renderAllBattleTurnsOnDemand,
   renderBattleCardQueued,
 } from './services/battleService.js';
+import { cleanupExpiredBattleLogs } from './services/battleEngine/battleLogStore.js';
 import { grantChatExp, handleVoiceExp, processVoiceHeartbeat, getUserExpBoostSummary } from './services/expService.js';
 import {
   claimDaily,
@@ -28,6 +32,8 @@ import {
   rollGacha,
   sendGift,
   cleanupExpiredRoles,
+  getAutoSellConfig,
+  updateAutoSellConfig,
 } from './services/economyService.js';
 import { getServerLeaderboard, settleWeeklyPowerLeaderboard } from './services/leaderboardService.js';
 import {
@@ -113,8 +119,11 @@ import {
 } from './services/spiritVeinService.js';
 import {
   getCachedTeamBattle,
+  loadTeamBattleReport,
   getTeamBattleLogPayload,
   renderTeamBattleLogHtml,
+  renderSingleTeamBattleTurnOnDemand,
+  renderAllTeamBattleTurnsOnDemand,
 } from './services/battleEngine/teamBattleService.js';
 import { renderTeamBattleCard } from './canvas/teamBattleRenderer.js';
 import {
@@ -274,6 +283,8 @@ app.get('/', (req, res) => {
       battle_simulate: 'POST /api/battle/simulate',
       battle_report_frame: 'GET /api/battle/report/:battleId/:frame[.webp|.png]',
       battle_logs: 'POST /api/battle/logs',
+      battle_logs_render_all: 'POST /api/battle/logs/:battleId/render-all',
+      battle_logs_turn_img: 'GET /api/battle/logs/:battleId/turn/:turn.webp',
       battle_report_png: 'GET /api/battle/report/:battleId[.png|.webp]',
       battle_report_stateless_png: 'GET /api/battle/report.png?attacker=...&defender=...',
       battle_render_custom: 'POST /api/battle/render',
@@ -284,6 +295,7 @@ app.get('/', (req, res) => {
       economy_daily: 'POST /api/economy/daily',
       economy_doiqua: 'POST /api/economy/doiqua',
       economy_roll: 'POST /api/economy/roll',
+      economy_autosell: 'GET /api/economy/autosell/:userId | POST /api/economy/autosell',
       economy_gift: 'POST /api/economy/gift',
       roles_cleanup_expired: 'POST /api/roles/cleanup-expired',
       leaderboard: 'GET /api/leaderboard[?type=level|power|wealth|marry&limit=10]',
@@ -568,7 +580,10 @@ app.post('/api/exp/voice', requireBackendApiKey, async (req, res) => {
 
 app.post('/api/exp/voice-heartbeat', requireBackendApiKey, async (req, res) => {
   try {
-    const result = await processVoiceHeartbeat();
+    const [result] = await Promise.all([
+      processVoiceHeartbeat(),
+      cleanupExpiredBattleLogs().catch(() => null),
+    ]);
     return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] Lỗi xử lý /api/exp/voice-heartbeat:', err);
@@ -687,7 +702,7 @@ app.post('/api/battle/logs', async (req, res) => {
     const channelId = getCleanParam(req.body?.channelId || req.body?.channel_id, null);
     const rawUser = getCleanParam(req.body?.userId || req.body?.user_id, null);
     const userId = rawUser ? sanitizeUserId(rawUser) : null;
-    const payload = getBattleLogPayload({ battleId, channelId, userId });
+    const payload = await getBattleLogPayload({ battleId, channelId, userId });
     return res.status(200).json(payload);
   } catch (err) {
     console.error('[Server] Lỗi tra cứu nhật ký trận đấu:', err);
@@ -702,11 +717,11 @@ app.get('/api/battle/logs', async (req, res) => {
     const rawUser = getCleanParam(req.query.userId || req.query.user_id, null);
     const userId = rawUser ? sanitizeUserId(rawUser) : null;
     if (String(req.query.format || '').toLowerCase() === 'html' && battleId) {
-      const rendered = renderBattleLogHtml(battleId);
+      const rendered = await renderBattleLogHtml(battleId);
       res.set('Content-Type', 'text/html; charset=utf-8');
       return res.status(200).send(rendered.html);
     }
-    const payload = getBattleLogPayload({ battleId, channelId, userId });
+    const payload = await getBattleLogPayload({ battleId, channelId, userId });
     return res.status(200).json(payload);
   } catch (err) {
     console.error('[Server] Lỗi tra cứu nhật ký trận đấu:', err);
@@ -714,14 +729,44 @@ app.get('/api/battle/logs', async (req, res) => {
   }
 });
 
+app.post('/api/battle/logs/:battleId/render-all', async (req, res) => {
+  try {
+    const battleId = String(req.params.battleId || '').trim();
+    const out = await renderAllBattleTurnsOnDemand(battleId);
+    return res.status(out.found ? 200 : 404).json(out);
+  } catch (err) {
+    console.error('[Server] Lỗi render full hiệp on-demand:', err);
+    return res.status(500).json({ success: false, error: 'RENDER_ALL_TURNS_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/battle/logs/:battleId/turn/:turnSpec', async (req, res) => {
+  try {
+    const battleId = String(req.params.battleId || '').trim();
+    const rawTurn = String(req.params.turnSpec || '').replace(/\.(webp|png)$/i, '').trim();
+    const turnNum = Math.max(0, parseInt(rawTurn, 10) || 0);
+    const imgBuffer = await renderSingleBattleTurnOnDemand(battleId, turnNum);
+    if (!imgBuffer) {
+      return res.status(404).json({ success: false, error: 'TURN_NOT_FOUND', message: 'Không tìm thấy hiệp đấu hoặc đã hết hạn lưu 48h.' });
+    }
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Content-Length', imgBuffer.length);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(imgBuffer);
+  } catch (err) {
+    console.error('[Server] Lỗi render turn 1v1 on-demand:', err);
+    return res.status(500).json({ success: false, error: 'TURN_RENDER_FAILED', message: err.message });
+  }
+});
+
 app.get(['/api/battle/logs/:battleId/view', '/api/battle/logs/:battleId', '/battle/logs/:battleId'], async (req, res) => {
   try {
     const battleId = String(req.params.battleId || '').trim();
     if (String(req.query.format || '').toLowerCase() === 'json') {
-      const payload = getBattleLogPayload({ battleId });
+      const payload = await getBattleLogPayload({ battleId });
       return res.status(200).json(payload);
     }
-    const rendered = renderBattleLogHtml(battleId);
+    const rendered = await renderBattleLogHtml(battleId);
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.set('Cache-Control', 'public, max-age=300');
     return res.status(200).send(rendered.html);
@@ -735,7 +780,7 @@ app.get('/api/battle/report/:battleId/:frameSpec', async (req, res) => {
   try {
     const cleanId = String(req.params.battleId || '').trim();
     const rawSpec = String(req.params.frameSpec || '').trim().toLowerCase();
-    const cached = getCachedBattleReport(cleanId);
+    const cached = await loadBattleReport(cleanId);
     if (!cached) {
       return res.status(404).json({
         success: false,
@@ -760,12 +805,12 @@ app.get('/api/battle/report/:battleId/:frameSpec', async (req, res) => {
       }
     }
 
-    const frameMeta = getBattleFrameMeta(cleanId, frameIndex);
-    const scale = frameMeta ? frameMeta.scale : 2;
+    const frameMeta = getBattleFrameMeta(cleanId, frameIndex, cached);
+    const scale = frameMeta ? frameMeta.scale : 1.8;
     const imgBuffer = await renderBattleCardQueued(`battle:${cleanId}:${frameIndex}:${isWebp ? 'webp' : 'png'}`, cached, {
       scale,
       format: isWebp ? 'webp' : 'png',
-      webpQuality: scale <= 1 ? 80 : 84,
+      webpQuality: scale <= 1 ? 72 : 75,
       frame: frameMeta,
     });
     if (isWebp) {
@@ -787,7 +832,7 @@ app.get('/api/battle/report/:battleId', async (req, res) => {
     const rawParam = String(req.params.battleId || '');
     const isWebp = rawParam.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
     const cleanId = rawParam.replace(/\.(png|webp)$/i, '').trim();
-    const cached = getCachedBattleReport(cleanId);
+    const cached = await loadBattleReport(cleanId);
     if (!cached) {
       return res.status(404).json({
         success: false,
@@ -808,6 +853,8 @@ app.get('/api/battle/report/:battleId', async (req, res) => {
     }
 
     const imgBuffer = await renderBattleCardQueued(`battle:${cleanId}:default:${isWebp ? 'webp' : 'png'}`, cached, {
+      scale: 1.25,
+      webpQuality: 75,
       format: isWebp ? 'webp' : 'png',
     });
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');
@@ -1067,6 +1114,39 @@ app.post('/api/economy/roll', requireBackendApiKey, requireUpdateAck, async (req
   } catch (err) {
     console.error('[Server] /api/economy/roll error:', err);
     return res.status(500).json({ success: false, error: 'ROLL_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/economy/autosell/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getAutoSellConfig(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] GET /api/economy/autosell error:', err);
+    return res.status(500).json({ success: false, error: 'AUTOSELL_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/economy/autosell', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await updateAutoSellConfig(body.userId || body.user_id, {
+      common: body.common ?? body.pham_pham ?? body.phampham,
+      rare: body.rare ?? body.linh_pham ?? body.linhpham,
+      epic: body.epic ?? body.tien_pham ?? body.tienpham,
+      keep_new: body.keep_new ?? body.keepNew ?? body.giu_mon_moi ?? body.giumonmoi,
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] POST /api/economy/autosell error:', err);
+    return res.status(500).json({ success: false, error: 'AUTOSELL_UPDATE_FAILED', message: err.message });
   }
 });
 
@@ -2067,10 +2147,39 @@ app.post('/api/vein/settle-expired', requireBackendApiKey, async (req, res) => {
   }
 });
 
-app.get('/api/vein/battle/:battleId/view', (req, res) => {
+app.post('/api/vein/battle/:battleId/render-all', async (req, res) => {
+  try {
+    const cleanBid = String(req.params.battleId || '').trim();
+    const out = await renderAllTeamBattleTurnsOnDemand(cleanBid);
+    return res.status(out.found ? 200 : 404).json(out);
+  } catch (err) {
+    console.error('[Server] /api/vein/battle/:battleId/render-all error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_RENDER_ALL_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/vein/battle/:battleId/turn/:turnSpec', async (req, res) => {
+  try {
+    const cleanBid = String(req.params.battleId || '').trim();
+    const turnNum = Math.max(0, parseInt(String(req.params.turnSpec || '').replace(/\.(webp|png)$/i, ''), 10) || 0);
+    const buf = await renderSingleTeamBattleTurnOnDemand(cleanBid, turnNum);
+    if (!buf) {
+      return res.status(404).json({ success: false, error: 'VEIN_TURN_NOT_FOUND', message: 'Không tìm thấy hiệp chiến báo Linh Mạch hoặc đã hết hạn 48h.' });
+    }
+    res.setHeader('Content-Type', 'image/webp');
+    res.setHeader('Content-Length', buf.length);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.send(buf);
+  } catch (err) {
+    console.error('[Server] /api/vein/battle/:battleId/turn error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_TURN_RENDER_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/vein/battle/:battleId/view', async (req, res) => {
   try {
     const cleanBid = String(req.params.battleId || '').replace(/\.(html|json)$/i, '').trim();
-    const { found, html } = renderTeamBattleLogHtml(cleanBid);
+    const { found, html } = await renderTeamBattleLogHtml(cleanBid);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=1800');
     return res.status(found ? 200 : 404).send(html);
@@ -2080,10 +2189,10 @@ app.get('/api/vein/battle/:battleId/view', (req, res) => {
   }
 });
 
-app.post('/api/vein/logs', requireUpdateAck, (req, res) => {
+app.post('/api/vein/logs', requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const payload = getTeamBattleLogPayload({
+    const payload = await getTeamBattleLogPayload({
       battleId: getCleanParam(body.battleId),
       userId: getCleanParam(body.userId),
     });
@@ -2099,11 +2208,11 @@ app.get('/api/vein/battle/:battleId', async (req, res) => {
     const raw = String(req.params.battleId || '');
     const isPng = raw.endsWith('.png');
     const cleanBid = raw.replace(/\.(webp|png)$/i, '');
-    const report = getCachedTeamBattle(cleanBid);
+    const report = await loadTeamBattleReport(cleanBid);
     if (!report) {
-      return res.status(404).json({ success: false, error: 'TEAM_BATTLE_NOT_FOUND', message: 'Chiến báo tổ đội đã hết hạn lưu tạm (30 phút).' });
+      return res.status(404).json({ success: false, error: 'TEAM_BATTLE_NOT_FOUND', message: 'Chiến báo tổ đội đã hết hạn lưu trữ (tối đa 2 ngày).' });
     }
-    const buf = await renderTeamBattleCard(report, { format: isPng ? 'png' : 'webp' });
+    const buf = await renderTeamBattleCard(report, { format: isPng ? 'png' : 'webp', scale: 0.9, webpQuality: 76 });
     res.setHeader('Content-Type', isPng ? 'image/png' : 'image/webp');
     res.setHeader('Cache-Control', 'public, max-age=1800');
     return res.send(buf);
@@ -2243,7 +2352,11 @@ if (isMain) {
       warmStaticAssetsInBackground().catch((err) => {
         console.warn('[StaticCache] Boot warm error:', err.message);
       });
+      cleanupExpiredBattleLogs({ force: true }).catch(() => null);
     }, 250);
+    setInterval(() => {
+      cleanupExpiredBattleLogs().catch(() => null);
+    }, 60 * 60 * 1000).unref();
   });
 }
 

@@ -50,8 +50,8 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường • Khám Phá Đại Lục',
-  version: '1.4.5',
+  subtitle: 'Cẩm nang v1.4.7 • Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường • Khám Phá',
+  version: '1.4.7',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -60,7 +60,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-22T12:00:00.000Z',
+  updated_at: '2026-11-23T00:00:00.000Z',
   total_categories: 7,
 };
 
@@ -69,290 +69,258 @@ export const WIKI_CATEGORIES = {
     id: 'overview',
     title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
     icon: em('su_wiki_scroll'),
-    description: 'Khái lược hệ thống tu tiên, lộ trình khởi đầu và danh mục lệnh trọng tâm.',
+    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.4.7).',
     image_url: '',
     sections: [
       {
-        heading: '1. Khởi Đầu Tu Hành',
-        content: '• Trạng thái mặc định: Cấp 1 • 0 EXP • 0 Linh Thạch • 1 Slot Role.\n• Linh Thú khởi đầu: Hóa Thạch Nham Nham Thú (Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD) cấp sẵn để tham chiến.\n• Tích lũy EXP tự động khi đàm đạo (Chat) và tu luyện trong phòng thoại (Voice EXP 85–135 EXP / 5 phút, chấm công định kỳ mỗi 12 phút).',
+        heading: '1. Khởi Đầu Nhanh',
+        content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Hệ Thống Lệnh Trọng Tâm (v1.4.5)',
-        content: '• /profile, /rank & /exp: Thẻ hồ sơ tu sĩ, cảnh giới & thống kê % Boost EXP Chat / Voice kèm EXP trung bình thực nhận.\n• /battle, /linhvuc, /party & /linhmach: Thách đấu PvP/PvE, trang bị Linh Vực • Thần Thức • Thần Cảnh (Đạo Áp Cấp 2) & lập Tổ Đội chiếm Linh Mạch.\n• /daily, /job, /doiqua, /roll, /shop, /dismantle, /tangqua: Linh Thạch, 6 Nghề Tu Tiên (tối đa 8 ca/ngày), Shop Ngày, Gacha, Phân Rã & Tặng Quà.\n• /farm, /exchange & /explorer: Nông trại thời gian thực & Khám phá Đại Lục Cửu Châu 12 địa danh.\n• /coinflip, /blackjack, /slots, /crash: Các thức giải trí tiêu khiển bằng Linh Thạch.\n• /enchant, /nhiemvu & /top: Khắc Ấn D→S (kèm Thiên Đạo Tuyệt Ấn Thạch), 5 Nhiệm Vụ Ngày, 3 Hợp Đồng Tuần, Tháp 200 Tầng & BXH.\n• /inv, /phapbao, /linhthu, /roles, /equip, /unequip: Túi Đồ, Kho Pháp Bảo, Linh Thú, Role & Trang Bị 1 chạm.\n• /marry, /divorce, /giatoc, /wiki, /info, /updates: Tiên Lữ, Gia Tộc Lv.1–10, Cẩm Nang 7 chuyên mục, Tra UID/Emoji & Nhật Ký.',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.4.7)',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
       {
-        name: `${em('su_sprout')} Khởi Đầu Tu Hành`,
-        value: '• Mặc định: **Lv.1 • 0 EXP • 0 Linh Thạch • 1 Slot Role**.\n• Linh Thú khởi đầu: **Hóa Thạch Nham Nham Thú** *(Phàm Phẩm • Hệ Thổ • 120 ATK / 180 DEF / 100 SPD)*.\n• Tự động khởi tạo hồ sơ khi tương tác Chat / Voice (chấm công Voice định kỳ mỗi 12 phút).',
+        name: `${em('su_sprout')} Khởi Đầu`,
+        value: '• Tự tạo hồ sơ khi Chat (`23–35 EXP/45s`) hoặc Voice (`85–135 EXP/5p`).\n• Tặng sẵn Pet **Hóa Thạch Nham Nham Thú** *(120 ATK / 180 DEF / 100 SPD)* & 1 Slot Role.',
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Hệ Thống Lệnh (v1.4.5)`,
-        value: '• `/profile` • `/rank` • `/exp` • `/battle` • `/linhvuc` • `/top` — Hồ sơ, % Boost EXP, Đấu Trường & BXH.\n• `/party` • `/linhmach` • `/explorer` — Tổ Đội 3 người, Chiếm Linh Mạch & Thám Hiểm 12 Địa Danh.\n• `/daily` • `/job` • `/farm` • `/exchange` • `/doiqua` — Linh Thạch, Nghề Nghiệp (8 ca/ngày) & Nông Trại.\n• `/roll` • `/shop` *(kèm Shop Ngày)* • `/dismantle` • `/tangqua` — Triệu Hồi & Giao Thương.\n• `/coinflip` • `/blackjack` • `/slots` • `/crash` — Thức chơi Linh Thạch.\n• `/enchant` • `/nhiemvu` • `/inv` • `/phapbao` • `/linhthu` • `/roles` • `/equip` — Khắc Ấn D→S & Tháp 200 Tầng.\n• `/marry` • `/divorce` • `/giatoc` • `/wiki` • `/info` • `/updates` — Tiên Lữ, Gia Tộc & Cẩm Nang.',
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.4.7)`,
+        value: [
+          '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
+          '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
+          '• **Kho & Gacha:** `/roll` • `/autosell` • `/shop` • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
+          '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
+          '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('su_sparkle')} Lệnh Tiện Ích Server`,
+        value: '• **Âm nhạc:** `/play` • `/queue` • `/music` • `/sound`\n• **Giveaway & Ghim:** `/giveaway_create` • `/giveaway_end` • `/giveaway_list` • `/giveaway_cancel` • `/giveaway_check` • `/sticky-set` • `/sticky-off`',
         inline: false,
       },
     ],
-    content: 'Hệ thống tu tiên SuMi Family v1.4.5 vận hành đồng bộ: tra cứu Boost EXP `/exp`, bồi dưỡng 90 Linh Thú & 165 Pháp Bảo, khai mở Linh Vực • Đạo Áp, chiếm Linh Mạch `/linhmach`, thám hiểm `/explorer` và Tháp 200 Tầng.',
+    content: 'Hệ thống Tu Tiên SuMi Family v1.4.7: /exp đo Boost, /autosell lọc Gacha, /battle kèm Web Logs 48h, Tháp 500 tầng, Nông Trại, Khám Phá 12 địa danh & tiện ích Server.',
   },
 
   realms: {
     id: 'realms',
     title: `${em('su_realm_7_hondondao')} Hệ Thống Cảnh Giới & Thăng Cấp`,
     icon: em('su_realm_7_hondondao'),
-    description: '7 Đại Cảnh Giới (Lv.1–100), công thức EXP, mốc Role cấp độ và mở khóa Slot Role.',
+    description: '7 Đại Cảnh Giới (Lv.1–100), EXP Chat/Voice & 8 mốc Level Roles.',
     image_url: '',
     sections: [
       {
-        heading: '1. Bảy Đại Cảnh Giới & Mở Khóa Slot Role',
-        content: '• I. Luyện Khí Sơ Kỳ (Lv.1–19) — 1 Slot Role\n• II. Trúc Cơ Đạo Cảnh (Lv.20–39) — 2 Slot Role\n• III. Kim Đan Đại Đạo (Lv.40–59) — 3 Slot Role • Viền Tử Kim\n• IV. Nguyên Anh Chân Quân (Lv.60–79) — 4 Slot Role\n• V. Hóa Thần Tiên Tôn (Lv.80–89) — 5 Slot Role\n• VI. Đại Thừa Vô Cực (Lv.90–99) — 5 Slot Role\n• VII. Hỗn Độn Chúa Tể (Lv.100) — Đỉnh cao tối thượng',
+        heading: '1. Bảy Cảnh Giới & Slot Role',
+        content: '• Lv.1–19 Luyện Khí (1 Slot) → Lv.20–39 Trúc Cơ (2 Slot) → Lv.40–59 Kim Đan (3 Slot) → Lv.60–79 Nguyên Anh (4 Slot) → Lv.80–100 Hóa Thần / Đại Thừa / Hỗn Độn Chúa Tể (5 Slot).',
       },
       {
-        heading: '2. Cơ Chế Tích Lũy EXP & Công Thức',
-        content: '• Chat: 20–30 EXP / tin nhắn hợp lệ (cooldown 45 giây).\n• Voice: 85–135 EXP mỗi 5 phút hoạt động trong kênh thoại (chấm công định kỳ mỗi 12 phút không cần rời phòng).\n• Công thức thăng cấp: 60 × (Level ^ 1.45), trần 500.000 EXP tại Lv.100.\n• Buff EXP: « Linh Hồn Tu Luyện » (+15% EXP), « Cửu Vĩ Yêu Hậu » (+80% EXP).',
-      },
-      {
-        heading: '3. Mốc Level Roles Tự Động & Quyền Discord',
-        content: '• Lv.5 U Linh Chớm Nở (+3% EXP): Gửi ảnh/tệp ở sảnh.\n• Lv.15 Linh Cáo Học Giả (+5% EXP): Nhúng link, Đổi nick, Emoji ngoại.\n• Lv.20 Linh Cáo Tinh Anh (+8% EXP, +5% LT): Sticker ngoại, Tin thoại, Lập Gia Tộc.\n• Lv.35 Yêu Hồ Nguyệt Ảnh (+12% EXP, +10% LT): Public Thread, Stream Voice.\n• Lv.45 Huyễn Linh Thú (+15% EXP, +10% LT, +5% Pet): Soundboard, Activities.\n• Lv.60 Thiên Hồ Viễn Cổ (+20% EXP, +15% LT, +8% Pet): Private Thread, Âm ngoại.\n• Lv.80 Chi Linh Thánh Đế (+30% EXP, +25% LT, +12% Pet): Priority Speaker, TTS, Poll.\n• Lv.100 Hỗn Độn Chúa Tể — Trảm Quyết Tối Thượng (+50% EXP, +50% LT, +20% Pet): Full Voice (Move/Mute/Deafen), Quản lý Nick/Thread, Ghim tin & Miễn Slowmode.',
+        heading: '2. Nguồn EXP & Mốc Level Role',
+        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 60 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).',
       },
     ],
     fields: [
       {
-        name: `${em('su_mountain')} 7 Đại Cảnh Giới & Mở Khóa Slot Role`,
-        value: `• ${realmEmoji(1)} **I. Luyện Khí Sơ Kỳ** (\`Lv.1–19\`) • 1 Slot • Viền Bạch Ngọc\n• ${realmEmoji(20)} **II. Trúc Cơ Đạo Cảnh** (\`Lv.20–39\`) • 2 Slot\n• ${realmEmoji(40)} **III. Kim Đan Đại Đạo** (\`Lv.40–59\`) • 3 Slot • Viền Tử Kim\n• ${realmEmoji(60)} **IV. Nguyên Anh Chân Quân** (\`Lv.60–79\`) • 4 Slot\n• ${realmEmoji(80)} **V. Hóa Thần Tiên Tôn** (\`Lv.80–89\`) • 5 Slot\n• ${realmEmoji(90)} **VI. Đại Thừa Vô Cực** (\`Lv.90–99\`) • 5 Slot\n• ${realmEmoji(100)} **VII. Hỗn Độn Chúa Tể** (\`Lv.100\`) • Đỉnh cao tối thượng`,
+        name: `${em('su_mountain')} 7 Cảnh Giới & Slot Role`,
+        value: `${realmEmoji(1)} **Lv.1–19** Luyện Khí *(1 Slot)* • ${realmEmoji(20)} **Lv.20–39** Trúc Cơ *(2)* • ${realmEmoji(40)} **Lv.40–59** Kim Đan *(3)*\n${realmEmoji(60)} **Lv.60–79** Nguyên Anh *(4)* • ${realmEmoji(80)} **Lv.80–89** Hóa Thần *(5)* • ${realmEmoji(90)} **Lv.90–99** Đại Thừa *(5)* • ${realmEmoji(100)} **Lv.100** Hỗn Độn Chúa Tể`,
         inline: false,
       },
       {
         name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
-        value: '• **Chat**: `20–30 EXP` / tin nhắn *(cooldown 45 giây)*.\n• **Voice**: `85–135 EXP` / `5 phút` hoạt động *(+20% • chấm công định kỳ mỗi 12 phút)*.\n• **Công thức lên cấp**: `60 × (Level ^ 1.45)` *(tối đa `500.000 EXP` tại Lv.100)*.\n• **Buff & Kiểm tra:** `Linh Hồn Tu Luyện` (+15%), `Cửu Vĩ Yêu Hậu` (+80%), Level Role, Tiên Lữ & Gia Tộc — xem nhanh bằng **`/exp`**!',
+        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `60 × Level^1.45` *(trần `500.000 EXP`)* • Tra tổng boost bằng `/exp`.',
         inline: false,
       },
       {
-        name: `${em('su_medal_role')} Mốc Level Roles & Đặc Quyền Discord`,
+        name: `${em('su_medal_role')} Mốc Level Role & Quyền Discord`,
         value: [
-          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp ở sảnh`,
-          `• ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Nhúng link, Đổi nick, Emoji ngoại`,
-          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Sticker ngoại, Voice msg, Gia Tộc`,
-          `• ${levelMilestoneEmoji(35)} \`Lv.35\` (+12% EXP, +10% LT): Public Thread, Stream Voice`,
-          `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15% EXP, +10% LT, +5% Pet): Soundboard, Activities`,
-          `• ${levelMilestoneEmoji(60)} \`Lv.60\` (+20% EXP, +15% LT, +8% Pet): Private Thread, Âm ngoại`,
-          `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30% EXP, +25% LT, +12% Pet): Priority, TTS, Poll`,
-          `• ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50% EXP/LT, +20% Pet): Full Voice, Quản lý Nick/Thread, Ghim & Miễn Slowmode`,
+          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp ở sảnh • ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Link, Đổi nick, Emoji ngoại`,
+          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Sticker ngoại, Voice msg, Lập Gia Tộc`,
+          `• ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Thread, Stream • ${levelMilestoneEmoji(45)} \`Lv.45\` (+15%/+10%/+5% Pet): Soundboard`,
+          `• ${levelMilestoneEmoji(60)} \`Lv.60\` (+20%/+15%/+8%): Private Thread • ${levelMilestoneEmoji(80)} \`Lv.80\` (+30%/+25%/+12%): Priority, TTS, Poll`,
+          `• ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50% EXP/LT, +20% Pet): Full Voice, Nick/Thread, Ghim & Miễn Slowmode`,
         ].join('\n'),
         inline: false,
       },
     ],
-    content: 'Lộ trình tu luyện gồm 7 đại cảnh giới từ Lv.1 đến Lv.100. Đạt mốc cảnh giới tự động mở khóa thêm Slot Role Quyền Năng và nâng cấp viền Avatar trên `/profile` & `/rank`.',
+    content: '7 cảnh giới từ Lv.1 đến Lv.100 mở dần tới 5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5p; dùng /exp xem chi tiết.',
   },
 
   battle: {
     id: 'battle',
     title: `${em('su_arena')} Đấu Trường, Ngũ Hành & Linh Vực`,
     icon: em('su_arena'),
-    description: 'Quy tắc 1v1, Ngũ Hành Tương Khắc, Tứ Đại Dị Tố và hệ thống Linh Vực • Thần Thức • Thần Cảnh (từ Hiệp 2).',
+    description: 'Luật 1v1 /battle, Web Logs 48h, Ngũ Hành • Dị Tố, Linh Vực (Hiệp 2+) & Tổ Đội Linh Mạch.',
     image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.3.1`,
     sections: [
       {
-        heading: '1. Vòng Xoay Ngũ Hành',
-        content: '• Kim → Mộc → Thổ → Thủy → Hỏa → Kim.\n• Thuận khắc: +30% sát thương (×1.30).\n• Bị khắc: -20% sát thương gây ra (×0.80).',
+        heading: '1. Ngũ Hành & Dị Tố',
+        content: '• Kim → Mộc → Thổ → Thủy → Hỏa → Kim (+30% / -20%).\n• Lôi khắc Thủy & Kim (+30% / -20%); Ám ↔ Quang (+25% hai chiều); Hỗn Độn/Hư Không (+20% xuyên giáp, -15% ST nhận).',
       },
       {
-        heading: '2. Tứ Đại Dị Tố Đặc Thù',
-        content: '• Lôi: Khắc mạnh Thủy & Kim (+30% DMG); Thủy/Kim đánh Lôi giảm -20%.\n• Ám vs Quang: Tương sát lưỡng cực (+25% DMG hai chiều).\n• Hỗn Độn / Hư Không: Ngoài ngũ hành, không bị khắc, +20% sát thương chuẩn xuyên giáp & -15% sát thương nhận vào.',
-      },
-      {
-        heading: '3. Quy Tắc 1v1 (/battle)',
-        content: '• Ưu tiên ra đòn: HAX Lôi Quang Tốc > Final SPD cao hơn.\n• Công thức HP chiến đấu: (Lv × 1.000) + (Final DEF × 5) + Bonus HP.\n• Giới hạn 30 hiệp; cooldown 5 giây/trận.',
-      },
-      {
-        heading: '4. Linh Vực • Thần Thức • Thần Cảnh (/linhvuc)',
-        content: '• Gồm 30 Linh Vực, 15 Thần Thức & 15 Thần Cảnh (mở qua /roll loai:domain). Thần Thoại Độc Nhất & Thường cân bằng trong biên độ chênh lệch tối đa 15%.\n• Kích hoạt từ Hiệp 2: Linh Vực không cộng thẳng ATK/DEF/SPD mà tập trung Buff xuyên giáp/HAX và áp đặt Debuff.\n• Tương Khắc 5 Hệ Vực: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực. Khi cả hai Linh Vực cùng tồn tại, hệ bị khắc tiêu hao -2 Linh Mạch/hiệp (phe khắc -1/hiệp) và đôi bên chỉ nhận Buff sân nhà (trừ Linh Vực Thần Thoại có thuộc tính Xuyên Kháng Lãnh Địa).\n• Thần Thức gia tăng giới hạn Linh Mạch & hiệu lực Buff; Thần Cảnh cường hóa Debuff & bổ sung hiệu ứng bất lợi mới.',
+        heading: '2. Đấu Trường 1v1, Web Logs 48h & Linh Vực',
+        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
       },
     ],
     fields: [
       {
         name: `${em('su_element_wheel')} Ngũ Hành & Tứ Đại Dị Tố`,
-        value: `${elementEmoji('Kim')} Kim → ${elementEmoji('Mộc')} Mộc → ${elementEmoji('Thổ')} Thổ → ${elementEmoji('Thủy')} Thủy → ${elementEmoji('Hỏa')} Hỏa → Kim (\`+30%\` / \`-20%\`)\n• ${elementEmoji('Lôi')} **Lôi** khắc Thủy/Kim (\`+30%\`) • ${elementEmoji('Ám')} **Ám** ${em('su_crossed_swords')} ${elementEmoji('Quang')} **Quang** (\`+25%\`) • ${elementEmoji('Hỗn Độn')} **Hỗn Độn/Hư Không** (\`+20%\` xuyên giáp, \`-15%\` ST nhận).`,
+        value: `${elementEmoji('Kim')} Kim → ${elementEmoji('Mộc')} Mộc → ${elementEmoji('Thổ')} Thổ → ${elementEmoji('Thủy')} Thủy → ${elementEmoji('Hỏa')} Hỏa → Kim (\`+30%\` / \`-20%\`)\n• ${elementEmoji('Lôi')} **Lôi** khắc Thủy/Kim (\`+30%\`) • ${elementEmoji('Ám')} **Ám** ↔ ${elementEmoji('Quang')} **Quang** (\`+25%\`) • ${elementEmoji('Hỗn Độn')} **Hỗn Độn/Hư Không** (\`+20%\` xuyên giáp, \`-15%\` ST nhận)`,
         inline: false,
       },
       {
         name: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (Hiệp 2+)`,
         value: [
-          `• **Tương Khắc Vực**: ${domainElementEmoji('Kiếm Vực')} Kiếm Vực → ${domainElementEmoji('Huyễn Vực')} Huyễn Vực → ${domainElementEmoji('Trận Vực')} Trận Vực → ${domainElementEmoji('Minh Vực')} Minh Vực → ${domainElementEmoji('Thánh Vực')} Thánh Vực → Kiếm Vực (\`-1\` vs \`-2 Linh Mạch\`/hiệp).`,
-          '• **Cơ chế Giằng Co**: Khi hai Linh Vực cùng hoạt động, đôi bên chỉ kích hoạt Buff sân nhà (những Linh Vực Thần Thoại có *Xuyên Kháng* vẫn áp đặt Debuff). Khi Linh Mạch địch cạn, toàn bộ Debuff khai mở hoàn toàn.',
-          '• **Thần Thức / Thần Cảnh**: Thần Thức tăng trần Linh Mạch & Buff; Thần Cảnh tăng độ sâu Debuff & hiệu ứng khống chế (`/linhvuc`).',
-          `• ${em('dao_ap_crest', '⚡')} **Đạo Áp (Debuff Cấp 2):** Toàn bộ Linh Vực Thần Thoại khi đánh vỡ Linh Vực địch sẽ kích hoạt **Đạo Áp** ở hiệp kế tiếp (` + '`1–3 hiệp`' + `, mạnh hơn debuff gốc ` + '`+20%–30%`' + `).`,
+          `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
+          `• **Cơ chế:** Khi 2 Vực giằng co, mỗi bên nhận Buff sân nhà (trừ *Xuyên Kháng*); **Thần Thức** tăng Mạch/Buff, **Thần Cảnh** tăng Debuff. ${em('dao_ap_crest', '⚡')} **Đạo Áp (\`1–3 hiệp\`)** kích hoạt khi Vực Thần Thoại phá Vực địch.`,
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('vein_mine_sp', '⛰️')} Chiếm Đoạt Linh Mạch (/party • /linhmach) & Khám Phá (/explorer)`,
+        name: `${em('su_crossed_swords')} Luật /battle, Web Logs & /linhmach`,
         value: [
-          '• **Linh Mạch (6 Khung Giờ Vàng `08/12/18/20/21/22h`):** Mở 2 mỏ (`F–C` & `B–S+`), lập Tổ Đội 3 người (`/party`) đấu Boss/3v3 theo thứ tự SPD (dùng Linh Vực Đội Trưởng), hưởng `6–56 LT/phút` chia đều đội (`+15%` Ngân Khố Tộc nếu cùng Clan).',
-          `• **Khám Phá Bản Đồ (\`/explorer\`):** Đưa Pet chính/phụ + Loadout đi 12 địa danh (\`10k → 1M\`, \`2/3/6/12h\`) nhận \`200–300 LT/giờ\`, cơ hội rơi ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(0.5%)* & nhặt bảo vật rơi *(60%)*.`,
+          '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
+          '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
+          `• ${em('vein_mine_sp', '⛰️')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, tổ đội 3 người tranh mỏ \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*.`,
         ].join('\n'),
-        inline: false,
-      },
-      {
-        name: `${em('su_crossed_swords')} Luật Đấu Trường 1v1 & PvE Tự Do`,
-        value: '• `/battle @doi_thu`: PvP (`15` trận tính LT/ngày) • `/battle` (bỏ trống): **PvE Tự Do** (`25` trận tính LT/ngày — 50% Ngang / 10% Yếu / 40% Mạnh).\n• Thắng **`+10 LT`** / Thua **`-5 LT`** (tối thiểu `0 LT`) • Thứ tự đánh: `Lôi Quang Tốc` > `SPD` cao hơn • Tối đa **30 hiệp**.',
         inline: false,
       },
     ],
-    content: 'Đấu Trường 1v1 (`/battle [doi_thu]`) kết hợp Ngũ Hành, Dị Tố, kỹ năng HAX và giao tranh Linh Vực từ Hiệp 2, xuất trực tiếp Ảnh Chiến Báo đa lượt.',
+    content: 'Đấu Trường /battle kết hợp Ngũ Hành, HAX & Linh Vực (Hiệp 2+). Discord hiện các hiệp mốc 1/5/10/15/20 & Kết; xem từng hiệp chi tiết trên Web Logs (lưu 48h).',
   },
 
   equipment: {
     id: 'equipment',
     title: `${em('su_crossed_swords')} Trang Bị Loadout (165 Pháp Bảo)`,
     icon: em('su_crossed_swords'),
-    description: '3 Slot trang bị (57 Vũ Khí, 54 Bảo Ngọc, 54 Chiến Hồn), tỉ lệ rớt và quy tắc 39 Pháp Bảo Thần Thoại Độc Nhất.',
+    description: '57 Vũ Khí • 54 Bảo Ngọc • 54 Chiến Hồn, tỉ lệ rớt, Độc Nhất & Khắc Ấn D→S.',
     image_url: '',
     sections: [
       {
-        heading: '1. Cấu Trúc 3 Slot Loadout (165 Pháp Bảo)',
-        content: '• Vũ Khí (57 món): Tăng ATK, SPD, tỉ lệ bạo kích CRIT và hiệu ứng HAX công kích.\n• Bảo Ngọc (54 món): Tăng DEF, HP tối đa, khiên hộ mệnh và kháng hiệu ứng.\n• Chiến Hồn (54 món): Tăng chỉ số tổng hợp và kích hoạt thiên phú HAX đa tầng.',
+        heading: '1. 3 Slot Pháp Bảo (165 Món)',
+        content: '• Vũ Khí (57): ATK, SPD, CRIT & HAX công • Bảo Ngọc (54): DEF, HP, Khiên & kháng • Chiến Hồn (54): Chỉ số tổng & HAX đa tầng.',
       },
       {
-        heading: '2. Tỉ Lệ Rớt & Quy Tắc Độc Nhất Toàn Server',
-        content: '• Phàm Phẩm: 60.5% • Linh Phẩm: 25% • Tiên Phẩm: 14% • Thần Thoại: 0.5%.\n• Toàn kho gồm 39 Pháp Bảo Thần Thoại Độc Nhất Toàn Server (mỗi món chỉ 1 chủ nhân) và 56 Pháp Bảo Thần Thoại Tự Do cho toàn thể tu sĩ cùng săn; cân bằng tổng thể giữa Độc Nhất và Thường tối đa trong ngưỡng 15%.\n• Phẩm chất Khắc Ấn mặc định: D (40%) / C (32%) / B (20%) / A (8%) — S (+40%) chỉ nâng qua /enchant.',
+        heading: '2. Tỉ Lệ Rớt & Quy Tắc Sở Hữu',
+        content: '• Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5% (39 Độc Nhất toàn server + 56 Thần Thoại Tự Do, cân bằng <= 15%).\n• Quay trùng cộng dồn & giữ tư chất Khắc Ấn cao nhất; hỗ trợ tự bán qua /autosell, xem kho /phapbao, tháo /unequip & nâng D→S qua /enchant.',
       },
     ],
     fields: [
       {
         name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo (165 Món)`,
-        value: `• ${em('su_crossed_swords')} **Vũ Khí** (57 món): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (54 món): \`DEF • HP • Khiên\`\n• ${em('su_thunder_hax')} **Chiến Hồn** (54 món): \`ATK • DEF • SPD • HAX\``,
+        value: `• ${em('su_crossed_swords')} **Vũ Khí** (57): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (54): \`DEF • HP • Khiên\`\n• ${em('su_thunder_hax')} **Chiến Hồn** (54): \`ATK • DEF • SPD • HAX\``,
         inline: true,
       },
       {
         name: `${em('su_gacha_dice')} Tỉ Lệ Rớt`,
-        value: `• ${tierEmoji('common')} Phàm Phẩm: **60.5%**\n• ${tierEmoji('rare')} Linh Phẩm: **25%**\n• ${tierEmoji('epic')} Tiên Phẩm: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **0.5%** *(39 Độc Nhất + 56 Tự Do)*`,
+        value: `• ${tierEmoji('common')} Phàm: **60.5%**\n• ${tierEmoji('rare')} Linh: **25%**\n• ${tierEmoji('epic')} Tiên: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **0.5%** *(39 Độc Nhất + 56 Tự Do)*`,
         inline: true,
       },
       {
-        name: `${tierEmoji('supreme')} Quy Tắc Độc Nhất, Kế Thừa Tư Chất & /phapbao`,
-        value: '39 Pháp Bảo Thần Thoại Độc Nhất chỉ tồn tại **1 bản trên toàn server**; 56 Thần Thoại Tự Do cùng hàng chục Pháp Bảo mới sở hữu HAX riêng biệt và chênh lệch sức mạnh tối đa `<= 15%`. Quay trùng Pháp Bảo thường tự cộng số lượng & tự kế thừa tư chất `max(D..S)`. Dùng `/phapbao` xem toàn kho & `/enchant` nâng hạng **D → S**.',
+        name: `${tierEmoji('supreme')} Quy Tắc & Lệnh Liên Quan`,
+        value: '• **39 Độc Nhất** chỉ tồn tại 1 bản toàn server; chênh lệch sức mạnh tổng thể `<= 15%`.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, trang bị `/equip`, tháo `/unequip`, nâng cấp `/enchant` (`D→S`).',
         inline: false,
       },
     ],
-    content: 'Hệ thống trang bị gồm **165 Pháp Bảo** chia đều 3 Slot **Vũ Khí • Bảo Ngọc • Chiến Hồn** (mỗi món sở hữu HAX riêng + Khắc Ấn **D → S**).',
+    content: '165 Pháp Bảo chia 3 Slot (57 Vũ Khí / 54 Bảo Ngọc / 54 Chiến Hồn), hỗ trợ /phapbao, /equip, /unequip, /enchant & /autosell.',
   },
 
   pets: {
     id: 'pets',
     title: `${em('su_pet_paw')} Linh Thú Tiên Giới (90 Chiến Pet)`,
     icon: em('su_pet_paw'),
-    description: 'Khái niệm Linh Thú, công thức Chiến Lực và 4 bậc phẩm cấp (13 Phàm / 13 Linh / 14 Tiên / 50 Thần Thoại).',
+    description: '90 Linh Thú tiêu chuẩn (13 Phàm / 13 Linh / 14 Tiên / 50 Thần Thoại), công thức Lực Chiến & lệnh quản lý.',
     image_url: '',
     sections: [
       {
-        heading: '1. Linh Thú Là Gì?',
-        content: '• Linh Thú là chiến hữu đồng hành xuất trận trực tiếp trong /battle và hiển thị trên thẻ /profile (kèm cấp Sao 1★–10★ & Hạng Khắc Ấn D–S).\n• Mọi tân thủ được cấp sẵn 1 Pet Phàm Phẩm mặc định: Hóa Thạch Nham Nham Thú (Hệ Thổ • 120 ATK / 180 DEF / 100 SPD).\n• Quay trùng Linh Thú không độc nhất sẽ cộng dồn số lượng và tự động giữ tư chất Khắc Ấn cao nhất (Auto-Best Grade).\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Bonus Trang Bị.',
-      },
-      {
-        heading: '2. Phân Chia 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt',
-        content: '• Phàm Phẩm (13 loài) — Tỉ lệ rớt: 60.5% (hoặc 300 LT trong /shop).\n• Linh Phẩm (13 loài) — Tỉ lệ rớt: 25% (hoặc 900 LT trong /shop).\n• Tiên Phẩm (14 loài) — Tỉ lệ rớt: 14% (chỉ mở từ /roll).\n• Thần Thoại (50 loài: 10 Độc Nhất Toàn Server + 40 Thần Thoại Tự Do) — Tỉ lệ rớt: 0.5% (chỉ mở từ /roll).',
+        heading: '1. Tổng Quan Linh Thú',
+        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.\n• Quản lý & nâng sao qua /linhthu, /pet, /enchant; quay trùng tự giữ Khắc Ấn cao nhất hoặc tự bán bằng /autosell.',
       },
     ],
     fields: [
       {
-        name: `${em('su_wiki_scroll')} Khái Niệm & Công Thức`,
-        value: 'Linh Thú là chiến hữu xuất trận trong `/battle`, mang Hệ Ngũ Hành, Kỹ Năng HAX & Hạng Khắc Ấn (`D → S`) riêng.\n• **Pet khởi đầu**: `Hóa Thạch Nham Nham Thú` *(Phàm Phẩm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Chiến Lực**: `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị`.',
+        name: `${em('su_wiki_scroll')} Công Thức & Lệnh Quản Lý`,
+        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Chiến Lực:** `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị`.\n• Quản lý, đổi pet chính & nâng cấp sao qua `/linhthu` & `/pet`; lọc bán tự động qua `/autosell`.',
         inline: false,
       },
       {
-        name: `${em('su_gacha_dice')} 4 Bậc Phẩm Cấp & Tỉ Lệ Rớt (90 Linh Thú Tiêu Chuẩn)`,
-        value: `• ${tierEmoji('common')} **Phàm Phẩm** *(13 loài)* — Tỉ lệ rớt: **60.5%** *(hoặc 300 LT trong \`/shop\`)*\n• ${tierEmoji('rare')} **Linh Phẩm** *(13 loài)* — Tỉ lệ rớt: **25%** *(hoặc 900 LT trong \`/shop\`)*\n• ${tierEmoji('epic')} **Tiên Phẩm** *(14 loài)* — Tỉ lệ rớt: **14%** *(chỉ mở từ \`/roll\`)*\n• ${tierEmoji('mythic')} **Thần Thoại** *(50 loài: 10 Độc Nhất + 40 Tự Do)* — Tỉ lệ rớt: **0.5%** *(chỉ mở từ \`/roll\`)*`,
+        name: `${em('su_gacha_dice')} 4 Bậc Phẩm Cấp (90 Linh Thú)`,
+        value: [
+          `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.5%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
+          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(50 loài: 10 Độc Nhất + 40 Tự Do)*: **0.5%** *(\`/roll\`)*`,
+        ].join('\n'),
         inline: false,
       },
     ],
-    content: 'Bách khoa **90 Chiến Linh Thú tiêu chuẩn** phân chia 4 bậc Phẩm Cấp (**13 Phàm • 13 Linh • 14 Tiên • 50 Thần Thoại**), cân bằng chặt chẽ theo ma trận khắc chế HAX & Khắc Ấn **D → S**.',
+    content: '90 Linh Thú tiêu chuẩn chia 4 bậc (13 Phàm • 13 Linh • 14 Tiên • 50 Thần Thoại), quản lý qua /linhthu, /pet & /autosell.',
   },
 
   economy: {
     id: 'economy',
-    title: `${em('su_linhthach')} Kinh Tế, Nông Trại, Tiên Lữ & Gia Tộc`,
+    title: `${em('su_linhthach')} Kinh Tế, Nhiệm Vụ, Tháp 500 & Nông Trại`,
     icon: em('su_linhthach'),
-    description: 'Kinh tế Linh Thạch, Công Việc /job (8 ca/ngày), Nông Trại /farm & /exchange, 4 Thức chơi Linh Thạch, Tiên Lữ /marry và Gia Tộc /giatoc.',
+    description: '/daily, /job, /roll, /autosell, /shop, /nhiemvu (Tháp 500 tầng), /farm, Minigame, /marry & /giatoc.',
     image_url: '',
     sections: [
       {
-        heading: '1. Linh Thạch, /job & Cửa Hàng (/daily, /job, /doiqua, /roll, /shop, /dismantle, /enchant, /tangqua, /nhiemvu, /top)',
-        content: '• /daily: 40–60 LT + Streak 7 ngày • Lên cấp mới (1 lần/cấp): +50..+400 LT/cấp + thưởng mốc 10 cấp • Voice EXP: 85–135/5p chấm công mỗi 12 phút.\n• /job: 6 Công Việc Tu Tiên (Quét Sân, Rửa Bát, Tưới Cây, Giao Trà Sữa, Câu Cá, Tuần Tra — hồi 1 giờ/ca, tối đa 8 ca/ngày) nhận +35..+75 LT & +18..+32 EXP.\n• /doiqua: Phế 1.000 EXP -> 10 LT (không nhận lại thưởng level đã qua).\n• /roll: 50 LT/lượt (450/10 lượt). 4 Bể Gacha: Pháp Bảo (equipment), Linh Thú (pet), Role (role), Linh Vực/Thần Thức/Thần Cảnh (domain). Tỉ lệ chuẩn: Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5%.\n• /shop: Nhẫn Cưới 4 cấp, 26 Pet & 44 Pháp Bảo Phàm/Linh, 21 Role Đơn (7d/30d/VV), Đá Khắc Ấn (150 LT, 5/ngày, max 99), Thẻ Reset Tháp (200 LT, 3/ngày, max 10 túi), 20 Background.\n• /dismantle: Mua Shop hoàn 20% (Pháp Bảo) hoặc 25% (Pet/Role) giá thực trả; đồ Gacha tính giá thu hồi chuẩn. Hỗ trợ phá hàng loạt all_common/all_rare/all_epic hoặc CSV cho cả Item, Pet và Role.\n• /enchant: Khắc Ấn nâng phẩm D -> C -> B -> A -> S (+0% -> +40% chỉ số) bằng Đá Khắc Ấn + LT (hụt tăng +5% Pity, không rớt cấp).\n• /nhiemvu: 5 Nhiệm Vụ Ngày (+15/+20/+25/+20/+20 LT; hoàn tất 5/5 thưởng thêm +115 LT + 1 Vé Triệu Hồi Pháp Bảo + 1 Tinh Thạch + 1 Đá Khắc Ấn) + 3 Hợp Đồng Tuần (reset Thứ 2) + Tháp Thí Luyện 200 Tầng (Boss tầng chia hết 5 thưởng thêm Đá Khắc Ấn).',
+        heading: '1. Kiếm LT, Gacha & Cửa Hàng',
+        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10) hỗ trợ /autosell tự bán Phàm/Linh/Tiên ngay khi quay.\n• /shop (kèm Shop Ngày giảm 15–40%): Đá Khắc Ấn 150 LT (5/ngày), Thẻ Reset Tháp 200 LT (5/ngày, max 15 túi); /dismantle hoàn 20–25% Shop hoặc giá Gacha.',
       },
       {
-        heading: '2. Nông Trại Thời Gian Thực (/farm & /exchange)',
-        content: '• Mặc định 4 ô (Ô 1–2 Linh Điền trồng Thảo Dược, Ô 3–4 Linh Các ấp Trứng Linh Thú; có thể mở tối đa 6 ô tại /exchange).\n• 3 Chu kỳ 6h / 12h / 24h: Quay lại Tưới nước / Cho ăn đúng khung giờ (2h / 4h / 6h) để giữ sinh khí; bỏ bê quá lâu (4.5h / 7h / 12h) sẽ héo úa.\n• Thu hoạch nhận Linh Thạch lãi lớn & Linh Quả Tiên Giới (farm_essence), quy đổi tại /exchange lấy Linh Thạch, Đá Khắc Ấn, Tinh Thạch, Vé Gacha (Pháp Bảo/Pet/Linh Vực), Thẻ Tẩy Tủy Tháp & Mở Ô Canh Tác.',
-      },
-      {
-        heading: '3. Giải Trí Linh Thạch (/coinflip, /blackjack, /slots, /crash)',
-        content: '• Mức cược 10–10.000 LT/ván (cooldown 5 giây): Tung Xu /coinflip (1:2), Thất Điểm 21 /blackjack (1:2), Tụ Bảo Bồn 4 Ô /slots (tối đa 1:5), Ngự Kiếm Phá Không /crash (rút trước khi nổ).',
-      },
-      {
-        heading: '4. Tiên Lữ (/marry, /divorce) & Gia Tộc (/giatoc)',
-        content: '• 4 Cấp Nhẫn: Phàm (+5%) -> Linh (+10%) -> Tiên (+15%) -> Thần Thoại (+20% EXP & Chiến Lực đôi); Streak kết hôn tới +25% (+10% EXP Ngày Kỷ Niệm).\n• Gia Tộc (/giatoc): Thành lập từ Lv.20 + 1.000 LT; nâng cấp Lv.1–10 (10–50 thành viên, buff +2%..+20% EXP & Daily LT); Clan Wars 24H từ 500 LT ngân khố.',
+        heading: '2. Nhiệm Vụ Ngày, Tháp 500 Tầng, Nông Trại & Cộng Đồng',
+        content: '• /nhiemvu: 5 Quest Ngày (2 cố định + 3 xoay vòng từ 10 hoạt động, mốc 5/5 +130 LT + quà), 3 Hợp Đồng Tuần & Tháp 500 Tầng (+10% nền, random chiến lực ±12%, NPC mở Linh Vực từ F70, reset 5/ngày).\n• /farm & /exchange (4–6 ô, 6/12/24h thu LT + Linh Quả); Minigame /coinflip, /blackjack, /slots, /crash (10–10.000 LT); /marry & /giatoc (Lv.20+, Clan Wars 24H). Xác nhận /updates bản mới nhận +800 LT.',
       },
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha & Khắc Ấn`,
+        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha & Cửa Hàng`,
         value: [
-          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày, hồi 1h/ca, +35–75 LT & 18–32 EXP)* • `/doiqua` (`1.000 EXP → 10 LT`).',
-          '• **4 Bể Gacha `/roll`** *(Pháp Bảo / Linh Thú / Role / Linh Vực)*: `50 LT/lượt` (`450 LT/10`) • `Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5%`.',
-          '• `/shop`: Nhẫn Cưới, **26 Pet / 44 Pháp Bảo** Phàm & Linh, **21 Role Đơn**, **Đá Khắc Ấn (150 LT)**, **Thẻ Reset Tháp (200 LT)**, 20 Background.',
-          '• `/dismantle` & `/enchant`: Thu hồi Shop `20%–25%` / Gacha chuẩn • Khắc Ấn **D → S** (`+0%..+40%`).',
-          '• `/nhiemvu`: **5 Nhiệm Vụ Ngày** *(thưởng từng mục + mốc 5/5 hậu hĩnh)* + **3 Hợp Đồng Tuần** + **Tháp 200 Tầng**.',
+          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` nhận **+800 LT**.',
+          '• `/roll` (`50 LT/lượt`, `450/10`) kèm **`/autosell`** tự bán Phàm/Linh/Tiên khi quay • `/dismantle` • `/enchant` (`D→S`).',
+          '• `/shop` *(kèm Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày) • Thẻ Reset Tháp (`200 LT`, **5/ngày**, max **15 túi**).',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('su_sprout')} Nông Trại (/farm • /exchange) & Giải Trí Linh Thạch`,
+        name: `${em('su_tower_boss', '🗼')} Nhiệm Vụ Ngày (+10%) & Tháp 500 Tầng`,
         value: [
-          '• **`/farm`**: 4–6 ô **Linh Điền & Linh Các** (`6h/12h/24h`), chăm sóc đúng khung giờ nhận **Linh Thạch & Linh Quả** (`farm_essence`).',
-          '• **`/exchange`**: Quy đổi **Linh Quả** lấy Linh Thạch, Đá Khắc Ấn, Tinh Thạch, Vé Gacha các loại, Thẻ Tẩy Tủy & Mở Ô #5/#6.',
-          '• **Minigame (`10–10.000 LT`)**: `/coinflip` *(1:2)* • `/blackjack` *(1:2)* • `/slots` *(4 ô, tối đa 1:5)* • `/crash` *(Ngự Kiếm)* .',
+          '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** 2 cố định (`/daily`, `150 EXP`) + **3 xoay vòng** từ 10 hoạt động • Hoàn tất **5/5** thưởng **+130 LT** + quà + **3 Hợp Đồng Tuần**.',
+          '• **Tháp 500 Tầng:** Buff **+10%**, random chiến lực **±12%/trận**, NPC dùng **Linh Vực từ F70+** *(+Thần Thức F150, +Thần Cảnh F250)*, tỉ lệ Thần Thoại tăng tới **100% từ F100+**.',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('ring_mythic')} Tiên Lữ Kết Hôn (/marry • /divorce)`,
-        value: '• **4 Cấp Nhẫn**: Phàm (`+5%`) → Linh (`+10%`) → Tiên (`+15%`) → Thần Thoại (`+20%` EXP & Chiến Lực đôi).\n• **Streak Ngày Cưới**: `7d (+2%)` → `30d (+5%)` → `100d (+8%)` → `180d (+12%)` → `365d+ (+15%..+25%)` & `+10% EXP` đúng Ngày Kỷ Niệm.',
-        inline: false,
-      },
-      {
-        name: `${em('su_clan_castle')} Gia Tộc & Clan Wars 24H (/giatoc)`,
-        value: '• Điều kiện lập: `Lv.20+` & `1.000 Linh Thạch` • Quy mô `Lv.1–10` (`10–50` thành viên).\n• Buff thành viên: `+2%` đến `+20% EXP` & Daily Linh Thạch.\n• **Clan Wars 24H**: Đặt cược từ `500` Linh Thạch từ ngân khố, tranh tài 24 giờ thắng nhận trọn `×2` tiền cược + `5.000 EXP Tộc`.',
+        name: `${em('su_sprout')} Nông Trại, Giải Trí, Tiên Lữ & Gia Tộc`,
+        value: [
+          '• **`/farm` & `/exchange`:** 4–6 ô (`6/12/24h`), đổi Linh Quả lấy LT, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset.',
+          '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
+          `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP/LT, Clan Wars 24H).`,
+        ].join('\n'),
         inline: false,
       },
     ],
-    content: 'Hệ thống Kinh Tế, Nghề Tu Tiên `/job` (8 ca/ngày), Nông Trại `/farm`, Đổi Quà `/exchange`, 4 Thức chơi Linh Thạch, Tiên Lữ và Gia Tộc Chiến 24H liên kết chặt chẽ giúp cộng đồng SuMi Family phát triển bền vững.',
+    content: 'Kinh tế v1.4.7: /daily, /job (8 ca), /roll + /autosell, /nhiemvu xoay vòng (+10% LT), Tháp 500 tầng, /farm, /exchange, Minigame, /marry & /giatoc.',
   },
 
   explorer: {
     id: 'explorer',
     title: `${em('explorer_world_map_v14', '🗺️')} Khám Phá Đại Lục & Bản Đồ 4K (/explorer)`,
     icon: em('explorer_world_map_v14', '🗺️'),
-    description: 'Bản đồ Đại Lục Cửu Châu 12 địa danh (10.000 → 1.000.000 Lực), Đội Hình Khám Phá riêng, Thức Ăn Bổ Trợ, cơ chế Sinh Tử & nhặt 60% bảo vật rơi.',
+    description: '12 địa danh (10k → 1M Lực), 4 mốc giờ, Thức Ăn Bổ Trợ, Sinh Tử & nhặt 60% đồ rơi.',
     image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
     sections: [
       {
-        heading: '1. 12 Địa Danh Đại Lục Cửu Châu (Dễ → Nightmare)',
+        heading: '1. 12 Địa Danh Đại Lục Cửu Châu',
         content: V14_EXPLORER_MAPS.map(
-          (m) => `• #${m.order} ${m.name} (${m.difficulty} • ${m.recommended_power.toLocaleString('vi-VN')} Lực • Quà ×${m.reward_multiplier})`,
+          (m) => `• #${m.order} ${m.name} (${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • ×${m.reward_multiplier})`,
         ).join('\n'),
       },
       {
-        heading: '2. Thời Gian, Đội Hình Khám Phá & Cơ Chế Sinh Tử',
-        content: [
-          '• 4 Mốc Thời Gian: 2 / 3 / 6 / 12 giờ. Thưởng cơ bản 200–300 LT/giờ × hệ số map + quà Shop + 0.5% Thiên Đạo Tuyệt Ấn Thạch (Khắc Ấn 100% mọi bậc D→S, khuyên dùng A→S) + 0.01% Vũ Khí Thần Thoại.',
-          '• Đội Hình (/explorer -> Chỉnh Loadout): Chọn 1 Linh Thú (Chính hoặc Phụ) + 3 Pháp Bảo + 1 Linh Vực. Tài sản đang đi khám phá bị khóa khỏi PvP/PvE/Tháp/Địa Mạch; nếu cử Pet chính đi có thể dùng /linhthu chuyển sang Pet phụ khác.',
-          '• Sống Sót & Tử Vong: Lực đội hình >= lực map bắt đầu ở 90% sống sót (+5% mỗi +10% lực vượt); < lực map tỉ lệ tử nạn từ 20% (+10% mỗi -10% thua lực).',
-          '• Nếu Tử Nạn: Pet không Độc Nhất mất vĩnh viễn; Pet Độc Nhất rơi trạng thái Trọng Thương (hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ). Pháp Bảo Độc Nhất & Linh Vực an toàn tuyệt đối; Pháp Bảo không Độc Nhất rớt tại đúng địa danh & mốc giờ — người khác qua cùng địa danh với mốc >= giờ rơi và sống sót có 60% cơ hội nhặt trọn (giữ nguyên bậc Khắc Ấn)!',
-        ].join('\n'),
-      },
-      {
-        heading: '3. Lương Thảo & Dược Phẩm Khám Phá (/shop)',
-        content: '• Hộ Mệnh Linh Đan (180 LT): +8% tỉ lệ sống sót.\n• Tụ Bảo Tiên Trà (220 LT): +18% tổng Linh Thạch thu hoạch.\n• Ngự Phong Tốc Quả (250 LT): Rút gọn -25% thời gian di chuyển.\n• Cửu Chuyển Hoàn Hồn Lộ (2.500 LT): Hồi sinh Linh Thú Độc Nhất trọng thương.',
+        heading: '2. Cơ Chế Sinh Tử & Phần Thưởng',
+        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng 200–300 LT/h × hệ số + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Lực >= Map sống 90%–100%; nếu tử nạn, Pet Độc Nhất trọng thương (hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ), Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
       },
     ],
     fields: [
@@ -364,21 +332,20 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('enchant_stone_absolute', '💎')} Quy Tắc Sinh Tử, Khóa Đồ & Nhặt Bảo Vật 60%`,
+        name: `${em('enchant_stone_absolute', '💎')} Quy Tắc Sinh Tử & Nhặt Đồ 60%`,
         value: [
-          '• **Phần Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số map` + quà Shop + **0.5%** Thiên Đạo Tuyệt Ấn Thạch *(100% Khắc Ấn D→S)* + **0.01%** Vũ Khí Thần Thoại.',
-          '• **Tỉ Lệ Sống Sót:** Lực `>=` Map từ **90% → 100%**; lực `<` Map tỉ lệ tử nạn từ **20% → 95%**.',
-          '• **Rớt Đồ 60%:** Pháp Bảo thường bị rơi khi tử nạn nằm lại đúng tọa độ & mốc giờ; tu sĩ sau qua cùng địa danh *(mốc `>=` giờ rơi)* và sống sót có **60%** cơ hội nhặt nguyên bậc Khắc Ấn!',
+          '• **Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số` + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
+          '• **Sinh tử:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn **20%→95%**. Pháp Bảo thường rơi khi tử nạn chờ người qua sau *(mốc `>=` giờ rơi)* nhặt **60%**.',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('food_survival_pill', '🥗')} 3 Thức Ăn Khám Phá & Hồi Sinh (/shop)`,
-        value: `${em('food_survival_pill')} **Hộ Mệnh Linh Đan** *(180 LT • +8% Sống)* • ${em('food_yield_tea')} **Tụ Bảo Tiên Trà** *(220 LT • +18% LT)* • ${em('food_speed_fruit')} **Ngự Phong Tốc Quả** *(250 LT • -25% Giờ)* • ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** *(2.500 LT • Hồi sinh Pet Độc Nhất)*`,
+        name: `${em('food_survival_pill', '🥗')} Thức Ăn & Hồi Sinh (/shop)`,
+        value: `${em('food_survival_pill')} **Hộ Mệnh Đan** *(180 LT, +8% sống)* • ${em('food_yield_tea')} **Tụ Bảo Trà** *(220 LT, +18% LT)* • ${em('food_speed_fruit')} **Ngự Phong Quả** *(250 LT, -25% giờ)* • ${em('explorer_revive_elixir')} **Hoàn Hồn Lộ** *(2.500 LT, cứu Pet Độc Nhất)*`,
         inline: false,
       },
     ],
-    content: 'Hệ thống Khám Phá Đại Lục `/explorer` với Bản Đồ 4K 12 địa danh, Loadout độc lập, 3 loại Thức Ăn Bổ Trợ, Đá Khắc Ấn Tuyệt Đối 0.5% và cơ chế nhặt 60% bảo vật rơi.',
+    content: 'Khám Phá /explorer qua 12 địa danh (10k → 1M Lực) theo mốc 2/3/6/12h, hỗ trợ thức ăn & cơ chế nhặt 60% bảo vật rơi.',
   },
 };
 
@@ -529,7 +496,7 @@ export async function getWikiItemDetail(itemId) {
   ];
   if (ownerLine) descriptionLines.push(ownerLine);
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.3`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.4.7`;
 
   return {
     success: true,
@@ -549,7 +516,7 @@ export async function getWikiItemDetail(itemId) {
       color: tier.color,
       color_dec: tier.colorDec,
       image_url: imageUrl,
-      footer: `SuMi Family • Kho Pháp Bảo (${slotLabel} • ${item.rarity})`,
+      footer: '',
     },
   };
 }
@@ -583,7 +550,7 @@ export async function getWikiPetDetail(petType) {
     `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.3`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.4.7`;
 
   return {
     success: true,
@@ -597,7 +564,7 @@ export async function getWikiPetDetail(petType) {
       color: tier.color,
       color_dec: tier.colorDec,
       image_url: imageUrl,
-      footer: `SuMi Family • Bách Khoa Linh Thú (${pet.rarity} • Hệ ${pet.element})`,
+      footer: '',
     },
   };
 }

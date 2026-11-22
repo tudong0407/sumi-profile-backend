@@ -90,10 +90,10 @@
     "tag": "<a:ani_UmaruParty:1571061847216623736>"
   },
   "bac_hai_huyen_vu_de": {
-    "id": "1573800129272488140",
+    "id": "1574148803085471835",
     "name": "bac_hai_huyen_vu_de",
     "animated": false,
-    "tag": "<:bac_hai_huyen_vu_de:1573800129272488140>"
+    "tag": "<:bac_hai_huyen_vu_de:1574148803085471835>"
   },
   "bach_kim_ho_tu": {
     "id": "1573412145553739796",
@@ -102,10 +102,10 @@
     "tag": "<:bach_kim_ho_tu:1573412145553739796>"
   },
   "bach_ngoc_ky_lan": {
-    "id": "1573799698685497448",
+    "id": "1574148827504578700",
     "name": "bach_ngoc_ky_lan",
     "animated": false,
-    "tag": "<:bach_ngoc_ky_lan:1573799698685497448>"
+    "tag": "<:bach_ngoc_ky_lan:1574148827504578700>"
   },
   "bach_ngoc_thien_nga": {
     "id": "1573659859562266784",
@@ -120,28 +120,28 @@
     "tag": "<:bang_tuyet_ho:1573412155678789664>"
   },
   "card_back": {
-    "id": "1573802253834395778",
+    "id": "1574148848467574864",
     "name": "card_back",
     "animated": false,
-    "tag": "<:card_back:1573802253834395778>"
+    "tag": "<:card_back:1574148848467574864>"
   },
   "card_bust": {
-    "id": "1573802277406511304",
+    "id": "1574149024033022082",
     "name": "card_bust",
     "animated": false,
-    "tag": "<:card_bust:1573802277406511304>"
+    "tag": "<:card_bust:1574149024033022082>"
   },
   "card_deal": {
-    "id": "1573802241574576268",
+    "id": "1574149182992687246",
     "name": "card_deal",
     "animated": true,
-    "tag": "<a:card_deal:1573802241574576268>"
+    "tag": "<a:card_deal:1574149182992687246>"
   },
   "card_win": {
-    "id": "1573802266211913798",
+    "id": "1574149205260501033",
     "name": "card_win",
     "animated": false,
-    "tag": "<:card_win:1573802266211913798>"
+    "tag": "<:card_win:1574149205260501033>"
   },
   "chu_tuoc_au_dieu": {
     "id": "1573411228078968916",
@@ -150,46 +150,46 @@
     "tag": "<a:chu_tuoc_au_dieu:1573411228078968916>"
   },
   "coin_heads": {
-    "id": "1573802137094328505",
+    "id": "1574149223169921047",
     "name": "coin_heads",
     "animated": false,
-    "tag": "<:coin_heads:1573802137094328505>"
+    "tag": "<:coin_heads:1574149223169921047>"
   },
   "coin_spin": {
-    "id": "1573802127963193385",
+    "id": "1574149245760438282",
     "name": "coin_spin",
     "animated": true,
-    "tag": "<a:coin_spin:1573802127963193385>"
+    "tag": "<a:coin_spin:1574149245760438282>"
   },
   "coin_tails": {
-    "id": "1573802148368486582",
+    "id": "1574149266023129138",
     "name": "coin_tails",
     "animated": false,
-    "tag": "<:coin_tails:1573802148368486582>"
+    "tag": "<:coin_tails:1574149266023129138>"
   },
   "crash_boom": {
-    "id": "1573802298121912371",
+    "id": "1574149283689529547",
     "name": "crash_boom",
     "animated": true,
-    "tag": "<a:crash_boom:1573802298121912371>"
+    "tag": "<a:crash_boom:1574149283689529547>"
   },
   "crash_cashout": {
-    "id": "1573802307752042497",
+    "id": "1574149306989019520",
     "name": "crash_cashout",
     "animated": false,
-    "tag": "<:crash_cashout:1573802307752042497>"
+    "tag": "<:crash_cashout:1574149306989019520>"
   },
   "crash_fly": {
-    "id": "1573802287124578357",
+    "id": "1574149334805651456",
     "name": "crash_fly",
     "animated": true,
-    "tag": "<a:crash_fly:1573802287124578357>"
+    "tag": "<a:crash_fly:1574149334805651456>"
   },
   "cuu_thien_loi_de_ho": {
-    "id": "1573800185090547924",
+    "id": "1574149358029512827",
     "name": "cuu_thien_loi_de_ho",
     "animated": false,
-    "tag": "<:cuu_thien_loi_de_ho:1573800185090547924>"
+    "tag": "<:cuu_thien_loi_de_ho:1574149358029512827>"
   },
   "cuu_thien_loi_phuong": {
     "id": "1573659880009764864",
@@ -198,22 +198,22 @@
     "tag": "<a:cuu_thien_loi_phuong:1573659880009764864>"
   },
   "cuu_tieu_kim_long": {
-    "id": "1573799754935312576",
+    "id": "1574149377805656235",
     "name": "cuu_tieu_kim_long",
     "animated": false,
-    "tag": "<:cuu_tieu_kim_long:1573799754935312576>"
+    "tag": "<:cuu_tieu_kim_long:1574149377805656235>"
   },
   "cuu_u_do_than_diem_lang": {
-    "id": "1573800159442370651",
+    "id": "1574149399905575043",
     "name": "cuu_u_do_than_diem_lang",
     "animated": false,
-    "tag": "<:cuu_u_do_than_diem_lang:1573800159442370651>"
+    "tag": "<:cuu_u_do_than_diem_lang:1574149399905575043>"
   },
   "cuu_u_huyen_xoa": {
-    "id": "1573799887483572244",
+    "id": "1574149569682341918",
     "name": "cuu_u_huyen_xoa",
     "animated": false,
-    "tag": "<:cuu_u_huyen_xoa:1573799887483572244>"
+    "tag": "<:cuu_u_huyen_xoa:1574149569682341918>"
   },
   "cuu_vi_hong_ho": {
     "id": "1573411004727951400",
@@ -240,208 +240,208 @@
     "tag": "<a:dia_long_nham_vuong:1573659896325472356>"
   },
   "domain_common_1": {
-    "id": "1573801399991533614",
+    "id": "1574149590217920658",
     "name": "domain_common_1",
     "animated": false,
-    "tag": "<:domain_common_1:1573801399991533614>"
+    "tag": "<:domain_common_1:1574149590217920658>"
   },
   "domain_common_2": {
-    "id": "1573801410955444355",
+    "id": "1574149612837802054",
     "name": "domain_common_2",
     "animated": false,
-    "tag": "<:domain_common_2:1573801410955444355>"
+    "tag": "<:domain_common_2:1574149612837802054>"
   },
   "domain_common_3": {
-    "id": "1573801422678532209",
+    "id": "1574149637109973032",
     "name": "domain_common_3",
     "animated": false,
-    "tag": "<:domain_common_3:1573801422678532209>"
+    "tag": "<:domain_common_3:1574149637109973032>"
   },
   "domain_common_4": {
-    "id": "1573801434099617894",
+    "id": "1574149654675853462",
     "name": "domain_common_4",
     "animated": false,
-    "tag": "<:domain_common_4:1573801434099617894>"
+    "tag": "<:domain_common_4:1574149654675853462>"
   },
   "domain_common_5": {
-    "id": "1573801451489198243",
+    "id": "1574149676217929868",
     "name": "domain_common_5",
     "animated": false,
-    "tag": "<:domain_common_5:1573801451489198243>"
+    "tag": "<:domain_common_5:1574149676217929868>"
   },
   "domain_epic_1": {
-    "id": "1573801521022247232",
+    "id": "1574149698976219226",
     "name": "domain_epic_1",
     "animated": false,
-    "tag": "<:domain_epic_1:1573801521022247232>"
+    "tag": "<:domain_epic_1:1574149698976219226>"
   },
   "domain_epic_2": {
-    "id": "1573801528978841810",
+    "id": "1574149717917700128",
     "name": "domain_epic_2",
     "animated": false,
-    "tag": "<:domain_epic_2:1573801528978841810>"
+    "tag": "<:domain_epic_2:1574149717917700128>"
   },
   "domain_epic_3": {
-    "id": "1573801545655394465",
+    "id": "1574149742538260502",
     "name": "domain_epic_3",
     "animated": false,
-    "tag": "<:domain_epic_3:1573801545655394465>"
+    "tag": "<:domain_epic_3:1574149742538260502>"
   },
   "domain_epic_4": {
-    "id": "1573801559358185572",
+    "id": "1574149767213219961",
     "name": "domain_epic_4",
     "animated": false,
-    "tag": "<:domain_epic_4:1573801559358185572>"
+    "tag": "<:domain_epic_4:1574149767213219961>"
   },
   "domain_epic_5": {
-    "id": "1573801573560361030",
+    "id": "1574149785483481242",
     "name": "domain_epic_5",
     "animated": false,
-    "tag": "<:domain_epic_5:1573801573560361030>"
+    "tag": "<:domain_epic_5:1574149785483481242>"
   },
   "domain_fuyumi_cuu_vi_hong_mong": {
-    "id": "1573801770432335990",
+    "id": "1574149807969148948",
     "name": "domain_fuyumi_cuu_vi_hong_mong",
     "animated": false,
-    "tag": "<:domain_fuyumi_cuu_vi_hong_mong:1573801770432335990>"
+    "tag": "<:domain_fuyumi_cuu_vi_hong_mong:1574149807969148948>"
   },
   "domain_mythic_1": {
-    "id": "1573801587824922715",
+    "id": "1574149833588211755",
     "name": "domain_mythic_1",
     "animated": false,
-    "tag": "<:domain_mythic_1:1573801587824922715>"
+    "tag": "<:domain_mythic_1:1574149833588211755>"
   },
   "domain_mythic_10": {
-    "id": "1573801702472290405",
+    "id": "1574149854819782677",
     "name": "domain_mythic_10",
     "animated": false,
-    "tag": "<:domain_mythic_10:1573801702472290405>"
+    "tag": "<:domain_mythic_10:1574149854819782677>"
   },
   "domain_mythic_2": {
-    "id": "1573801600634327120",
+    "id": "1574149874482544832",
     "name": "domain_mythic_2",
     "animated": false,
-    "tag": "<:domain_mythic_2:1573801600634327120>"
+    "tag": "<:domain_mythic_2:1574149874482544832>"
   },
   "domain_mythic_3": {
-    "id": "1573801614664405032",
+    "id": "1574149896561230007",
     "name": "domain_mythic_3",
     "animated": false,
-    "tag": "<:domain_mythic_3:1573801614664405032>"
+    "tag": "<:domain_mythic_3:1574149896561230007>"
   },
   "domain_mythic_4": {
-    "id": "1573801625238118515",
+    "id": "1574149917415309402",
     "name": "domain_mythic_4",
     "animated": false,
-    "tag": "<:domain_mythic_4:1573801625238118515>"
+    "tag": "<:domain_mythic_4:1574149917415309402>"
   },
   "domain_mythic_5": {
-    "id": "1573801640308379888",
+    "id": "1574149940798824518",
     "name": "domain_mythic_5",
     "animated": false,
-    "tag": "<:domain_mythic_5:1573801640308379888>"
+    "tag": "<:domain_mythic_5:1574149940798824518>"
   },
   "domain_mythic_6": {
-    "id": "1573801657282727996",
+    "id": "1574149968485290139",
     "name": "domain_mythic_6",
     "animated": false,
-    "tag": "<:domain_mythic_6:1573801657282727996>"
+    "tag": "<:domain_mythic_6:1574149968485290139>"
   },
   "domain_mythic_7": {
-    "id": "1573801668733173762",
+    "id": "1574149991516340234",
     "name": "domain_mythic_7",
     "animated": false,
-    "tag": "<:domain_mythic_7:1573801668733173762>"
+    "tag": "<:domain_mythic_7:1574149991516340234>"
   },
   "domain_mythic_8": {
-    "id": "1573801681974468639",
+    "id": "1574150006632480840",
     "name": "domain_mythic_8",
     "animated": false,
-    "tag": "<:domain_mythic_8:1573801681974468639>"
+    "tag": "<:domain_mythic_8:1574150006632480840>"
   },
   "domain_mythic_9": {
-    "id": "1573801691915092094",
+    "id": "1574150028153585705",
     "name": "domain_mythic_9",
     "animated": false,
-    "tag": "<:domain_mythic_9:1573801691915092094>"
+    "tag": "<:domain_mythic_9:1574150028153585705>"
   },
   "domain_rare_1": {
-    "id": "1573801459609510049",
+    "id": "1574150050878193776",
     "name": "domain_rare_1",
     "animated": false,
-    "tag": "<:domain_rare_1:1573801459609510049>"
+    "tag": "<:domain_rare_1:1574150050878193776>"
   },
   "domain_rare_2": {
-    "id": "1573801468962545734",
+    "id": "1574150071405248532",
     "name": "domain_rare_2",
     "animated": false,
-    "tag": "<:domain_rare_2:1573801468962545734>"
+    "tag": "<:domain_rare_2:1574150071405248532>"
   },
   "domain_rare_3": {
-    "id": "1573801479393771690",
+    "id": "1574150092959518720",
     "name": "domain_rare_3",
     "animated": false,
-    "tag": "<:domain_rare_3:1573801479393771690>"
+    "tag": "<:domain_rare_3:1574150092959518720>"
   },
   "domain_rare_4": {
-    "id": "1573801495009300643",
+    "id": "1574150112437870713",
     "name": "domain_rare_4",
     "animated": false,
-    "tag": "<:domain_rare_4:1573801495009300643>"
+    "tag": "<:domain_rare_4:1574150112437870713>"
   },
   "domain_rare_5": {
-    "id": "1573801509337174136",
+    "id": "1574150135196287258",
     "name": "domain_rare_5",
     "animated": false,
-    "tag": "<:domain_rare_5:1573801509337174136>"
+    "tag": "<:domain_rare_5:1574150135196287258>"
   },
   "domain_unique_1": {
-    "id": "1573801712156811264",
+    "id": "1574150157644337182",
     "name": "domain_unique_1",
     "animated": false,
-    "tag": "<:domain_unique_1:1573801712156811264>"
+    "tag": "<:domain_unique_1:1574150157644337182>"
   },
   "domain_unique_2": {
-    "id": "1573801725284974827",
+    "id": "1574150177504362687",
     "name": "domain_unique_2",
     "animated": false,
-    "tag": "<:domain_unique_2:1573801725284974827>"
+    "tag": "<:domain_unique_2:1574150177504362687>"
   },
   "domain_unique_3": {
-    "id": "1573801739805659258",
+    "id": "1574150198966493385",
     "name": "domain_unique_3",
     "animated": false,
-    "tag": "<:domain_unique_3:1573801739805659258>"
+    "tag": "<:domain_unique_3:1574150198966493385>"
   },
   "domain_unique_4": {
-    "id": "1573801748705837207",
+    "id": "1574150218654683196",
     "name": "domain_unique_4",
     "animated": false,
-    "tag": "<:domain_unique_4:1573801748705837207>"
+    "tag": "<:domain_unique_4:1574150218654683196>"
   },
   "domain_unique_5": {
-    "id": "1573801759670013972",
+    "id": "1574150248983564419",
     "name": "domain_unique_5",
     "animated": false,
-    "tag": "<:domain_unique_5:1573801759670013972>"
+    "tag": "<:domain_unique_5:1574150248983564419>"
   },
   "egg_linh_thu": {
-    "id": "1573802361321816094",
+    "id": "1574150279446798427",
     "name": "egg_linh_thu",
     "animated": false,
-    "tag": "<:egg_linh_thu:1573802361321816094>"
+    "tag": "<:egg_linh_thu:1574150279446798427>"
   },
   "egg_than_thu": {
-    "id": "1573802382851317800",
+    "id": "1574150299961139273",
     "name": "egg_than_thu",
     "animated": false,
-    "tag": "<:egg_than_thu:1573802382851317800>"
+    "tag": "<:egg_than_thu:1574150299961139273>"
   },
   "egg_tien_thu": {
-    "id": "1573802370142310512",
+    "id": "1574150323323273266",
     "name": "egg_tien_thu",
     "animated": false,
-    "tag": "<:egg_tien_thu:1573802370142310512>"
+    "tag": "<:egg_tien_thu:1574150323323273266>"
   },
   "enchant_stone": {
     "id": "1573719323610980423",
@@ -468,10 +468,10 @@
     "tag": "<:explorer_world_map_v14:1573965861591715900>"
   },
   "farm_essence": {
-    "id": "1573802317738938439",
+    "id": "1574150347075748040",
     "name": "farm_essence",
     "animated": false,
-    "tag": "<:farm_essence:1573802317738938439>"
+    "tag": "<:farm_essence:1574150347075748040>"
   },
   "food_speed_fruit": {
     "id": "1573965895422705744",
@@ -1038,16 +1038,16 @@
     "tag": "<a:gem_common_5:1573659345802231939>"
   },
   "gem_common_6": {
-    "id": "1573800625270169612",
+    "id": "1574150367208284202",
     "name": "gem_common_6",
     "animated": false,
-    "tag": "<:gem_common_6:1573800625270169612>"
+    "tag": "<:gem_common_6:1574150367208284202>"
   },
   "gem_common_7": {
-    "id": "1573800638041559203",
+    "id": "1574150382672945202",
     "name": "gem_common_7",
     "animated": false,
-    "tag": "<:gem_common_7:1573800638041559203>"
+    "tag": "<:gem_common_7:1574150382672945202>"
   },
   "gem_epic_1": {
     "id": "1573411999080124577",
@@ -1086,16 +1086,16 @@
     "tag": "<a:gem_epic_6:1573659377288749068>"
   },
   "gem_epic_7": {
-    "id": "1573800668135952555",
+    "id": "1574150402281054379",
     "name": "gem_epic_7",
     "animated": false,
-    "tag": "<:gem_epic_7:1573800668135952555>"
+    "tag": "<:gem_epic_7:1574150402281054379>"
   },
   "gem_epic_8": {
-    "id": "1573800679804248255",
+    "id": "1574150789314777210",
     "name": "gem_epic_8",
     "animated": false,
-    "tag": "<:gem_epic_8:1573800679804248255>"
+    "tag": "<:gem_epic_8:1574150789314777210>"
   },
   "gem_mythic_1": {
     "id": "1573411026840322118",
@@ -1104,64 +1104,64 @@
     "tag": "<a:gem_mythic_1:1573411026840322118>"
   },
   "gem_mythic_10": {
-    "id": "1573800730714968064",
+    "id": "1574150816267247716",
     "name": "gem_mythic_10",
     "animated": false,
-    "tag": "<:gem_mythic_10:1573800730714968064>"
+    "tag": "<:gem_mythic_10:1574150816267247716>"
   },
   "gem_mythic_11": {
-    "id": "1573800741519360091",
+    "id": "1574150838820016198",
     "name": "gem_mythic_11",
     "animated": false,
-    "tag": "<:gem_mythic_11:1573800741519360091>"
+    "tag": "<:gem_mythic_11:1574150838820016198>"
   },
   "gem_mythic_12": {
-    "id": "1573800761337454632",
+    "id": "1574150857803563159",
     "name": "gem_mythic_12",
     "animated": false,
-    "tag": "<:gem_mythic_12:1573800761337454632>"
+    "tag": "<:gem_mythic_12:1574150857803563159>"
   },
   "gem_mythic_13": {
-    "id": "1573800776172699699",
+    "id": "1574150880251478096",
     "name": "gem_mythic_13",
     "animated": false,
-    "tag": "<:gem_mythic_13:1573800776172699699>"
+    "tag": "<:gem_mythic_13:1574150880251478096>"
   },
   "gem_mythic_14": {
-    "id": "1573800784515305573",
+    "id": "1574150901399298168",
     "name": "gem_mythic_14",
     "animated": false,
-    "tag": "<:gem_mythic_14:1573800784515305573>"
+    "tag": "<:gem_mythic_14:1574150901399298168>"
   },
   "gem_mythic_15": {
-    "id": "1573800793788649613",
+    "id": "1574150921645072476",
     "name": "gem_mythic_15",
     "animated": false,
-    "tag": "<:gem_mythic_15:1573800793788649613>"
+    "tag": "<:gem_mythic_15:1574150921645072476>"
   },
   "gem_mythic_16": {
-    "id": "1573800805214068876",
+    "id": "1574150940934545558",
     "name": "gem_mythic_16",
     "animated": false,
-    "tag": "<:gem_mythic_16:1573800805214068876>"
+    "tag": "<:gem_mythic_16:1574150940934545558>"
   },
   "gem_mythic_17": {
-    "id": "1573800823895363678",
+    "id": "1574150964263387356",
     "name": "gem_mythic_17",
     "animated": false,
-    "tag": "<:gem_mythic_17:1573800823895363678>"
+    "tag": "<:gem_mythic_17:1574150964263387356>"
   },
   "gem_mythic_18": {
-    "id": "1573800835886874755",
+    "id": "1574150987898298388",
     "name": "gem_mythic_18",
     "animated": false,
-    "tag": "<:gem_mythic_18:1573800835886874755>"
+    "tag": "<:gem_mythic_18:1574150987898298388>"
   },
   "gem_mythic_19": {
-    "id": "1573800845928042557",
+    "id": "1574151006097252412",
     "name": "gem_mythic_19",
     "animated": false,
-    "tag": "<:gem_mythic_19:1573800845928042557>"
+    "tag": "<:gem_mythic_19:1574151006097252412>"
   },
   "gem_mythic_2": {
     "id": "1573411039746195507",
@@ -1170,22 +1170,22 @@
     "tag": "<a:gem_mythic_2:1573411039746195507>"
   },
   "gem_mythic_20": {
-    "id": "1573800858095849642",
+    "id": "1574151022023278737",
     "name": "gem_mythic_20",
     "animated": false,
-    "tag": "<:gem_mythic_20:1573800858095849642>"
+    "tag": "<:gem_mythic_20:1574151022023278737>"
   },
   "gem_mythic_21": {
-    "id": "1573800866090319952",
+    "id": "1574151038510960640",
     "name": "gem_mythic_21",
     "animated": false,
-    "tag": "<:gem_mythic_21:1573800866090319952>"
+    "tag": "<:gem_mythic_21:1574151038510960640>"
   },
   "gem_mythic_22": {
-    "id": "1573800876731142335",
+    "id": "1574151149597229138",
     "name": "gem_mythic_22",
     "animated": false,
-    "tag": "<:gem_mythic_22:1573800876731142335>"
+    "tag": "<:gem_mythic_22:1574151149597229138>"
   },
   "gem_mythic_3": {
     "id": "1573411056024555540",
@@ -1206,28 +1206,28 @@
     "tag": "<a:gem_mythic_5:1573659414806794282>"
   },
   "gem_mythic_6": {
-    "id": "1573800689727967313",
+    "id": "1574151172619768032",
     "name": "gem_mythic_6",
     "animated": false,
-    "tag": "<:gem_mythic_6:1573800689727967313>"
+    "tag": "<:gem_mythic_6:1574151172619768032>"
   },
   "gem_mythic_7": {
-    "id": "1573800699186389002",
+    "id": "1574151193272524841",
     "name": "gem_mythic_7",
     "animated": false,
-    "tag": "<:gem_mythic_7:1573800699186389002>"
+    "tag": "<:gem_mythic_7:1574151193272524841>"
   },
   "gem_mythic_8": {
-    "id": "1573800709151924354",
+    "id": "1574151216785789079",
     "name": "gem_mythic_8",
     "animated": false,
-    "tag": "<:gem_mythic_8:1573800709151924354>"
+    "tag": "<:gem_mythic_8:1574151216785789079>"
   },
   "gem_mythic_9": {
-    "id": "1573800720938041414",
+    "id": "1574151237790601286",
     "name": "gem_mythic_9",
     "animated": false,
-    "tag": "<:gem_mythic_9:1573800720938041414>"
+    "tag": "<:gem_mythic_9:1574151237790601286>"
   },
   "gem_rare_1": {
     "id": "1573412059092361371",
@@ -1260,82 +1260,82 @@
     "tag": "<a:gem_rare_5:1573659474533810357>"
   },
   "gem_rare_6": {
-    "id": "1573800647864750140",
+    "id": "1574151253565509736",
     "name": "gem_rare_6",
     "animated": false,
-    "tag": "<:gem_rare_6:1573800647864750140>"
+    "tag": "<:gem_rare_6:1574151253565509736>"
   },
   "gem_rare_7": {
-    "id": "1573800657318580264",
+    "id": "1574151273673007265",
     "name": "gem_rare_7",
     "animated": false,
-    "tag": "<:gem_rare_7:1573800657318580264>"
+    "tag": "<:gem_rare_7:1574151273673007265>"
   },
   "gem_unique_1": {
-    "id": "1573800891373461585",
+    "id": "1574151297609765005",
     "name": "gem_unique_1",
     "animated": false,
-    "tag": "<:gem_unique_1:1573800891373461585>"
+    "tag": "<:gem_unique_1:1574151297609765005>"
   },
   "gem_unique_10": {
-    "id": "1573801007094300687",
+    "id": "1574151317637566554",
     "name": "gem_unique_10",
     "animated": false,
-    "tag": "<:gem_unique_10:1573801007094300687>"
+    "tag": "<:gem_unique_10:1574151317637566554>"
   },
   "gem_unique_2": {
-    "id": "1573800904212349060",
+    "id": "1574151338340778104",
     "name": "gem_unique_2",
     "animated": false,
-    "tag": "<:gem_unique_2:1573800904212349060>"
+    "tag": "<:gem_unique_2:1574151338340778104>"
   },
   "gem_unique_3": {
-    "id": "1573800914631004266",
+    "id": "1574151396092157954",
     "name": "gem_unique_3",
     "animated": false,
-    "tag": "<:gem_unique_3:1573800914631004266>"
+    "tag": "<:gem_unique_3:1574151396092157954>"
   },
   "gem_unique_4": {
-    "id": "1573800929918984202",
+    "id": "1574151418804441308",
     "name": "gem_unique_4",
     "animated": false,
-    "tag": "<:gem_unique_4:1573800929918984202>"
+    "tag": "<:gem_unique_4:1574151418804441308>"
   },
   "gem_unique_5": {
-    "id": "1573800940463591444",
+    "id": "1574151440333668513",
     "name": "gem_unique_5",
     "animated": false,
-    "tag": "<:gem_unique_5:1573800940463591444>"
+    "tag": "<:gem_unique_5:1574151440333668513>"
   },
   "gem_unique_6": {
-    "id": "1573800950378790994",
+    "id": "1574151459375681607",
     "name": "gem_unique_6",
     "animated": false,
-    "tag": "<:gem_unique_6:1573800950378790994>"
+    "tag": "<:gem_unique_6:1574151459375681607>"
   },
   "gem_unique_7": {
-    "id": "1573800966963077281",
+    "id": "1574151473326198988",
     "name": "gem_unique_7",
     "animated": false,
-    "tag": "<:gem_unique_7:1573800966963077281>"
+    "tag": "<:gem_unique_7:1574151473326198988>"
   },
   "gem_unique_8": {
-    "id": "1573800980137386147",
+    "id": "1574151494268231710",
     "name": "gem_unique_8",
     "animated": false,
-    "tag": "<:gem_unique_8:1573800980137386147>"
+    "tag": "<:gem_unique_8:1574151494268231710>"
   },
   "gem_unique_9": {
-    "id": "1573800991378120876",
+    "id": "1574151519782174822",
     "name": "gem_unique_9",
     "animated": false,
-    "tag": "<:gem_unique_9:1573800991378120876>"
+    "tag": "<:gem_unique_9:1574151519782174822>"
   },
   "hac_diem_linh_nha": {
-    "id": "1573799687989760083",
+    "id": "1574151540506103828",
     "name": "hac_diem_linh_nha",
     "animated": false,
-    "tag": "<:hac_diem_linh_nha:1573799687989760083>"
+    "tag": "<:hac_diem_linh_nha:1574151540506103828>"
   },
   "hai_duong_tien_ngu": {
     "id": "1573412168202850314",
@@ -1368,10 +1368,10 @@
     "tag": "<:hoa_thach_nham_nham:1573412180244828333>"
   },
   "hoang_thien_ban_co_lan": {
-    "id": "1573800194242519210",
+    "id": "1574151558449598515",
     "name": "hoang_thien_ban_co_lan",
     "animated": false,
-    "tag": "<:hoang_thien_ban_co_lan:1573800194242519210>"
+    "tag": "<:hoang_thien_ban_co_lan:1574151558449598515>"
   },
   "hoang_thien_ky_lan": {
     "id": "1573659937937293425",
@@ -1386,40 +1386,40 @@
     "tag": "<a:hoang_tho_thach_su:1573659952902311936>"
   },
   "hoang_tuyen_minh_ho": {
-    "id": "1573799927711145994",
+    "id": "1574151577261056021",
     "name": "hoang_tuyen_minh_ho",
     "animated": false,
-    "tag": "<:hoang_tuyen_minh_ho:1573799927711145994>"
+    "tag": "<:hoang_tuyen_minh_ho:1574151577261056021>"
   },
   "hon_don_chi_to_long": {
-    "id": "1573800099170095276",
+    "id": "1574151599037743104",
     "name": "hon_don_chi_to_long",
     "animated": false,
-    "tag": "<:hon_don_chi_to_long:1573800099170095276>"
+    "tag": "<:hon_don_chi_to_long:1574151599037743104>"
   },
   "hon_nguyen_thanh_long": {
-    "id": "1573799798824247530",
+    "id": "1574151620462116946",
     "name": "hon_nguyen_thanh_long",
     "animated": false,
-    "tag": "<:hon_nguyen_thanh_long:1573799798824247530>"
+    "tag": "<:hon_nguyen_thanh_long:1574151620462116946>"
   },
   "huyen_bang_thuy_long": {
-    "id": "1573799725172265150",
+    "id": "1574151644373852241",
     "name": "huyen_bang_thuy_long",
     "animated": false,
-    "tag": "<:huyen_bang_thuy_long:1573799725172265150>"
+    "tag": "<:huyen_bang_thuy_long:1574151644373852241>"
   },
   "huyen_minh_cuu_phuong": {
-    "id": "1573799777081229342",
+    "id": "1574151666263916606",
     "name": "huyen_minh_cuu_phuong",
     "animated": false,
-    "tag": "<:huyen_minh_cuu_phuong:1573799777081229342>"
+    "tag": "<:huyen_minh_cuu_phuong:1574151666263916606>"
   },
   "huyen_thien_vo_cuc_ngao": {
-    "id": "1573799961286414449",
+    "id": "1574151689865265336",
     "name": "huyen_thien_vo_cuc_ngao",
     "animated": false,
-    "tag": "<:huyen_thien_vo_cuc_ngao:1573799961286414449>"
+    "tag": "<:huyen_thien_vo_cuc_ngao:1574151689865265336>"
   },
   "huyen_vu_linh_quy": {
     "id": "1573659972078800906",
@@ -1434,10 +1434,10 @@
     "tag": "<a:huyet_nguyet_linh_dieu:1573660071739658277>"
   },
   "huyet_sat_kiem_ho": {
-    "id": "1573799739638685767",
+    "id": "1574151710358773922",
     "name": "huyet_sat_kiem_ho",
     "animated": false,
-    "tag": "<:huyet_sat_kiem_ho:1573799739638685767>"
+    "tag": "<:huyet_sat_kiem_ho:1574151710358773922>"
   },
   "kawaii_aiyaXD": {
     "id": "1571060084354842694",
@@ -2004,10 +2004,10 @@
     "tag": "<a:kim_giap_tue_lan:1573660095202459878>"
   },
   "kim_quang_toan_nghe": {
-    "id": "1573799971034103938",
+    "id": "1574151727672983552",
     "name": "kim_quang_toan_nghe",
     "animated": false,
-    "tag": "<:kim_quang_toan_nghe:1573799971034103938>"
+    "tag": "<:kim_quang_toan_nghe:1574151727672983552>"
   },
   "kim_si_dieu_hoang": {
     "id": "1573411271456325735",
@@ -2016,10 +2016,10 @@
     "tag": "<a:kim_si_dieu_hoang:1573411271456325735>"
   },
   "kim_van_linh_bao": {
-    "id": "1573799665374072936",
+    "id": "1574151747268644864",
     "name": "kim_van_linh_bao",
     "animated": false,
-    "tag": "<:kim_van_linh_bao:1573799665374072936>"
+    "tag": "<:kim_van_linh_bao:1574151747268644864>"
   },
   "kitsune_crown": {
     "id": "1571059173607743530",
@@ -2100,10 +2100,10 @@
     "tag": "<:kitsune_warn:1571059198572109915>"
   },
   "linh_ho_tieu_bach": {
-    "id": "1573799630871855184",
+    "id": "1574151761390735511",
     "name": "linh_ho_tieu_bach",
     "animated": false,
-    "tag": "<:linh_ho_tieu_bach:1573799630871855184>"
+    "tag": "<:linh_ho_tieu_bach:1574151761390735511>"
   },
   "linh_mieu_hoa_tien": {
     "id": "1573411293610778694",
@@ -2118,16 +2118,16 @@
     "tag": "<a:loi_dinh_kim_ho:1573411307808358414>"
   },
   "loi_kiet_thien_long": {
-    "id": "1573799995466055851",
+    "id": "1574151789144571945",
     "name": "loi_kiet_thien_long",
     "animated": false,
-    "tag": "<:loi_kiet_thien_long:1573799995466055851>"
+    "tag": "<:loi_kiet_thien_long:1574151789144571945>"
   },
   "loi_than_cuu_ung": {
-    "id": "1573799813688856787",
+    "id": "1574151808279122000",
     "name": "loi_than_cuu_ung",
     "animated": false,
-    "tag": "<:loi_than_cuu_ung:1573799813688856787>"
+    "tag": "<:loi_than_cuu_ung:1574151808279122000>"
   },
   "man_da_la_linh_thu": {
     "id": "1573411334358573139",
@@ -2142,10 +2142,10 @@
     "tag": "<a:minh_gioi_u_ho:1573660110268399740>"
   },
   "moc_hoang_than_tuoc": {
-    "id": "1573799916567003196",
+    "id": "1574151831435743293",
     "name": "moc_hoang_than_tuoc",
     "animated": false,
-    "tag": "<:moc_hoang_than_tuoc:1573799916567003196>"
+    "tag": "<:moc_hoang_than_tuoc:1574151831435743293>"
   },
   "music_edm": {
     "id": "1571058910503374989",
@@ -2178,10 +2178,10 @@
     "tag": "<a:phong_vu_tieu_tuoc:1573660157571895467>"
   },
   "quang_linh_cuu_ho": {
-    "id": "1573799939123843224",
+    "id": "1574151857939554334",
     "name": "quang_linh_cuu_ho",
     "animated": false,
-    "tag": "<:quang_linh_cuu_ho:1573799939123843224>"
+    "tag": "<:quang_linh_cuu_ho:1574151857939554334>"
   },
   "quang_minh_thanh_thu": {
     "id": "1573411360124174467",
@@ -2190,100 +2190,100 @@
     "tag": "<a:quang_minh_thanh_thu:1573411360124174467>"
   },
   "realm_common_1": {
-    "id": "1573801947746533499",
+    "id": "1574151882816098366",
     "name": "realm_common_1",
     "animated": false,
-    "tag": "<:realm_common_1:1573801947746533499>"
+    "tag": "<:realm_common_1:1574151882816098366>"
   },
   "realm_common_2": {
-    "id": "1573801959578796065",
+    "id": "1574151903796007024",
     "name": "realm_common_2",
     "animated": false,
-    "tag": "<:realm_common_2:1573801959578796065>"
+    "tag": "<:realm_common_2:1574151903796007024>"
   },
   "realm_common_3": {
-    "id": "1573801973512282182",
+    "id": "1574151920464040107",
     "name": "realm_common_3",
     "animated": false,
-    "tag": "<:realm_common_3:1573801973512282182>"
+    "tag": "<:realm_common_3:1574151920464040107>"
   },
   "realm_epic_1": {
-    "id": "1573802021314887910",
+    "id": "1574151938746884290",
     "name": "realm_epic_1",
     "animated": false,
-    "tag": "<:realm_epic_1:1573802021314887910>"
+    "tag": "<:realm_epic_1:1574151938746884290>"
   },
   "realm_epic_2": {
-    "id": "1573802035961135316",
+    "id": "1574151957269184638",
     "name": "realm_epic_2",
     "animated": false,
-    "tag": "<:realm_epic_2:1573802035961135316>"
+    "tag": "<:realm_epic_2:1574151957269184638>"
   },
   "realm_epic_3": {
-    "id": "1573802045339603187",
+    "id": "1574151974998249684",
     "name": "realm_epic_3",
     "animated": false,
-    "tag": "<:realm_epic_3:1573802045339603187>"
+    "tag": "<:realm_epic_3:1574151974998249684>"
   },
   "realm_fuyumi_van_co_tuyet_diet": {
-    "id": "1573802117284634634",
+    "id": "1574151995307200532",
     "name": "realm_fuyumi_van_co_tuyet_diet",
     "animated": false,
-    "tag": "<:realm_fuyumi_van_co_tuyet_diet:1573802117284634634>"
+    "tag": "<:realm_fuyumi_van_co_tuyet_diet:1574151995307200532>"
   },
   "realm_mythic_1": {
-    "id": "1573802054785171559",
+    "id": "1574152014340825338",
     "name": "realm_mythic_1",
     "animated": false,
-    "tag": "<:realm_mythic_1:1573802054785171559>"
+    "tag": "<:realm_mythic_1:1574152014340825338>"
   },
   "realm_mythic_2": {
-    "id": "1573802065287712869",
+    "id": "1574152032783179796",
     "name": "realm_mythic_2",
     "animated": false,
-    "tag": "<:realm_mythic_2:1573802065287712869>"
+    "tag": "<:realm_mythic_2:1574152032783179796>"
   },
   "realm_mythic_3": {
-    "id": "1573802074221707335",
+    "id": "1574152050680397965",
     "name": "realm_mythic_3",
     "animated": false,
-    "tag": "<:realm_mythic_3:1573802074221707335>"
+    "tag": "<:realm_mythic_3:1574152050680397965>"
   },
   "realm_mythic_4": {
-    "id": "1573802083914612746",
+    "id": "1574152081831366746",
     "name": "realm_mythic_4",
     "animated": false,
-    "tag": "<:realm_mythic_4:1573802083914612746>"
+    "tag": "<:realm_mythic_4:1574152081831366746>"
   },
   "realm_rare_1": {
-    "id": "1573801984975179816",
+    "id": "1574152109924810924",
     "name": "realm_rare_1",
     "animated": false,
-    "tag": "<:realm_rare_1:1573801984975179816>"
+    "tag": "<:realm_rare_1:1574152109924810924>"
   },
   "realm_rare_2": {
-    "id": "1573801997671464990",
+    "id": "1574152128086147152",
     "name": "realm_rare_2",
     "animated": false,
-    "tag": "<:realm_rare_2:1573801997671464990>"
+    "tag": "<:realm_rare_2:1574152128086147152>"
   },
   "realm_rare_3": {
-    "id": "1573802009948061928",
+    "id": "1574152153361285160",
     "name": "realm_rare_3",
     "animated": false,
-    "tag": "<:realm_rare_3:1573802009948061928>"
+    "tag": "<:realm_rare_3:1574152153361285160>"
   },
   "realm_unique_1": {
-    "id": "1573802094715080804",
+    "id": "1574152175934767295",
     "name": "realm_unique_1",
     "animated": false,
-    "tag": "<:realm_unique_1:1573802094715080804>"
+    "tag": "<:realm_unique_1:1574152175934767295>"
   },
   "realm_unique_2": {
-    "id": "1573802108673724569",
+    "id": "1574152195316650077",
     "name": "realm_unique_2",
     "animated": false,
-    "tag": "<:realm_unique_2:1573802108673724569>"
+    "tag": "<:realm_unique_2:1574152195316650077>"
   },
   "ring_common": {
     "id": "1573412311836655906",
@@ -2310,160 +2310,160 @@
     "tag": "<:ring_rare:1573412297223835829>"
   },
   "seed_linh_thao": {
-    "id": "1573802327947743363",
+    "id": "1574152211225645136",
     "name": "seed_linh_thao",
     "animated": false,
-    "tag": "<:seed_linh_thao:1573802327947743363>"
+    "tag": "<:seed_linh_thao:1574152211225645136>"
   },
   "seed_than_moc": {
-    "id": "1573802351100174406",
+    "id": "1574152228502241520",
     "name": "seed_than_moc",
     "animated": false,
-    "tag": "<:seed_than_moc:1573802351100174406>"
+    "tag": "<:seed_than_moc:1574152228502241520>"
   },
   "seed_tien_thao": {
-    "id": "1573802341277376742",
+    "id": "1574152292498677760",
     "name": "seed_tien_thao",
     "animated": false,
-    "tag": "<:seed_tien_thao:1573802341277376742>"
+    "tag": "<:seed_tien_thao:1574152292498677760>"
   },
   "sense_common_1": {
-    "id": "1573801781123752087",
+    "id": "1574152338518712390",
     "name": "sense_common_1",
     "animated": false,
-    "tag": "<:sense_common_1:1573801781123752087>"
+    "tag": "<:sense_common_1:1574152338518712390>"
   },
   "sense_common_2": {
-    "id": "1573801789344456766",
+    "id": "1574152361310691348",
     "name": "sense_common_2",
     "animated": false,
-    "tag": "<:sense_common_2:1573801789344456766>"
+    "tag": "<:sense_common_2:1574152361310691348>"
   },
   "sense_common_3": {
-    "id": "1573801799226232964",
+    "id": "1574152380889440347",
     "name": "sense_common_3",
     "animated": false,
-    "tag": "<:sense_common_3:1573801799226232964>"
+    "tag": "<:sense_common_3:1574152380889440347>"
   },
   "sense_epic_1": {
-    "id": "1573801839424573610",
+    "id": "1574152403710640190",
     "name": "sense_epic_1",
     "animated": false,
-    "tag": "<:sense_epic_1:1573801839424573610>"
+    "tag": "<:sense_epic_1:1574152403710640190>"
   },
   "sense_epic_2": {
-    "id": "1573801850249937087",
+    "id": "1574152426691236090",
     "name": "sense_epic_2",
     "animated": false,
-    "tag": "<:sense_epic_2:1573801850249937087>"
+    "tag": "<:sense_epic_2:1574152426691236090>"
   },
   "sense_epic_3": {
-    "id": "1573801860794552343",
+    "id": "1574152452540997763",
     "name": "sense_epic_3",
     "animated": false,
-    "tag": "<:sense_epic_3:1573801860794552343>"
+    "tag": "<:sense_epic_3:1574152452540997763>"
   },
   "sense_fuyumi_thai_thuong_hong_ho": {
-    "id": "1573801937361576098",
+    "id": "1574152473344610495",
     "name": "sense_fuyumi_thai_thuong_hong_ho",
     "animated": false,
-    "tag": "<:sense_fuyumi_thai_thuong_hong_ho:1573801937361576098>"
+    "tag": "<:sense_fuyumi_thai_thuong_hong_ho:1574152473344610495>"
   },
   "sense_mythic_1": {
-    "id": "1573801873742241882",
+    "id": "1574152493674533026",
     "name": "sense_mythic_1",
     "animated": false,
-    "tag": "<:sense_mythic_1:1573801873742241882>"
+    "tag": "<:sense_mythic_1:1574152493674533026>"
   },
   "sense_mythic_2": {
-    "id": "1573801883238273166",
+    "id": "1574152518361944205",
     "name": "sense_mythic_2",
     "animated": false,
-    "tag": "<:sense_mythic_2:1573801883238273166>"
+    "tag": "<:sense_mythic_2:1574152518361944205>"
   },
   "sense_mythic_3": {
-    "id": "1573801892541112361",
+    "id": "1574152544085876967",
     "name": "sense_mythic_3",
     "animated": false,
-    "tag": "<:sense_mythic_3:1573801892541112361>"
+    "tag": "<:sense_mythic_3:1574152544085876967>"
   },
   "sense_mythic_4": {
-    "id": "1573801900116283434",
+    "id": "1574152566777061548",
     "name": "sense_mythic_4",
     "animated": false,
-    "tag": "<:sense_mythic_4:1573801900116283434>"
+    "tag": "<:sense_mythic_4:1574152566777061548>"
   },
   "sense_rare_1": {
-    "id": "1573801808911142974",
+    "id": "1574152584556716032",
     "name": "sense_rare_1",
     "animated": false,
-    "tag": "<:sense_rare_1:1573801808911142974>"
+    "tag": "<:sense_rare_1:1574152584556716032>"
   },
   "sense_rare_2": {
-    "id": "1573801817345888276",
+    "id": "1574152602789224518",
     "name": "sense_rare_2",
     "animated": false,
-    "tag": "<:sense_rare_2:1573801817345888276>"
+    "tag": "<:sense_rare_2:1574152602789224518>"
   },
   "sense_rare_3": {
-    "id": "1573801827382595604",
+    "id": "1574152620996690070",
     "name": "sense_rare_3",
     "animated": false,
-    "tag": "<:sense_rare_3:1573801827382595604>"
+    "tag": "<:sense_rare_3:1574152620996690070>"
   },
   "sense_unique_1": {
-    "id": "1573801909649670326",
+    "id": "1574152641385074739",
     "name": "sense_unique_1",
     "animated": false,
-    "tag": "<:sense_unique_1:1573801909649670326>"
+    "tag": "<:sense_unique_1:1574152641385074739>"
   },
   "sense_unique_2": {
-    "id": "1573801920337023137",
+    "id": "1574152659500269719",
     "name": "sense_unique_2",
     "animated": false,
-    "tag": "<:sense_unique_2:1573801920337023137>"
+    "tag": "<:sense_unique_2:1574152659500269719>"
   },
   "slot_fox": {
-    "id": "1573802167998095414",
+    "id": "1574152679897432135",
     "name": "slot_fox",
     "animated": false,
-    "tag": "<:slot_fox:1573802167998095414>"
+    "tag": "<:slot_fox:1574152679897432135>"
   },
   "slot_jade": {
-    "id": "1573802177745518773",
+    "id": "1574152700495659119",
     "name": "slot_jade",
     "animated": false,
-    "tag": "<:slot_jade:1573802177745518773>"
+    "tag": "<:slot_jade:1574152700495659119>"
   },
   "slot_lotus": {
-    "id": "1573802216970649731",
+    "id": "1574152718837350560",
     "name": "slot_lotus",
     "animated": false,
-    "tag": "<:slot_lotus:1573802216970649731>"
+    "tag": "<:slot_lotus:1574152718837350560>"
   },
   "slot_pill": {
-    "id": "1573802204878610513",
+    "id": "1574152738517028964",
     "name": "slot_pill",
     "animated": false,
-    "tag": "<:slot_pill:1573802204878610513>"
+    "tag": "<:slot_pill:1574152738517028964>"
   },
   "slot_scroll": {
-    "id": "1573802230606200952",
+    "id": "1574152761849806929",
     "name": "slot_scroll",
     "animated": false,
-    "tag": "<:slot_scroll:1573802230606200952>"
+    "tag": "<:slot_scroll:1574152761849806929>"
   },
   "slot_spin": {
-    "id": "1573802158376099940",
+    "id": "1574152779709161622",
     "name": "slot_spin",
     "animated": true,
-    "tag": "<a:slot_spin:1573802158376099940>"
+    "tag": "<a:slot_spin:1574152779709161622>"
   },
   "slot_sword": {
-    "id": "1573802191507038349",
+    "id": "1574152803671089242",
     "name": "slot_sword",
     "animated": false,
-    "tag": "<:slot_sword:1573802191507038349>"
+    "tag": "<:slot_sword:1574152803671089242>"
   },
   "soul_common_1": {
     "id": "1573412336411082934",
@@ -2496,16 +2496,16 @@
     "tag": "<a:soul_common_5:1573659492032450740>"
   },
   "soul_common_6": {
-    "id": "1573801014870413463",
+    "id": "1574152824999256355",
     "name": "soul_common_6",
     "animated": false,
-    "tag": "<:soul_common_6:1573801014870413463>"
+    "tag": "<:soul_common_6:1574152824999256355>"
   },
   "soul_common_7": {
-    "id": "1573801023804285028",
+    "id": "1574152846876745849",
     "name": "soul_common_7",
     "animated": false,
-    "tag": "<:soul_common_7:1573801023804285028>"
+    "tag": "<:soul_common_7:1574152846876745849>"
   },
   "soul_epic_1": {
     "id": "1573412387661287545",
@@ -2544,22 +2544,22 @@
     "tag": "<a:soul_epic_6:1573659564891709540>"
   },
   "soul_epic_7": {
-    "id": "1573801066506752030",
+    "id": "1574152871153377452",
     "name": "soul_epic_7",
     "animated": false,
-    "tag": "<:soul_epic_7:1573801066506752030>"
+    "tag": "<:soul_epic_7:1574152871153377452>"
   },
   "soul_epic_8": {
-    "id": "1573801079160709232",
+    "id": "1574152889943851160",
     "name": "soul_epic_8",
     "animated": false,
-    "tag": "<:soul_epic_8:1573801079160709232>"
+    "tag": "<:soul_epic_8:1574152889943851160>"
   },
   "soul_epic_9": {
-    "id": "1573801091995275384",
+    "id": "1574152912324534423",
     "name": "soul_epic_9",
     "animated": false,
-    "tag": "<:soul_epic_9:1573801091995275384>"
+    "tag": "<:soul_epic_9:1574152912324534423>"
   },
   "soul_mythic_1": {
     "id": "1573411602127134720",
@@ -2568,64 +2568,64 @@
     "tag": "<a:soul_mythic_1:1573411602127134720>"
   },
   "soul_mythic_10": {
-    "id": "1573801145795616867",
+    "id": "1574152932377632858",
     "name": "soul_mythic_10",
     "animated": false,
-    "tag": "<:soul_mythic_10:1573801145795616867>"
+    "tag": "<:soul_mythic_10:1574152932377632858>"
   },
   "soul_mythic_11": {
-    "id": "1573801157237932112",
+    "id": "1574152955471462612",
     "name": "soul_mythic_11",
     "animated": false,
-    "tag": "<:soul_mythic_11:1573801157237932112>"
+    "tag": "<:soul_mythic_11:1574152955471462612>"
   },
   "soul_mythic_12": {
-    "id": "1573801171343245312",
+    "id": "1574152976535396503",
     "name": "soul_mythic_12",
     "animated": false,
-    "tag": "<:soul_mythic_12:1573801171343245312>"
+    "tag": "<:soul_mythic_12:1574152976535396503>"
   },
   "soul_mythic_13": {
-    "id": "1573801182982316164",
+    "id": "1574152997699584110",
     "name": "soul_mythic_13",
     "animated": false,
-    "tag": "<:soul_mythic_13:1573801182982316164>"
+    "tag": "<:soul_mythic_13:1574152997699584110>"
   },
   "soul_mythic_14": {
-    "id": "1573801193870725294",
+    "id": "1574153019065503854",
     "name": "soul_mythic_14",
     "animated": false,
-    "tag": "<:soul_mythic_14:1573801193870725294>"
+    "tag": "<:soul_mythic_14:1574153019065503854>"
   },
   "soul_mythic_15": {
-    "id": "1573801203416965242",
+    "id": "1574153037302206504",
     "name": "soul_mythic_15",
     "animated": false,
-    "tag": "<:soul_mythic_15:1573801203416965242>"
+    "tag": "<:soul_mythic_15:1574153037302206504>"
   },
   "soul_mythic_16": {
-    "id": "1573801214678671420",
+    "id": "1574153055602216990",
     "name": "soul_mythic_16",
     "animated": false,
-    "tag": "<:soul_mythic_16:1573801214678671420>"
+    "tag": "<:soul_mythic_16:1574153055602216990>"
   },
   "soul_mythic_17": {
-    "id": "1573801227962290347",
+    "id": "1574153077026586736",
     "name": "soul_mythic_17",
     "animated": false,
-    "tag": "<:soul_mythic_17:1573801227962290347>"
+    "tag": "<:soul_mythic_17:1574153077026586736>"
   },
   "soul_mythic_18": {
-    "id": "1573801239660077129",
+    "id": "1574153096534167762",
     "name": "soul_mythic_18",
     "animated": false,
-    "tag": "<:soul_mythic_18:1573801239660077129>"
+    "tag": "<:soul_mythic_18:1574153096534167762>"
   },
   "soul_mythic_19": {
-    "id": "1573801260912476331",
+    "id": "1574153119154045088",
     "name": "soul_mythic_19",
     "animated": false,
-    "tag": "<:soul_mythic_19:1573801260912476331>"
+    "tag": "<:soul_mythic_19:1574153119154045088>"
   },
   "soul_mythic_2": {
     "id": "1573411621202698390",
@@ -2634,16 +2634,16 @@
     "tag": "<a:soul_mythic_2:1573411621202698390>"
   },
   "soul_mythic_20": {
-    "id": "1573801271020888164",
+    "id": "1574153138477342910",
     "name": "soul_mythic_20",
     "animated": false,
-    "tag": "<:soul_mythic_20:1573801271020888164>"
+    "tag": "<:soul_mythic_20:1574153138477342910>"
   },
   "soul_mythic_21": {
-    "id": "1573801285894012948",
+    "id": "1574153158274453655",
     "name": "soul_mythic_21",
     "animated": false,
-    "tag": "<:soul_mythic_21:1573801285894012948>"
+    "tag": "<:soul_mythic_21:1574153158274453655>"
   },
   "soul_mythic_3": {
     "id": "1573411636868284527",
@@ -2664,28 +2664,28 @@
     "tag": "<a:soul_mythic_5:1573659654842622072>"
   },
   "soul_mythic_6": {
-    "id": "1573801100451254313",
+    "id": "1574153173763883100",
     "name": "soul_mythic_6",
     "animated": false,
-    "tag": "<:soul_mythic_6:1573801100451254313>"
+    "tag": "<:soul_mythic_6:1574153173763883100>"
   },
   "soul_mythic_7": {
-    "id": "1573801109430997085",
+    "id": "1574153194681008219",
     "name": "soul_mythic_7",
     "animated": false,
-    "tag": "<:soul_mythic_7:1573801109430997085>"
+    "tag": "<:soul_mythic_7:1574153194681008219>"
   },
   "soul_mythic_8": {
-    "id": "1573801126363398214",
+    "id": "1574153226297807001",
     "name": "soul_mythic_8",
     "animated": false,
-    "tag": "<:soul_mythic_8:1573801126363398214>"
+    "tag": "<:soul_mythic_8:1574153226297807001>"
   },
   "soul_mythic_9": {
-    "id": "1573801136438378726",
+    "id": "1574153244798615562",
     "name": "soul_mythic_9",
     "animated": false,
-    "tag": "<:soul_mythic_9:1573801136438378726>"
+    "tag": "<:soul_mythic_9:1574153244798615562>"
   },
   "soul_rare_1": {
     "id": "1573412445127712860",
@@ -2718,76 +2718,76 @@
     "tag": "<a:soul_rare_5:1573659671565181029>"
   },
   "soul_rare_6": {
-    "id": "1573801034843684874",
+    "id": "1574153263714934835",
     "name": "soul_rare_6",
     "animated": false,
-    "tag": "<:soul_rare_6:1573801034843684874>"
+    "tag": "<:soul_rare_6:1574153263714934835>"
   },
   "soul_rare_7": {
-    "id": "1573801051809652747",
+    "id": "1574153284573208786",
     "name": "soul_rare_7",
     "animated": false,
-    "tag": "<:soul_rare_7:1573801051809652747>"
+    "tag": "<:soul_rare_7:1574153284573208786>"
   },
   "soul_unique_1": {
-    "id": "1573801297851981844",
+    "id": "1574153306085925035",
     "name": "soul_unique_1",
     "animated": false,
-    "tag": "<:soul_unique_1:1573801297851981844>"
+    "tag": "<:soul_unique_1:1574153306085925035>"
   },
   "soul_unique_10": {
-    "id": "1573801390122336347",
+    "id": "1574153329548730388",
     "name": "soul_unique_10",
     "animated": false,
-    "tag": "<:soul_unique_10:1573801390122336347>"
+    "tag": "<:soul_unique_10:1574153329548730388>"
   },
   "soul_unique_2": {
-    "id": "1573801306483859596",
+    "id": "1574153350784753805",
     "name": "soul_unique_2",
     "animated": false,
-    "tag": "<:soul_unique_2:1573801306483859596>"
+    "tag": "<:soul_unique_2:1574153350784753805>"
   },
   "soul_unique_3": {
-    "id": "1573801317422334104",
+    "id": "1574153369403138088",
     "name": "soul_unique_3",
     "animated": false,
-    "tag": "<:soul_unique_3:1573801317422334104>"
+    "tag": "<:soul_unique_3:1574153369403138088>"
   },
   "soul_unique_4": {
-    "id": "1573801326486356079",
+    "id": "1574153386713157682",
     "name": "soul_unique_4",
     "animated": false,
-    "tag": "<:soul_unique_4:1573801326486356079>"
+    "tag": "<:soul_unique_4:1574153386713157682>"
   },
   "soul_unique_5": {
-    "id": "1573801339341897819",
+    "id": "1574153407374041208",
     "name": "soul_unique_5",
     "animated": false,
-    "tag": "<:soul_unique_5:1573801339341897819>"
+    "tag": "<:soul_unique_5:1574153407374041208>"
   },
   "soul_unique_6": {
-    "id": "1573801351312580700",
+    "id": "1574153428794478662",
     "name": "soul_unique_6",
     "animated": false,
-    "tag": "<:soul_unique_6:1573801351312580700>"
+    "tag": "<:soul_unique_6:1574153428794478662>"
   },
   "soul_unique_7": {
-    "id": "1573801363177996380",
+    "id": "1574153448830800027",
     "name": "soul_unique_7",
     "animated": false,
-    "tag": "<:soul_unique_7:1573801363177996380>"
+    "tag": "<:soul_unique_7:1574153448830800027>"
   },
   "soul_unique_8": {
-    "id": "1573801371344437399",
+    "id": "1574153495362146456",
     "name": "soul_unique_8",
     "animated": false,
-    "tag": "<:soul_unique_8:1573801371344437399>"
+    "tag": "<:soul_unique_8:1574153495362146456>"
   },
   "soul_unique_9": {
-    "id": "1573801379703562320",
+    "id": "1574153517407539330",
     "name": "soul_unique_9",
     "animated": false,
-    "tag": "<:soul_unique_9:1573801379703562320>"
+    "tag": "<:soul_unique_9:1574153517407539330>"
   },
   "su_arena": {
     "id": "1573410736758067240",
@@ -3210,10 +3210,10 @@
     "tag": "<a:sumi_Verify:1571061494999810159>"
   },
   "thach_hoang_cu_linh": {
-    "id": "1573800027401232465",
+    "id": "1574153533937160283",
     "name": "thach_hoang_cu_linh",
     "animated": false,
-    "tag": "<:thach_hoang_cu_linh:1573800027401232465>"
+    "tag": "<:thach_hoang_cu_linh:1574153533937160283>"
   },
   "thai_am_ngoc_tho": {
     "id": "1573660174932254792",
@@ -3222,22 +3222,22 @@
     "tag": "<a:thai_am_ngoc_tho:1573660174932254792>"
   },
   "thai_at_than_trach": {
-    "id": "1573799951887110186",
+    "id": "1574153558461517922",
     "name": "thai_at_than_trach",
     "animated": false,
-    "tag": "<:thai_at_than_trach:1573799951887110186>"
+    "tag": "<:thai_at_than_trach:1574153558461517922>"
   },
   "thai_co_bach_ho": {
-    "id": "1573799766759051466",
+    "id": "1574153580871688192",
     "name": "thai_co_bach_ho",
     "animated": false,
-    "tag": "<:thai_co_bach_ho:1573799766759051466>"
+    "tag": "<:thai_co_bach_ho:1574153580871688192>"
   },
   "thai_cuc_thanh_quang_thu": {
-    "id": "1573800149942280263",
+    "id": "1574153608742707370",
     "name": "thai_cuc_thanh_quang_thu",
     "animated": false,
-    "tag": "<:thai_cuc_thanh_quang_thu:1573800149942280263>"
+    "tag": "<:thai_cuc_thanh_quang_thu:1574153608742707370>"
   },
   "thai_duong_kim_o": {
     "id": "1573660190501249025",
@@ -3246,22 +3246,22 @@
     "tag": "<a:thai_duong_kim_o:1573660190501249025>"
   },
   "thai_duong_than_su": {
-    "id": "1573800089254633472",
+    "id": "1574153627214286938",
     "name": "thai_duong_than_su",
     "animated": false,
-    "tag": "<:thai_duong_than_su:1573800089254633472>"
+    "tag": "<:thai_duong_than_su:1574153627214286938>"
   },
   "thai_so_cuu_phuong_hoang": {
-    "id": "1573800109307592743",
+    "id": "1574153644654198875",
     "name": "thai_so_cuu_phuong_hoang",
     "animated": false,
-    "tag": "<:thai_so_cuu_phuong_hoang:1573800109307592743>"
+    "tag": "<:thai_so_cuu_phuong_hoang:1574153644654198875>"
   },
   "thanh_bang_hai_hoang": {
-    "id": "1573799982991937628",
+    "id": "1574153668222132306",
     "name": "thanh_bang_hai_hoang",
     "animated": false,
-    "tag": "<:thanh_bang_hai_hoang:1573799982991937628>"
+    "tag": "<:thanh_bang_hai_hoang:1574153668222132306>"
   },
   "thanh_de_moc_long": {
     "id": "1573660200882282536",
@@ -3270,16 +3270,16 @@
     "tag": "<a:thanh_de_moc_long:1573660200882282536>"
   },
   "thanh_de_van_co_long": {
-    "id": "1573800172817744073",
+    "id": "1574153690305142895",
     "name": "thanh_de_van_co_long",
     "animated": false,
-    "tag": "<:thanh_de_van_co_long:1573800172817744073>"
+    "tag": "<:thanh_de_van_co_long:1574153690305142895>"
   },
   "thanh_lam_tieu_dieu": {
-    "id": "1573799655266058331",
+    "id": "1574153708848287774",
     "name": "thanh_lam_tieu_dieu",
     "animated": false,
-    "tag": "<:thanh_lam_tieu_dieu:1573799655266058331>"
+    "tag": "<:thanh_lam_tieu_dieu:1574153708848287774>"
   },
   "thanh_long_au_xa": {
     "id": "1573660216820498543",
@@ -3300,22 +3300,22 @@
     "tag": "<:thao_moc_linh_vien:1573412235416440932>"
   },
   "thien_co_ngoc_ho": {
-    "id": "1573799823809843361",
+    "id": "1574153731031957636",
     "name": "thien_co_ngoc_ho",
     "animated": false,
-    "tag": "<:thien_co_ngoc_ho:1573799823809843361>"
+    "tag": "<:thien_co_ngoc_ho:1574153731031957636>"
   },
   "thien_khong_kim_dieu": {
-    "id": "1573799897390518444",
+    "id": "1574153749008490608",
     "name": "thien_khong_kim_dieu",
     "animated": false,
-    "tag": "<:thien_khong_kim_dieu:1573799897390518444>"
+    "tag": "<:thien_khong_kim_dieu:1574153749008490608>"
   },
   "thien_loi_thach_vien": {
-    "id": "1573799713193590784",
+    "id": "1574153768419725402",
     "name": "thien_loi_thach_vien",
     "animated": false,
-    "tag": "<:thien_loi_thach_vien:1573799713193590784>"
+    "tag": "<:thien_loi_thach_vien:1574153768419725402>"
   },
   "thiet_giap_xich_giac": {
     "id": "1573412249047932938",
@@ -3324,10 +3324,10 @@
     "tag": "<:thiet_giap_xich_giac:1573412249047932938>"
   },
   "thoi_khong_than_tinh_ho": {
-    "id": "1573800139452063895",
+    "id": "1574153788388933685",
     "name": "thoi_khong_than_tinh_ho",
     "animated": false,
-    "tag": "<:thoi_khong_than_tinh_ho:1573800139452063895>"
+    "tag": "<:thoi_khong_than_tinh_ho:1574153788388933685>"
   },
   "thuy_tinh_huyen_ngao": {
     "id": "1573412260536385608",
@@ -3336,10 +3336,10 @@
     "tag": "<:thuy_tinh_huyen_ngao:1573412260536385608>"
   },
   "thuy_vu_thanh_phuong": {
-    "id": "1573799876792418354",
+    "id": "1574153805870665809",
     "name": "thuy_vu_thanh_phuong",
     "animated": false,
-    "tag": "<:thuy_vu_thanh_phuong:1573799876792418354>"
+    "tag": "<:thuy_vu_thanh_phuong:1574153805870665809>"
   },
   "tinh_khong_da_thao": {
     "id": "1573411376586817860",
@@ -3348,16 +3348,16 @@
     "tag": "<a:tinh_khong_da_thao:1573411376586817860>"
   },
   "tinh_tu_thien_nga": {
-    "id": "1573800037262295170",
+    "id": "1574153825671975043",
     "name": "tinh_tu_thien_nga",
     "animated": false,
-    "tag": "<:tinh_tu_thien_nga:1573800037262295170>"
+    "tag": "<:tinh_tu_thien_nga:1574153825671975043>"
   },
   "tinh_van_cuu_loc": {
-    "id": "1573799854440714310",
+    "id": "1574153852024791231",
     "name": "tinh_van_cuu_loc",
     "animated": false,
-    "tag": "<:tinh_van_cuu_loc:1573799854440714310>"
+    "tag": "<:tinh_van_cuu_loc:1574153852024791231>"
   },
   "title_rename_card": {
     "id": "1573412524509110282",
@@ -3384,34 +3384,34 @@
     "tag": "<a:tu_kim_bach_trach:1573660251993940069>"
   },
   "tu_tieu_loi_su": {
-    "id": "1573799907016310914",
+    "id": "1574153870085591072",
     "name": "tu_tieu_loi_su",
     "animated": false,
-    "tag": "<:tu_tieu_loi_su:1573799907016310914>"
+    "tag": "<:tu_tieu_loi_su:1574153870085591072>"
   },
   "tu_vi_huyen_quy": {
-    "id": "1573799788808249526",
+    "id": "1574153895650005052",
     "name": "tu_vi_huyen_quy",
     "animated": false,
-    "tag": "<:tu_vi_huyen_quy:1573799788808249526>"
+    "tag": "<:tu_vi_huyen_quy:1574153895650005052>"
   },
   "u_do_ma_lang": {
-    "id": "1573799834744524920",
+    "id": "1574153914490560532",
     "name": "u_do_ma_lang",
     "animated": false,
-    "tag": "<:u_do_ma_lang:1573799834744524920>"
+    "tag": "<:u_do_ma_lang:1574153914490560532>"
   },
   "u_lam_linh_diep": {
-    "id": "1573799677470580808",
+    "id": "1574153935038578708",
     "name": "u_lam_linh_diep",
     "animated": false,
-    "tag": "<:u_lam_linh_diep:1573799677470580808>"
+    "tag": "<:u_lam_linh_diep:1574153935038578708>"
   },
   "u_linh_kiem_ma": {
-    "id": "1573800052542021712",
+    "id": "1574153955804577793",
     "name": "u_linh_kiem_ma",
     "animated": false,
-    "tag": "<:u_linh_kiem_ma:1573800052542021712>"
+    "tag": "<:u_linh_kiem_ma:1574153955804577793>"
   },
   "u_linh_tieu_mieu": {
     "id": "1573660266619478026",
@@ -3426,22 +3426,22 @@
     "tag": "<a:u_minh_lang_vuong:1573411407121223792>"
   },
   "van_kiem_de_ton_ho": {
-    "id": "1573800119613259936",
+    "id": "1574153972128813256",
     "name": "van_kiem_de_ton_ho",
     "animated": false,
-    "tag": "<:van_kiem_de_ton_ho:1573800119613259936>"
+    "tag": "<:van_kiem_de_ton_ho:1574153972128813256>"
   },
   "van_moc_xuan_long": {
-    "id": "1573800078165147728",
+    "id": "1574153993683210441",
     "name": "van_moc_xuan_long",
     "animated": false,
-    "tag": "<:van_moc_xuan_long:1573800078165147728>"
+    "tag": "<:van_moc_xuan_long:1574153993683210441>"
   },
   "van_nhac_than_ngu": {
-    "id": "1573799842289946664",
+    "id": "1574154013086056600",
     "name": "van_nhac_than_ngu",
     "animated": false,
-    "tag": "<:van_nhac_than_ngu:1573799842289946664>"
+    "tag": "<:van_nhac_than_ngu:1574154013086056600>"
   },
   "vein_mine_a": {
     "id": "1573965983356424244",
@@ -3498,10 +3498,10 @@
     "tag": "<:viem_nguc_khuyen:1573412273869950976>"
   },
   "vu_tru_khong_lo": {
-    "id": "1573800067981381652",
+    "id": "1574154031889252542",
     "name": "vu_tru_khong_lo",
     "animated": false,
-    "tag": "<:vu_tru_khong_lo:1573800067981381652>"
+    "tag": "<:vu_tru_khong_lo:1574154031889252542>"
   },
   "weapon_common_1": {
     "id": "1573412535661633596",
@@ -3540,16 +3540,16 @@
     "tag": "<a:weapon_common_6:1573659700044632126>"
   },
   "weapon_common_7": {
-    "id": "1573800204811903231",
+    "id": "1574154052542140507",
     "name": "weapon_common_7",
     "animated": false,
-    "tag": "<:weapon_common_7:1573800204811903231>"
+    "tag": "<:weapon_common_7:1574154052542140507>"
   },
   "weapon_common_8": {
-    "id": "1573800215524282418",
+    "id": "1574154075526660297",
     "name": "weapon_common_8",
     "animated": false,
-    "tag": "<:weapon_common_8:1573800215524282418>"
+    "tag": "<:weapon_common_8:1574154075526660297>"
   },
   "weapon_epic_1": {
     "id": "1573412588585361520",
@@ -3588,22 +3588,22 @@
     "tag": "<a:weapon_epic_6:1573659733376635040>"
   },
   "weapon_epic_7": {
-    "id": "1573800249036636202",
+    "id": "1574154097945346048",
     "name": "weapon_epic_7",
     "animated": false,
-    "tag": "<:weapon_epic_7:1573800249036636202>"
+    "tag": "<:weapon_epic_7:1574154097945346048>"
   },
   "weapon_epic_8": {
-    "id": "1573800263557578904",
+    "id": "1574154117037686885",
     "name": "weapon_epic_8",
     "animated": false,
-    "tag": "<:weapon_epic_8:1573800263557578904>"
+    "tag": "<:weapon_epic_8:1574154117037686885>"
   },
   "weapon_epic_9": {
-    "id": "1573800281441960057",
+    "id": "1574154136830738563",
     "name": "weapon_epic_9",
     "animated": false,
-    "tag": "<:weapon_epic_9:1573800281441960057>"
+    "tag": "<:weapon_epic_9:1574154136830738563>"
   },
   "weapon_mythic_1": {
     "id": "1573411797762052137",
@@ -3612,64 +3612,64 @@
     "tag": "<a:weapon_mythic_1:1573411797762052137>"
   },
   "weapon_mythic_10": {
-    "id": "1573800341563117729",
+    "id": "1574154154060947496",
     "name": "weapon_mythic_10",
     "animated": false,
-    "tag": "<:weapon_mythic_10:1573800341563117729>"
+    "tag": "<:weapon_mythic_10:1574154154060947496>"
   },
   "weapon_mythic_11": {
-    "id": "1573800355001663609",
+    "id": "1574154182766764072",
     "name": "weapon_mythic_11",
     "animated": false,
-    "tag": "<:weapon_mythic_11:1573800355001663609>"
+    "tag": "<:weapon_mythic_11:1574154182766764072>"
   },
   "weapon_mythic_12": {
-    "id": "1573800366263238706",
+    "id": "1574154235778441258",
     "name": "weapon_mythic_12",
     "animated": false,
-    "tag": "<:weapon_mythic_12:1573800366263238706>"
+    "tag": "<:weapon_mythic_12:1574154235778441258>"
   },
   "weapon_mythic_13": {
-    "id": "1573800373842350162",
+    "id": "1574154255881863238",
     "name": "weapon_mythic_13",
     "animated": false,
-    "tag": "<:weapon_mythic_13:1573800373842350162>"
+    "tag": "<:weapon_mythic_13:1574154255881863238>"
   },
   "weapon_mythic_14": {
-    "id": "1573800383581659326",
+    "id": "1574154279684542634",
     "name": "weapon_mythic_14",
     "animated": false,
-    "tag": "<:weapon_mythic_14:1573800383581659326>"
+    "tag": "<:weapon_mythic_14:1574154279684542634>"
   },
   "weapon_mythic_15": {
-    "id": "1573800393412976772",
+    "id": "1574154297086713999",
     "name": "weapon_mythic_15",
     "animated": false,
-    "tag": "<:weapon_mythic_15:1573800393412976772>"
+    "tag": "<:weapon_mythic_15:1574154297086713999>"
   },
   "weapon_mythic_16": {
-    "id": "1573800404062568579",
+    "id": "1574154315818598427",
     "name": "weapon_mythic_16",
     "animated": false,
-    "tag": "<:weapon_mythic_16:1573800404062568579>"
+    "tag": "<:weapon_mythic_16:1574154315818598427>"
   },
   "weapon_mythic_17": {
-    "id": "1573800414577692772",
+    "id": "1574154336034885703",
     "name": "weapon_mythic_17",
     "animated": false,
-    "tag": "<:weapon_mythic_17:1573800414577692772>"
+    "tag": "<:weapon_mythic_17:1574154336034885703>"
   },
   "weapon_mythic_18": {
-    "id": "1573800432327983247",
+    "id": "1574154352405516379",
     "name": "weapon_mythic_18",
     "animated": false,
-    "tag": "<:weapon_mythic_18:1573800432327983247>"
+    "tag": "<:weapon_mythic_18:1574154352405516379>"
   },
   "weapon_mythic_19": {
-    "id": "1573800446815109221",
+    "id": "1574154369056903338",
     "name": "weapon_mythic_19",
     "animated": false,
-    "tag": "<:weapon_mythic_19:1573800446815109221>"
+    "tag": "<:weapon_mythic_19:1574154369056903338>"
   },
   "weapon_mythic_2": {
     "id": "1573411812299243581",
@@ -3678,22 +3678,22 @@
     "tag": "<a:weapon_mythic_2:1573411812299243581>"
   },
   "weapon_mythic_20": {
-    "id": "1573800463080357988",
+    "id": "1574154388698701864",
     "name": "weapon_mythic_20",
     "animated": false,
-    "tag": "<:weapon_mythic_20:1573800463080357988>"
+    "tag": "<:weapon_mythic_20:1574154388698701864>"
   },
   "weapon_mythic_21": {
-    "id": "1573800475638374571",
+    "id": "1574154414447526089",
     "name": "weapon_mythic_21",
     "animated": false,
-    "tag": "<:weapon_mythic_21:1573800475638374571>"
+    "tag": "<:weapon_mythic_21:1574154414447526089>"
   },
   "weapon_mythic_22": {
-    "id": "1573800487008862308",
+    "id": "1574154437331787897",
     "name": "weapon_mythic_22",
     "animated": false,
-    "tag": "<:weapon_mythic_22:1573800487008862308>"
+    "tag": "<:weapon_mythic_22:1574154437331787897>"
   },
   "weapon_mythic_3": {
     "id": "1573411830704115732",
@@ -3714,28 +3714,28 @@
     "tag": "<a:weapon_mythic_5:1573659767174467604>"
   },
   "weapon_mythic_6": {
-    "id": "1573800296855900240",
+    "id": "1574154457220911134",
     "name": "weapon_mythic_6",
     "animated": false,
-    "tag": "<:weapon_mythic_6:1573800296855900240>"
+    "tag": "<:weapon_mythic_6:1574154457220911134>"
   },
   "weapon_mythic_7": {
-    "id": "1573800309967425606",
+    "id": "1574154479325151252",
     "name": "weapon_mythic_7",
     "animated": false,
-    "tag": "<:weapon_mythic_7:1573800309967425606>"
+    "tag": "<:weapon_mythic_7:1574154479325151252>"
   },
   "weapon_mythic_8": {
-    "id": "1573800321212219602",
+    "id": "1574154503454724246",
     "name": "weapon_mythic_8",
     "animated": false,
-    "tag": "<:weapon_mythic_8:1573800321212219602>"
+    "tag": "<:weapon_mythic_8:1574154503454724246>"
   },
   "weapon_mythic_9": {
-    "id": "1573800330691350538",
+    "id": "1574154527765172465",
     "name": "weapon_mythic_9",
     "animated": false,
-    "tag": "<:weapon_mythic_9:1573800330691350538>"
+    "tag": "<:weapon_mythic_9:1574154527765172465>"
   },
   "weapon_rare_1": {
     "id": "1573412639831494676",
@@ -3774,94 +3774,94 @@
     "tag": "<a:weapon_rare_6:1573659812158505062>"
   },
   "weapon_rare_7": {
-    "id": "1573800228010852493",
+    "id": "1574154545880109188",
     "name": "weapon_rare_7",
     "animated": false,
-    "tag": "<:weapon_rare_7:1573800228010852493>"
+    "tag": "<:weapon_rare_7:1574154545880109188>"
   },
   "weapon_rare_8": {
-    "id": "1573800239469695156",
+    "id": "1574154571121557504",
     "name": "weapon_rare_8",
     "animated": false,
-    "tag": "<:weapon_rare_8:1573800239469695156>"
+    "tag": "<:weapon_rare_8:1574154571121557504>"
   },
   "weapon_unique_1": {
-    "id": "1573800497247293521",
+    "id": "1574154590134337809",
     "name": "weapon_unique_1",
     "animated": false,
-    "tag": "<:weapon_unique_1:1573800497247293521>"
+    "tag": "<:weapon_unique_1:1574154590134337809>"
   },
   "weapon_unique_10": {
-    "id": "1573800612037009498",
+    "id": "1574154612926320771",
     "name": "weapon_unique_10",
     "animated": false,
-    "tag": "<:weapon_unique_10:1573800612037009498>"
+    "tag": "<:weapon_unique_10:1574154612926320771>"
   },
   "weapon_unique_2": {
-    "id": "1573800506588143766",
+    "id": "1574154628642242661",
     "name": "weapon_unique_2",
     "animated": false,
-    "tag": "<:weapon_unique_2:1573800506588143766>"
+    "tag": "<:weapon_unique_2:1574154628642242661>"
   },
   "weapon_unique_3": {
-    "id": "1573800516742418616",
+    "id": "1574154664012685503",
     "name": "weapon_unique_3",
     "animated": false,
-    "tag": "<:weapon_unique_3:1573800516742418616>"
+    "tag": "<:weapon_unique_3:1574154664012685503>"
   },
   "weapon_unique_4": {
-    "id": "1573800532923908117",
+    "id": "1574154683138973756",
     "name": "weapon_unique_4",
     "animated": false,
-    "tag": "<:weapon_unique_4:1573800532923908117>"
+    "tag": "<:weapon_unique_4:1574154683138973756>"
   },
   "weapon_unique_5": {
-    "id": "1573800543376384070",
+    "id": "1574154704479457332",
     "name": "weapon_unique_5",
     "animated": false,
-    "tag": "<:weapon_unique_5:1573800543376384070>"
+    "tag": "<:weapon_unique_5:1574154704479457332>"
   },
   "weapon_unique_6": {
-    "id": "1573800554776498286",
+    "id": "1574154725115306076",
     "name": "weapon_unique_6",
     "animated": false,
-    "tag": "<:weapon_unique_6:1573800554776498286>"
+    "tag": "<:weapon_unique_6:1574154725115306076>"
   },
   "weapon_unique_7": {
-    "id": "1573800565975158875",
+    "id": "1574154771349119167",
     "name": "weapon_unique_7",
     "animated": false,
-    "tag": "<:weapon_unique_7:1573800565975158875>"
+    "tag": "<:weapon_unique_7:1574154771349119167>"
   },
   "weapon_unique_8": {
-    "id": "1573800576758583338",
+    "id": "1574154794455793704",
     "name": "weapon_unique_8",
     "animated": false,
-    "tag": "<:weapon_unique_8:1573800576758583338>"
+    "tag": "<:weapon_unique_8:1574154794455793704>"
   },
   "weapon_unique_9": {
-    "id": "1573800600414720172",
+    "id": "1574154814059716648",
     "name": "weapon_unique_9",
     "animated": false,
-    "tag": "<:weapon_unique_9:1573800600414720172>"
+    "tag": "<:weapon_unique_9:1574154814059716648>"
   },
   "xich_diem_ky_lan": {
-    "id": "1573799866411257979",
+    "id": "1574154832460390470",
     "name": "xich_diem_ky_lan",
     "animated": false,
-    "tag": "<:xich_diem_ky_lan:1573799866411257979>"
+    "tag": "<:xich_diem_ky_lan:1574154832460390470>"
   },
   "xich_nguyet_tue_ho": {
-    "id": "1573800006043959550",
+    "id": "1574154852550967337",
     "name": "xich_nguyet_tue_ho",
     "animated": false,
-    "tag": "<:xich_nguyet_tue_ho:1573800006043959550>"
+    "tag": "<:xich_nguyet_tue_ho:1574154852550967337>"
   },
   "xich_thach_tieu_quy": {
-    "id": "1573799643890974761",
+    "id": "1574154873052733681",
     "name": "xich_thach_tieu_quy",
     "animated": false,
-    "tag": "<:xich_thach_tieu_quy:1573799643890974761>"
+    "tag": "<:xich_thach_tieu_quy:1574154873052733681>"
   },
   "xich_xa_hoa_long": {
     "id": "1573412284548776140",

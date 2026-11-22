@@ -63,7 +63,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: 'Vui lòng nhập Mã UID hoặc Tên Linh Thú / Pháp Bảo / Role / Vật Phẩm cần tra cứu (ví dụ: `weapon_epic_4`, `bach_kim_ho_tu`, `tower_reset_card`, `1573577808867762186`).',
       color: '#f43f5e',
       image_url: '',
-      footer: 'SuMi Family • /info <ma_id>',
+      footer: '',
     };
   }
 
@@ -180,8 +180,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: p.is_exclusive_fuyumi
         ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}`
-        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.3`,
-      footer: `SuMi Family • Tra cứu UID: ${p.pet_type}`,
+        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.4.7`,
+      footer: '',
     };
   }
 
@@ -222,8 +222,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${itemEmoji(it.item_id, em('su_crossed_swords'))} PHÁP BẢO: ${it.item_name}`,
       description: lines.join('\n'),
       color: it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.3`,
-      footer: `SuMi Family • Tra cứu UID: ${it.item_id}`,
+      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.4.7`,
+      footer: '',
     };
   }
 
@@ -256,7 +256,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: lines.join('\n'),
       color: '#a855f7',
       image_url: '',
-      footer: `SuMi Family • Role ID: ${r.role_id}`,
+      footer: '',
     };
   }
 
@@ -275,7 +275,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#fbbf24',
       image_url: '',
-      footer: `SuMi Family • Mốc Cấp ${m.level}`,
+      footer: '',
     };
   }
 
@@ -294,14 +294,14 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• **Giá bán (\`/shop\`):** **${c.price.toLocaleString('vi-VN')}** ${lt}`,
         `• **Công dụng:** ${c.description}`,
         isTowerCard
-          ? `• **Giới hạn:** Mua tối đa **3 thẻ/ngày** • Tích trữ tối đa **10 thẻ** trong túi • Dùng qua \`/nhiemvu hanh_dong:reset\`.`
+          ? `• **Giới hạn:** Mua tối đa **5 thẻ/ngày** • Tích trữ tối đa **15 thẻ** trong túi • Dùng qua \`/nhiemvu hanh_dong:reset\`.`
           : isEnchantStone
             ? `• **Giới hạn & Nguồn:** Mua tối đa **5 viên/ngày** tại \`/shop\` (túi tối đa **99 viên**), rơi thêm tại **Boss Tháp mỗi 5 tầng** & **Hợp Đồng Tuần**. Dùng qua \`/enchant\`.`
             : '• **Nguồn kiếm:** Mua tại `/shop` (hoặc thưởng `/nhiemvu` / Tháp Thí Luyện).',
       ].join('\n'),
       color: '#38bdf8',
       image_url: `${PUBLIC_BASE_URL}/assets/shop/${c.item_id}.png`,
-      footer: `SuMi Family • Vật Phẩm: ${c.item_id}`,
+      footer: '',
     };
   }
 
@@ -321,7 +321,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#fb7185',
       image_url: `${PUBLIC_BASE_URL}/assets/rings/${r.item_id}.png`,
-      footer: `SuMi Family • Nhẫn Cưới: ${r.item_id}`,
+      footer: '',
     };
   }
 
@@ -354,7 +354,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: lines.join('\n'),
       color: d.rarity_key === 'supreme' ? '#ec4899' : d.rarity_key === 'mythic' ? '#f59e0b' : d.rarity_key === 'epic' ? '#a855f7' : d.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: `${PUBLIC_BASE_URL}/assets/domains/${d.domain_id}.png`,
-      footer: `SuMi Family • Linh Vực UID: ${d.domain_id}`,
+      footer: '',
     };
   }
 
@@ -381,7 +381,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].filter(Boolean).join('\n'),
       color: s.rarity_key === 'supreme' ? '#ec4899' : '#38bdf8',
       image_url: `${PUBLIC_BASE_URL}/assets/domains/${s.sense_id}.png`,
-      footer: `SuMi Family • Thần Thức UID: ${s.sense_id}`,
+      footer: '',
     };
   }
 
@@ -407,7 +407,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].filter(Boolean).join('\n'),
       color: r.rarity_key === 'supreme' ? '#ec4899' : '#f43f5e',
       image_url: `${PUBLIC_BASE_URL}/assets/domains/${r.realm_id}.png`,
-      footer: `SuMi Family • Thần Cảnh UID: ${r.realm_id}`,
+      footer: '',
     };
   }
 
@@ -428,7 +428,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#22c55e',
       image_url: `${PUBLIC_BASE_URL}/assets/farm/${s.seed_id}.png`,
-      footer: `SuMi Family • Nông Trại UID: ${s.seed_id}`,
+      footer: '',
     };
   }
 
@@ -455,7 +455,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
           ].join('\n'),
       color: '#f59e0b',
       image_url: `${PUBLIC_BASE_URL}/assets/farm/farm_essence.png`,
-      footer: `SuMi Family • /exchange`,
+      footer: '',
     };
   }
 
@@ -474,7 +474,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#ec4899',
       image_url: `${PUBLIC_BASE_URL}/assets/${b.file}`,
-      footer: `SuMi Family • Background: ${b.bg_id}`,
+      footer: '',
     };
   }
 
@@ -494,7 +494,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#a855f7',
       image_url: '',
-      footer: `SuMi Family • Khung Viền: ${f.frame_id}`,
+      footer: '',
     };
   }
 
@@ -506,6 +506,6 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     description: `Không tìm thấy Linh Thú, Pháp Bảo, Linh Vực, Role hay Vật Phẩm nào khớp \`${raw}\`.\n• Hãy thử nhập đúng UID trong \`/inv\`, \`/phapbao\`, \`/linhthu\`, \`/linhvuc\` hoặc một phần tên (VD: \`Thái Cổ\`, \`weapon_epic_4\`, \`domain_epic_1\`, \`tower_reset_card\`).`,
     color: '#f43f5e',
     image_url: '',
-    footer: 'SuMi Family • /info <ma_id>',
+    footer: '',
   };
 }

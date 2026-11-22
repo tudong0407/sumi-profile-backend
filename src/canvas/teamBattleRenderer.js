@@ -552,8 +552,34 @@ async function drawGrandBossPanel(ctx, boss, x, y, w, h) {
 
 export async function renderTeamBattleCard(battleResult, options = {}) {
   const format = options.format === 'png' ? 'png' : 'webp';
-  const canvas = createCanvas(WIDTH, HEIGHT);
+  const rawScale = Number(options.scale);
+  const scale = Number.isFinite(rawScale) && rawScale >= 0.45 && rawScale <= 1.2 ? rawScale : 0.9;
+  const webpQuality = options.webpQuality ?? 76;
+  const frame = options.frame || null;
+  const isFinal = frame ? frame.isFinal !== false : true;
+  const canvasW = Math.round(WIDTH * scale);
+  const canvasH = Math.round(HEIGHT * scale);
+  const canvas = createCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+
+  // Clone đội hình với HP & Linh Mạch tại đúng hiệp (nếu render theo frame trên Web Logs)
+  const teamAListRaw = (battleResult.teamA || []).slice(0, 3).map((u, idx) => ({
+    ...u,
+    currentHp: frame?.teamAHp?.[idx] !== undefined ? Number(frame.teamAHp[idx]) : u.currentHp,
+  }));
+  const teamBListRaw = (battleResult.teamB || []).slice(0, 3).map((u, idx) => ({
+    ...u,
+    currentHp: frame?.teamBHp?.[idx] !== undefined ? Number(frame.teamBHp[idx]) : u.currentHp,
+  }));
+  const leaderDomA = battleResult.leaderDomainA ? {
+    ...battleResult.leaderDomainA,
+    finalEnergy: frame?.domainAEnergy !== undefined ? frame.domainAEnergy : battleResult.leaderDomainA.finalEnergy,
+  } : null;
+  const leaderDomB = battleResult.leaderDomainB ? {
+    ...battleResult.leaderDomainB,
+    finalEnergy: frame?.domainBEnergy !== undefined ? frame.domainBEnergy : battleResult.leaderDomainB.finalEnergy,
+  } : null;
 
   // Nền Gradient Tu Tiên Tối Sang Trọng
   const bgGrad = ctx.createLinearGradient(0, 0, WIDTH, HEIGHT);
@@ -583,24 +609,28 @@ export async function renderTeamBattleCard(battleResult, options = {}) {
 
   // Tiêu đề mỗi phe + Góc Linh Vực Đội Trưởng
   ctx.textAlign = 'left';
-  ctx.fillStyle = leftWon ? '#34d399' : '#fda4af';
+  ctx.fillStyle = !isFinal ? '#f9a8d4' : (leftWon ? '#34d399' : '#fda4af');
   ctx.font = `800 24px ${FONT_FAMILY}`;
-  ctx.fillText(`ĐỘI KHIÊU CHIẾN (${(battleResult.teamA || []).length} NGƯỜI) — ${leftWon ? 'CHIẾN THẮNG' : 'THẤT BẠI'}`, leftX, headerY + 26);
+  ctx.fillText(
+    `ĐỘI KHIÊU CHIẾN (${teamAListRaw.length} NGƯỜI) — ${!isFinal ? 'ĐANG GIAO CHIẾN' : (leftWon ? 'CHIẾN THẮNG' : 'THẤT BẠI')}`,
+    leftX,
+    headerY + 26,
+  );
 
   ctx.textAlign = 'right';
-  ctx.fillStyle = !leftWon ? '#34d399' : '#fda4af';
-  const isBossMode = (battleResult.teamB || []).length === 1 && battleResult.teamB[0]?.isBoss;
+  ctx.fillStyle = !isFinal ? '#7dd3fc' : (!leftWon ? '#34d399' : '#fda4af');
+  const isBossMode = teamBListRaw.length === 1 && teamBListRaw[0]?.isBoss;
   ctx.fillText(
-    `${isBossMode ? 'BOSS TRẤN THỦ LINH MẠCH' : `ĐỘI PHÒNG THỦ (${(battleResult.teamB || []).length} NGƯỜI)`} — ${!leftWon ? 'GIỮ VỮNG' : 'THẤT THỦ'}`,
+    `${isBossMode ? 'BOSS TRẤN THỦ LINH MẠCH' : `ĐỘI PHÒNG THỦ (${teamBListRaw.length} NGƯỜI)`} — ${!isFinal ? 'ĐANG GIAO CHIẾN' : (!leftWon ? 'GIỮ VỮNG' : 'THẤT THỦ')}`,
     rightX + colW,
     headerY + 26,
   );
 
   // Hộp Linh Vực Đội Trưởng 2 bên
-  await drawLeaderDomainCorner(ctx, battleResult.leaderDomainA, leftX, headerY + 42, colW, 88, '#ec4899', 'LINH VỰC ĐỘI TRƯỞNG');
+  await drawLeaderDomainCorner(ctx, leaderDomA, leftX, headerY + 42, colW, 88, '#ec4899', 'LINH VỰC ĐỘI TRƯỞNG');
   await drawLeaderDomainCorner(
     ctx,
-    battleResult.leaderDomainB,
+    leaderDomB,
     rightX,
     headerY + 42,
     colW,
@@ -614,8 +644,8 @@ export async function renderTeamBattleCard(battleResult, options = {}) {
   const stripH = 266;
   const stripGap = 20;
   const colBodyH = stripH * 3 + stripGap * 2;
-  const teamAList = (battleResult.teamA || []).slice(0, 3);
-  const teamBList = (battleResult.teamB || []).slice(0, 3);
+  const teamAList = teamAListRaw;
+  const teamBList = teamBListRaw;
 
   const renderSideList = async (list, sx, color) => {
     if (list.length <= 1) {
@@ -657,31 +687,44 @@ export async function renderTeamBattleCard(battleResult, options = {}) {
   drawRoundRect(ctx, boxX, boxY, boxW, boxH, 20);
   ctx.fillStyle = 'rgba(30, 18, 48, 0.92)';
   ctx.fill();
-  ctx.strokeStyle = leftWon ? '#10b981' : '#f59e0b';
+  ctx.strokeStyle = !isFinal ? '#ec4899' : (leftWon ? '#10b981' : '#f59e0b');
   ctx.lineWidth = 2.5;
   ctx.stroke();
 
-  ctx.fillStyle = '#fde68a';
-  ctx.font = `800 20px ${FONT_FAMILY}`;
-  ctx.fillText(leftWon ? '🏆 CHIẾM MỎ THÀNH CÔNG' : '🛡️ GIỮ VỮNG LINH MẠCH', midX, boxY + 46);
+  if (!isFinal) {
+    ctx.fillStyle = '#fde68a';
+    ctx.font = `800 20px ${FONT_FAMILY}`;
+    ctx.fillText('⚔️ ĐANG GIAO CHIẾN', midX, boxY + 46);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 22px ${FONT_FAMILY}`;
-  const winnerLead = leftWon ? teamAList[0]?.name : teamBList[0]?.name;
-  ctx.fillText(truncateText(ctx, winnerLead || 'Người Thắng', boxW - 24), midX, boxY + 92);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 30px ${FONT_FAMILY}`;
+    const curT = Number(frame?.turn || 0);
+    ctx.fillText(curT > 0 ? `HIỆP ${curT} / ${frame?.totalTurns || battleResult.turnCount || 1}` : 'KHAI TRẬN', midX, boxY + 98);
 
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = `600 18px ${FONT_FAMILY}`;
-  ctx.fillText(`Tổng số hiệp: ${battleResult.turnCount || 1} Hiệp`, midX, boxY + 132);
-  const modeTxt = isBossMode
-    ? (teamAList.length === 1 ? 'Chế độ: Đơn Đấu vs BOSS' : `Chế độ: Tổ Đội ${teamAList.length}vBOSS`)
-    : `Chế độ: Tổ Đội ${teamAList.length}v${teamBList.length}`;
-  ctx.fillText(modeTxt, midX, boxY + 164);
+    ctx.fillStyle = '#fbcfe8';
+    ctx.font = `600 17px ${FONT_FAMILY}`;
+    const modeTxt = isBossMode
+      ? (teamAList.length === 1 ? 'Chế độ: Đơn Đấu vs BOSS' : `Chế độ: Tổ Đội ${teamAList.length}vBOSS`)
+      : `Chế độ: Tổ Đội ${teamAList.length}v${teamBList.length}`;
+    ctx.fillText(modeTxt, midX, boxY + 150);
+  } else {
+    ctx.fillStyle = '#fde68a';
+    ctx.font = `800 20px ${FONT_FAMILY}`;
+    ctx.fillText(leftWon ? '🏆 CHIẾM MỎ THÀNH CÔNG' : '🛡️ GIỮ VỮNG LINH MẠCH', midX, boxY + 46);
 
-  // Footer
-  ctx.fillStyle = 'rgba(203, 213, 225, 0.72)';
-  ctx.font = `500 17px ${FONT_FAMILY}`;
-  ctx.fillText('SuMi Family v1.4 • Chiến Báo Tổ Đội Chiếm Đoạt Linh Mạch • Trợ Lý Linh Hồ AI Nhiễm Nhiễm', WIDTH / 2, HEIGHT - 34);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 22px ${FONT_FAMILY}`;
+    const winnerLead = leftWon ? teamAList[0]?.name : teamBList[0]?.name;
+    ctx.fillText(truncateText(ctx, winnerLead || 'Người Thắng', boxW - 24), midX, boxY + 92);
 
-  return format === 'png' ? canvas.toBuffer('image/png') : canvas.toBuffer('image/webp', 88);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = `600 18px ${FONT_FAMILY}`;
+    ctx.fillText(`Tổng số hiệp: ${battleResult.turnCount || 1} Hiệp`, midX, boxY + 132);
+    const modeTxt = isBossMode
+      ? (teamAList.length === 1 ? 'Chế độ: Đơn Đấu vs BOSS' : `Chế độ: Tổ Đội ${teamAList.length}vBOSS`)
+      : `Chế độ: Tổ Đội ${teamAList.length}v${teamBList.length}`;
+    ctx.fillText(modeTxt, midX, boxY + 164);
+  }
+
+  return format === 'png' ? canvas.toBuffer('image/png') : canvas.toBuffer('image/webp', webpQuality);
 }

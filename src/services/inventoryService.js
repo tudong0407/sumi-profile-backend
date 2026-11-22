@@ -47,6 +47,7 @@ import {
 } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
+import { trackQuestActivity } from './questService.js';
 
 const RARITY_RANK = { supreme: 5, mythic: 4, epic: 3, rare: 2, common: 1 };
 
@@ -1500,6 +1501,8 @@ export async function dismantleTarget(userId, payload = {}) {
           ]);
 
           const removeRoleIds = [...new Set(unequippedRoles.map((r) => String(r.role_id || '').trim()).filter(Boolean))];
+          await trackQuestActivity(cleanId, { craftDelta: 1, now });
+
           const previewNames = unequippedRoles.slice(0, 6).map((r) => `**${r.role_name}**`).join(', ');
           const moreTxt = unequippedRoles.length > 6 ? ` *... (+${unequippedRoles.length - 6} role)*` : '';
           return {
@@ -1574,6 +1577,7 @@ export async function dismantleTarget(userId, payload = {}) {
         await Promise.all([
           supabase.from('user_roles').delete().eq('id', targetRole.id),
           supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+          trackQuestActivity(cleanId, { craftDelta: 1, now }),
         ]);
 
         const quoteLine = quote.isShop
@@ -1710,6 +1714,7 @@ export async function dismantleTarget(userId, payload = {}) {
               dbPromises.push(supabase.from('user_pet_items').update({ quantity: 1 }).eq('id', row.id));
             }
             await Promise.all(dbPromises);
+            await trackQuestActivity(cleanId, { craftDelta: 1, now });
 
             for (const { row } of deleteEntries) {
               if (EQUIPMENT_BY_ID[row.item_id]?.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(row.item_id)) {
@@ -1770,6 +1775,7 @@ export async function dismantleTarget(userId, payload = {}) {
             ? supabase.from('user_pet_items').update({ quantity: 1 }).eq('id', matchedItem.id)
             : supabase.from('user_pet_items').delete().eq('id', matchedItem.id),
           supabase.from('users').update({ linh_thach: newBalance, updated_at: now.toISOString() }).eq('user_id', cleanId),
+          trackQuestActivity(cleanId, { craftDelta: 1, now }),
         ]);
 
         const quoteLine = quote.isShop
@@ -1911,6 +1917,7 @@ export async function dismantleTarget(userId, payload = {}) {
           dbPromises.push(supabase.from('user_pets').update({ quantity: 1 }).eq('pet_id', row.pet_id));
         }
         await Promise.all(dbPromises);
+        await trackQuestActivity(cleanId, { craftDelta: 1, now });
 
         const previewNames = allOps.slice(0, 6).map(({ row, copies }) => `**${row.pet_name}**${copies > 1 ? ` ×${copies}` : ''}`).join(', ');
         const moreTxt = allOps.length > 6 ? ` *... (+${allOps.length - 6} pet)*` : '';
@@ -1987,6 +1994,7 @@ export async function dismantleTarget(userId, payload = {}) {
           dbOps.push(supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId).eq('equipped_to_pet', matchedPet.pet_type));
           dbOps.push(supabase.from('user_pets').delete().eq('pet_id', matchedPet.pet_id));
         }
+        dbOps.push(trackQuestActivity(cleanId, { craftDelta: 1, now }));
         await Promise.all(dbOps);
 
         const quoteLine = quote.isShop
@@ -2334,6 +2342,7 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
       } else {
         dbTasks.push(supabase.from('user_pet_items').update({ enchant_grade: newGrade, enchant_pity: 0 }).eq('id', targetRow.id));
       }
+      dbTasks.push(trackQuestActivity(cleanId, { craftDelta: 1 }));
       await Promise.all(dbTasks);
 
       const oldBonus = getEnchantBonusPct(currentGrade);
@@ -2407,6 +2416,7 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
         supabase.from('user_pet_items').update({ enchant_grade: newGrade, enchant_pity: newPity }).eq('id', targetRow.id),
       );
     }
+    dbTasks.push(trackQuestActivity(cleanId, { craftDelta: 1 }));
     await Promise.all(dbTasks);
 
     const oldBonus = getEnchantBonusPct(currentGrade);

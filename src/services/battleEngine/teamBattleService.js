@@ -12,6 +12,20 @@ import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js
 import { createInitialCombatState } from './statsCompiler.js';
 import { em, domainElementEmoji } from '../../config/emojiHelper.js';
 import { PUBLIC_BASE_URL } from '../../data/catalog.js';
+import { renderTeamBattleCard } from '../../canvas/teamBattleRenderer.js';
+import { withCanvasRenderSlot } from './battleService.js';
+import {
+  BATTLE_LOG_TTL_MS,
+  getCachedTurnBuffer,
+  setCachedTurnBuffer,
+  saveBattleLogRecord,
+  loadBattleLogRecord,
+} from './battleLogStore.js';
+import {
+  renderExpiredBattleLogHtml,
+  renderInteractiveBattleLogPage,
+  stripDiscordTagsToHtml,
+} from './webBattleLogHtml.js';
 
 const TEAM_BATTLE_CACHE_MAX = 80;
 const teamBattleCache = new Map();
@@ -67,11 +81,16 @@ export function cacheTeamBattle(battleId, result) {
 export function getCachedTeamBattle(battleId) {
   const entry = teamBattleCache.get(battleId);
   if (!entry) return null;
-  if (Date.now() - entry.createdAt > 30 * 60 * 1000) {
+  if (Date.now() - entry.createdAt > BATTLE_LOG_TTL_MS) {
     teamBattleCache.delete(battleId);
     return null;
   }
   return entry.result;
+}
+
+export async function loadTeamBattleReport(battleId) {
+  const cleanId = String(battleId || '').trim();
+  return getCachedTeamBattle(cleanId) || await loadBattleLogRecord({ battleId: cleanId, battleKind: 'team' });
 }
 
 export function applyFatigueToCombatant(combatant, fatigueStacks = 0) {
@@ -151,6 +170,30 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
   const turnLogs = [];
   const highlights = [];
   const turnDetailLines = [];
+  const leaderDomAInit = leaderA?.domainLoadout?.domain || null;
+  const leaderDomBInit = leaderB?.domainLoadout?.domain || null;
+  const formatTeamDomainLabel = () => {
+    if (!leaderDomAInit && !leaderDomBInit) return '';
+    const fa = leaderDomAInit ? `${leaderDomAInit.name}: ${domainState.attacker.indestructible ? '∞' : domainState.attacker.energy}/${domainState.attacker.indestructible ? '∞' : domainState.attacker.maxEnergy}` : 'Trống';
+    const fb = leaderDomBInit ? `${leaderDomBInit.name}: ${domainState.defender.indestructible ? '∞' : domainState.defender.energy}/${domainState.defender.indestructible ? '∞' : domainState.defender.maxEnergy}` : 'Trống';
+    return `Linh Mạch Đội Trưởng: ${fa} vs ${fb}`;
+  };
+  const turnSnapshots = [
+    {
+      turn: 0,
+      isFinal: false,
+      domainAEnergy: domainState.attacker.energy,
+      domainBEnergy: domainState.defender.energy,
+      domainLabel: formatTeamDomainLabel(),
+      teamAHp: teamA.map((u) => u.currentHp),
+      teamBHp: teamB.map((u) => u.currentHp),
+      hpBars: [
+        ...teamA.map((u) => ({ side: 'A', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: u.shield || 0 })),
+        ...teamB.map((u) => ({ side: 'B', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: u.shield || 0 })),
+      ],
+      events: [`• **Khai Trận:** ${teamA.map((u) => u.name).join(', ')} ⚔️ ${teamB.map((u) => u.name).join(', ')}`],
+    },
+  ];
   let turnCount = 0;
 
   const isTeamAlive = (team) => team.some((u) => u.currentHp > 0);
@@ -158,6 +201,8 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
   for (let turn = 1; turn <= maxTurns; turn += 1) {
     if (!isTeamAlive(teamA) || !isTeamAlive(teamB)) break;
     turnCount = turn;
+    const prevAHp = teamA.map((u) => u.currentHp);
+    const prevBHp = teamB.map((u) => u.currentHp);
 
     const turnEvents = [];
     const thisTurnLines = [];
@@ -297,7 +342,26 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       turnDetailLines.push(...thisTurnLines);
     }
 
+    turnSnapshots.push({
+      turn,
+      isFinal: false,
+      domainAEnergy: domainState.attacker.energy,
+      domainBEnergy: domainState.defender.energy,
+      domainLabel: formatTeamDomainLabel(),
+      teamAHp: teamA.map((u) => u.currentHp),
+      teamBHp: teamB.map((u) => u.currentHp),
+      hpBars: [
+        ...teamA.map((u, idx) => ({ side: 'A', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: prevAHp[idx], maxHp: u.maxHp, shield: u.shield || 0 })),
+        ...teamB.map((u, idx) => ({ side: 'B', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: prevBHp[idx], maxHp: u.maxHp, shield: u.shield || 0 })),
+      ],
+      events: thisTurnLines.length ? thisTurnLines.map((l) => l.trim()) : ['• Đôi bên thăm dò thế trận.'],
+    });
+
     turnLogs.push({ turn, events: turnEvents });
+  }
+
+  if (turnSnapshots.length > 0) {
+    turnSnapshots[turnSnapshots.length - 1].isFinal = true;
   }
 
   const hpPctA = teamA.reduce((s, u) => s + u.currentHp, 0) / Math.max(1, teamA.reduce((s, u) => s + u.maxHp, 0));
@@ -348,15 +412,22 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
     fullBattleLog += (fullBattleLog ? '\n' : '') + line;
   }
 
+  const nowCreatedMs = Date.now();
+  const expiresAtMs = nowCreatedMs + BATTLE_LOG_TTL_MS;
+
   const result = {
     battleId,
+    createdAtMs: nowCreatedMs,
+    expiresAtMs,
     mode: opts.mode || (teamB.length === 1 && teamB[0].isBoss ? '3vBoss' : '3v3'),
     veinLabel: opts.veinLabel || 'Tranh Đoạt Linh Mạch',
     winnerSide,
     turnCount,
+    turnSnapshots,
     webLogUrl,
     untruncatedLogLines,
     fullBattleLog,
+    footer: '',
     teamA: teamA.map((u) => ({
       id: u.id,
       name: u.name,
@@ -430,19 +501,80 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
   };
 
   cacheTeamBattle(battleId, result);
+  void saveBattleLogRecord({
+    battleId,
+    battleKind: 'team',
+    participantIds: [...teamA, ...teamB].map((u) => u.id),
+    payload: result,
+    nowMs: nowCreatedMs,
+  });
   return result;
 }
 
-export function getTeamBattleLogPayload({ battleId, userId } = {}) {
-  let targetId = battleId && !/^\{/.test(String(battleId)) ? String(battleId).trim() : null;
-  let r = targetId ? getCachedTeamBattle(targetId) : null;
+export async function renderSingleTeamBattleTurnOnDemand(battleId, rawTurn) {
+  const cleanId = String(battleId || '').trim();
+  const r = await loadTeamBattleReport(cleanId);
+  if (!r) return null;
 
-  if (!r && userId && !/^\{/.test(String(userId))) {
-    const fallbackBid = latestTeamBattleByUser.get(String(userId).trim());
-    if (fallbackBid) {
-      targetId = fallbackBid;
-      r = getCachedTeamBattle(fallbackBid);
-    }
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [{ turn: Number(r.turnCount || 1), isFinal: true, teamAHp: (r.teamA || []).map((u) => u.currentHp), teamBHp: (r.teamB || []).map((u) => u.currentHp) }];
+
+  const targetTurn = Math.max(0, Math.min(Number(r.turnCount || 1), Number(rawTurn) || 0));
+  const cacheKey = `vein-turn:${targetTurn}`;
+  const hit = getCachedTurnBuffer(cleanId, cacheKey);
+  if (hit) return hit;
+
+  const snap = snaps.find((s) => Number(s.turn) === targetTurn) || snaps[snaps.length - 1];
+  const frameObj = {
+    turn: Number(snap.turn || 0),
+    totalTurns: Number(r.turnCount || 1),
+    isFinal: Boolean(snap.isFinal) || Number(snap.turn) >= Number(r.turnCount || 1),
+    teamAHp: snap.teamAHp,
+    teamBHp: snap.teamBHp,
+    domainAEnergy: snap.domainAEnergy,
+    domainBEnergy: snap.domainBEnergy,
+  };
+  const buf = await withCanvasRenderSlot(`vein:${cleanId}:${cacheKey}`, () => renderTeamBattleCard(r, {
+    format: 'webp',
+    scale: 0.78,
+    webpQuality: 74,
+    frame: frameObj,
+  }));
+  if (buf) setCachedTurnBuffer(cleanId, cacheKey, buf);
+  return buf;
+}
+
+export async function renderAllTeamBattleTurnsOnDemand(battleId) {
+  const cleanId = String(battleId || '').trim();
+  const r = await loadTeamBattleReport(cleanId);
+  if (!r) return { success: false, found: false, rendered_count: 0, urls: [] };
+
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [{ turn: Number(r.turnCount || 1), isFinal: true }];
+
+  const urls = [];
+  for (const snap of snaps) {
+    const t = Number(snap.turn || 0);
+    await renderSingleTeamBattleTurnOnDemand(cleanId, t);
+    urls.push(`/api/vein/battle/${encodeURIComponent(cleanId)}/turn/${t}.webp`);
+  }
+  return {
+    success: true,
+    found: true,
+    battle_id: cleanId,
+    rendered_count: urls.length,
+    total_turns: Number(r.turnCount || 1),
+    urls,
+  };
+}
+
+export async function getTeamBattleLogPayload({ battleId, userId } = {}) {
+  const cleanId = battleId && !/^\{/.test(String(battleId)) ? String(battleId).trim() : null;
+  let r = cleanId ? getCachedTeamBattle(cleanId) : null;
+  if (!r) {
+    r = await loadBattleLogRecord({ battleId: cleanId, userId, battleKind: 'team' });
   }
 
   if (!r) {
@@ -451,8 +583,8 @@ export function getTeamBattleLogPayload({ battleId, userId } = {}) {
       found: false,
       battleId: null,
       title: `${em('su_wiki_scroll')} NHẬT KÝ CHIẾN BÁO LINH MẠCH`,
-      description: 'Nhật ký trận Linh Mạch này đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại. Hãy mở trận `/linhmach` mới để xem chi tiết!',
-      footer: 'SuMi Family • Nhật Ký Linh Mạch',
+      description: 'Nhật ký trận Linh Mạch này đã quá hạn lưu trữ (tối đa 2 ngày) hoặc không tồn tại. Hãy mở trận `/linhmach` mới để xem chi tiết!',
+      footer: '',
     };
   }
 
@@ -463,88 +595,55 @@ export function getTeamBattleLogPayload({ battleId, userId } = {}) {
     webLogUrl: r.webLogUrl,
     title: `${em('su_wiki_scroll')} NHẬT KÝ LINH MẠCH • ${r.veinLabel}`,
     description: r.fullBattleLog || r.summaryLine,
-    footer: `SuMi Family • ${r.turnCount} Hiệp • Mã trận: ${r.battleId}`,
+    footer: '',
   };
 }
 
-function escapeHtmlVein(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function formatLineHtmlVein(text) {
-  let s = escapeHtmlVein(text);
-  s = s.replace(/&lt;(a?):([a-zA-Z0-9_]+):([0-9]{15,22})&gt;/g, (_, anim, name, id) => {
-    const ext = anim === 'a' ? 'gif' : 'png';
-    return `<img class="d-emoji" src="https://cdn.discordapp.com/emojis/${id}.${ext}?size=48&quality=lossless" alt=":${name}:" title=":${name}:">`;
-  });
-  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  return s;
-}
-
-export function renderTeamBattleLogHtml(battleId) {
+export async function renderTeamBattleLogHtml(battleId) {
   const cleanId = String(battleId || '').trim();
-  const r = getCachedTeamBattle(cleanId);
+  const r = await loadTeamBattleReport(cleanId);
   if (!r) {
     return {
       found: false,
-      html: `<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nhật Ký Linh Mạch Đã Hết Hạn • SuMi Family</title>
-<style>body{background:#0f0a1c;color:#f5e9ff;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}.card{max-width:560px;background:#1a1230;border:1px solid #f59e0b55;border-radius:16px;padding:28px;text-align:center;box-shadow:0 12px 40px #0008}h1{color:#fde68a;font-size:1.35rem;margin-top:0}</style></head>
-<body><div class="card"><h1>⛰️ Nhật Ký Chiến Báo Linh Mạch Không Còn Trong Bộ Nhớ Tạm</h1><p>Mã trận <code>${escapeHtmlVein(cleanId)}</code> đã quá hạn lưu tạm (30 phút) hoặc máy chủ vừa khởi động lại.</p><p>Hãy dùng <code>/linhmach</code> trên Discord SuMi Family để mở trận mới nhé!</p></div></body></html>`,
+      html: renderExpiredBattleLogHtml(cleanId, true),
     };
   }
 
-  const linesHtml = (r.untruncatedLogLines || []).map((line) => {
-    if (!line.trim()) return '<div class="spacer"></div>';
-    const isHeader = /^\*\*[123]\./.test(line) || line.startsWith('🚩 ') || line.startsWith('🛡️ ');
-    const isTurn = line.startsWith('• **Hiệp ');
-    const isResult = line.includes('**KẾT QUẢ:**');
-    const cls = isResult ? 'log-line result-line' : isHeader ? 'log-line section-title' : isTurn ? 'log-line turn-line' : 'log-line';
-    return `<div class="${cls}">${formatLineHtmlVein(line)}</div>`;
-  }).join('\n');
+  const snaps = Array.isArray(r.turnSnapshots) && r.turnSnapshots.length > 0
+    ? r.turnSnapshots
+    : [{
+        turn: Number(r.turnCount || 1),
+        isFinal: true,
+        teamAHp: (r.teamA || []).map((u) => u.currentHp),
+        teamBHp: (r.teamB || []).map((u) => u.currentHp),
+        hpBars: [
+          ...(r.teamA || []).map((u) => ({ side: 'A', label: u.name, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: 0 })),
+          ...(r.teamB || []).map((u) => ({ side: 'B', label: u.name, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: 0 })),
+        ],
+        events: (r.untruncatedLogLines || []).slice(0, 20),
+      }];
 
-  const html = `<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Chiến Báo Linh Mạch #${escapeHtmlVein(r.battleId)} • ${escapeHtmlVein(r.veinLabel)}</title>
-  <style>
-    :root { color-scheme: dark; }
-    body { background: radial-gradient(circle at top, #23133d 0%, #0d0818 70%); color: #f3e8ff; font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 24px 14px 48px; line-height: 1.6; }
-    .container { max-width: 980px; margin: 0 auto; background: rgba(23, 15, 42, 0.94); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 18px; padding: 24px 26px; box-shadow: 0 16px 48px rgba(0,0,0,0.65); }
-    .header-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid rgba(245, 158, 11, 0.3); padding-bottom: 14px; margin-bottom: 18px; }
-    h1 { font-size: 1.3rem; margin: 0; color: #fde68a; }
-    .badge { background: rgba(236, 72, 153, 0.18); border: 1px solid rgba(244, 114, 182, 0.45); color: #fbcfe8; padding: 4px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; }
-    .banner-wrap { margin: 14px 0 22px; text-align: center; }
-    .banner-wrap img { max-width: 100%; border-radius: 14px; border: 1px solid rgba(245, 158, 11, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    .log-line { padding: 4px 10px; border-radius: 8px; margin-bottom: 2px; font-size: 0.94rem; word-break: break-word; }
-    .section-title { margin-top: 14px; color: #f9a8d4; font-size: 1.04rem; background: rgba(236, 72, 153, 0.1); border-left: 3px solid #ec4899; padding: 6px 12px; }
-    .turn-line { margin-top: 8px; background: rgba(255, 255, 255, 0.04); border-left: 3px solid #f59e0b; padding: 5px 10px; }
-    .result-line { margin-top: 14px; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.4); padding: 10px 14px; font-size: 1.02rem; }
-    .spacer { height: 8px; }
-    code { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; color: #fde68a; }
-    a { color: #93c5fd; }
-    .d-emoji { width: 1.15em; height: 1.15em; vertical-align: -0.2em; object-fit: contain; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header-bar">
-      <h1>⛰️ ${escapeHtmlVein(r.veinLabel)}</h1>
-      <span class="badge">${r.turnCount} Hiệp • Mã #${escapeHtmlVein(r.battleId)}</span>
-    </div>
-    <div class="banner-wrap"><img src="/api/vein/battle/${escapeHtmlVein(r.battleId)}.webp" alt="Chiến Báo Linh Mạch"></div>
-    <div class="logs-box">${linesHtml}</div>
-  </div>
-</body>
-</html>`;
+  const headerEndIdx = (r.untruncatedLogLines || []).findIndex((l) => l.startsWith('**2.'));
+  const rosterHtmlLines = headerEndIdx > 0 ? r.untruncatedLogLines.slice(0, headerEndIdx) : [];
+  const winnerSummaryHtml = stripDiscordTagsToHtml(
+    r.winnerSide === 'A'
+      ? `🏆 **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG** sau **${r.turnCount} hiệp**!`
+      : `🛡️ **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH** sau **${r.turnCount} hiệp**!`,
+  );
+
+  const html = renderInteractiveBattleLogPage({
+    battleId: cleanId,
+    title: r.veinLabel || 'Chiến Báo Linh Mạch',
+    subtitle: `${r.mode || 'Tổ Đội'} • ${(r.teamA || []).map((u) => u.name).join(', ')} vs ${(r.teamB || []).map((u) => u.name).join(', ')}`,
+    totalTurns: r.turnCount || 1,
+    expiresAtMs: r.expiresAtMs || ((r.createdAtMs || Date.now()) + BATTLE_LOG_TTL_MS),
+    renderAllUrl: `/api/vein/battle/${encodeURIComponent(cleanId)}/render-all`,
+    turnImageTemplate: `/api/vein/battle/${encodeURIComponent(cleanId)}/turn/{turn}.webp`,
+    snapshots: snaps,
+    rosterHtmlLines,
+    winnerSummaryHtml,
+    themeAccent: '#f59e0b',
+  });
 
   return { found: true, html };
 }

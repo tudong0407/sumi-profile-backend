@@ -31,7 +31,7 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     if (testServer) await testServer.close();
   });
 
-  it('1. 1-shot battle generates 2 adaptive frames (800x400 mid -> 1400x700 final WebP) and logs by channelId', async () => {
+  it('1. 1-shot battle generates 2 adaptive frames (720x360 mid -> 1250x625 final WebP) and logs by channelId', async () => {
     const channelId = '1466390891399876668';
     const simRes = await testServer.fetch('/api/battle/simulate', {
       method: 'POST',
@@ -56,7 +56,7 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     const f1First = await testServer.fetch(`/api/battle/report/${json.battleId}/1.webp`);
     assert.equal(f1First.status, 200);
     assert.ok(f1First.headers.get('content-type')?.includes('image/webp'));
-    await assertWebpValid(Buffer.from(await f1First.arrayBuffer()), 800, 400);
+    await assertWebpValid(Buffer.from(await f1First.arrayBuffer()), 720, 360);
 
     const t0 = Date.now();
     const f1Res = await testServer.fetch(`/api/battle/report/${json.battleId}/1.webp`);
@@ -67,7 +67,7 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     const f2Res = await testServer.fetch(`/api/battle/report/${json.battleId}/2.webp`);
     assert.equal(f2Res.status, 200);
     assert.ok(f2Res.headers.get('content-type')?.includes('image/webp'));
-    await assertWebpValid(Buffer.from(await f2Res.arrayBuffer()), 1400, 700);
+    await assertWebpValid(Buffer.from(await f2Res.arrayBuffer()), 1250, 625);
 
     // Logs lookup via channelId, userId, and battleId
     const logByCh = await testServer.fetch('/api/battle/logs', {
@@ -84,7 +84,7 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     assert.ok(logJson.description.includes('Diễn Biến Chi Tiết'));
   });
 
-  it('2. 5+ turn battle generates 3 adaptive frames (800x400 -> 800x400 -> 1400x700) cleanly', async () => {
+  it('2. 5+ turn battle generates H1/5/10/15/20/Final adaptive frames (720x360 mid -> 1250x625 final) cleanly', async () => {
     const tankA = {
       user_id: '900000000000000011',
       username: 'Đấu Sĩ Thanh Long',
@@ -138,20 +138,15 @@ describe('Tier 1 - Battle Multi-Turn Adaptive WebP & Fast Cache', () => {
     assert.equal(simRes.status, 200);
     const json = await simRes.json();
     assert.ok(json.turnCount >= 5, `Expected 5+ turns for balanced duel, got ${json.turnCount}`);
-    assert.equal(json.frameCount, 3);
+    assert.ok(json.frameCount >= 3 && json.frameCount <= 6, `Expected 3..6 milestone frames, got ${json.frameCount}`);
     assert.equal(json.hasFrame3, true);
 
-    const [r1, r2, r3] = await Promise.all([
-      testServer.fetch(`/api/battle/report/${json.battleId}/1.webp`),
-      testServer.fetch(`/api/battle/report/${json.battleId}/2.webp`),
-      testServer.fetch(`/api/battle/report/${json.battleId}/3.webp`),
-    ]);
-    assert.equal(r1.status, 200);
-    assert.equal(r2.status, 200);
-    assert.equal(r3.status, 200);
-    await assertWebpValid(Buffer.from(await r1.arrayBuffer()), 800, 400);
-    await assertWebpValid(Buffer.from(await r2.arrayBuffer()), 800, 400);
-    await assertWebpValid(Buffer.from(await r3.arrayBuffer()), 1400, 700);
+    for (let idx = 1; idx <= json.frameCount; idx += 1) {
+      const fRes = await testServer.fetch(`/api/battle/report/${json.battleId}/${idx}.webp`);
+      assert.equal(fRes.status, 200);
+      const isLast = idx === json.frameCount;
+      await assertWebpValid(Buffer.from(await fRes.arrayBuffer()), isLast ? 1250 : 720, isLast ? 625 : 360);
+    }
   });
 
   it('3. Profile, Rank, and Wiki endpoints serve valid WebP when requested with .webp', async () => {

@@ -24,6 +24,7 @@ import {
   pickCleanDisplayValue,
   computeRoleBuffTotals,
 } from './profileService.js';
+import { trackQuestActivity } from './questService.js';
 
 const dailyShopLocks = new Map();
 const memRotations = new Map();
@@ -543,6 +544,8 @@ export async function buyDailyShopSlot(userId, rawSlotIndex, opts = {}) {
         grantNote = `• Pháp Bảo ${itemEmoji(eqDef.item_id)} **${eqDef.item_name}** (${gradeEmoji(grade)} Bậc **${grade}** • +${getEnchantBonusPct(grade)}%) đã vào Kho Pháp Bảo!`;
       }
     }
+
+    await trackQuestActivity(cleanId, { shopDelta: 1 });
 
     const lt = em('su_linhthach');
     return {
