@@ -1305,14 +1305,14 @@ function patchExistingCommand(name, elements) {
     }
     if (!patched.some((n) => n.id === 'msg_wiki_explorer')) {
       const gb = new V14GraphBuilder();
-      gb.branch({ id: 'w_root_cat' }, 'wr_explorer', 'comparison', {
+      gb.branch('w_root_cat', 'wr_explorer', 'comparison', {
         type: 'equal_to',
         comparison_value: 'explorer',
         ignoreCase: true,
         option: '',
         not: false,
       }, { x: 960, y: 260 });
-      gb.branch({ id: 'w_sel_cat' }, 'ws_explorer', 'comparison', {
+      gb.branch('w_sel_cat', 'ws_explorer', 'comparison', {
         type: 'equal_to',
         comparison_value: 'explorer',
         ignoreCase: true,
@@ -1331,7 +1331,10 @@ function patchExistingCommand(name, elements) {
       }, { x: 960, y: 740 });
       gb.link('wiki_exp_api', 'msg_wiki_explorer');
 
-      const newEls = gb.elements();
+      const newEls = gb.elements().filter(
+        (e) => !(e.source === 'w_root_cat' && e.target === 'wr_explorer')
+          && !(e.source === 'w_sel_cat' && e.target === 'ws_explorer'),
+      );
       // Tạo edge step cho w_root_cat -> wr_explorer và w_sel_cat -> ws_explorer, đặt trước wr_home/ws_econ
       const wrEdge = {
         source: 'w_root_cat',
@@ -1860,10 +1863,16 @@ async function deployEventByIntIdViaCDP(intId, elements) {
     assertUniqueApiActionNames(kaTree, 'keepalive');
     assertSelectLimitsAndRegex(kaTree, 'keepalive');
     console.log(`[Offline OK] PATCH Keep-Alive Cron: ${kaTree.length} elements`);
-    const res = await deployEventByIntIdViaCDP('71c549b1-b532-4afb-958a-8e47b168f96b', kaTree);
+    const res = await deployViaCDP({
+      groupId: PROFILE_GROUP_ID,
+      mode: 'event',
+      name: 'SuMi — Render Keep-Alive (12m)',
+      elements: kaTree,
+      enabled: true,
+    });
     console.log('[Patched] Keep-Alive Cron:', JSON.stringify(res));
     if (!res?.ok) throw new Error(`Failed patching Keep-Alive Cron: ${JSON.stringify(res)}`);
-    await new Promise((r) => setTimeout(r, 1200));
+    await new Promise((r) => setTimeout(r, 1500));
   }
 
   // 5. Patch 4 Chat/Voice EXP Self-Healing Level-Role Events
@@ -1882,10 +1891,16 @@ async function deployEventByIntIdViaCDP(intId, elements) {
       assertUniqueApiActionNames(tree, sp.label);
       assertSelectLimitsAndRegex(tree, sp.label);
       console.log(`[Offline OK] PATCH ${sp.label}: ${tree.length} elements`);
-      const res = await deployEventByIntIdViaCDP(sp.intId, tree);
+      const res = await deployViaCDP({
+        groupId: PROFILE_GROUP_ID,
+        mode: 'event',
+        name: sp.label,
+        elements: tree,
+        enabled: true,
+      });
       console.log(`[Patched] ${sp.label}:`, JSON.stringify(res));
       if (!res?.ok) throw new Error(`Failed patching ${sp.label}: ${JSON.stringify(res)}`);
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 1500));
     }
   }
 
