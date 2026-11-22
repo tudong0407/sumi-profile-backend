@@ -106,6 +106,22 @@ function parseRoleIdSet(roleIds) {
   return set;
 }
 
+/**
+ * Tìm toàn bộ Level Role mà thành viên đã đủ cấp nhưng chưa có trên Discord (phục vụ tự động cấp bù).
+ * Chỉ trả về khi `roleIdSet` có dữ liệu role thực tế từ BotGhost.
+ */
+export function computeMissingLevelRoleIds(level, roleIdSet) {
+  if (!(roleIdSet instanceof Set) || roleIdSet.size === 0) return [];
+  const lvl = Number(level) || 1;
+  const missing = [];
+  for (const m of LEVEL_ROLE_MILESTONES) {
+    if (lvl >= m.level && !roleIdSet.has(m.roleId)) {
+      missing.push(m.roleId);
+    }
+  }
+  return missing;
+}
+
 function computeLevelProgression(startLevel, startExp, gainedExp) {
   let level = Math.max(1, Number(startLevel) || 1);
   let exp = Math.max(0, Number(startExp) || 0) + Math.max(0, Number(gainedExp) || 0);
@@ -288,6 +304,7 @@ export async function grantChatExp(params = {}, opts = {}) {
       if (!Number.isNaN(lastMs)) {
         const elapsed = nowMs - lastMs;
         if (elapsed >= 0 && elapsed < CHAT_COOLDOWN_MS) {
+          const missingIds = computeMissingLevelRoleIds(currentLevel, roleIdSet);
           return {
             success: true,
             awarded: false,
@@ -300,6 +317,8 @@ export async function grantChatExp(params = {}, opts = {}) {
             next_level_exp: getExpForNextLevel(currentLevel),
             realm: getRealmByLevel(currentLevel),
             leveled_up: false,
+            unlocked_level_role_id: missingIds[missingIds.length - 1] || '',
+            sync_level_role_ids: missingIds.join(','),
             initialized_new_user: initializedNewUser,
           };
         }
@@ -338,6 +357,11 @@ export async function grantChatExp(params = {}, opts = {}) {
       await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
     }
 
+    const missingIds = computeMissingLevelRoleIds(prog.level, roleIdSet);
+    const syncSet = new Set(missingIds);
+    if (prog.unlockedRole?.roleId) syncSet.add(prog.unlockedRole.roleId);
+    const syncIds = [...syncSet];
+
     const ltNote = ltReward.totalReward > 0
       ? ` Nhận **+${ltReward.totalReward.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** vượt cấp!`
       : '';
@@ -360,8 +384,9 @@ export async function grantChatExp(params = {}, opts = {}) {
       level_up_linh_thach: ltReward.totalReward,
       highest_level_claimed: ltReward.newHighestClaimed,
       linh_thach: newBalance,
-      unlocked_level_role_id: prog.unlockedRole?.roleId || '',
+      unlocked_level_role_id: prog.unlockedRole?.roleId || syncIds[syncIds.length - 1] || '',
       unlocked_level_role_name: prog.unlockedRole?.name || '',
+      sync_level_role_ids: syncIds.join(','),
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
         ? `${em('su_level_up', '✨')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
@@ -433,6 +458,7 @@ export async function handleVoiceExp(params = {}, opts = {}) {
 
     if (action === 'join') {
       await persistUserExpUpdate(cleanId, { voice_joined_at: nowIso }, persisted);
+      const joinMissing = computeMissingLevelRoleIds(currentLevel, roleIdSet);
       return {
         success: true,
         action: 'join',
@@ -444,6 +470,8 @@ export async function handleVoiceExp(params = {}, opts = {}) {
         next_level_exp: getExpForNextLevel(currentLevel),
         realm: getRealmByLevel(currentLevel),
         leveled_up: false,
+        unlocked_level_role_id: joinMissing[joinMissing.length - 1] || '',
+        sync_level_role_ids: joinMissing.join(','),
         initialized_new_user: initializedNewUser,
         voice_joined_at: nowIso,
       };
@@ -520,6 +548,11 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       await trackQuestActivity(cleanId, { expDelta: expGained, now: new Date(nowMs) });
     }
 
+    const missingIds = computeMissingLevelRoleIds(prog.level, roleIdSet);
+    const syncSet = new Set(missingIds);
+    if (prog.unlockedRole?.roleId) syncSet.add(prog.unlockedRole.roleId);
+    const syncIds = [...syncSet];
+
     const ltNote = ltReward.totalReward > 0
       ? ` Nhận **+${ltReward.totalReward.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** vượt cấp!`
       : '';
@@ -546,8 +579,9 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       level_up_linh_thach: ltReward.totalReward,
       highest_level_claimed: ltReward.newHighestClaimed,
       linh_thach: newBalance,
-      unlocked_level_role_id: prog.unlockedRole?.roleId || '',
+      unlocked_level_role_id: prog.unlockedRole?.roleId || syncIds[syncIds.length - 1] || '',
       unlocked_level_role_name: prog.unlockedRole?.name || '',
+      sync_level_role_ids: syncIds.join(','),
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
         ? `${em('su_level_up', '✨')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
@@ -561,7 +595,18 @@ export async function handleVoiceExp(params = {}, opts = {}) {
  */
 export async function processVoiceHeartbeat(opts = {}) {
   if (!supabase) {
-    return { success: true, scanned: 0, awarded_count: 0, total_exp_awarded: 0, total_lt_awarded: 0, leveled_up_users: [] };
+    return {
+      success: true,
+      scanned: 0,
+      awarded_count: 0,
+      total_exp_awarded: 0,
+      total_lt_awarded: 0,
+      leveled_up_users: [],
+      role_grants: [],
+      first_role_user_id: '',
+      first_role_id: '',
+      first_level_up_message: '',
+    };
   }
 
   const { data: rows, error } = await supabase
@@ -601,6 +646,10 @@ export async function processVoiceHeartbeat(opts = {}) {
     }
   }
 
+  const roleGrants = leveledUpUsers
+    .filter((u) => u.unlocked_level_role_id)
+    .map((u) => ({ user_id: u.user_id, role_id: u.unlocked_level_role_id, level: u.level }));
+
   return {
     success: true,
     scanned: (rows || []).length,
@@ -608,5 +657,9 @@ export async function processVoiceHeartbeat(opts = {}) {
     total_exp_awarded: totalExp,
     total_lt_awarded: totalLt,
     leveled_up_users: leveledUpUsers,
+    role_grants: roleGrants,
+    first_role_user_id: roleGrants[0]?.user_id || '',
+    first_role_id: roleGrants[0]?.role_id || '',
+    first_level_up_message: leveledUpUsers[0]?.level_up_message || '',
   };
 }

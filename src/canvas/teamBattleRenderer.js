@@ -86,7 +86,7 @@ function truncateText(ctx, text, maxW) {
   return `${out}…`;
 }
 
-async function drawLeaderDomainCorner(ctx, domainInfo, x, y, w, h, accentColor) {
+async function drawLeaderDomainCorner(ctx, domainInfo, x, y, w, h, accentColor, customLabel = 'LINH VỰC ĐỘI TRƯỞNG') {
   ctx.save();
   drawRoundRect(ctx, x, y, w, h, 14);
   ctx.fillStyle = 'rgba(20, 14, 34, 0.88)';
@@ -99,7 +99,11 @@ async function drawLeaderDomainCorner(ctx, domainInfo, x, y, w, h, accentColor) 
     ctx.fillStyle = '#94a3b8';
     ctx.font = `600 18px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
-    ctx.fillText('Đội Trưởng Chưa Mở Linh Vực', x + w / 2, y + h / 2 + 6);
+    ctx.fillText(
+      customLabel.includes('BOSS') ? 'Boss Không Dùng Linh Vực' : 'Đội Trưởng Chưa Mở Linh Vực',
+      x + w / 2,
+      y + h / 2 + 6,
+    );
     ctx.restore();
     return;
   }
@@ -128,7 +132,7 @@ async function drawLeaderDomainCorner(ctx, domainInfo, x, y, w, h, accentColor) 
   ctx.font = `700 14px ${FONT_FAMILY}`;
   const energyTxt = domainInfo.indestructible ? '∞ Mạch' : `${domainInfo.finalEnergy}/${domainInfo.maxEnergy} Mạch`;
   const daoApTag = domainInfo.daoApUsed ? ' • ⚡ĐẠO ÁP' : '';
-  ctx.fillText(`LINH VỰC ĐỘI TRƯỞNG (${energyTxt}${daoApTag})`, x + 82, y + 28);
+  ctx.fillText(`${customLabel} (${energyTxt}${daoApTag})`, x + 82, y + 28);
 
   ctx.fillStyle = '#f8fafc';
   ctx.font = `700 19px ${FONT_FAMILY}`;
@@ -140,8 +144,50 @@ async function drawLeaderDomainCorner(ctx, domainInfo, x, y, w, h, accentColor) 
   ctx.restore();
 }
 
+function getNormalizedUnitDisplay(unit) {
+  const petObj = unit.pet || {};
+  const petType = petObj.pet_type || unit.petType || '';
+  const petName = petObj.pet_name || unit.petName || 'Linh Thú';
+  const element = petObj.element || unit.element || '';
+  const level = Number(petObj.level || unit.level || 1);
+  const star = Number(petObj.star || unit.star || 1);
+  const grade = String(petObj.enchant_grade || unit.enchantGrade || unit.enchant_grade || 'D').toUpperCase();
+  const atk = Number(unit.atk || 0);
+  const def = Number(unit.def || 0);
+  const spd = Number(unit.spd || 0);
+  const power = Number(unit.powerScore || unit.power || 0) || (atk * 3 + def * 2 + spd * 2 + level * 50);
+  return { petType, petName, element, level, star, grade, power };
+}
+
+async function loadPetSprite(petType) {
+  if (!petType) return null;
+  const mappedPetFile = PET_IMAGE_MAP[petType];
+  return (mappedPetFile ? await safeLoadImage(mappedPetFile) : null)
+    || await safeLoadImage(`pets/${petType}.png`)
+    || await safeLoadImage(`${petType}.png`);
+}
+
+function drawPetEnchantBadge(ctx, grade, rightX, bottomY, size = 24) {
+  const g = String(grade || 'D').toUpperCase();
+  const bx = rightX - size - 6;
+  const by = bottomY - size - 6;
+  ctx.save();
+  ctx.fillStyle = GRADE_COLORS[g] || '#94a3b8';
+  drawRoundRect(ctx, bx, by, size, size, Math.max(4, Math.floor(size / 4)));
+  ctx.fill();
+  ctx.fillStyle = '#0f172a';
+  ctx.font = `800 ${Math.round(size * 0.62)}px ${FONT_FAMILY}`;
+  ctx.textAlign = 'center';
+  ctx.fillText(g, bx + size / 2, by + size * 0.74);
+  ctx.restore();
+}
+
 async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
   const isKo = Number(unit.currentHp || 0) <= 0;
+  const meta = getNormalizedUnitDisplay(unit);
+  const isDuo = h > 320;
+  const spriteBox = isDuo ? 190 : 148;
+
   ctx.save();
   drawRoundRect(ctx, x, y, w, h, 18);
   ctx.fillStyle = isKo ? 'rgba(22, 16, 30, 0.72)' : 'rgba(26, 19, 44, 0.90)';
@@ -150,13 +196,9 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
   ctx.lineWidth = unit.isLeader ? 2.5 : 1.5;
   ctx.stroke();
 
-  // Pet sprite bên trái (compact 148x148, contain để giữ nền trong suốt đẹp)
-  const mappedPetFile = PET_IMAGE_MAP[unit.pet?.pet_type];
-  const petImg = (mappedPetFile ? await safeLoadImage(mappedPetFile) : null)
-    || await safeLoadImage(`pets/${unit.pet?.pet_type}.png`)
-    || await safeLoadImage(`${unit.pet?.pet_type}.png`);
-  const spriteBox = 148;
-  const spX = x + 14;
+  // Pet sprite bên trái (contain để giữ nền trong suốt đẹp)
+  const petImg = await loadPetSprite(meta.petType);
+  const spX = x + 16;
   const spY = y + (h - spriteBox) / 2;
   drawRoundRect(ctx, spX, spY, spriteBox, spriteBox, 16);
   ctx.fillStyle = 'rgba(15, 11, 28, 0.9)';
@@ -172,26 +214,28 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
     ctx.drawImage(petImg, spX + (spriteBox - dw) / 2, spY + (spriteBox - dh) / 2, dw, dh);
     ctx.restore();
   }
+  drawPetEnchantBadge(ctx, meta.grade, spX + spriteBox, spY + spriteBox, isDuo ? 28 : 22);
 
   // Avatar nhỏ góc trên trái của sprite
   const avImg = await safeLoadImage(unit.avatarUrl);
   if (avImg) {
-    drawClippedImage(ctx, avImg, x + 10, y + 12, 42, 21);
+    drawClippedImage(ctx, avImg, x + 10, y + 12, isDuo ? 48 : 42, isDuo ? 24 : 21);
   }
 
-  const tx = x + 178;
-  const tw = w - 194;
+  const tx = x + spriteBox + 34;
+  const tw = w - (spriteBox + 50);
+  const topPad = isDuo ? 44 : 0;
 
   // Tên thành viên + badge Đội Trưởng / Mệt Mỏi
   ctx.textAlign = 'left';
   ctx.fillStyle = isKo ? '#94a3b8' : '#ffffff';
-  ctx.font = `700 23px ${FONT_FAMILY}`;
+  ctx.font = `700 ${isDuo ? 26 : 23}px ${FONT_FAMILY}`;
   const leaderPrefix = unit.isLeader ? '👑 ' : '';
-  ctx.fillText(truncateText(ctx, `${leaderPrefix}${unit.name}`, tw - 170), tx, y + 38);
+  ctx.fillText(truncateText(ctx, `${leaderPrefix}${unit.name}`, tw - 170), tx, y + 38 + topPad);
 
   if (unit.fatiguePenaltyPct > 0) {
     const fLabel = `Mệt -${unit.fatiguePenaltyPct}%`;
-    drawRoundRect(ctx, x + w - 140, y + 14, 124, 30, 8);
+    drawRoundRect(ctx, x + w - 140, y + 14 + topPad * 0.4, 124, 30, 8);
     ctx.fillStyle = 'rgba(244, 63, 94, 0.22)';
     ctx.fill();
     ctx.strokeStyle = '#fb7185';
@@ -200,25 +244,25 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
     ctx.fillStyle = '#fda4af';
     ctx.font = `700 15px ${FONT_FAMILY}`;
     ctx.textAlign = 'center';
-    ctx.fillText(fLabel, x + w - 78, y + 34);
+    ctx.fillText(fLabel, x + w - 78, y + 34 + topPad * 0.4);
     ctx.textAlign = 'left';
   }
 
   // Tên Pet + Hệ + Lv/Sao
   ctx.fillStyle = '#f9a8d4';
-  ctx.font = `600 18px ${FONT_FAMILY}`;
-  const petMeta = `${unit.pet?.pet_name || 'Linh Thú'} • ${unit.pet?.element || ''} • Lv.${unit.pet?.level || 1} • ${unit.pet?.star || 1}★`;
-  ctx.fillText(truncateText(ctx, petMeta, tw), tx, y + 66);
+  ctx.font = `600 ${isDuo ? 20 : 18}px ${FONT_FAMILY}`;
+  const petMeta = `${meta.petName}${meta.element ? ` • Hệ ${meta.element}` : ''} • Lv.${meta.level} • ${meta.star}★`;
+  ctx.fillText(truncateText(ctx, petMeta, tw), tx, y + 66 + topPad);
 
   // Thanh HP
   const hpRatio = Math.max(0, Math.min(1, Number(unit.currentHp || 0) / Math.max(1, Number(unit.maxHp || 1))));
-  const barY = y + 80;
-  const barH = 26;
-  drawRoundRect(ctx, tx, barY, tw, barH, 13);
+  const barY = y + (isDuo ? 136 : 80);
+  const barH = isDuo ? 30 : 26;
+  drawRoundRect(ctx, tx, barY, tw, barH, barH / 2);
   ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
   ctx.fill();
   if (hpRatio > 0) {
-    drawRoundRect(ctx, tx, barY, Math.max(18, tw * hpRatio), barH, 13);
+    drawRoundRect(ctx, tx, barY, Math.max(18, tw * hpRatio), barH, barH / 2);
     const hpGrad = ctx.createLinearGradient(tx, barY, tx + tw, barY);
     hpGrad.addColorStop(0, '#ec4899');
     hpGrad.addColorStop(1, '#f43f5e');
@@ -226,29 +270,30 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
     ctx.fill();
   }
   ctx.fillStyle = '#ffffff';
-  ctx.font = `700 15px ${FONT_FAMILY}`;
+  ctx.font = `700 ${isDuo ? 16 : 15}px ${FONT_FAMILY}`;
   ctx.textAlign = 'center';
   const hpTxt = isKo
     ? 'ĐÃ GỤC (0 HP)'
     : `HP: ${Number(unit.currentHp).toLocaleString('vi-VN')} / ${Number(unit.maxHp).toLocaleString('vi-VN')} (${Math.round(hpRatio * 100)}%)`;
-  ctx.fillText(hpTxt, tx + tw / 2, barY + 18);
+  ctx.fillText(hpTxt, tx + tw / 2, barY + barH * 0.7);
 
   // Chỉ số ATK / DEF / SPD + 3 Mini Icon Pháp Bảo
   ctx.textAlign = 'left';
   ctx.fillStyle = '#e2e8f0';
-  ctx.font = `600 16px ${FONT_FAMILY}`;
+  ctx.font = `600 ${isDuo ? 18 : 16}px ${FONT_FAMILY}`;
   ctx.fillText(
     `ATK ${Number(unit.atk).toLocaleString('vi-VN')}  •  DEF ${Number(unit.def).toLocaleString('vi-VN')}  •  SPD ${Number(unit.spd).toLocaleString('vi-VN')}`,
     tx,
-    y + 132,
+    barY + barH + (isDuo ? 34 : 26),
   );
 
   // 3 ô Pháp Bảo thu gọn bên dưới
   const eqSlots = [unit.equipment?.weapon, unit.equipment?.gem, unit.equipment?.soul];
   let ex = tx;
-  const ey = y + 144;
+  const eqSize = isDuo ? 58 : 46;
+  const ey = barY + barH + (isDuo ? 54 : 38);
   for (const piece of eqSlots) {
-    drawRoundRect(ctx, ex, ey, 46, 46, 9);
+    drawRoundRect(ctx, ex, ey, eqSize, eqSize, 10);
     ctx.fillStyle = 'rgba(15, 10, 28, 0.85)';
     ctx.fill();
     ctx.strokeStyle = piece ? (GRADE_COLORS[piece.enchant_grade || 'D'] || '#64748b') : 'rgba(148,163,184,0.2)';
@@ -257,26 +302,178 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
 
     if (piece?.item_id) {
       const iImg = await safeLoadImage(`items/${piece.item_id}.png`) || await safeLoadImage(`${piece.item_id}.png`);
-      if (iImg) drawClippedImage(ctx, iImg, ex + 3, ey + 3, 40, 7);
-      // Mini badge bậc Khắc Ấn góc dưới phải
+      if (iImg) drawClippedImage(ctx, iImg, ex + 4, ey + 4, eqSize - 8, 7);
       const g = String(piece.enchant_grade || 'D').toUpperCase();
+      const bSize = isDuo ? 20 : 18;
       ctx.fillStyle = GRADE_COLORS[g] || '#94a3b8';
-      drawRoundRect(ctx, ex + 28, ey + 28, 18, 18, 4);
+      drawRoundRect(ctx, ex + eqSize - bSize, ey + eqSize - bSize, bSize, bSize, 4);
       ctx.fill();
       ctx.fillStyle = '#0f172a';
       ctx.font = `800 12px ${FONT_FAMILY}`;
       ctx.textAlign = 'center';
-      ctx.fillText(g, ex + 37, ey + 41);
+      ctx.fillText(g, ex + eqSize - bSize / 2, ey + eqSize - bSize * 0.25);
       ctx.textAlign = 'left';
     }
-    ex += 56;
+    ex += eqSize + 12;
   }
 
   // Lực chiến góc dưới phải
   ctx.textAlign = 'right';
   ctx.fillStyle = '#fcd34d';
-  ctx.font = `700 17px ${FONT_FAMILY}`;
-  ctx.fillText(`⚡ ${Number(unit.powerScore || 0).toLocaleString('vi-VN')} Lực`, x + w - 18, y + h - 18);
+  ctx.font = `700 ${isDuo ? 19 : 17}px ${FONT_FAMILY}`;
+  ctx.fillText(`⚡ ${meta.power.toLocaleString('vi-VN')} Lực`, x + w - 18, y + h - 20);
+
+  ctx.restore();
+}
+
+async function drawSoloFighterPanel(ctx, unit, x, y, w, h, sideColor) {
+  const isKo = Number(unit.currentHp || 0) <= 0;
+  const meta = getNormalizedUnitDisplay(unit);
+  ctx.save();
+  drawRoundRect(ctx, x, y, w, h, 22);
+  ctx.fillStyle = isKo ? 'rgba(22, 16, 30, 0.78)' : 'rgba(26, 18, 46, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = isKo ? 'rgba(244, 63, 94, 0.45)' : sideColor;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Header người chơi: Avatar + Tên + Badge Mệt Mỏi
+  const avImg = await safeLoadImage(unit.avatarUrl);
+  if (avImg) {
+    drawClippedImage(ctx, avImg, x + 28, y + 22, 56, 28);
+  }
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 28px ${FONT_FAMILY}`;
+  ctx.fillText(truncateText(ctx, `👑 ${unit.name}`, w - 280), x + 98, y + 60);
+
+  if (unit.fatiguePenaltyPct > 0) {
+    drawRoundRect(ctx, x + w - 172, y + 30, 144, 34, 10);
+    ctx.fillStyle = 'rgba(244, 63, 94, 0.22)';
+    ctx.fill();
+    ctx.strokeStyle = '#fb7185';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#fda4af';
+    ctx.font = `700 16px ${FONT_FAMILY}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`Mệt -${unit.fatiguePenaltyPct}%`, x + w - 100, y + 53);
+  }
+
+  // Khung chân dung Pet cỡ lớn đối xứng với Grand Boss Panel
+  const imgSize = 310;
+  const imgX = x + (w - imgSize) / 2;
+  const imgY = y + 96;
+  drawRoundRect(ctx, imgX - 6, imgY - 6, imgSize + 12, imgSize + 12, 24);
+  ctx.fillStyle = 'rgba(12, 8, 22, 0.92)';
+  ctx.fill();
+  ctx.strokeStyle = sideColor;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const petImg = await loadPetSprite(meta.petType);
+  if (petImg) {
+    ctx.save();
+    drawRoundRect(ctx, imgX, imgY, imgSize, imgSize, 20);
+    ctx.clip();
+    if (isKo) ctx.globalAlpha = 0.45;
+    const fitRatio = Math.min((imgSize - 24) / petImg.width, (imgSize - 24) / petImg.height);
+    const dw = petImg.width * fitRatio;
+    const dh = petImg.height * fitRatio;
+    ctx.drawImage(petImg, imgX + (imgSize - dw) / 2, imgY + (imgSize - dh) / 2, dw, dh);
+    ctx.restore();
+  }
+  drawPetEnchantBadge(ctx, meta.grade, imgX + imgSize, imgY + imgSize, 32);
+
+  // Tên Pet + Hệ/Lv/Sao + Chiến Lực
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f9a8d4';
+  ctx.font = `800 32px ${FONT_FAMILY}`;
+  ctx.fillText(truncateText(ctx, meta.petName, w - 48), x + w / 2, imgY + imgSize + 52);
+
+  ctx.fillStyle = '#fde68a';
+  ctx.font = `700 22px ${FONT_FAMILY}`;
+  ctx.fillText(
+    `Hệ ${meta.element || 'Hỗn Độn'}  •  Lv.${meta.level} • ${meta.star}★  •  ⚡ ${meta.power.toLocaleString('vi-VN')} Lực`,
+    x + w / 2,
+    imgY + imgSize + 88,
+  );
+
+  // Thanh HP cỡ lớn
+  const barX = x + 38;
+  const barW = w - 76;
+  const barY = imgY + imgSize + 110;
+  const barH = 38;
+  const hpRatio = Math.max(0, Math.min(1, Number(unit.currentHp || 0) / Math.max(1, Number(unit.maxHp || 1))));
+  drawRoundRect(ctx, barX, barY, barW, barH, 19);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+  ctx.fill();
+  if (hpRatio > 0) {
+    drawRoundRect(ctx, barX, barY, Math.max(24, barW * hpRatio), barH, 19);
+    const g = ctx.createLinearGradient(barX, barY, barX + barW, barY);
+    g.addColorStop(0, '#ec4899');
+    g.addColorStop(1, '#f43f5e');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 20px ${FONT_FAMILY}`;
+  ctx.fillText(
+    isKo ? 'ĐÃ GỤC (0 HP)' : `HP: ${Number(unit.currentHp).toLocaleString('vi-VN')} / ${Number(unit.maxHp).toLocaleString('vi-VN')} (${Math.round(hpRatio * 100)}%)`,
+    x + w / 2,
+    barY + 26,
+  );
+
+  // ATK / DEF / SPD
+  ctx.fillStyle = '#e2e8f0';
+  ctx.font = `700 21px ${FONT_FAMILY}`;
+  ctx.fillText(
+    `ATK ${Number(unit.atk).toLocaleString('vi-VN')}   •   DEF ${Number(unit.def).toLocaleString('vi-VN')}   •   SPD ${Number(unit.spd).toLocaleString('vi-VN')}`,
+    x + w / 2,
+    barY + 74,
+  );
+
+  // 3 Thẻ Pháp Bảo căn giữa phía dưới
+  const eqLabels = ['VŨ KHÍ', 'BẢO NGỌC', 'CHIẾN HỒN'];
+  const eqPieces = [unit.equipment?.weapon, unit.equipment?.gem, unit.equipment?.soul];
+  const cardW = 226;
+  const cardH = 112;
+  const gap = 18;
+  const rowX = x + (w - (cardW * 3 + gap * 2)) / 2;
+  const rowY = y + h - cardH - 28;
+
+  for (let idx = 0; idx < 3; idx += 1) {
+    const piece = eqPieces[idx];
+    const cx = rowX + idx * (cardW + gap);
+    drawRoundRect(ctx, cx, rowY, cardW, cardH, 14);
+    ctx.fillStyle = 'rgba(15, 10, 28, 0.88)';
+    ctx.fill();
+    ctx.strokeStyle = piece ? (GRADE_COLORS[piece.enchant_grade || 'D'] || '#64748b') : 'rgba(148,163,184,0.22)';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    const icoSize = 68;
+    const icoX = cx + 12;
+    const icoY = rowY + (cardH - icoSize) / 2;
+    drawRoundRect(ctx, icoX, icoY, icoSize, icoSize, 10);
+    ctx.fillStyle = 'rgba(26, 18, 44, 0.9)';
+    ctx.fill();
+    if (piece?.item_id) {
+      const iImg = await safeLoadImage(`items/${piece.item_id}.png`) || await safeLoadImage(`${piece.item_id}.png`);
+      if (iImg) drawClippedImage(ctx, iImg, icoX + 4, icoY + 4, icoSize - 8, 8);
+      drawPetEnchantBadge(ctx, piece.enchant_grade, icoX + icoSize + 4, icoY + icoSize + 4, 20);
+    }
+
+    const textX = icoX + icoSize + 12;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#f472b6';
+    ctx.font = `700 13px ${FONT_FAMILY}`;
+    ctx.fillText(eqLabels[idx], textX, rowY + 34);
+
+    ctx.fillStyle = piece ? '#f8fafc' : '#64748b';
+    ctx.font = `600 15px ${FONT_FAMILY}`;
+    ctx.fillText(truncateText(ctx, piece?.item_name || 'Trống', cardW - icoSize - 32), textX, rowY + 62);
+  }
 
   ctx.restore();
 }
@@ -400,24 +597,46 @@ export async function renderTeamBattleCard(battleResult, options = {}) {
   );
 
   // Hộp Linh Vực Đội Trưởng 2 bên
-  await drawLeaderDomainCorner(ctx, battleResult.leaderDomainA, leftX, headerY + 42, colW, 88, '#ec4899');
-  await drawLeaderDomainCorner(ctx, battleResult.leaderDomainB, rightX, headerY + 42, colW, 88, '#f59e0b');
+  await drawLeaderDomainCorner(ctx, battleResult.leaderDomainA, leftX, headerY + 42, colW, 88, '#ec4899', 'LINH VỰC ĐỘI TRƯỞNG');
+  await drawLeaderDomainCorner(
+    ctx,
+    battleResult.leaderDomainB,
+    rightX,
+    headerY + 42,
+    colW,
+    88,
+    '#f59e0b',
+    isBossMode ? 'LINH VỰC BOSS TRẤN THỦ' : 'LINH VỰC ĐỘI TRƯỞNG',
+  );
 
-  // 3 hàng chiến sĩ bên Trái
+  // Thân chiến báo (838px cao đều 2 bên: Solo = 1 panel lớn, Duo = 2 panel vừa, Trio = 3 panel gọn)
   const stripStartY = 244;
   const stripH = 266;
   const stripGap = 20;
-  for (let i = 0; i < Math.min(3, (battleResult.teamA || []).length); i += 1) {
-    await drawFighterStrip(ctx, battleResult.teamA[i], leftX, stripStartY + i * (stripH + stripGap), colW, stripH, '#ec4899');
-  }
+  const colBodyH = stripH * 3 + stripGap * 2;
+  const teamAList = (battleResult.teamA || []).slice(0, 3);
+  const teamBList = (battleResult.teamB || []).slice(0, 3);
 
-  // Bên Phải: Grand Boss Panel (nếu 3vBoss) HOẶC 3 hàng chiến sĩ (nếu 3v3)
-  if (isBossMode) {
-    await drawGrandBossPanel(ctx, battleResult.teamB[0], rightX, stripStartY, colW, stripH * 3 + stripGap * 2);
-  } else {
-    for (let i = 0; i < Math.min(3, (battleResult.teamB || []).length); i += 1) {
-      await drawFighterStrip(ctx, battleResult.teamB[i], rightX, stripStartY + i * (stripH + stripGap), colW, stripH, '#38bdf8');
+  const renderSideList = async (list, sx, color) => {
+    if (list.length <= 1) {
+      if (list[0]) await drawSoloFighterPanel(ctx, list[0], sx, stripStartY, colW, colBodyH, color);
+    } else if (list.length === 2) {
+      const duoH = Math.floor((colBodyH - stripGap) / 2);
+      for (let i = 0; i < 2; i += 1) {
+        await drawFighterStrip(ctx, list[i], sx, stripStartY + i * (duoH + stripGap), colW, duoH, color);
+      }
+    } else {
+      for (let i = 0; i < 3; i += 1) {
+        await drawFighterStrip(ctx, list[i], sx, stripStartY + i * (stripH + stripGap), colW, stripH, color);
+      }
     }
+  };
+
+  await renderSideList(teamAList, leftX, '#ec4899');
+  if (isBossMode) {
+    await drawGrandBossPanel(ctx, teamBList[0], rightX, stripStartY, colW, colBodyH);
+  } else {
+    await renderSideList(teamBList, rightX, '#38bdf8');
   }
 
   // Cột trung tâm VS + Trạng thái kết thúc
@@ -448,13 +667,16 @@ export async function renderTeamBattleCard(battleResult, options = {}) {
 
   ctx.fillStyle = '#ffffff';
   ctx.font = `700 22px ${FONT_FAMILY}`;
-  const winnerLead = leftWon ? battleResult.teamA?.[0]?.name : battleResult.teamB?.[0]?.name;
+  const winnerLead = leftWon ? teamAList[0]?.name : teamBList[0]?.name;
   ctx.fillText(truncateText(ctx, winnerLead || 'Người Thắng', boxW - 24), midX, boxY + 92);
 
   ctx.fillStyle = '#cbd5e1';
   ctx.font = `600 18px ${FONT_FAMILY}`;
   ctx.fillText(`Tổng số hiệp: ${battleResult.turnCount || 1} Hiệp`, midX, boxY + 132);
-  ctx.fillText(isBossMode ? 'Chế độ: Tổ Đội vs BOSS' : 'Chế độ: Tổ Đội 3v3', midX, boxY + 164);
+  const modeTxt = isBossMode
+    ? (teamAList.length === 1 ? 'Chế độ: Đơn Đấu vs BOSS' : `Chế độ: Tổ Đội ${teamAList.length}vBOSS`)
+    : `Chế độ: Tổ Đội ${teamAList.length}v${teamBList.length}`;
+  ctx.fillText(modeTxt, midX, boxY + 164);
 
   // Footer
   ctx.fillStyle = 'rgba(203, 213, 225, 0.72)';

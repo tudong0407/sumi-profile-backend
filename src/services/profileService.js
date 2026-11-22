@@ -605,13 +605,18 @@ export async function getProfileData(userId, overrides = {}) {
         { data: equippedItems, error: equipErr },
         { data: roles },
         { data: equippedDomains },
+        { data: activeExp },
       ] = await Promise.all([
         supabase.from('users').select('*').eq('user_id', cleanId).single(),
         supabase.from('user_pets').select('*').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
         supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
         supabase.from('user_roles').select('*').eq('user_id', cleanId).eq('is_equipped', true).order('equipped_slot', { ascending: true }),
         supabase.from('user_domains').select('*').eq('user_id', cleanId).eq('is_equipped', true),
+        supabase.from('explorer_expeditions').select('pet_id, pet_type, locked_equip_ids, locked_domain_ids').eq('user_id', cleanId).eq('status', 'active').limit(1).maybeSingle(),
       ]);
+
+      const busyEquipIds = new Set((Array.isArray(activeExp?.locked_equip_ids) ? activeExp.locked_equip_ids : []).map(String));
+      const busyDomainIds = new Set((Array.isArray(activeExp?.locked_domain_ids) ? activeExp.locked_domain_ids : []).map(String));
 
       if (!userErr && user) {
         // Lấy Clan nếu có
@@ -646,8 +651,9 @@ export async function getProfileData(userId, overrides = {}) {
 
         if (!equipErr && Array.isArray(equippedItems)) {
           for (const item of equippedItems) {
-            // Guard: Chỉ ghi nhận các vật phẩm đang thực sự được trang bị vào slot (bỏ qua unequipped item có slot == null)
+            // Guard: Chỉ ghi nhận các vật phẩm đang thực sự được trang bị vào slot (bỏ qua unequipped item hoặc đồ đang khóa khám phá /explorer)
             if (!item.slot) continue;
+            if (busyEquipIds.has(String(item.item_id)) && Number(item.quantity || 1) <= 1) continue;
             const slotKey = String(item.slot).toLowerCase().trim();
             if (['weapon', 'gem', 'soul'].includes(slotKey)) {
               const itemGrade = normalizeEnchantGrade(item.enchant_grade || 'D');
@@ -667,6 +673,7 @@ export async function getProfileData(userId, overrides = {}) {
                 enchant_bonus_pct: getEnchantBonusPct(itemGrade),
                 enchant_pity: Number(item.enchant_pity) || 0,
                 enchant_applied: true,
+                quantity: Number(item.quantity || 1),
                 bonus_atk: effAtk,
                 bonus_def: effDef,
                 bonus_spd: effSpd,
@@ -781,13 +788,21 @@ export async function getProfileData(userId, overrides = {}) {
           petData.power = Math.round(petData.power * (1 + roleBuffs.petPowerBonusPct / 100));
         }
 
-        const dRow = (equippedDomains || []).find((d) => d.entity_kind === 'domain');
-        const sRow = (equippedDomains || []).find((d) => d.entity_kind === 'sense');
-        const rRow = (equippedDomains || []).find((d) => d.entity_kind === 'realm');
+        const isBusyDomain = (row) => busyDomainIds.has(String(row?.entity_id)) && Number(row?.quantity || 1) <= 1;
+        const availDomains = (equippedDomains || []).filter((d) => !isBusyDomain(d));
+        const dRow = availDomains.find((d) => d.entity_kind === 'domain');
+        const sRow = availDomains.find((d) => d.entity_kind === 'sense');
+        const rRow = availDomains.find((d) => d.entity_kind === 'realm');
         const domainLoadout = {
-          domain: dRow?.entity_id ? (DOMAIN_BY_ID[dRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null) : null),
-          sense: sRow?.entity_id ? (DIVINE_SENSE_BY_ID[sRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DIVINE_SENSE_BY_ID.sense_fuyumi_thai_thuong_hong_ho || null) : null),
-          realm: rRow?.entity_id ? (DIVINE_REALM_BY_ID[rRow.entity_id] || null) : (cleanId === FUYUMI_USER_ID ? (DIVINE_REALM_BY_ID.realm_fuyumi_van_co_tuyet_diet || null) : null),
+          domain: dRow?.entity_id
+            ? (DOMAIN_BY_ID[dRow.entity_id] || null)
+            : (cleanId === FUYUMI_USER_ID && !busyDomainIds.has('domain_fuyumi_cuu_vi_hong_mong') ? (DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null) : null),
+          sense: sRow?.entity_id
+            ? (DIVINE_SENSE_BY_ID[sRow.entity_id] || null)
+            : (cleanId === FUYUMI_USER_ID && !busyDomainIds.has('sense_fuyumi_thai_thuong_hong_ho') ? (DIVINE_SENSE_BY_ID.sense_fuyumi_thai_thuong_hong_ho || null) : null),
+          realm: rRow?.entity_id
+            ? (DIVINE_REALM_BY_ID[rRow.entity_id] || null)
+            : (cleanId === FUYUMI_USER_ID && !busyDomainIds.has('realm_fuyumi_van_co_tuyet_diet') ? (DIVINE_REALM_BY_ID.realm_fuyumi_van_co_tuyet_diet || null) : null),
         };
 
         baseProfile = {

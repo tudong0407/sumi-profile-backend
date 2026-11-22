@@ -440,7 +440,7 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
 
     // 7B. /wiki battle contains all 5 Vực element emojis & updated v1.3.1 chart
     const wikiBattle = await (await testServer.fetch('/api/wiki?category=battle')).json();
-    assert.equal(wikiBattle.version, '1.3.1');
+    assert.ok(['1.3.1', '1.4'].includes(wikiBattle.version), `Unexpected wikiBattle.version: ${wikiBattle.version}`);
     assert.match(wikiBattle.data.image_url, /elements\.webp\?v=1\.3\.1/);
     const domainField = wikiBattle.data.fields.find((f) => /Linh Vực/i.test(f.name));
     assert.ok(domainField, 'Wiki battle should have Linh Vực field');

@@ -40,12 +40,12 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     assert.ok(!allWikiPets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.is_exclusive_fuyumi), 'Exclusive Fuyumi pet must NOT appear in wiki catalog');
   });
 
-  it('2. Standalone realms category exists, all 6 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
+  it('2. Standalone realms category exists, all 7 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200);
     const json = await res.json();
     const ids = json.categories.map((c) => c.id);
-    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy']);
+    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer']);
 
     const fullWikiText = JSON.stringify(json.categories);
     assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive pet Cửu Vĩ Hồng Hồ');

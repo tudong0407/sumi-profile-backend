@@ -805,22 +805,165 @@ export async function getUserRoles(userId, options = {}) {
   };
 }
 
+function findBackgroundMatch(rawQuery) {
+  const q = String(rawQuery || '').trim();
+  if (!q) return null;
+  if (BACKGROUND_BY_ID[q]) return BACKGROUND_BY_ID[q];
+  const normQ = normalizeTargetText(q);
+  const stripPathExt = (s) => String(s || '').replace(/^backgrounds\//i, '').replace(/\.[a-z0-9]+$/i, '').toLowerCase();
+  const normStrip = stripPathExt(q).toLowerCase();
+  return BACKGROUND_CATALOG.find((b) =>
+    b.bg_id.toLowerCase() === normQ
+    || b.file.toLowerCase() === normQ
+    || stripPathExt(b.bg_id) === normStrip
+    || stripPathExt(b.file) === normStrip
+    || normalizeTargetText(b.name) === normQ) || null;
+}
+
+function findFrameKeyMatch(rawQuery) {
+  const normQ = normalizeTargetText(rawQuery);
+  if (!normQ) return null;
+  const candidate = normQ.replace(/^frame_/, '');
+  if (candidate === 'celestial_fox_gold') return 'celestial_fox_gold';
+  if (AVATAR_FRAME_BY_ID[candidate]) return candidate;
+  const byName = Object.entries(AVATAR_FRAME_BY_ID).find(([, meta]) => normalizeTargetText(meta.name) === normQ);
+  return byName ? byName[0] : null;
+}
+
+function findDomainEntityMatch(rawQuery) {
+  const q = String(rawQuery || '').trim();
+  if (!q) return null;
+  if (DOMAIN_BY_ID[q]) return DOMAIN_BY_ID[q];
+  if (DIVINE_SENSE_BY_ID[q]) return DIVINE_SENSE_BY_ID[q];
+  if (DIVINE_REALM_BY_ID[q]) return DIVINE_REALM_BY_ID[q];
+  const normQ = normalizeTargetText(q);
+  const all = [
+    ...Object.values(DOMAIN_BY_ID),
+    ...Object.values(DIVINE_SENSE_BY_ID),
+    ...Object.values(DIVINE_REALM_BY_ID),
+  ];
+  return all.find((x) => x.id.toLowerCase() === normQ || normalizeTargetText(x.name) === normQ) || null;
+}
+
+function findCatalogRoleId(rawQuery) {
+  const cleaned = String(rawQuery || '').trim().replace(/^<@&(\d+)>$/, '$1');
+  if (!cleaned) return null;
+  if (/^[0-9]{15,22}$/.test(cleaned)) return cleaned;
+  const normQ = normalizeTargetText(cleaned);
+  const pools = [...Object.values(ROLE_BY_ID), ...Object.values(SHOP_ROLE_BY_ID)];
+  const matched = pools.find((r) => r.role_id === cleaned || normalizeTargetText(r.name) === normQ);
+  return matched ? matched.role_id : null;
+}
+
 export async function equipTarget(userId, payload = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
-  const category = String(payload.category || '').toLowerCase();
+  const rawCategory = String(payload.category || '').trim().toLowerCase();
+  let category = rawCategory === 'auto' ? '' : rawCategory;
   const rawTargetId = String(payload.targetId || '').trim();
-  const normalizedInput = (category === 'role' || category === 'title') ? rawTargetId : normalizeEmojiAwareQuery(rawTargetId);
-  let targetId = normalizedInput;
-  if (category === 'item' && !EQUIPMENT_BY_ID[targetId]) {
-    const normIn = normalizeTargetText(normalizedInput);
-    const byName = Object.values(EQUIPMENT_BY_ID).find((x) => x.item_id.toLowerCase() === normIn || normalizeTargetText(x.item_name) === normIn);
-    if (byName) targetId = byName.item_id;
+  if (!rawTargetId) {
+    return {
+      success: false,
+      status: 400,
+      error: 'MISSING_TARGET_ID',
+      message: 'Vui lòng nhập **UID**, **Emoji**, **Role ID** hoặc **Tên** món muốn trang bị!',
+    };
   }
+
+  const emojiNormalized = normalizeEmojiAwareQuery(rawTargetId);
+  const normEmoji = normalizeTargetText(emojiNormalized);
+  let targetId = (!category || category === 'role' || category === 'title') ? rawTargetId : emojiNormalized;
+
   const { user } = await ensureUserInitialized(cleanId);
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+  if (!category) {
+    const titleMatch = rawTargetId.match(/^title\s*:\s*(.+)$/i);
+    if (titleMatch) {
+      category = 'title';
+      targetId = titleMatch[1].trim();
+    } else if (EQUIPMENT_BY_ID[emojiNormalized]) {
+      category = 'item';
+      targetId = emojiNormalized;
+    } else {
+      const matchedItem = Object.values(EQUIPMENT_BY_ID).find(
+        (x) => x.item_id.toLowerCase() === normEmoji || normalizeTargetText(x.item_name) === normEmoji,
+      );
+      if (matchedItem) {
+        category = 'item';
+        targetId = matchedItem.item_id;
+      } else {
+        const matchedDom = findDomainEntityMatch(emojiNormalized);
+        if (matchedDom) {
+          const { equipDomainEntity } = await import('./domainService.js');
+          const domRes = await equipDomainEntity(cleanId, matchedDom.id);
+          return { ...domRes, category: 'domain' };
+        }
+        const matchedPet = PET_BY_TYPE[emojiNormalized] || Object.values(PET_BY_TYPE).find(
+          (p) => p.pet_type.toLowerCase() === normEmoji || normalizeTargetText(p.pet_name) === normEmoji,
+        );
+        if (matchedPet) {
+          const petRes = await setActivePet(cleanId, matchedPet.pet_type);
+          return { ...petRes, category: 'pet' };
+        }
+        const matchedBg = findBackgroundMatch(emojiNormalized) || findBackgroundMatch(rawTargetId);
+        if (matchedBg) {
+          category = 'background';
+          targetId = matchedBg.bg_id;
+        } else {
+          const matchedFrame = findFrameKeyMatch(emojiNormalized) || findFrameKeyMatch(rawTargetId);
+          if (matchedFrame) {
+            category = 'frame';
+            targetId = matchedFrame;
+          } else {
+            const matchedRoleId = findCatalogRoleId(rawTargetId);
+            if (matchedRoleId) {
+              category = 'role';
+              targetId = matchedRoleId;
+            } else {
+              const { data: userRoles } = await supabase.from('user_roles').select('role_id, role_name').eq('user_id', cleanId);
+              const normRaw = normalizeTargetText(rawTargetId);
+              const dbRole = (userRoles || []).find((r) => r.role_id === rawTargetId || normalizeTargetText(r.role_name) === normRaw);
+              if (dbRole) {
+                category = 'role';
+                targetId = dbRole.role_id;
+              } else {
+                return {
+                  success: false,
+                  status: 404,
+                  error: 'TARGET_NOT_FOUND',
+                  message: `Không tìm thấy UID / Emoji / Tên \`${rawTargetId}\` khớp Pháp Bảo, Linh Vực, Linh Thú, Role, Ảnh Nền hay Khung Viền nào.\n• *(Muốn đổi danh hiệu, hãy gõ \`/equip ma_id:title:Tên Mới\`)*`,
+                };
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    if (category === 'item' && !EQUIPMENT_BY_ID[targetId]) {
+      const byName = Object.values(EQUIPMENT_BY_ID).find((x) => x.item_id.toLowerCase() === normEmoji || normalizeTargetText(x.item_name) === normEmoji);
+      if (byName) targetId = byName.item_id;
+    } else if (category === 'background') {
+      const bg = findBackgroundMatch(targetId) || findBackgroundMatch(rawTargetId);
+      if (bg) targetId = bg.bg_id;
+    } else if (category === 'frame') {
+      const fk = findFrameKeyMatch(targetId) || findFrameKeyMatch(rawTargetId);
+      if (fk) targetId = fk;
+    } else if (category === 'domain') {
+      const { equipDomainEntity } = await import('./domainService.js');
+      const domRes = await equipDomainEntity(cleanId, emojiNormalized);
+      return { ...domRes, category: 'domain' };
+    } else if (category === 'pet') {
+      const petRes = await setActivePet(cleanId, emojiNormalized);
+      return { ...petRes, category: 'pet' };
+    } else if (category === 'role') {
+      const resolvedRole = findCatalogRoleId(targetId);
+      if (resolvedRole) targetId = resolvedRole;
+    }
+  }
 
   if (category === 'item') {
     const itemMeta = EQUIPMENT_BY_ID[targetId];
@@ -828,12 +971,22 @@ export async function equipTarget(userId, payload = {}) {
 
     const { data: own } = await supabase
       .from('user_pet_items')
-      .select('id, equipped_to_pet, slot')
+      .select('id, equipped_to_pet, slot, quantity')
       .eq('user_id', cleanId)
       .eq('item_id', targetId)
       .maybeSingle();
 
     if (!own) return { success: false, status: 404, error: 'ITEM_NOT_OWNED', message: `Bạn chưa sở hữu **${itemMeta.item_name}**.` };
+
+    const busyExp = await getUserBusyExplorationAssets(cleanId);
+    if (busyExp?.isExploring && busyExp.busyEquipIds.has(targetId) && Number(own.quantity || 1) <= 1) {
+      return {
+        success: false,
+        status: 400,
+        error: 'ITEM_BUSY_EXPLORING',
+        message: `🧭 Pháp bảo **${itemMeta.item_name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy gắn món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+      };
+    }
 
     const { data: activePet } = await supabase
       .from('user_pets')
@@ -885,7 +1038,9 @@ export async function equipTarget(userId, payload = {}) {
       await supabase.from('user_roles').update({ is_equipped: false, equipped_slot: null }).in('id', expiredEquippedIds);
     }
 
-    const targetRole = (userRoles || []).find((r) => r.role_id === targetId || r.role_name === targetId);
+    const normTarget = normalizeTargetText(targetId);
+    const targetRole = (userRoles || []).find((r) =>
+      r.role_id === targetId || r.role_name === targetId || normalizeTargetText(r.role_name) === normTarget);
     if (!targetRole) {
       return { success: false, status: 404, error: 'ROLE_NOT_OWNED', message: 'Bạn chưa sở hữu Role Quyền Năng này trong túi.' };
     }

@@ -104,12 +104,22 @@ export async function compileCombatant(userOrId, role = 'attacker') {
 
   // Khóa tài sản đang đi khám phá (/explorer): loại trừ trang bị & Linh Vực đang xuất hành để không bị dùng song song!
   let busyExp = null;
+  let strippedBusyEquip = false;
   if (/^[0-9]{15,22}$/.test(id)) {
     busyExp = await getUserBusyExplorationAssets(id);
     if (busyExp?.isExploring) {
-      if (weapon && busyExp.busyEquipIds.has(weapon.item_id)) weapon = null;
-      if (gem && busyExp.busyEquipIds.has(gem.item_id)) gem = null;
-      if (soul && busyExp.busyEquipIds.has(soul.item_id)) soul = null;
+      if (weapon && busyExp.busyEquipIds.has(weapon.item_id) && Number(weapon.quantity || 1) <= 1) {
+        weapon = null;
+        strippedBusyEquip = true;
+      }
+      if (gem && busyExp.busyEquipIds.has(gem.item_id) && Number(gem.quantity || 1) <= 1) {
+        gem = null;
+        strippedBusyEquip = true;
+      }
+      if (soul && busyExp.busyEquipIds.has(soul.item_id) && Number(soul.quantity || 1) <= 1) {
+        soul = null;
+        strippedBusyEquip = true;
+      }
     }
   }
 
@@ -163,13 +173,20 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
   const petHaxDesc = catalogPet?.hax_description || pet.hax_desc || pet.hax_description || null;
   const rawDomainLoadout = resolveDomainLoadout(profile);
+  const domIdKey = (d) => String(d?.domain_id || d?.sense_id || d?.realm_id || d?.id || '');
   const domainLoadout = busyExp?.isExploring
     ? {
-        domain: rawDomainLoadout.domain && busyExp.busyDomainIds.has(rawDomainLoadout.domain.domain_id) ? null : rawDomainLoadout.domain,
-        sense: rawDomainLoadout.sense && busyExp.busyDomainIds.has(rawDomainLoadout.sense.sense_id) ? null : rawDomainLoadout.sense,
-        realm: rawDomainLoadout.realm && busyExp.busyDomainIds.has(rawDomainLoadout.realm.realm_id) ? null : rawDomainLoadout.realm,
+        domain: rawDomainLoadout.domain && busyExp.busyDomainIds.has(domIdKey(rawDomainLoadout.domain)) ? null : rawDomainLoadout.domain,
+        sense: rawDomainLoadout.sense && busyExp.busyDomainIds.has(domIdKey(rawDomainLoadout.sense)) ? null : rawDomainLoadout.sense,
+        realm: rawDomainLoadout.realm && busyExp.busyDomainIds.has(domIdKey(rawDomainLoadout.realm)) ? null : rawDomainLoadout.realm,
       }
     : rawDomainLoadout;
+
+  const computedPower = finalAtk * 3 + finalDef * 2 + finalSpd * 2 + level * 50;
+  const powerScore = Math.max(
+    100,
+    strippedBusyEquip ? computedPower : (Number(pet.power || pet.power_score || 0) || computedPower),
+  );
 
   return {
     id,
@@ -189,6 +206,19 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     star,
     enchantGrade,
     enchant_grade: enchantGrade,
+    powerScore,
+    pet: {
+      pet_type: petType,
+      pet_name: petName,
+      element,
+      rarity: petRarity,
+      rarity_key: petRarityKey,
+      level,
+      star,
+      enchant_grade: enchantGrade,
+      hax_skill: petHaxName,
+      hax_description: petHaxDesc,
+    },
     baseAtk: finalAtk,
     baseDef: finalDef,
     baseSpd: finalSpd,

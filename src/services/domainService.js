@@ -245,6 +245,16 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
       };
     }
 
+    const busyExp = await getUserBusyExplorationAssets(cleanId);
+    if (busyExp?.isExploring && busyExp.busyDomainIds.has(resolved.meta.id) && Number(owned.quantity || 1) <= 1) {
+      return {
+        success: false,
+        status: 400,
+        error: 'DOMAIN_BUSY_EXPLORING',
+        message: `🧭 **${resolved.meta.name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy trang bị món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+      };
+    }
+
     if (owned.is_equipped) {
       return {
         success: true,

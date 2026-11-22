@@ -15,6 +15,7 @@ import {
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
+import { V14_EXPLORER_MAPS } from '../data/v14ExpansionCatalog.js';
 import {
   em,
   tierEmoji,
@@ -26,7 +27,7 @@ import {
   levelMilestoneEmoji,
 } from '../config/emojiHelper.js';
 
-export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy'];
+export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer'];
 
 const CATEGORY_ALIASES = {
   beginner: 'overview',
@@ -41,12 +42,16 @@ const CATEGORY_ALIASES = {
   nong_trai: 'economy',
   farm: 'economy',
   minigame: 'economy',
+  kham_pha: 'explorer',
+  ban_do: 'explorer',
+  map: 'explorer',
+  dai_luc: 'explorer',
 };
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường',
-  version: '1.3.1',
+  subtitle: 'Toàn thư hệ thống Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường • Khám Phá Đại Lục',
+  version: '1.4',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -55,8 +60,8 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-22T03:00:00.000Z',
-  total_categories: 6,
+  updated_at: '2026-11-22T12:00:00.000Z',
+  total_categories: 7,
 };
 
 export const WIKI_CATEGORIES = {
@@ -312,6 +317,59 @@ export const WIKI_CATEGORIES = {
       },
     ],
     content: 'Hệ thống Kinh Tế, Nghề Tu Tiên `/job` (8 ca/ngày), Nông Trại `/farm`, Đổi Quà `/exchange`, 4 Thức chơi Linh Thạch, Tiên Lữ và Gia Tộc Chiến 24H liên kết chặt chẽ giúp cộng đồng SuMi Family phát triển bền vững.',
+  },
+
+  explorer: {
+    id: 'explorer',
+    title: `${em('explorer_world_map_v14', '🗺️')} Khám Phá Đại Lục & Bản Đồ 4K (/explorer)`,
+    icon: em('explorer_world_map_v14', '🗺️'),
+    description: 'Bản đồ Đại Lục Cửu Châu 12 địa danh (10.000 → 1.000.000 Lực), Đội Hình Khám Phá riêng, Thức Ăn Bổ Trợ, cơ chế Sinh Tử & nhặt 60% bảo vật rơi.',
+    image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
+    sections: [
+      {
+        heading: '1. 12 Địa Danh Đại Lục Cửu Châu (Dễ → Nightmare)',
+        content: V14_EXPLORER_MAPS.map(
+          (m) => `• #${m.order} ${m.name} (${m.difficulty} • ${m.recommended_power.toLocaleString('vi-VN')} Lực • Quà ×${m.reward_multiplier})`,
+        ).join('\n'),
+      },
+      {
+        heading: '2. Thời Gian, Đội Hình Khám Phá & Cơ Chế Sinh Tử',
+        content: [
+          '• 4 Mốc Thời Gian: 2 / 3 / 6 / 12 giờ. Thưởng cơ bản 200–300 LT/giờ × hệ số map + quà Shop + 0.5% Thiên Đạo Tuyệt Ấn Thạch (Khắc Ấn 100% mọi bậc D→S, khuyên dùng A→S) + 0.01% Vũ Khí Thần Thoại.',
+          '• Đội Hình (/explorer -> Chỉnh Loadout): Chọn 1 Linh Thú (Chính hoặc Phụ) + 3 Pháp Bảo + 1 Linh Vực. Tài sản đang đi khám phá bị khóa khỏi PvP/PvE/Tháp/Địa Mạch; nếu cử Pet chính đi có thể dùng /linhthu chuyển sang Pet phụ khác.',
+          '• Sống Sót & Tử Vong: Lực đội hình >= lực map bắt đầu ở 90% sống sót (+5% mỗi +10% lực vượt); < lực map tỉ lệ tử nạn từ 20% (+10% mỗi -10% thua lực).',
+          '• Nếu Tử Nạn: Pet không Độc Nhất mất vĩnh viễn; Pet Độc Nhất rơi trạng thái Trọng Thương (hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ). Pháp Bảo Độc Nhất & Linh Vực an toàn tuyệt đối; Pháp Bảo không Độc Nhất rớt tại đúng địa danh & mốc giờ — người khác qua cùng địa danh với mốc >= giờ rơi và sống sót có 60% cơ hội nhặt trọn (giữ nguyên bậc Khắc Ấn)!',
+        ].join('\n'),
+      },
+      {
+        heading: '3. Lương Thảo & Dược Phẩm Khám Phá (/shop)',
+        content: '• Hộ Mệnh Linh Đan (180 LT): +8% tỉ lệ sống sót.\n• Tụ Bảo Tiên Trà (220 LT): +18% tổng Linh Thạch thu hoạch.\n• Ngự Phong Tốc Quả (250 LT): Rút gọn -25% thời gian di chuyển.\n• Cửu Chuyển Hoàn Hồn Lộ (2.500 LT): Hồi sinh Linh Thú Độc Nhất trọng thương.',
+      },
+    ],
+    fields: [
+      {
+        name: `${em('explorer_world_map_v14', '🗺️')} 12 Địa Danh Đại Lục Cửu Châu`,
+        value: V14_EXPLORER_MAPS.map(
+          (m) => `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • ×${m.reward_multiplier})*`,
+        ).join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('enchant_stone_absolute', '💎')} Quy Tắc Sinh Tử, Khóa Đồ & Nhặt Bảo Vật 60%`,
+        value: [
+          '• **Phần Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số map` + quà Shop + **0.5%** Thiên Đạo Tuyệt Ấn Thạch *(100% Khắc Ấn D→S)* + **0.01%** Vũ Khí Thần Thoại.',
+          '• **Tỉ Lệ Sống Sót:** Lực `>=` Map từ **90% → 100%**; lực `<` Map tỉ lệ tử nạn từ **20% → 95%**.',
+          '• **Rớt Đồ 60%:** Pháp Bảo thường bị rơi khi tử nạn nằm lại đúng tọa độ & mốc giờ; tu sĩ sau qua cùng địa danh *(mốc `>=` giờ rơi)* và sống sót có **60%** cơ hội nhặt nguyên bậc Khắc Ấn!',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('food_survival_pill', '🥗')} 3 Thức Ăn Khám Phá & Hồi Sinh (/shop)`,
+        value: `${em('food_survival_pill')} **Hộ Mệnh Linh Đan** *(180 LT • +8% Sống)* • ${em('food_yield_tea')} **Tụ Bảo Tiên Trà** *(220 LT • +18% LT)* • ${em('food_speed_fruit')} **Ngự Phong Tốc Quả** *(250 LT • -25% Giờ)* • ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** *(2.500 LT • Hồi sinh Pet Độc Nhất)*`,
+        inline: false,
+      },
+    ],
+    content: 'Hệ thống Khám Phá Đại Lục `/explorer` với Bản Đồ 4K 12 địa danh, Loadout độc lập, 3 loại Thức Ăn Bổ Trợ, Đá Khắc Ấn Tuyệt Đối 0.5% và cơ chế nhặt 60% bảo vật rơi.',
   },
 };
 

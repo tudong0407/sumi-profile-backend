@@ -219,7 +219,7 @@ function embedMsg(gb, id, {
   return gb.act(id, 'advanced_message', data, pos);
 }
 
-function btnCfg(label, style, emojiName, row = '1', weight = '1', animated = false) {
+function btnCfg(label, style, emojiName, row = '1', weight = '1', animated = false, showReplies = 'show') {
   return {
     label,
     style,
@@ -228,7 +228,7 @@ function btnCfg(label, style, emojiName, row = '1', weight = '1', animated = fal
     orderComponent: true,
     row,
     weight,
-    showReplies: 'show',
+    showReplies,
   };
 }
 
@@ -749,6 +749,25 @@ export function buildLinhMachV14Cmd() {
     }, { x: xPos - 100, y: 1260 });
     gb.link(cOk.yes, `lm_${grp}_win`);
 
+    // Nút Xem Full Nhật Ký Trận Đấu + Link Web chi tiết (như /battle!)
+    gb.advBtn(
+      `lm_${grp}_logs_btn`,
+      `lm_${grp}_win`,
+      btnCfg('Xem Nhật Ký Trận Đấu', 'SECONDARY', 'su_wiki_scroll', '1', '1', false, 'hide'),
+      { x: xPos - 100, y: 1420 },
+    );
+    apiAction(gb, `lm_${grp}_log_api`, `lm_${grp}_log_res`, 'POST', `${BACKEND_BASE}/api/vein/logs`,
+      `{"battleId":"{lm_${grp}_res.response.battle_id}","userId":"{user_id}"}`, { x: xPos - 100, y: 1580 });
+    gb.link(`lm_${grp}_logs_btn`, `lm_${grp}_log_api`);
+    embedMsg(gb, `lm_${grp}_log_msg`, {
+      title: `{lm_${grp}_log_res.response.title}`,
+      description: `{lm_${grp}_log_res.response.description}`,
+      footer: `{lm_${grp}_log_res.response.footer}`,
+      color: '#a855f7',
+      target: { reply: true },
+    }, { x: xPos - 100, y: 1740 });
+    gb.link(`lm_${grp}_log_api`, `lm_${grp}_log_msg`);
+
     embedMsg(gb, `lm_${grp}_err`, {
       title: `${uidEm(emName)} CHIẾM ĐOẠT LINH MẠCH`,
       description: `{lm_${grp}_res.response.message}`,
@@ -763,7 +782,85 @@ export function buildLinhMachV14Cmd() {
 }
 
 // ============================================================================
-// 6. NEW /explorer — Khám Phá Bản Đồ 12 Địa Danh (0 tham số, 100% Button + Dropdown)
+// 5b. UPGRADED /equip — Trang Bị 1 Tham Số Tự Nhận Diện UID / Emoji / Tên
+// ============================================================================
+export function buildEquipV14Cmd() {
+  const gb = new V14GraphBuilder();
+  gb.rootSlash(
+    'equip',
+    'Trang bị nhanh Pháp Bảo, Linh Vực, Linh Thú, Role, Ảnh Nền hoặc Khung bằng 1 UID / Emoji',
+    { ephemeral: false },
+  );
+  gb.errorHandlerWait();
+  gb.option(
+    'ma_id',
+    'string',
+    'UID, Emoji, Role ID hoặc Tên món muốn trang bị (đổi danh hiệu: title:Tên Mới)',
+    { required: true, x: 420, y: 0 },
+  );
+
+  embedMsg(gb, 'eq_ack', {
+    title: `${uidEm('su_crossed_swords')} Đang trang bị...`,
+    description: 'Đang tự động nhận diện & trang bị `{option_ma_id}`...',
+    color: '#3b82f6',
+    editId: 'eq_ack',
+  }, { x: 0, y: 220 });
+  gb.link('root', 'eq_ack');
+
+  apiAction(
+    gb,
+    'eq_api',
+    'eq_res',
+    'POST',
+    `${BACKEND_BASE}/api/equip`,
+    '{"userId":"{user_id}","targetId":"{option_ma_id}"}',
+    { x: 0, y: 390 },
+  );
+  gb.link('eq_ack', 'eq_api');
+
+  const eqNoAck = attachUpdateAckBranch(gb, 'eq', 'eq_api', 'eq_res', { editId: 'eq_ack', x: 0, y: 560 });
+
+  const cOk = gb.cmp('eq_ok', '{eq_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: 240, y: 740 });
+  gb.link(eqNoAck, cOk.condId);
+
+  embedMsg(gb, 'eq_edit', {
+    title: `${uidEm('su_crossed_swords')} TRANG BỊ THÀNH CÔNG`,
+    description: '{eq_res.response.message}',
+    color: '#10b981',
+    target: { editId: 'eq_ack' },
+    action_id: 'eq_ack',
+  }, { x: 60, y: 920 });
+  gb.link(cOk.yes, 'eq_edit');
+
+  gb.act('eq_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 60, y: 1100 });
+  gb.link('eq_edit', 'eq_wait');
+
+  const cAddRole = gb.cmp('eq_has_role', '{eq_res.response.add_role_id}', '^[0-9]+$', 'matches_pattern', {}, { x: 60, y: 1280 });
+  gb.link('eq_wait', cAddRole.condId);
+
+  gb.act('eq_add_role', 'role_add', {
+    roles: [],
+    additional_roles: '{eq_res.response.add_role_id}',
+    success_handles: false,
+    target: { self: true },
+    server_id: '1026096141273661450',
+  }, { x: -120, y: 1480 });
+  gb.link(cAddRole.yes, 'eq_add_role');
+
+  embedMsg(gb, 'eq_err', {
+    title: `${uidEm('su_crossed_swords')} KHÔNG THỂ TRANG BỊ`,
+    description: '{eq_res.response.message}',
+    color: '#f43f5e',
+    target: { editId: 'eq_ack' },
+    action_id: 'eq_ack',
+  }, { x: 420, y: 920 });
+  gb.link(cOk.no, 'eq_err');
+
+  return gb.elements();
+}
+
+// ============================================================================
+// 6. NEW /explorer — Khám Phá Bản Đồ 12 Địa Danh (v1.4.1 UX Fixed)
 // ============================================================================
 export function buildExplorerV14Cmd() {
   const gb = new V14GraphBuilder();
@@ -771,7 +868,7 @@ export function buildExplorerV14Cmd() {
   gb.errorHandlerWait();
 
   embedMsg(gb, 'ex_ack', {
-    title: `${uidEm('explorer_world_map_v14')} Đang mở Bản Đồ Khám Phá Đại Lục SuMi...`,
+    title: `${uidEm('explorer_world_map_v14')} Đang mở Trung Tâm Khám Phá Đại Lục SuMi...`,
     description: 'Đang nạp Đội Hình Khám Phá & trạng thái hành trình...',
     color: '#10b981',
     editId: 'ex_ack',
@@ -782,27 +879,44 @@ export function buildExplorerV14Cmd() {
   gb.link('ex_ack', 'ex_hub_api');
   const exNoAck = attachUpdateAckBranch(gb, 'ex', 'ex_hub_api', 'ex_hub_res', { editId: 'ex_ack', x: 0, y: 560 });
 
+  // Chỉ hiện nút [Hồi Sinh Pet Độc Nhất] khi injured_count > 0
+  const cInj = gb.cmp('ex_has_injured', '{ex_hub_res.response.injured_count}', '0', 'greater_than', {}, { x: 0, y: 720 });
+  gb.link(exNoAck, cInj.condId);
+
   embedMsg(gb, 'ex_hub_msg', {
     title: '{ex_hub_res.response.title}',
     description: '{ex_hub_res.response.description}',
     imageUrl: `${BACKEND_BASE}/api/explorer/map.webp?v=1.4`,
     color: '#10b981',
-    footer: 'Chọn Xuất Phát, Chỉnh Loadout (Pet + 3 Pháp Bảo + Linh Vực), Nhận Quà hoặc Hồi Sinh bên dưới',
+    footer: 'Chọn Xuất Phát, Chỉnh Loadout (Pet + 3 Pháp Bảo + Linh Vực) hoặc Nhận Quà / Tiến Độ bên dưới',
     target: { editId: 'ex_ack' },
     action_id: 'ex_ack',
-  }, { x: 0, y: 740 });
-  gb.link(exNoAck, 'ex_hub_msg');
+  }, { x: 260, y: 920 });
+  gb.link(cInj.no, 'ex_hub_msg');
 
-  // --- FLOW A: [🧭 Xuất Phát] -> Dropdown Giờ (2/3/6/12h) -> Dropdown 12 Map -> Dropdown Thức Ăn + Nút Xác Nhận ---
-  gb.advBtn('ex_btn_go', 'ex_hub_msg', btnCfg('Xuất Phát Khám Phá', 'SUCCESS', 'explorer_world_map_v14', '1', '1', false), { x: -600, y: 940 });
+  embedMsg(gb, 'ex_hub_inj_msg', {
+    title: '{ex_hub_res.response.title}',
+    description: '{ex_hub_res.response.description}',
+    imageUrl: `${BACKEND_BASE}/api/explorer/map.webp?v=1.4`,
+    color: '#f59e0b',
+    footer: 'Có Linh Thú Độc Nhất trọng thương — bấm Hồi Sinh hoặc chọn tác vụ bên dưới',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: -260, y: 920 });
+  gb.link(cInj.yes, 'ex_hub_inj_msg');
+
+  // --- FLOW A: [Xuất Phát Khám Phá] -> Dropdown Giờ -> Dropdown 12 Map -> Dropdown Thức Ăn (+ Mua Ngay nếu ×0) -> Xác Nhận ---
+  gb.advBtn('ex_btn_go', 'ex_hub_msg', btnCfg('Xuất Phát Khám Phá', 'SUCCESS', 'crash_fly', '1', '1', true, 'show'), { x: -640, y: 1120 });
+  gb.advBtn('ex_btn_go_inj', 'ex_hub_inj_msg', btnCfg('Xuất Phát Khám Phá', 'SUCCESS', 'crash_fly', '1', '1', true, 'show'), { x: -860, y: 1120 });
   embedMsg(gb, 'ex_step1_msg', {
-    title: `${uidEm('explorer_world_map_v14')} BƯỚC 1/3 — CHỌN THỜI GIAN KHÁM PHÁ`,
+    title: `${uidEm('crash_fly')} BƯỚC 1/3 — CHỌN THỜI GIAN KHÁM PHÁ`,
     description: '• Chọn mốc thời gian chuyến đi (`2 / 3 / 6 / 12 giờ`) ở Dropdown bên dưới.\n• Mỗi giờ thu hoạch **200–300 LT × hệ số map** + quà shop + **0.5% Thiên Đạo Tuyệt Ấn Thạch** + **60% nhặt đồ rơi**!',
     color: '#38bdf8',
     target: { editId: 'ex_ack' },
     action_id: 'ex_ack',
-  }, { x: -600, y: 1100 });
+  }, { x: -640, y: 1300 });
   gb.link('ex_btn_go', 'ex_step1_msg');
+  gb.link('ex_btn_go_inj', 'ex_step1_msg');
 
   gb.advSelectMenu('ex_sel_dur', 'ex_step1_msg', {
     placeholder: 'Chọn thời gian khám phá (2 / 3 / 6 / 12 giờ)...',
@@ -815,10 +929,10 @@ export function buildExplorerV14Cmd() {
     ],
     row: '1',
     weight: '1',
-  }, { x: -600, y: 1260 });
+  }, { x: -640, y: 1460 });
 
   apiAction(gb, 'ex_dur_api', 'ex_dur_res', 'POST', `${BACKEND_BASE}/api/explorer/select-step`,
-    '{"userId":"{user_id}","step":"duration","value":"{ex_dur_val}"}', { x: -600, y: 1420 });
+    '{"userId":"{user_id}","step":"duration","value":"{ex_dur_val}"}', { x: -640, y: 1620 });
   gb.link('ex_sel_dur', 'ex_dur_api');
 
   embedMsg(gb, 'ex_step2_msg', {
@@ -828,7 +942,7 @@ export function buildExplorerV14Cmd() {
     color: '#f59e0b',
     target: { editId: 'ex_ack' },
     action_id: 'ex_ack',
-  }, { x: -600, y: 1580 });
+  }, { x: -640, y: 1780 });
   gb.link('ex_dur_api', 'ex_step2_msg');
 
   gb.advSelectMenu('ex_sel_map', 'ex_step2_msg', {
@@ -842,10 +956,10 @@ export function buildExplorerV14Cmd() {
     })),
     row: '1',
     weight: '1',
-  }, { x: -600, y: 1740 });
+  }, { x: -640, y: 1940 });
 
   apiAction(gb, 'ex_map_api', 'ex_map_res', 'POST', `${BACKEND_BASE}/api/explorer/select-step`,
-    '{"userId":"{user_id}","step":"map","value":"{ex_map_val}"}', { x: -600, y: 1900 });
+    '{"userId":"{user_id}","step":"map","value":"{ex_map_val}"}', { x: -640, y: 2100 });
   gb.link('ex_sel_map', 'ex_map_api');
 
   embedMsg(gb, 'ex_step3_msg', {
@@ -854,7 +968,7 @@ export function buildExplorerV14Cmd() {
     color: '#ec4899',
     target: { editId: 'ex_ack' },
     action_id: 'ex_ack',
-  }, { x: -600, y: 2060 });
+  }, { x: -640, y: 2260 });
   gb.link('ex_map_api', 'ex_step3_msg');
 
   gb.advSelectMenu('ex_sel_food', 'ex_step3_msg', {
@@ -862,17 +976,69 @@ export function buildExplorerV14Cmd() {
     customVariableName: 'ex_food_val',
     basic_options: [
       { label: 'Không Mang Thức Ăn', description: 'Khởi hành với chỉ số gốc của Đội Hình', value: 'none', emoji_id: uidId('su_sparkle') },
-      { label: 'Hộ Mệnh Linh Đan (Loại A)', description: '+8% Tỉ lệ sống sót cho chuyến đi', value: 'food_survival_pill', emoji_id: uidId('food_survival_pill') },
-      { label: 'Tụ Bảo Tiên Trà (Loại B)', description: '+18% Tổng Linh Thạch thu hoạch', value: 'food_yield_tea', emoji_id: uidId('food_yield_tea') },
-      { label: 'Ngự Phong Tốc Quả (Loại C)', description: 'Rút gọn -25% thời gian di chuyển', value: 'food_speed_fruit', emoji_id: uidId('food_speed_fruit') },
+      { label: 'Hộ Mệnh Linh Đan (180 LT)', description: '+8% Tỉ lệ sống sót cho chuyến đi', value: 'food_survival_pill', emoji_id: uidId('food_survival_pill') },
+      { label: 'Tụ Bảo Tiên Trà (220 LT)', description: '+18% Tổng Linh Thạch thu hoạch', value: 'food_yield_tea', emoji_id: uidId('food_yield_tea') },
+      { label: 'Ngự Phong Tốc Quả (250 LT)', description: 'Rút gọn -25% thời gian di chuyển', value: 'food_speed_fruit', emoji_id: uidId('food_speed_fruit') },
     ],
     row: '1',
     weight: '1',
-  }, { x: -720, y: 2220 });
+  }, { x: -780, y: 2420 });
 
   apiAction(gb, 'ex_food_api', 'ex_food_res', 'POST', `${BACKEND_BASE}/api/explorer/select-step`,
-    '{"userId":"{user_id}","step":"food","value":"{ex_food_val}"}', { x: -720, y: 2380 });
+    '{"userId":"{user_id}","step":"food","value":"{ex_food_val}"}', { x: -780, y: 2580 });
   gb.link('ex_sel_food', 'ex_food_api');
+
+  // Chặn dùng đồ ăn miễn phí khi số lượng = 0 -> Cho phép Mua & Dùng Ngay hoặc Đi Không Thức Ăn!
+  const cNeedBuy = gb.cmp('ex_food_need_buy', '{ex_food_res.response.needs_buy}', 'true', 'equal_to', { ignoreCase: true }, { x: -780, y: 2740 });
+  gb.link('ex_food_api', cNeedBuy.condId);
+
+  embedMsg(gb, 'ex_food_buy_msg', {
+    title: '{ex_food_res.response.title}',
+    description: '{ex_food_res.response.description}',
+    color: '#f59e0b',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: -1020, y: 2920 });
+  gb.link(cNeedBuy.yes, 'ex_food_buy_msg');
+
+  gb.advBtn('ex_btn_buy_food', 'ex_food_buy_msg', btnCfg('Mua & Dùng Ngay', 'PRIMARY', 'su_linhthach', '1', '1', false, 'show'), { x: -1180, y: 3100 });
+  apiAction(gb, 'ex_buy_food_api', 'ex_buy_food_res', 'POST', `${BACKEND_BASE}/api/explorer/buy-food`,
+    '{"userId":"{user_id}","foodId":"{ex_food_val}"}', { x: -1180, y: 3260 });
+  gb.link('ex_btn_buy_food', 'ex_buy_food_api');
+
+  const cBuyOk = gb.cmp('ex_buy_ok', '{ex_buy_food_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: -1180, y: 3420 });
+  gb.link('ex_buy_food_api', cBuyOk.condId);
+
+  embedMsg(gb, 'ex_buy_ready_msg', {
+    title: '{ex_buy_food_res.response.title}',
+    description: '{ex_buy_food_res.response.description}',
+    color: '#10b981',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: -1320, y: 3600 });
+  gb.link(cBuyOk.yes, 'ex_buy_ready_msg');
+
+  embedMsg(gb, 'ex_buy_fail_msg', {
+    title: '{ex_buy_food_res.response.title}',
+    description: '{ex_buy_food_res.response.description}',
+    color: '#f43f5e',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: -1020, y: 3600 });
+  gb.link(cBuyOk.no, 'ex_buy_fail_msg');
+
+  gb.advBtn('ex_btn_go_nofood', 'ex_food_buy_msg', btnCfg('Xuất Phát Không Thức Ăn', 'SUCCESS', 'crash_fly', '1', '2', true, 'show'), { x: -860, y: 3100 });
+  apiAction(gb, 'ex_go_nofood_api', 'ex_go_nofood_res', 'POST', `${BACKEND_BASE}/api/explorer/start`,
+    '{"userId":"{user_id}","foodId":"none"}', { x: -860, y: 3260 });
+  gb.link('ex_btn_go_nofood', 'ex_go_nofood_api');
+  embedMsg(gb, 'ex_go_nofood_edit', {
+    title: '{ex_go_nofood_res.response.title}',
+    description: '{ex_go_nofood_res.response.description}',
+    color: '#10b981',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: -860, y: 3420 });
+  gb.link('ex_go_nofood_api', 'ex_go_nofood_edit');
 
   embedMsg(gb, 'ex_food_ready_msg', {
     title: '{ex_food_res.response.title}',
@@ -880,16 +1046,18 @@ export function buildExplorerV14Cmd() {
     color: '#10b981',
     target: { editId: 'ex_ack' },
     action_id: 'ex_ack',
-  }, { x: -720, y: 2540 });
-  gb.link('ex_food_api', 'ex_food_ready_msg');
+  }, { x: -560, y: 2920 });
+  gb.link(cNeedBuy.no, 'ex_food_ready_msg');
 
-  // Launch button on BOTH step3 (without food) AND food_ready (with chosen food)
-  for (const [bId, parentId, xP, yP] of [
-    ['ex_launch_btn1', 'ex_step3_msg', -420, 2220],
-    ['ex_launch_btn2', 'ex_food_ready_msg', -720, 2700],
+  // Nút Xác Nhận Xuất Phát cho các nhánh hợp lệ
+  for (const [bId, parentId, xP, yP, lbl, bodyStr] of [
+    ['ex_launch_btn1', 'ex_step3_msg', -380, 2420, 'Xác Nhận Xuất Phát', '{"userId":"{user_id}"}'],
+    ['ex_launch_btn2', 'ex_food_ready_msg', -560, 3100, 'Xác Nhận Xuất Phát', '{"userId":"{user_id}"}'],
+    ['ex_launch_btn3', 'ex_buy_ready_msg', -1320, 3780, 'Xác Nhận Xuất Phát', '{"userId":"{user_id}"}'],
+    ['ex_launch_btn4', 'ex_buy_fail_msg', -1020, 3780, 'Xuất Phát Không Thức Ăn', '{"userId":"{user_id}","foodId":"none"}'],
   ]) {
-    gb.advBtn(bId, parentId, btnCfg('Xác Nhận Xuất Phát', 'SUCCESS', 'crash_fly', '2', '1', true), { x: xP, y: yP });
-    apiAction(gb, `${bId}_api`, `${bId}_res`, 'POST', `${BACKEND_BASE}/api/explorer/start`, '{"userId":"{user_id}"}', { x: xP, y: yP + 160 });
+    gb.advBtn(bId, parentId, btnCfg(lbl, 'SUCCESS', 'crash_fly', '2', '1', true, 'show'), { x: xP, y: yP });
+    apiAction(gb, `${bId}_api`, `${bId}_res`, 'POST', `${BACKEND_BASE}/api/explorer/start`, bodyStr, { x: xP, y: yP + 160 });
     gb.link(bId, `${bId}_api`);
     embedMsg(gb, `${bId}_edit`, {
       title: `{${bId}_res.response.title}`,
@@ -901,35 +1069,36 @@ export function buildExplorerV14Cmd() {
     gb.link(`${bId}_api`, `${bId}_edit`);
   }
 
-  // --- FLOW B: [🎒 Chỉnh Loadout] -> 5 Slot Tabs (Pet, Weapon, Gem, Soul, Domain) + Dropdown #1..#15 ---
-  gb.advBtn('ex_btn_lo', 'ex_hub_msg', btnCfg('Chỉnh Loadout', 'PRIMARY', 'su_crossed_swords', '1', '2', false), { x: 0, y: 940 });
+  // --- FLOW B: [Chỉnh Loadout] — mở bảng Ephemeral bền vững, chọn bao nhiêu ô liên tiếp cũng KHÔNG mất nút! ---
+  gb.advBtn('ex_btn_lo', 'ex_hub_msg', btnCfg('Chỉnh Loadout', 'PRIMARY', 'su_crossed_swords', '1', '2', false, 'hide'), { x: 20, y: 1120 });
+  gb.advBtn('ex_btn_lo_inj', 'ex_hub_inj_msg', btnCfg('Chỉnh Loadout', 'PRIMARY', 'su_crossed_swords', '1', '2', false, 'hide'), { x: -160, y: 1120 });
   embedMsg(gb, 'ex_lo_menu', {
     title: '🎒 THIẾT LẬP ĐỘI HÌNH KHÁM PHÁ (1 Pet + 3 Pháp Bảo + 1 Linh Vực)',
-    description: 'Bấm vào từng ô bên dưới để mở danh sách và chọn trang bị cho Đội Hình Khám Phá (có thể dùng Pet phụ + đồ phụ hoặc chính Pet chính):',
+    description: 'Bấm lần lượt vào từng ô bên dưới để gắn **Pet**, **Vũ Khí**, **Bảo Ngọc**, **Chiến Hồn** và **Linh Vực**.\n✨ *Bảng nút này luôn được giữ nguyên để Tiểu thư / bạn chỉnh sửa liên tục tất cả các ô xong rồi quay lại bảng chính bấm **[Xuất Phát Khám Phá]**!*',
     color: '#a855f7',
-    target: { editId: 'ex_ack' },
-    action_id: 'ex_ack',
-  }, { x: 0, y: 1100 });
+    target: { reply: true },
+  }, { x: 20, y: 1300 });
   gb.link('ex_btn_lo', 'ex_lo_menu');
+  gb.link('ex_btn_lo_inj', 'ex_lo_menu');
 
   const loTabs = [
-    { key: 'pet', label: 'Chọn Linh Thú', emoji: 'su_pet_paw', row: '1', w: '1', x: -160, clear: false },
-    { key: 'weapon', label: 'Vũ Khí', emoji: 'su_crossed_swords', row: '1', w: '2', x: 100, clear: true },
-    { key: 'gem', label: 'Bảo Ngọc', emoji: 'su_linhthach', row: '1', w: '3', x: 360, clear: true },
-    { key: 'soul', label: 'Chiến Hồn', emoji: 'su_sparkle', row: '2', w: '1', x: 620, clear: true },
-    { key: 'domain', label: 'Linh Vực', emoji: 'su_realm_star', row: '2', w: '2', x: 880, clear: true },
+    { key: 'pet', label: 'Chọn Linh Thú', emoji: 'su_pet_paw', row: '1', w: '1', x: -120, clear: false },
+    { key: 'weapon', label: 'Vũ Khí', emoji: 'su_crossed_swords', row: '1', w: '2', x: 140, clear: true },
+    { key: 'gem', label: 'Bảo Ngọc', emoji: 'su_linhthach', row: '1', w: '3', x: 400, clear: true },
+    { key: 'soul', label: 'Chiến Hồn', emoji: 'su_sparkle', row: '2', w: '1', x: 660, clear: true },
+    { key: 'domain', label: 'Linh Vực', emoji: 'su_realm_star', row: '2', w: '2', x: 920, clear: true },
   ];
   for (const t of loTabs) {
-    gb.advBtn(`ex_lo_btn_${t.key}`, 'ex_lo_menu', btnCfg(t.label, 'PRIMARY', t.emoji, t.row, t.w, false), { x: t.x, y: 1260 });
-    apiAction(gb, `ex_lo_get_${t.key}`, `ex_lo_${t.key}_res`, 'GET', `${BACKEND_BASE}/api/explorer/loadout/{user_id}?tab=${t.key}`, '', { x: t.x, y: 1420 });
+    gb.advBtn(`ex_lo_btn_${t.key}`, 'ex_lo_menu', btnCfg(t.label, 'PRIMARY', t.emoji, t.row, t.w, false, 'hide'), { x: t.x, y: 1460 });
+    apiAction(gb, `ex_lo_get_${t.key}`, `ex_lo_${t.key}_res`, 'GET', `${BACKEND_BASE}/api/explorer/loadout/{user_id}?tab=${t.key}`, '', { x: t.x, y: 1620 });
     gb.link(`ex_lo_btn_${t.key}`, `ex_lo_get_${t.key}`);
     embedMsg(gb, `ex_lo_list_${t.key}`, {
       title: `{ex_lo_${t.key}_res.response.title}`,
       description: `{ex_lo_${t.key}_res.response.description}`,
       color: '#a855f7',
-      target: { editId: 'ex_ack' },
-      action_id: 'ex_ack',
-    }, { x: t.x, y: 1580 });
+      target: { reply: true },
+      editId: `ex_lo_pick_${t.key}`,
+    }, { x: t.x, y: 1780 });
     gb.link(`ex_lo_get_${t.key}`, `ex_lo_list_${t.key}`);
 
     gb.advSelectMenu(`ex_lo_sel_${t.key}`, `ex_lo_list_${t.key}`, {
@@ -938,40 +1107,59 @@ export function buildExplorerV14Cmd() {
       basic_options: makeSlotOptions(15, t.label, t.clear),
       row: '1',
       weight: '1',
-    }, { x: t.x, y: 1740 });
+      showReplies: 'hide',
+    }, { x: t.x, y: 1940 });
     apiAction(gb, `ex_lo_save_${t.key}`, `ex_lo_sv_${t.key}_res`, 'POST', `${BACKEND_BASE}/api/explorer/loadout`,
-      `{"userId":"{user_id}","slotType":"${t.key}","slotValue":"{ex_pick_${t.key}}"}`, { x: t.x, y: 1900 });
+      `{"userId":"{user_id}","slotType":"${t.key}","slotValue":"{ex_pick_${t.key}}"}`, { x: t.x, y: 2100 });
     gb.link(`ex_lo_sel_${t.key}`, `ex_lo_save_${t.key}`);
     embedMsg(gb, `ex_lo_done_${t.key}`, {
-      title: '✅ ĐÃ CẬP NHẬT LOADOUT KHÁM PHÁ',
-      description: `{ex_lo_sv_${t.key}_res.response.message}`,
+      title: `{ex_lo_sv_${t.key}_res.response.title}`,
+      description: `{ex_lo_sv_${t.key}_res.response.description}`,
       color: '#10b981',
-      target: { editId: 'ex_ack' },
-      action_id: 'ex_ack',
-    }, { x: t.x, y: 2060 });
+      target: { editId: `ex_lo_pick_${t.key}` },
+      action_id: `ex_lo_pick_${t.key}`,
+    }, { x: t.x, y: 2260 });
     gb.link(`ex_lo_save_${t.key}`, `ex_lo_done_${t.key}`);
   }
 
-  // --- FLOW C, D, E: [🎁 Nhận Quà], [💊 Hồi Sinh Pet Độc Nhất], [🗺️ Bản Đồ & Đồ Rơi] ---
-  const quickHubBtns = [
-    { id: 'claim', label: 'Nhận Quà / Tiến Độ', style: 'PRIMARY', emoji: 'su_winner_trophy', row: '1', w: '3', method: 'POST', url: `${BACKEND_BASE}/api/explorer/claim`, body: '{"userId":"{user_id}"}', x: 520 },
-    { id: 'revive', label: 'Hồi Sinh Pet Độc Nhất', style: 'DANGER', emoji: 'explorer_revive_elixir', row: '2', w: '1', method: 'POST', url: `${BACKEND_BASE}/api/explorer/revive`, body: '{"userId":"{user_id}"}', x: 820 },
-    { id: 'mapboard', label: 'Bản Đồ 4K & Đồ Rơi', style: 'SECONDARY', emoji: 'explorer_world_map_v14', row: '2', w: '2', method: 'GET', url: `${BACKEND_BASE}/api/explorer/map-board?userId={user_id}`, body: '', x: 1120 },
-  ];
-  for (const b of quickHubBtns) {
-    gb.advBtn(`ex_btn_${b.id}`, 'ex_hub_msg', btnCfg(b.label, b.style, b.emoji, b.row, b.w, false), { x: b.x, y: 940 });
-    apiAction(gb, `ex_${b.id}_api`, `ex_${b.id}_res`, b.method, b.url, b.body, { x: b.x, y: 1100 });
-    gb.link(`ex_btn_${b.id}`, `ex_${b.id}_api`);
-    embedMsg(gb, `ex_${b.id}_edit`, {
-      title: b.id === 'revive' ? `${uidEm('explorer_revive_elixir')} HỒI SINH LINH THÚ ĐỘC NHẤT` : `{ex_${b.id}_res.response.title}`,
-      description: b.id === 'revive' ? `{ex_${b.id}_res.response.message}` : `{ex_${b.id}_res.response.description}`,
-      imageUrl: b.id === 'mapboard' ? `${BACKEND_BASE}/api/explorer/map.webp?v=1.4` : '',
-      color: '#ec4899',
-      target: { editId: 'ex_ack' },
-      action_id: 'ex_ack',
-    }, { x: b.x, y: 1260 });
-    gb.link(`ex_${b.id}_api`, `ex_${b.id}_edit`);
-  }
+  // --- FLOW C: [Nhận Quà / Tiến Độ] — phân nhánh an toàn (chưa xuất phát trả Ephemeral, hoàn thành edit ex_ack!) ---
+  gb.advBtn('ex_btn_claim', 'ex_hub_msg', btnCfg('Nhận Quà / Tiến Độ', 'PRIMARY', 'su_winner_trophy', '1', '3', false, 'hide'), { x: 1180, y: 1120 });
+  gb.advBtn('ex_btn_claim_inj', 'ex_hub_inj_msg', btnCfg('Nhận Quà / Tiến Độ', 'PRIMARY', 'su_winner_trophy', '1', '3', false, 'hide'), { x: 960, y: 1120 });
+  apiAction(gb, 'ex_claim_api', 'ex_claim_res', 'POST', `${BACKEND_BASE}/api/explorer/claim`, '{"userId":"{user_id}"}', { x: 1180, y: 1300 });
+  gb.link('ex_btn_claim', 'ex_claim_api');
+  gb.link('ex_btn_claim_inj', 'ex_claim_api');
+
+  const cClaimOk = gb.cmp('ex_claim_ok', '{ex_claim_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: 1180, y: 1460 });
+  gb.link('ex_claim_api', cClaimOk.condId);
+
+  embedMsg(gb, 'ex_claim_edit', {
+    title: '{ex_claim_res.response.title}',
+    description: '{ex_claim_res.response.description}',
+    color: '#ec4899',
+    target: { editId: 'ex_ack' },
+    action_id: 'ex_ack',
+  }, { x: 1040, y: 1640 });
+  gb.link(cClaimOk.yes, 'ex_claim_edit');
+
+  embedMsg(gb, 'ex_claim_info', {
+    title: '{ex_claim_res.response.title}',
+    description: '{ex_claim_res.response.description}',
+    color: '#f59e0b',
+    target: { reply: true },
+  }, { x: 1320, y: 1640 });
+  gb.link(cClaimOk.no, 'ex_claim_info');
+
+  // --- FLOW D: [Hồi Sinh Pet Độc Nhất] — CHỈ xuất hiện ở ex_hub_inj_msg khi có Pet Độc Nhất Trọng Thương! ---
+  gb.advBtn('ex_btn_revive', 'ex_hub_inj_msg', btnCfg('Hồi Sinh Pet Độc Nhất', 'DANGER', 'explorer_revive_elixir', '2', '1', false, 'hide'), { x: 1600, y: 1120 });
+  apiAction(gb, 'ex_revive_api', 'ex_revive_res', 'POST', `${BACKEND_BASE}/api/explorer/revive`, '{"userId":"{user_id}"}', { x: 1600, y: 1300 });
+  gb.link('ex_btn_revive', 'ex_revive_api');
+  embedMsg(gb, 'ex_revive_reply', {
+    title: '{ex_revive_res.response.title}',
+    description: '{ex_revive_res.response.description}',
+    color: '#ec4899',
+    target: { reply: true },
+  }, { x: 1600, y: 1460 });
+  gb.link('ex_revive_api', 'ex_revive_reply');
 
   return gb.elements();
 }
@@ -1097,6 +1285,114 @@ function patchExistingCommand(name, elements) {
     }
   }
 
+  if (name === 'wiki') {
+    for (const el of patched) {
+      if (el.id === 'opt_chuyen_muc' && Array.isArray(el.data?.data?.choices)) {
+        if (!el.data.data.choices.includes('explorer')) {
+          el.data.data.choices.push('explorer');
+        }
+      }
+      if (el.id === 'sel_wiki_cat' && Array.isArray(el.data?.data?.basic_options)) {
+        if (!el.data.data.basic_options.some((o) => o.value === 'explorer')) {
+          el.data.data.basic_options.push({
+            label: 'Khám Phá Đại Lục & Bản Đồ 4K',
+            description: '12 Địa Danh (10k→1M), đồ rơi 60% & quy tắc /explorer',
+            emoji_id: uidId('explorer_world_map_v14'),
+            value: 'explorer',
+          });
+        }
+      }
+    }
+    if (!patched.some((n) => n.id === 'msg_wiki_explorer')) {
+      const gb = new V14GraphBuilder();
+      gb.branch({ id: 'w_root_cat' }, 'wr_explorer', 'comparison', {
+        type: 'equal_to',
+        comparison_value: 'explorer',
+        ignoreCase: true,
+        option: '',
+        not: false,
+      }, { x: 960, y: 260 });
+      gb.branch({ id: 'w_sel_cat' }, 'ws_explorer', 'comparison', {
+        type: 'equal_to',
+        comparison_value: 'explorer',
+        ignoreCase: true,
+        option: '',
+        not: false,
+      }, { x: 960, y: 420 });
+      // Giữ wr_home (else) & ws_econ (else) ở cuối condition -> chuyển các edge step mới lên trước else nếu cần
+      apiAction(gb, 'wiki_exp_api', 'wiki_exp_res', 'GET', `${BACKEND_BASE}/api/explorer/map-board?userId={user_id}`, '', { x: 960, y: 580 });
+      embedMsg(gb, 'msg_wiki_explorer', {
+        title: '{wiki_exp_res.response.title}',
+        description: '{wiki_exp_res.response.description}',
+        imageUrl: `${BACKEND_BASE}/api/explorer/map.webp?v=1.4`,
+        color: '#10b981',
+        footer: 'SuMi Family • Cẩm Nang Khám Phá Đại Lục v1.4',
+        target: { reply: true },
+      }, { x: 960, y: 740 });
+      gb.link('wiki_exp_api', 'msg_wiki_explorer');
+
+      const newEls = gb.elements();
+      // Tạo edge step cho w_root_cat -> wr_explorer và w_sel_cat -> ws_explorer, đặt trước wr_home/ws_econ
+      const wrEdge = {
+        source: 'w_root_cat',
+        target: 'wr_explorer',
+        type: 'step',
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        id: 'reactflow__edge-w_root_cat-wr_explorer',
+      };
+      const wsEdge = {
+        source: 'w_sel_cat',
+        target: 'ws_explorer',
+        type: 'step',
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        id: 'reactflow__edge-w_sel_cat-ws_explorer',
+      };
+      const actEdges = [
+        {
+          source: 'wr_explorer',
+          sourceHandle: 'action',
+          target: 'wiki_exp_api',
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: 'reactflow__edge-wr_exploreraction-wiki_exp_apiaction',
+        },
+        {
+          source: 'ws_explorer',
+          sourceHandle: 'action',
+          target: 'wiki_exp_api',
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: 'reactflow__edge-ws_exploreraction-wiki_exp_apiaction',
+        },
+      ];
+
+      // Chèn wrEdge và wsEdge ngay trước wr_home / ws_econ để `else` luôn đứng cuối cùng
+      const inserted = [];
+      let placedWr = false;
+      let placedWs = false;
+      for (const el of patched) {
+        if (el.source === 'w_root_cat' && el.target === 'wr_home' && !placedWr) {
+          inserted.push(wrEdge);
+          placedWr = true;
+        }
+        if (el.source === 'w_sel_cat' && el.target === 'ws_econ' && !placedWs) {
+          inserted.push(wsEdge);
+          placedWs = true;
+        }
+        inserted.push(el);
+      }
+      if (!placedWr) inserted.push(wrEdge);
+      if (!placedWs) inserted.push(wsEdge);
+      patched = [...inserted, ...newEls, ...actEdges];
+    }
+  }
+
   return patched;
 }
 
@@ -1129,47 +1425,203 @@ function updateAiPromptTextV14(oldPrompt, includeFuyumiSecret) {
   return text.slice(0, sIdx) + buildV14KnowledgeBlock(includeFuyumiSecret) + text.slice(eIdx);
 }
 
+const SYNC_ROLE_REGEX = '^[0-9]+(,[0-9]+)*$';
+
+function patchLevelRoleEvent(kind, elements) {
+  let patched = JSON.parse(JSON.stringify(elements));
+  const gb = new V14GraphBuilder();
+  const hasEdge = (src, tgt) => patched.some((e) => e.source === src && e.target === tgt);
+
+  if (kind === 'chat') {
+    for (const el of patched) {
+      if (el.id === 'ce_has_role') el.data.data.base_value = '{exp_res.response.sync_level_role_ids}';
+      if (el.id === 'ce_has_role_yes') el.data.data.comparison_value = SYNC_ROLE_REGEX;
+      if (el.id === 'ce_add_role') el.data.data.additional_roles = '{exp_res.response.sync_level_role_ids}';
+    }
+    if (!patched.some((n) => n.id === 'ce_sync_role')) {
+      const cSync = gb.cmp('ce_sync_role', '{exp_res.response.sync_level_role_ids}', SYNC_ROLE_REGEX, 'matches_pattern', {}, { x: 420, y: 920 });
+      gb.act('ce_sync_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 340, y: 1120 });
+      gb.link(cSync.yes, 'ce_sync_wait');
+      gb.act('ce_sync_add', 'role_add', {
+        roles: [],
+        additional_roles: '{exp_res.response.sync_level_role_ids}',
+        success_handles: false,
+        target: { self: true },
+        server_id: '1026096141273661450',
+      }, { x: 340, y: 1280 });
+      gb.link('ce_sync_wait', 'ce_sync_add');
+      patched.push(...gb.elements());
+      if (!hasEdge('ce_lvl_no', cSync.condId)) {
+        patched.push({
+          source: 'ce_lvl_no',
+          sourceHandle: 'action',
+          target: cSync.condId,
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: `reactflow__edge-ce_lvl_noaction-${cSync.condId}action`,
+        });
+      }
+    }
+  } else if (kind === 'voice_join') {
+    if (!patched.some((n) => n.id === 'vj_has_role')) {
+      const cJoin = gb.cmp('vj_has_role', '{vexp_res.response.sync_level_role_ids}', SYNC_ROLE_REGEX, 'matches_pattern', {}, { x: 180, y: 780 });
+      gb.act('vj_wait_role', 'wait_action', { seconds: '1', success_handles: false }, { x: 100, y: 980 });
+      gb.link(cJoin.yes, 'vj_wait_role');
+      gb.act('vj_add_role', 'role_add', {
+        roles: [],
+        additional_roles: '{vexp_res.response.sync_level_role_ids}',
+        success_handles: false,
+        target: { self: true },
+        server_id: '1026096141273661450',
+      }, { x: 100, y: 1140 });
+      gb.link('vj_wait_role', 'vj_add_role');
+      patched.push(...gb.elements());
+      if (!hasEdge('ve_api', cJoin.condId)) {
+        patched.push({
+          source: 've_api',
+          sourceHandle: 'action',
+          target: cJoin.condId,
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: `reactflow__edge-ve_apiaction-${cJoin.condId}action`,
+        });
+      }
+    }
+  } else if (kind === 'voice_leave' || kind === 'voice_switch') {
+    for (const el of patched) {
+      if (el.id === 've_has_role') el.data.data.base_value = '{vexp_res.response.sync_level_role_ids}';
+      if (el.id === 've_has_role_yes') el.data.data.comparison_value = SYNC_ROLE_REGEX;
+      if (el.id === 've_add_role') el.data.data.additional_roles = '{vexp_res.response.sync_level_role_ids}';
+    }
+    if (!patched.some((n) => n.id === 've_sync_role')) {
+      const cSync = gb.cmp('ve_sync_role', '{vexp_res.response.sync_level_role_ids}', SYNC_ROLE_REGEX, 'matches_pattern', {}, { x: 420, y: 920 });
+      gb.act('ve_sync_wait', 'wait_action', { seconds: '1', success_handles: false }, { x: 340, y: 1120 });
+      gb.link(cSync.yes, 've_sync_wait');
+      gb.act('ve_sync_add', 'role_add', {
+        roles: [],
+        additional_roles: '{vexp_res.response.sync_level_role_ids}',
+        success_handles: false,
+        target: { self: true },
+        server_id: '1026096141273661450',
+      }, { x: 340, y: 1280 });
+      gb.link('ve_sync_wait', 've_sync_add');
+      patched.push(...gb.elements());
+      if (!hasEdge('ve_lvl_no', cSync.condId)) {
+        patched.push({
+          source: 've_lvl_no',
+          sourceHandle: 'action',
+          target: cSync.condId,
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: `reactflow__edge-ve_lvl_noaction-${cSync.condId}action`,
+        });
+      }
+    }
+  }
+  return patched;
+}
+
 function patchKeepAliveCron(elements) {
   let patched = JSON.parse(JSON.stringify(elements));
-  if (patched.some((n) => n.id === 'ka_weekly_settle_api')) return patched;
 
-  // Find terminal node in keep-alive chain (usually voice heartbeat or last api_action)
-  const outEdges = new Set(patched.filter((e) => e.source).map((e) => e.source));
-  const tailNode = patched.find((n) => n.type === 'action' && !outEdges.has(n.id) && n.id !== 'err_wait');
-  if (!tailNode) return patched;
+  if (!patched.some((n) => n.id === 'ka_weekly_settle_api')) {
+    const outEdges = new Set(patched.filter((e) => e.source).map((e) => e.source));
+    const tailNode = patched.find((n) => n.type === 'action' && !outEdges.has(n.id) && n.id !== 'err_wait');
+    if (tailNode) {
+      const gb = new V14GraphBuilder();
+      gb.act('ka_v14_wait1', 'wait_action', { seconds: '1', success_handles: false }, { x: 400, y: 1200 });
+      apiAction(gb, 'ka_vein_settle_api', 'ka_vein_res', 'POST', `${BACKEND_BASE}/api/vein/settle-expired`, '{}', { x: 400, y: 1360 });
+      gb.link('ka_v14_wait1', 'ka_vein_settle_api');
 
-  const gb = new V14GraphBuilder();
-  gb.act('ka_v14_wait1', 'wait_action', { seconds: '1', success_handles: false }, { x: 400, y: 1200 });
-  apiAction(gb, 'ka_vein_settle_api', 'ka_vein_res', 'POST', `${BACKEND_BASE}/api/vein/settle-expired`, '{}', { x: 400, y: 1360 });
-  gb.link('ka_v14_wait1', 'ka_vein_settle_api');
+      gb.act('ka_v14_wait2', 'wait_action', { seconds: '1', success_handles: false }, { x: 400, y: 1520 });
+      gb.link('ka_vein_settle_api', 'ka_v14_wait2');
 
-  gb.act('ka_v14_wait2', 'wait_action', { seconds: '1', success_handles: false }, { x: 400, y: 1520 });
-  gb.link('ka_vein_settle_api', 'ka_v14_wait2');
+      apiAction(gb, 'ka_weekly_settle_api', 'ka_weekly_res', 'POST', `${BACKEND_BASE}/api/leaderboard/weekly-settle`, '{}', { x: 400, y: 1680 });
+      gb.link('ka_v14_wait2', 'ka_weekly_settle_api');
 
-  apiAction(gb, 'ka_weekly_settle_api', 'ka_weekly_res', 'POST', `${BACKEND_BASE}/api/leaderboard/weekly-settle`, '{}', { x: 400, y: 1680 });
-  gb.link('ka_v14_wait2', 'ka_weekly_settle_api');
+      const cAnn = gb.cmp('ka_weekly_ann', '{ka_weekly_res.response.should_announce}', 'true', 'equal_to', { ignoreCase: true }, { x: 400, y: 1840 });
+      gb.link('ka_weekly_settle_api', cAnn.condId);
 
-  const cAnn = gb.cmp('ka_weekly_ann', '{ka_weekly_res.response.should_announce}', 'true', 'equal_to', { ignoreCase: true }, { x: 400, y: 1840 });
-  gb.link('ka_weekly_settle_api', cAnn.condId);
+      embedMsg(gb, 'ka_weekly_send', {
+        title: '{ka_weekly_res.response.announcement_embed.title}',
+        description: '{ka_weekly_res.response.announcement_embed.description}',
+        color: '#f59e0b',
+        footer: 'SuMi Family • Vinh Danh Top 10 Lực Chiến 19:00 Chủ Nhật',
+        target: { channel: WEEKLY_ANNOUNCE_CHANNEL_ID },
+      }, { x: 240, y: 2020 });
+      gb.link(cAnn.yes, 'ka_weekly_send');
 
-  embedMsg(gb, 'ka_weekly_send', {
-    title: '{ka_weekly_res.response.announcement_embed.title}',
-    description: '{ka_weekly_res.response.announcement_embed.description}',
-    color: '#f59e0b',
-    footer: 'SuMi Family • Vinh Danh Top 10 Lực Chiến 19:00 Chủ Nhật',
-    target: { channel: WEEKLY_ANNOUNCE_CHANNEL_ID },
-  }, { x: 240, y: 2020 });
-  gb.link(cAnn.yes, 'ka_weekly_send');
+      patched.push(...gb.elements(), {
+        source: tailNode.id,
+        sourceHandle: 'action',
+        target: 'ka_v14_wait1',
+        type: 'custom',
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        id: `reactflow__edge-${tailNode.id}action-ka_v14_wait1`,
+      });
+    }
+  }
 
-  patched.push(...gb.elements(), {
-    source: tailNode.id,
-    sourceHandle: 'action',
-    target: 'ka_v14_wait1',
-    type: 'custom',
-    animated: false,
-    arrowHeadType: 'arrowclosed',
-    id: `reactflow__edge-${tailNode.id}action-ka_v14_wait1`,
-  });
+  // Chèn cấp Level Role tự động ngay sau ka_heartbeat_api (nếu thành viên thăng cấp từ Voice 12m Heartbeat!)
+  if (!patched.some((n) => n.id === 'ka_hb_has_role')) {
+    const hbToV14 = patched.findIndex((e) => e.source === 'ka_heartbeat_api' && e.target === 'ka_v14_wait1');
+    if (hbToV14 !== -1) {
+      patched.splice(hbToV14, 1);
+      const gb = new V14GraphBuilder();
+      const cHb = gb.cmp('ka_hb_has_role', '{hb_res.response.first_role_id}', SYNC_ROLE_REGEX, 'matches_pattern', {}, { x: 760, y: 1020 });
+      gb.act('ka_hb_wait_role', 'wait_action', { seconds: '1', success_handles: false }, { x: 640, y: 1200 });
+      gb.link(cHb.yes, 'ka_hb_wait_role');
+      gb.act('ka_hb_add_role', 'role_add', {
+        roles: [],
+        additional_roles: '{hb_res.response.first_role_id}',
+        success_handles: false,
+        target: { id: '{hb_res.response.first_role_user_id}' },
+        server_id: '1026096141273661450',
+      }, { x: 640, y: 1360 });
+      gb.link('ka_hb_wait_role', 'ka_hb_add_role');
+      patched.push(
+        ...gb.elements(),
+        {
+          source: 'ka_heartbeat_api',
+          sourceHandle: 'action',
+          target: cHb.condId,
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: `reactflow__edge-ka_heartbeat_apiaction-${cHb.condId}action`,
+        },
+        {
+          source: 'ka_hb_add_role',
+          sourceHandle: 'action',
+          target: 'ka_v14_wait1',
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: 'reactflow__edge-ka_hb_add_roleaction-ka_v14_wait1action',
+        },
+        {
+          source: cHb.no,
+          sourceHandle: 'action',
+          target: 'ka_v14_wait1',
+          targetHandle: 'action',
+          type: 'custom',
+          animated: false,
+          arrowHeadType: 'arrowclosed',
+          id: `reactflow__edge-${cHb.no}action-ka_v14_wait1action`,
+        },
+      );
+    }
+  }
+
   return patched;
 }
 
@@ -1181,6 +1633,7 @@ const FULL_BUILD_COMMANDS = [
   { name: 'giatoc', build: buildGiatocV14Cmd },
   { name: 'party', build: buildPartyV14Cmd },
   { name: 'linhmach', build: buildLinhMachV14Cmd },
+  { name: 'equip', build: buildEquipV14Cmd },
   { name: 'explorer', build: buildExplorerV14Cmd },
 ];
 
@@ -1209,6 +1662,10 @@ async function fetchLiveReduxState() {
     const evList = Object.values(events || {});
     const aiEv = evList.find(e => e.int_id === '4cc5db30-029c-4a55-86e6-6e6850012afd') || events['21'];
     const kaEv = evList.find(e => e.int_id === '71c549b1-b532-4afb-958a-8e47b168f96b');
+    const ceEv = evList.find(e => e.int_id === 'abe615a8-d99b-43e6-988a-4e15c7aded0a');
+    const vjEv = evList.find(e => e.int_id === '3c2fa593-604c-4eb7-b183-7016084e8739');
+    const vlEv = evList.find(e => e.int_id === '455db929-0c8a-4727-8b26-0fe343546140');
+    const vsEv = evList.find(e => e.int_id === '26cd207f-2ca5-4fe0-b638-5136eec46a64');
     return JSON.stringify({
       cmds: Object.values(cmds).filter(c => c.groupId === '${PROFILE_GROUP_ID}' && c.name).map(c => ({
         name: c.name,
@@ -1218,6 +1675,10 @@ async function fetchLiveReduxState() {
       })),
       aiEv: aiEv ? { name: aiEv.name, enabled: aiEv.enabled !== false, compressed_tree: aiEv.compressed_tree } : null,
       kaEv: kaEv ? { name: kaEv.name, enabled: kaEv.enabled !== false, compressed_tree: kaEv.compressed_tree } : null,
+      ceEv: ceEv ? { name: ceEv.name, enabled: ceEv.enabled !== false, compressed_tree: ceEv.compressed_tree } : null,
+      vjEv: vjEv ? { name: vjEv.name, enabled: vjEv.enabled !== false, compressed_tree: vjEv.compressed_tree } : null,
+      vlEv: vlEv ? { name: vlEv.name, enabled: vlEv.enabled !== false, compressed_tree: vlEv.compressed_tree } : null,
+      vsEv: vsEv ? { name: vsEv.name, enabled: vsEv.enabled !== false, compressed_tree: vsEv.compressed_tree } : null,
     });
   })()`);
   return JSON.parse(raw);
@@ -1238,6 +1699,7 @@ async function main() {
     const errs = validateGraph(els);
     if (errs.length) throw new Error(`Validation failed for /${t.name}: ${errs.join(', ')}`);
     if (LEAK_RE.test(JSON.stringify(els))) throw new Error(`Confidential leak detected in /${t.name}`);
+    if (JSON.stringify(els).includes('🚀')) throw new Error(`Rocket emoji found in /${t.name}`);
     console.log(`[Offline OK] BUILD /${t.name}: ${els.length} elements`);
 
     if (!dryRun) {
@@ -1255,13 +1717,13 @@ async function main() {
   }
 
   if (dryRun) {
-    console.log('[DryRun] All 6 full-build v1.4 commands validated cleanly!');
+    console.log('[DryRun] All selected full-build v1.4 commands validated cleanly!');
     return;
   }
 
-  // 2. Patch existing commands (/updates, /enchant, /shop) + AI Mention + Keep-Alive Cron
+  // 2. Patch existing commands (/updates, /enchant, /shop, /wiki) + AI Mention + Keep-Alive Cron + Level Roles Events
   const live = await fetchLiveReduxState();
-  const PATCH_TARGETS = new Set(['updates', 'enchant', 'shop']);
+  const PATCH_TARGETS = new Set(['updates', 'enchant', 'shop', 'wiki']);
 
   for (const c of live.cmds) {
     if (!PATCH_TARGETS.has(c.name)) continue;
@@ -1303,9 +1765,11 @@ async function deployEventByIntIdViaCDP(intId, elements) {
       if (n.child) q.push(n.child); if (n.sibling) q.push(n.sibling);
     }
     if (!cb || !store) throw new Error('Missing CommandBuilder or store');
-    const events = store.getState().data.bot.commands.custom_events.events || [];
-    const idx = events.findIndex(e => e.int_id === '${intId}');
-    if (idx < 0) throw new Error('Missing event ${intId}');
+    const rawEv = store.getState().data.bot.commands.custom_events.events || [];
+    const events = Array.isArray(rawEv) ? rawEv : Object.values(rawEv);
+    const evObj = events.find(e => e.int_id === '${intId}');
+    const idx = Array.isArray(rawEv) ? events.findIndex(e => e.int_id === '${intId}') : Object.keys(rawEv).find(k => rawEv[k]?.int_id === '${intId}');
+    if (!evObj || idx === -1 || idx === undefined) throw new Error('Missing event ${intId}');
     const bin = atob('${b64}');
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -1389,15 +1853,40 @@ async function deployEventByIntIdViaCDP(intId, elements) {
     await new Promise((r) => setTimeout(r, 1200));
   }
 
-  // 4. Patch Keep-Alive Cron (12m) with Spirit Vein Settlement + Sunday 19:00 Top 10 Weekly Announcement
-  if ((!onlyNames || onlyNames.has('keepalive')) && live.kaEv?.compressed_tree) {
+  // 4. Patch Keep-Alive Cron (12m) — run when keepalive OR level_roles requested
+  if ((!onlyNames || onlyNames.has('keepalive') || onlyNames.has('level_roles')) && live.kaEv?.compressed_tree) {
     const kaTree = patchKeepAliveCron(JSON.parse(LZString.decompressFromBase64(live.kaEv.compressed_tree) || '[]'));
     assertAcyclicDAG(kaTree, 'keepalive');
     assertUniqueApiActionNames(kaTree, 'keepalive');
+    assertSelectLimitsAndRegex(kaTree, 'keepalive');
     console.log(`[Offline OK] PATCH Keep-Alive Cron: ${kaTree.length} elements`);
     const res = await deployEventByIntIdViaCDP('71c549b1-b532-4afb-958a-8e47b168f96b', kaTree);
     console.log('[Patched] Keep-Alive Cron:', JSON.stringify(res));
     if (!res?.ok) throw new Error(`Failed patching Keep-Alive Cron: ${JSON.stringify(res)}`);
+    await new Promise((r) => setTimeout(r, 1200));
+  }
+
+  // 5. Patch 4 Chat/Voice EXP Self-Healing Level-Role Events
+  if (!onlyNames || onlyNames.has('level_roles')) {
+    const lvlEventSpecs = [
+      { key: 'ceEv', kind: 'chat', intId: 'abe615a8-d99b-43e6-988a-4e15c7aded0a', label: 'SuMi — Chat EXP' },
+      { key: 'vjEv', kind: 'voice_join', intId: '3c2fa593-604c-4eb7-b183-7016084e8739', label: 'SuMi — Voice EXP (Join)' },
+      { key: 'vlEv', kind: 'voice_leave', intId: '455db929-0c8a-4727-8b26-0fe343546140', label: 'SuMi — Voice EXP (Leave)' },
+      { key: 'vsEv', kind: 'voice_switch', intId: '26cd207f-2ca5-4fe0-b638-5136eec46a64', label: 'SuMi — Voice EXP (Switch)' },
+    ];
+    for (const sp of lvlEventSpecs) {
+      const ev = live[sp.key];
+      if (!ev?.compressed_tree) continue;
+      const tree = patchLevelRoleEvent(sp.kind, JSON.parse(LZString.decompressFromBase64(ev.compressed_tree) || '[]'));
+      assertAcyclicDAG(tree, sp.label);
+      assertUniqueApiActionNames(tree, sp.label);
+      assertSelectLimitsAndRegex(tree, sp.label);
+      console.log(`[Offline OK] PATCH ${sp.label}: ${tree.length} elements`);
+      const res = await deployEventByIntIdViaCDP(sp.intId, tree);
+      console.log(`[Patched] ${sp.label}:`, JSON.stringify(res));
+      if (!res?.ok) throw new Error(`Failed patching ${sp.label}: ${JSON.stringify(res)}`);
+      await new Promise((r) => setTimeout(r, 1200));
+    }
   }
 
   console.log('[v1.4 BotGhost Deploy] ALL COMPLETE cleanly!');

@@ -111,13 +111,18 @@ import {
   challengeSpiritVein,
   settleExpiredSpiritVeins,
 } from './services/spiritVeinService.js';
-import { getCachedTeamBattle } from './services/battleEngine/teamBattleService.js';
+import {
+  getCachedTeamBattle,
+  getTeamBattleLogPayload,
+  renderTeamBattleLogHtml,
+} from './services/battleEngine/teamBattleService.js';
 import { renderTeamBattleCard } from './canvas/teamBattleRenderer.js';
 import {
   getExplorerHub,
   getExplorerLoadoutEditor,
   saveExplorerLoadout,
   selectExplorerPlanStep,
+  buyAndSelectExplorerFood,
   startExpedition,
   claimExpedition,
   reviveInjuredUniquePet,
@@ -2037,6 +2042,33 @@ app.post('/api/vein/settle-expired', requireBackendApiKey, async (req, res) => {
   }
 });
 
+app.get('/api/vein/battle/:battleId/view', (req, res) => {
+  try {
+    const cleanBid = String(req.params.battleId || '').replace(/\.(html|json)$/i, '').trim();
+    const { found, html } = renderTeamBattleLogHtml(cleanBid);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=1800');
+    return res.status(found ? 200 : 404).send(html);
+  } catch (err) {
+    console.error('[Server] /api/vein/battle/:battleId/view error:', err);
+    return res.status(500).send(`<h1>Lỗi hiển thị Nhật Ký Chiến Báo Linh Mạch</h1><p>${err.message}</p>`);
+  }
+});
+
+app.post('/api/vein/logs', requireUpdateAck, (req, res) => {
+  try {
+    const body = req.body || {};
+    const payload = getTeamBattleLogPayload({
+      battleId: getCleanParam(body.battleId),
+      userId: getCleanParam(body.userId),
+    });
+    return res.status(200).json(payload);
+  } catch (err) {
+    console.error('[Server] /api/vein/logs error:', err);
+    return res.status(500).json({ success: false, error: 'VEIN_LOGS_FAILED', message: err.message });
+  }
+});
+
 app.get('/api/vein/battle/:battleId', async (req, res) => {
   try {
     const raw = String(req.params.battleId || '');
@@ -2098,7 +2130,7 @@ app.post('/api/explorer/loadout', requireBackendApiKey, requireUpdateAck, async 
       soulId: body.soulId,
       domainId: body.domainId,
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/explorer/loadout POST error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_LOADOUT_SAVE_FAILED', message: err.message });
@@ -2109,10 +2141,21 @@ app.post('/api/explorer/select-step', requireBackendApiKey, requireUpdateAck, as
   try {
     const body = req.body || {};
     const result = await selectExplorerPlanStep(body.userId, body.step || 'duration', body.value);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/explorer/select-step error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_STEP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/buy-food', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await buyAndSelectExplorerFood(body.userId, body.foodId || body.itemId);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/buy-food error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_BUY_FOOD_FAILED', message: err.message });
   }
 });
 
@@ -2124,7 +2167,7 @@ app.post('/api/explorer/start', requireBackendApiKey, requireUpdateAck, async (r
       mapId: body.mapId,
       foodId: body.foodId,
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/explorer/start error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_START_FAILED', message: err.message });
@@ -2135,7 +2178,7 @@ app.post('/api/explorer/claim', requireBackendApiKey, requireUpdateAck, async (r
   try {
     const body = req.body || {};
     const result = await claimExpedition(body.userId, {});
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/explorer/claim error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_CLAIM_FAILED', message: err.message });
@@ -2146,7 +2189,7 @@ app.post('/api/explorer/revive', requireBackendApiKey, requireUpdateAck, async (
   try {
     const body = req.body || {};
     const result = await reviveInjuredUniquePet(body.userId);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/explorer/revive error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_REVIVE_FAILED', message: err.message });

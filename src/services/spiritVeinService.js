@@ -525,6 +525,7 @@ export async function challengeSpiritVein(userId, rawTierGroup = 'low', opts = {
         ? `• *(Đội cũ đã được tất toán **${oldHolderSettlement.paidTotal.toLocaleString('vi-VN')}** ${lt} cho **${oldHolderSettlement.minutes} phút** giữ mỏ trước đó)*`
         : '',
       battle.highlights.length > 0 ? `\n**Diễn Biến Tiêu Biểu:**\n${battle.highlights.slice(0, 4).map((h) => `• ${h}`).join('\n')}` : '',
+      battle.webLogUrl ? `• 📜 [Xem Full Nhật Ký Chiến Báo Trên Web](${battle.webLogUrl})` : '',
     ].filter(Boolean).join('\n');
 
     return {
@@ -534,6 +535,7 @@ export async function challengeSpiritVein(userId, rawTierGroup = 'low', opts = {
       vein_tier: vein.tier_code,
       battle_id: battle.battleId,
       image_url: battle.imageUrl,
+      web_log_url: battle.webLogUrl,
       battle,
       message: outcomeMsg,
     };

@@ -37,17 +37,26 @@ import {
 import {
   simulateTeamBattle,
   applyFatigueToCombatant,
+  getTeamBattleLogPayload,
+  renderTeamBattleLogHtml,
 } from '../../src/services/battleEngine/teamBattleService.js';
+import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
 import { renderTeamBattleCard } from '../../src/canvas/teamBattleRenderer.js';
 import {
   computeExplorerSurvival,
+  computeExplorerLoadoutPower,
+  getExplorerHub,
   saveExplorerLoadout,
+  selectExplorerPlanStep,
+  buyAndSelectExplorerFood,
   startExpedition,
   claimExpedition,
   reviveInjuredUniquePet,
   getUserBusyExplorationAssets,
 } from '../../src/services/explorerService.js';
-import { setActivePet, enchantTarget, dismantleTarget } from '../../src/services/inventoryService.js';
+import { getProfileData } from '../../src/services/profileService.js';
+import { computeMissingLevelRoleIds, grantChatExp } from '../../src/services/expService.js';
+import { setActivePet, enchantTarget, dismantleTarget, equipTarget } from '../../src/services/inventoryService.js';
 import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
 import { challengeTower } from '../../src/services/questService.js';
 import { getWikiData } from '../../src/services/wikiService.js';
@@ -426,4 +435,264 @@ test('v1.4 Confidentiality & Public Info Integrity (zero minigame winrate leaks,
   const secretLeakRe = /48%|45%|house\s*edge|tỉ lệ thắng|(?:coinflip|slots|blackjack|crash|minigame)[^.\n]{0,80}(?:40|45|48|50)%/i;
   assert.equal(secretLeakRe.test(wikiBattle), false, 'Wiki must NEVER leak minigame winrates');
   assert.equal(secretLeakRe.test(changelog), false, 'Changelog must NEVER leak minigame winrates');
+
+  const wikiExplorer = getWikiData('explorer');
+  assert.equal(wikiExplorer.success, true);
+  assert.equal(wikiExplorer.category, 'explorer');
+  assert.match(wikiExplorer.data.image_url, /\/api\/explorer\/map\.webp/);
+  assert.match(wikiExplorer.data.description, /12 địa danh/i);
+});
+
+test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto Level-Role Self-Heal + Linh Mach Solo/Team Render & Web Logs', async () => {
+  // 1. Auto Level-Role Self-Healing math (Lv.17 missing Lv.15 role)
+  assert.deepEqual(
+    computeMissingLevelRoleIds(17, new Set(['1038406122417176586'])),
+    ['1038405196662976562'],
+    'Lv.17 with Lv.5 role must detect missing Lv.15 role',
+  );
+  assert.deepEqual(
+    computeMissingLevelRoleIds(22, new Set(['1038406122417176586'])),
+    ['1038405196662976562', '1032988544874061836'],
+    'Lv.22 missing Lv.15 & Lv.20 must return both CSV IDs',
+  );
+  assert.deepEqual(computeMissingLevelRoleIds(17, new Set()), [], 'Empty Discord role set must not hallucinate missing roles');
+
+  // 2. Zero rocket emoji in explorerService.js
+  const explorerSrc = fs.readFileSync(path.resolve('src/services/explorerService.js'), 'utf8');
+  assert.equal(explorerSrc.includes('🚀'), false, 'explorerService.js must use crash_fly instead of rocket emoji');
+
+  // 3. Fuyumi power parity + Real compileCombatant() -> Solo (1vBoss), Duo (2vBoss), Trio (3v3) Linh Mạch renders & Web Logs
+  const fuyumiProfile = await getProfileData(FUYUMI_USER_ID);
+  assert.equal(fuyumiProfile.pet.power, 21410404);
+
+  const fuyumiCompiled = applyFatigueToCombatant(await compileCombatant(FUYUMI_USER_ID, 'attacker'), 0);
+  assert.equal(fuyumiCompiled.pet.pet_type, 'cuu_vi_hong_ho');
+  assert.equal(fuyumiCompiled.pet.pet_name, 'Cửu Vĩ Hồng Hồ');
+  assert.equal(fuyumiCompiled.powerScore, 21410404, 'Compiled Linh Mạch combatant must preserve real powerScore');
+
+  const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
+  const bossSp = [{
+    id: 'boss_vein_mine_sp',
+    name: `[BOSS S+] ${sp.boss_name}`,
+    isBoss: true,
+    bossImageFile: 'veins/vein_mine_sp.png',
+    pet: { pet_type: 'vein_mine_sp', pet_name: sp.boss_name, element: sp.element, level: 100, star: 10, enchant_grade: 'S' },
+    equipment: {},
+    domainLoadout: { domain: DOMAIN_BY_ID[sp.domain_id] },
+    atk: sp.stats.atk,
+    def: sp.stats.def,
+    spd: sp.stats.spd,
+    maxHp: sp.stats.hp,
+    critRate: 22,
+    powerScore: sp.boss_power,
+  }];
+
+  const soloBattle = simulateTeamBattle([fuyumiCompiled], bossSp, {
+    mode: '3vBoss',
+    veinLabel: 'LINH MẠCH HẠNG S+ • HỖN NGUYÊN ĐỊA MẠCH MA TÔN (SOLO)',
+    rng: () => 0.42,
+  });
+  assert.ok(soloBattle.webLogUrl.includes(`/api/vein/battle/${soloBattle.battleId}/view`));
+  const logPayload = getTeamBattleLogPayload({ battleId: soloBattle.battleId });
+  assert.equal(logPayload.found, true);
+  assert.match(logPayload.description, /Hiệp 1/);
+  const htmlLog = renderTeamBattleLogHtml(soloBattle.battleId);
+  assert.equal(htmlLog.found, true);
+  assert.match(htmlLog.html, /Cửu Vĩ Hồng Hồ/);
+
+  const pngSolo = await renderTeamBattleCard(soloBattle, { format: 'png' });
+  assertPngValid(pngSolo, 2000, 1150);
+
+  const ally2 = applyFatigueToCombatant({
+    id: 'ally_duo_2',
+    name: 'Tuyết Nguyệt Hồ',
+    pet: { pet_type: 'bach_kim_ho_tu', pet_name: 'Bạch Kim Hổ Tử', element: 'Kim', level: 85, star: 8, enchant_grade: 'A' },
+    equipment: { weapon: { item_id: 'weapon_epic_4', enchant_grade: 'A' } },
+    atk: 45000,
+    def: 38000,
+    spd: 41000,
+    maxHp: 950000,
+    critRate: 0.25,
+    powerScore: 4850000,
+  }, 1);
+  const duoBattle = simulateTeamBattle([fuyumiCompiled, ally2], bossSp, {
+    mode: '3vBoss',
+    veinLabel: 'LINH MẠCH HẠNG S+ • ĐỘI 2 NGƯỜI VS BOSS',
+    rng: () => 0.42,
+  });
+  const pngDuo = await renderTeamBattleCard(duoBattle, { format: 'png' });
+  assertPngValid(pngDuo, 2000, 1150);
+
+  const ally3 = applyFatigueToCombatant({
+    id: 'ally_trio_3',
+    name: 'Huyền Vũ Tôn',
+    pet: { pet_type: 'tu_kim_bach_trach', pet_name: 'Tử Kim Bạch Trạch', element: 'Lôi', level: 80, star: 7, enchant_grade: 'B' },
+    equipment: { gem: { item_id: 'gem_epic_1', enchant_grade: 'B' } },
+    atk: 39000,
+    def: 42000,
+    spd: 36000,
+    maxHp: 880000,
+    critRate: 0.2,
+    powerScore: 4120000,
+  }, 0);
+  const team3v3Battle = simulateTeamBattle(
+    [fuyumiCompiled, ally2, ally3],
+    [
+      { ...ally2, id: 'def_1', name: 'Thiên Kiếm', side: 'B', domainLoadout: { domain: DOMAIN_BY_ID.domain_mythic_1 } },
+      { ...ally3, id: 'def_2', name: 'Hàn Băng', side: 'B', domainLoadout: {} },
+      { ...ally3, id: 'def_3', name: 'Thanh Long', side: 'B', pet: { pet_type: 'thanh_de_moc_long', pet_name: 'Thanh Đế Mộc Long', element: 'Mộc', level: 78, star: 6, enchant_grade: 'B' } },
+    ],
+    { mode: '3v3', veinLabel: 'LINH MẠCH HẠNG S • TRANH ĐOẠT TỔ ĐỘI 3v3', rng: () => 0.42 },
+  );
+  const png3v3 = await renderTeamBattleCard(team3v3Battle, { format: 'png' });
+  assertPngValid(png3v3, 2000, 1150);
+
+  if (fs.existsSync(ARTIFACT_DIR)) {
+    fs.writeFileSync(path.join(ARTIFACT_DIR, 'prod_vein_solo_1vboss_v141.png'), pngSolo);
+    fs.writeFileSync(path.join(ARTIFACT_DIR, 'prod_vein_team_2vboss_v141.png'), pngDuo);
+    fs.writeFileSync(path.join(ARTIFACT_DIR, 'prod_vein_team_3v3_v141.png'), png3v3);
+  }
+
+  if (!supabase) return;
+
+  // 4. Fuyumi Explorer Hub power parity + Live DB test for Default Loadout, Idle Claim Error, Free Food Block, Buy Food, Chat Level-Role Sync
+  const fuyumiHub = await getExplorerHub(FUYUMI_USER_ID);
+  assert.equal(fuyumiHub.success, true);
+  assert.equal(fuyumiHub.loadout_power, 21410404, 'Fuyumi /explorer hub power must match /profile 21.410.404 exactly!');
+
+  const testUid = '999900000000014101';
+  const cleanup = async () => {
+    await supabase.from('user_quests').delete().eq('user_id', testUid);
+    await supabase.from('explorer_expeditions').delete().eq('user_id', testUid);
+    await supabase.from('explorer_loadouts').delete().eq('user_id', testUid);
+    await supabase.from('explorer_ui_selections').delete().eq('user_id', testUid);
+    await supabase.from('user_domains').delete().eq('user_id', testUid);
+    await supabase.from('user_pet_items').delete().eq('user_id', testUid);
+    await supabase.from('user_inventory').delete().eq('user_id', testUid);
+    await supabase.from('user_pets').delete().eq('user_id', testUid);
+    await supabase.from('users').delete().eq('user_id', testUid);
+  };
+  await cleanup();
+  try {
+    await supabase.from('users').insert({
+      user_id: testUid,
+      username: 'TestLv17Fix',
+      level: 17,
+      exp: 100,
+      linh_thach: 1000,
+      last_seen_update_version: LATEST_VERSION,
+    });
+    await supabase.from('user_pets').insert([
+      { user_id: testUid, pet_type: 'hoa_thach_nham_nham', pet_name: 'Pet Chính Lv17', pet_rarity: 'Phàm Phẩm', element: 'Thổ', level: 10, star: 2, atk: 300, def: 300, spd: 200, power_score: 2600, is_active: true, status: 'ready', enchant_grade: 'B', quantity: 1 },
+      { user_id: testUid, pet_type: 'nguyet_anh_thao_tho', pet_name: 'Pet Phụ Lv17', pet_rarity: 'Linh Phẩm', element: 'Mộc', level: 5, star: 1, atk: 150, def: 150, spd: 150, power_score: 1200, is_active: false, status: 'ready', enchant_grade: 'D', quantity: 1 },
+    ]);
+    await supabase.from('user_pet_items').insert([
+      { user_id: testUid, item_id: 'weapon_common_1', slot: 'weapon', enchant_grade: 'A', quantity: 1 },
+      { user_id: testUid, item_id: 'gem_common_1', slot: 'gem', enchant_grade: 'B', quantity: 1 },
+    ]);
+    await supabase.from('user_domains').insert({
+      user_id: testUid, entity_kind: 'domain', entity_id: 'domain_common_1', is_equipped: true,
+    });
+
+    // A) Default /explorer loadout must auto-pick Main Pet + its equipped Weapon/Gem + equipped Domain!
+    const hub = await getExplorerHub(testUid);
+    assert.equal(hub.success, true);
+    assert.equal(hub.has_saved_loadout, false);
+    assert.match(hub.description, /Mặc Định Pet Chính/);
+    assert.match(hub.description, /Pet Chính Lv17/);
+    assert.match(hub.description, /Thiết Mộc Trọng Kiếm/);
+
+    // B) Idle claimExpedition must return populated title & description (never undefined)
+    const idleClaim = await claimExpedition(testUid);
+    assert.equal(idleClaim.success, false);
+    assert.ok(idleClaim.title && !idleClaim.title.includes('{'), 'claim error title must be populated');
+    assert.ok(idleClaim.description && !idleClaim.description.includes('{'), 'claim error description must be populated');
+
+    // C) Selecting food when qty === 0 must block free usage & offer buy_food
+    await selectExplorerPlanStep(testUid, 'duration', '2');
+    await selectExplorerPlanStep(testUid, 'map', 'map_01_truc_lam');
+    const foodStep0 = await selectExplorerPlanStep(testUid, 'food', 'food_speed_fruit');
+    assert.equal(foodStep0.needs_buy, true, 'Must block free food when owned == 0');
+    assert.equal(foodStep0.selected_food_id, null, 'Must NOT equip unowned food in UI state');
+    assert.equal(foodStep0.food_price, 250);
+
+    // D) Buying on the spot deducts LT, adds inventory, and equips food!
+    const buyRes = await buyAndSelectExplorerFood(testUid, 'food_speed_fruit');
+    assert.equal(buyRes.success, true);
+    assert.equal(buyRes.selected_food_id, 'food_speed_fruit');
+    assert.equal(buyRes.remaining_lt, 750);
+
+    // E) grantChatExp with Lv.17 user having only Lv.5 role must self-heal Lv.15 role even without leveling up!
+    const chatRes = await grantChatExp({ userId: testUid, roleIds: ['1038406122417176586'] });
+    assert.equal(chatRes.success, true);
+    assert.equal(chatRes.sync_level_role_ids, '1038405196662976562', 'Chat EXP must return missing Lv.15 role for auto-grant');
+
+    // F) Category-free /equip (1 param targetId only, no category needed)
+    const eqItem = await equipTarget(testUid, { targetId: 'weapon_common_1' });
+    assert.equal(eqItem.success, true);
+    assert.equal(eqItem.category, 'item');
+
+    const eqEmoji = await equipTarget(testUid, { targetId: '<:gem_common_1:1573412180244828333>' });
+    assert.equal(eqEmoji.success, true);
+    assert.equal(eqEmoji.category, 'item');
+
+    const eqBg = await equipTarget(testUid, { targetId: 'default_background' });
+    assert.equal(eqBg.success, true);
+    assert.equal(eqBg.category, 'background');
+
+    const eqFrame = await equipTarget(testUid, { targetId: 'default' });
+    assert.equal(eqFrame.success, true);
+    assert.equal(eqFrame.category, 'frame');
+
+    const eqDom = await equipTarget(testUid, { targetId: 'domain_common_1' });
+    assert.equal(eqDom.success, true);
+    assert.equal(eqDom.category, 'domain');
+
+    const eqPet = await equipTarget(testUid, { targetId: 'nguyet_anh_thao_tho' });
+    assert.equal(eqPet.success, true);
+    assert.equal(eqPet.category, 'pet');
+
+    const eqRoleMiss = await equipTarget(testUid, { targetId: '1573186019858317422' });
+    assert.equal(eqRoleMiss.success, false);
+    assert.equal(eqRoleMiss.error, 'ROLE_NOT_OWNED');
+
+    const eqTitle = await equipTarget(testUid, { targetId: 'title:Kiếm Thánh' });
+    assert.equal(eqTitle.success, false);
+    assert.equal(eqTitle.error, 'TITLE_CARD_REQUIRED');
+
+    const eqUnknown = await equipTarget(testUid, { targetId: 'nonexistent_uid_xyz' });
+    assert.equal(eqUnknown.success, false);
+    assert.equal(eqUnknown.error, 'TARGET_NOT_FOUND');
+
+    // G) Asset Lock Parity (/profile == /battle == /equip block) & In-progress claim error fields while exploring
+    await saveExplorerLoadout(testUid, {
+      petId: 'hoa_thach_nham_nham',
+      weaponId: 'weapon_common_1',
+      gemId: 'gem_common_1',
+      domainId: 'domain_common_1',
+    });
+    const expStarted = await startExpedition(testUid, { durationHours: 2, mapId: 'map_01_truc_lam', foodId: null });
+    assert.equal(expStarted.success, true);
+
+    const profLocked = await getProfileData(testUid);
+    assert.equal(profLocked.pet.equipment.weapon, null, '/profile must hide locked exploring weapon when qty <= 1');
+    assert.equal(profLocked.domain_loadout.domain, null, '/profile must hide locked exploring domain when qty <= 1');
+
+    const compLocked = await compileCombatant(testUid, 'attacker');
+    assert.equal(compLocked.equipment.weapon, null);
+    assert.equal(compLocked.domainLoadout.domain, null);
+    assert.equal(compLocked.powerScore, profLocked.pet.power);
+
+    const eqBusy = await equipTarget(testUid, { targetId: 'weapon_common_1' });
+    assert.equal(eqBusy.success, false);
+    assert.equal(eqBusy.error, 'ITEM_BUSY_EXPLORING');
+
+    const inProgClaim = await claimExpedition(testUid);
+    assert.equal(inProgClaim.success, false);
+    assert.equal(inProgClaim.error, 'EXPEDITION_NOT_FINISHED');
+    assert.ok(inProgClaim.title && !inProgClaim.title.includes('{'));
+    assert.ok(inProgClaim.description && !inProgClaim.description.includes('{'));
+  } finally {
+    await cleanup();
+  }
 });

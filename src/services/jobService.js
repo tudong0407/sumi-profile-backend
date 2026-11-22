@@ -11,6 +11,7 @@ import {
   JOB_BY_ID,
   JOB_DAILY_LIMIT,
   JOB_COOLDOWN_MS,
+  LEVEL_ROLE_MILESTONES,
 } from '../data/catalog.js';
 import { em } from '../config/emojiHelper.js';
 import {
@@ -22,6 +23,7 @@ import {
   getMaxRoleSlotsByLevel,
 } from './profileService.js';
 import { computeTotalAccumulatedExp, decomposeTotalExp } from './economyService.js';
+import { computeLevelUpLinhThachReward } from './expService.js';
 import { getVnDateKey, trackQuestActivity } from './questService.js';
 
 const jobLocks = new Map();
@@ -177,18 +179,36 @@ export async function doJob(userId, rawJobId = '', options = {}) {
     const curLvl = Math.max(1, Number(user.level || 1));
     const totalExp = computeTotalAccumulatedExp(curLvl, user.exp);
     const nextProgress = decomposeTotalExp(totalExp + rewardExp);
+    const leveledUp = nextProgress.level > curLvl;
+
+    const currentHighestClaimed = Math.max(curLvl, Number(user.highest_level_claimed) || 1);
+    const lvlLtReward = leveledUp
+      ? computeLevelUpLinhThachReward(currentHighestClaimed, nextProgress.level)
+      : { totalReward: 0, newHighestClaimed: currentHighestClaimed };
+    const finalBal = nextBal + lvlLtReward.totalReward;
+
+    let unlockedRole = null;
+    if (leveledUp) {
+      for (const m of LEVEL_ROLE_MILESTONES) {
+        if (m.level > curLvl && m.level <= nextProgress.level) unlockedRole = m;
+      }
+    }
 
     const nowIso = now.toISOString();
     const nextJobsToday = jobsToday + 1;
+    const userPatch = {
+      linh_thach: finalBal,
+      exp: nextProgress.exp,
+      level: nextProgress.level,
+      max_role_slots: Math.max(Number(user.max_role_slots) || 1, getMaxRoleSlotsByLevel(nextProgress.level)),
+      updated_at: nowIso,
+    };
+    if (lvlLtReward.newHighestClaimed > (Number(user.highest_level_claimed) || 1)) {
+      userPatch.highest_level_claimed = lvlLtReward.newHighestClaimed;
+    }
 
     await Promise.all([
-      supabase.from('users').update({
-        linh_thach: nextBal,
-        exp: nextProgress.exp,
-        level: nextProgress.level,
-        max_role_slots: getMaxRoleSlotsByLevel(nextProgress.level),
-        updated_at: nowIso,
-      }).eq('user_id', cleanId),
+      supabase.from('users').update(userPatch).eq('user_id', cleanId),
       supabase.from('user_quests').upsert({
         user_id: cleanId,
         job_date: todayKey,
@@ -201,8 +221,11 @@ export async function doJob(userId, rawJobId = '', options = {}) {
     await trackQuestActivity(cleanId, { expDelta: rewardExp, jobDelta: 1, now });
 
     const story = job.stories[Math.floor(rng() * job.stories.length)] || job.summary;
-    const lvlUpNote = nextProgress.level > curLvl
-      ? `\n• ${em('su_level_up')} **ĐỘT PHÁ CẢNH GIỚI!** Lên **Lv.${nextProgress.level}** (${getRealmByLevel(nextProgress.level)})!`
+    const lvlLtNote = lvlLtReward.totalReward > 0
+      ? ` *(+${lvlLtReward.totalReward.toLocaleString('vi-VN')} LT vượt cấp)*`
+      : '';
+    const lvlUpNote = leveledUp
+      ? `\n• ${em('su_level_up')} **ĐỘT PHÁ CẢNH GIỚI!** Lên **Lv.${nextProgress.level}** (${getRealmByLevel(nextProgress.level)})!${lvlLtNote}${unlockedRole ? ` Mở khóa danh hiệu **${unlockedRole.name}**.` : ''}`
       : '';
 
     return {
@@ -212,17 +235,21 @@ export async function doJob(userId, rawJobId = '', options = {}) {
       icon: job.icon,
       reward_linh_thach: rewardLt,
       reward_exp: rewardExp,
-      linh_thach: nextBal,
-      linh_thach_fmt: nextBal.toLocaleString('vi-VN'),
+      linh_thach: finalBal,
+      linh_thach_fmt: finalBal.toLocaleString('vi-VN'),
       level: nextProgress.level,
       exp: nextProgress.exp,
+      leveled_up: leveledUp,
+      level_up_linh_thach: lvlLtReward.totalReward,
+      unlocked_level_role_id: unlockedRole?.roleId || '',
+      unlocked_level_role_name: unlockedRole?.name || '',
       jobs_today: nextJobsToday,
       daily_limit: JOB_DAILY_LIMIT,
       message: [
         `${job.icon} **HOÀN THÀNH CA LÀM: ${job.name.toUpperCase()}!**`,
         `> *${story}*`,
         `• Tiền công: **+${rewardLt}** ${em('su_linhthach')} **Linh Thạch** • Tu vi: **+${rewardExp} EXP**${lvlUpNote}`,
-        `• Số dư ví: **${nextBal.toLocaleString('vi-VN')} LT** • Ca hôm nay: \`${nextJobsToday}/${JOB_DAILY_LIMIT}\` *(Hồi chiêu 1 giờ)*`,
+        `• Số dư ví: **${finalBal.toLocaleString('vi-VN')} LT** • Ca hôm nay: \`${nextJobsToday}/${JOB_DAILY_LIMIT}\` *(Hồi chiêu 1 giờ)*`,
       ].join('\n'),
     };
   });
