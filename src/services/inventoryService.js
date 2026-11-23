@@ -365,38 +365,46 @@ export async function getInventory(userId, options = {}) {
     };
   });
 
-  const consumables = (invRes.data || []).map((inv) => {
-    const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
-    const bgMeta = BACKGROUND_BY_ID[inv.item_id];
-    const frameMeta = inv.item_id.startsWith('frame_') ? AVATAR_FRAME_BY_ID[inv.item_id.slice(6)] : null;
-    const domainMeta = DOMAIN_BY_ID[inv.item_id];
-    const senseMeta = DIVINE_SENSE_BY_ID[inv.item_id];
-    const realmMeta = DIVINE_REALM_BY_ID[inv.item_id];
-    const icon = cMeta?.icon
-      || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id)
-        : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', em('su_sprout'))
-        : (bgMeta || frameMeta) ? em('frame_unlock_token', em('su_sparkle'))
-        : domainMeta ? domainEmoji(inv.item_id, em('su_arena'))
-        : senseMeta ? senseEmoji(inv.item_id, em('su_sparkle'))
-        : realmMeta ? realmEmojiById(inv.item_id, em('su_arena'))
-        : em('su_pin_sigil'));
-    const displayName = cMeta?.name
-      || bgMeta?.name
-      || domainMeta?.name
-      || senseMeta?.name
-      || realmMeta?.name
-      || (inv.item_id === 'farm_essence' ? 'Linh Quả Tiên Giới' : null)
-      || (frameMeta ? `Khung ${frameMeta.name}` : inv.item_id);
-    return {
-      ...inv,
-      icon,
-      display_name: displayName,
-    };
-  });
+  const consumables = (invRes.data || [])
+    .filter((inv) => {
+      const id = String(inv.item_id || '').trim();
+      const cat = String(inv.item_category || '').trim().toLowerCase();
+      if (!id) return false;
+      if (cat === 'background' || cat === 'frame') return false;
+      if (BACKGROUND_BY_ID[id]) return false;
+      if (id === 'frame_unlock_token' || id.startsWith('frame_')) return false;
+      return true;
+    })
+    .map((inv) => {
+      const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
+      const domainMeta = DOMAIN_BY_ID[inv.item_id];
+      const senseMeta = DIVINE_SENSE_BY_ID[inv.item_id];
+      const realmMeta = DIVINE_REALM_BY_ID[inv.item_id];
+      const icon = cMeta?.icon
+        || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id)
+          : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', em('su_sprout'))
+          : domainMeta ? domainEmoji(inv.item_id, em('su_arena'))
+          : senseMeta ? senseEmoji(inv.item_id, em('su_sparkle'))
+          : realmMeta ? realmEmojiById(inv.item_id, em('su_arena'))
+          : em('su_pin_sigil'));
+      const displayName = cMeta?.name
+        || domainMeta?.name
+        || senseMeta?.name
+        || realmMeta?.name
+        || (inv.item_id === 'farm_essence' ? 'Linh Quả Tiên Giới' : inv.item_id);
+      return {
+        ...inv,
+        icon,
+        display_name: displayName,
+      };
+    });
 
   const bgRaw = user.background_url || 'default_background.png';
   const bgObj = BACKGROUND_BY_ID[bgRaw] || BACKGROUND_CATALOG.find((b) => b.file === bgRaw || `assets/${b.file}` === bgRaw);
   const bgName = bgObj?.name || (bgRaw.includes('celestial_palace_pink') ? 'Thiên Cung Cửu Vĩ' : 'Đạo Cảnh Mặc Định');
+  const frameRaw = String(user.avatar_frame || 'default').trim();
+  const frameObj = AVATAR_FRAME_BY_ID[frameRaw] || null;
+  const frameName = frameObj?.name || 'Mặc Định';
 
   const activePets = pets.filter((p) => p.is_active);
   const storagePets = pets.filter((p) => !p.is_active);
@@ -500,7 +508,7 @@ export async function getInventory(userId, options = {}) {
     ? ` • ${farmEmoji('farm_essence')} **Linh Quả:** \`${farmEssence.toLocaleString('vi-VN')}\``
     : '';
 
-  const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\`${essencePart} • ${em('frame_unlock_token')} **Ảnh Nền:** ${bgName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
+  const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\`${essencePart} • ${em('frame_unlock_token')} **Ảnh Nền:** ${bgName} • **Viền:** ${frameName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
 
   let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI`;
   let viewDescription = '';
@@ -2053,6 +2061,24 @@ export async function setActivePet(userId, petIdentifier) {
   };
 }
 
+export const PET_LEVEL_MAX_BONUS_PCT = 5.50; // Lv.1 -> Lv.100 = +550%
+export const PET_LEVEL_GROWTH_STEP = PET_LEVEL_MAX_BONUS_PCT / 99; // ~+5.5556%/cấp
+export const PET_STAR_GROWTH_STEP = 0.15; // 1★ -> 10★ = +135%
+
+export function computeScaledPetBaseStats(baseMeta = {}, level = 1, star = 1) {
+  const lvl = Math.min(100, Math.max(1, Number(level) || 1));
+  const st = Math.min(10, Math.max(1, Number(star) || 1));
+  const baseAtk = Math.max(10, Number(baseMeta.base_atk ?? baseMeta.atk ?? 100));
+  const baseDef = Math.max(10, Number(baseMeta.base_def ?? baseMeta.def ?? 100));
+  const baseSpd = Math.max(10, Number(baseMeta.base_spd ?? baseMeta.spd ?? 100));
+  const mult = 1 + (lvl - 1) * PET_LEVEL_GROWTH_STEP + (st - 1) * PET_STAR_GROWTH_STEP;
+  const atk = Math.max(baseAtk + (lvl - 1) * 5, Math.round(baseAtk * mult));
+  const def = Math.max(baseDef + (lvl - 1) * 5, Math.round(baseDef * mult));
+  const spd = Math.max(baseSpd + (lvl - 1) * 4, Math.round(baseSpd * mult));
+  const power_score = atk * 3 + def * 2 + spd * 2 + lvl * 50;
+  return { atk, def, spd, power_score, multiplier: mult };
+}
+
 export async function upgradePet(userId, petIdentifier, mode = 'level', targetGoal = null) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
@@ -2078,6 +2104,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
 
   if (mode === 'star') {
     const currentStar = Number(target.star || 1);
+    const currentLvl = Number(target.level || 1);
     if (currentStar >= 10) {
       return { success: false, status: 400, error: 'MAX_STAR', message: `**${target.pet_name}** đã đạt tối đa **10 Sao** ${em('su_realm_star')}!` };
     }
@@ -2091,16 +2118,15 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
 
     let stoneCost = 0;
     let ltCost = 0;
-    let newAtk = Number(target.atk || 0);
-    let newDef = Number(target.def || 0);
-    let newSpd = Number(target.spd || 0);
     for (let s = currentStar; s < nextStar; s += 1) {
       stoneCost += s;
       ltCost += s * 200;
-      newAtk = Math.round(newAtk + baseMeta.base_atk * 0.15);
-      newDef = Math.round(newDef + baseMeta.base_def * 0.15);
-      newSpd = Math.round(newSpd + baseMeta.base_spd * 0.15);
     }
+    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar);
+    const nextScaled = computeScaledPetBaseStats(baseMeta, currentLvl, nextStar);
+    const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+    const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+    const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
 
     const currentBal = Number(user.linh_thach || 0);
     const { data: stoneRow } = await supabase
@@ -2124,7 +2150,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
     const deltaPower = (newAtk - Number(target.atk || 0)) * 3
       + (newDef - Number(target.def || 0)) * 2
       + (newSpd - Number(target.spd || 0)) * 2;
-    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + Number(target.level || 1) * 50;
+    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + currentLvl * 50;
     const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
 
     await Promise.all([
@@ -2149,6 +2175,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
 
   // mode === 'level'
   const currentLvl = Number(target.level || 1);
+  const currentStar = Number(target.star || 1);
   if (currentLvl >= 100) {
     return { success: false, status: 400, error: 'MAX_PET_LEVEL', message: `**${target.pet_name}** đã đạt cấp tối đa **Lv.100**!` };
   }
@@ -2161,15 +2188,14 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
   }
 
   let ltCost = 0;
-  let newAtk = Number(target.atk || 0);
-  let newDef = Number(target.def || 0);
-  let newSpd = Number(target.spd || 0);
   for (let lvl = currentLvl; lvl < nextLvl; lvl += 1) {
     ltCost += lvl * 50;
-    newAtk = Math.round(newAtk + Math.max(5, baseMeta.base_atk * 0.05));
-    newDef = Math.round(newDef + Math.max(5, baseMeta.base_def * 0.05));
-    newSpd = Math.round(newSpd + Math.max(4, baseMeta.base_spd * 0.05));
   }
+  const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar);
+  const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar);
+  const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+  const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+  const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
 
   const currentBal = Number(user.linh_thach || 0);
   if (currentBal < ltCost) {

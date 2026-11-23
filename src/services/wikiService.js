@@ -185,7 +185,7 @@ export const WIKI_CATEGORIES = {
         value: [
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
-          `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** ngẫu nhiên theo tỉ lệ **F→S+** (\`S+ 5%\`), tổ đội 3 người tranh \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*; thắng mỗi mỏ cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`), tự giảm \`-10%/giờ\`.`,
+          `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** (**F→S+: \`8k → 135k\` Lực**, \`6–56 LT/phút\` +15% Kho Clan); Boss Hạng **A / S / S+** tung **Dư Chấn AoE 35%** quét cả hậu phương (nên đi Tổ Đội 3 người); thắng cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`, giảm \`-10%/giờ\`).`,
         ].join('\n'),
         inline: false,
       },
@@ -221,8 +221,8 @@ export const WIKI_CATEGORIES = {
         inline: true,
       },
       {
-        name: `${tierEmoji('supreme')} Quy Tắc & Lệnh Liên Quan`,
-        value: '• **39 Độc Nhất** chỉ tồn tại 1 bản toàn server; chênh lệch sức mạnh tổng thể `<= 15%`.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, trang bị `/equip`, tháo `/unequip`, nâng cấp `/enchant` (`D→S`).',
+        name: `${tierEmoji('supreme')} Quy Tắc, Khắc Ấn Mới & Pity 350`,
+        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại *(98% Thường / 2% Độc Nhất)*.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
         inline: false,
       },
     ],
@@ -244,7 +244,7 @@ export const WIKI_CATEGORIES = {
     fields: [
       {
         name: `${em('su_wiki_scroll')} Công Thức & Lệnh Quản Lý`,
-        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Chiến Lực:** `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị`.\n• Quản lý, đổi pet chính & nâng cấp sao qua `/linhthu` & `/pet`; lọc bán tự động qua `/autosell`.',
+        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Chiến Lực:** `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị` • Nâng nhanh qua `/linhthu muc_dich:<cấp|sao>`.',
         inline: false,
       },
       {
@@ -263,33 +263,34 @@ export const WIKI_CATEGORIES = {
     id: 'economy',
     title: `${em('su_linhthach')} Kinh Tế, Nhiệm Vụ, Tháp 500 & Nông Trại`,
     icon: em('su_linhthach'),
-    description: '/daily, /job, /roll, /autosell, /shop, /nhiemvu (Tháp 500 tầng), /farm, Minigame, /marry & /giatoc.',
+    description: '/daily, /job, /roll, /autosell, /shop, /nhiemvu (Tháp 500 tầng +15% LT), /farm, Minigame, /marry & /giatoc.',
     image_url: '',
     sections: [
       {
         heading: '1. Kiếm LT, Gacha & Cửa Hàng',
-        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10) hỗ trợ /autosell tự bán Phàm/Linh/Tiên ngay khi quay.\n• /shop (kèm Shop Ngày giảm 15–40%): Đá Khắc Ấn 150 LT (5/ngày), Thẻ Reset Tháp 200 LT (5/ngày, max 15 túi); /dismantle hoàn 20–25% Shop hoặc giá Gacha.',
+        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Nền & Viền đã sở hữu tự Equip 0 LT ngay trong /shop (ẩn khỏi /inv). Xác nhận /updates v1.5 nhận +2.000 LT!',
       },
       {
-        heading: '2. Nhiệm Vụ Ngày, Tháp 500 Tầng, Nông Trại & Cộng Đồng',
-        content: '• /nhiemvu: 5 Quest Ngày (2 cố định + 3 xoay vòng từ 10 hoạt động, mốc 5/5 +130 LT + quà), 3 Hợp Đồng Tuần & Tháp 500 Tầng (+10% nền, random chiến lực ±12%, NPC mở Linh Vực từ F70, reset 5/ngày).\n• /farm & /exchange (4–6 ô, 6/12/24h thu LT + Linh Quả); Minigame /coinflip, /blackjack, /slots, /crash (10–10.000 LT); /marry & /giatoc (Lv.20+, Clan Wars 24H). Xác nhận /updates bản mới nhận +800 LT.',
+        heading: '2. Nhiệm Vụ Ngày, Tháp 500 Tầng (+15% LT), Nông Trại & Cộng Đồng',
+        content: '• /nhiemvu: 5 Quest Ngày xoay vòng (mốc 5/5 +130 LT + quà), 3 Hợp Đồng Tuần & Tháp 500 Tầng (1k → 125k Lực, thưởng LT mỗi tầng tăng +15%, NPC mở Linh Vực từ F70).\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
       },
     ],
     fields: [
       {
         name: `${em('su_linhthach')} Linh Thạch, /job, Gacha & Cửa Hàng`,
         value: [
-          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` nhận **+800 LT**.',
-          '• `/roll` (`50 LT/lượt`, `450/10`) kèm **`/autosell`** tự bán Phàm/Linh/Tiên khi quay • `/dismantle` • `/enchant` (`D→S`).',
-          '• `/shop` *(kèm Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày) • Thẻ Reset Tháp (`200 LT`, **5/ngày**, max **15 túi**).',
+          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.5 nhận **+2.000 LT**.',
+          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • `/dismantle` • `/enchant` (`+0/+8/+18/+32/+50%`).',
+          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) • Nền & Viền đã mua đổi **0 LT** ngay trong `/shop`.',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('su_tower_boss')} Nhiệm Vụ Ngày (+10%) & Tháp 500 Tầng`,
+        name: `${em('su_tower_boss')} Nhiệm Vụ Ngày, Tháp 500 Tầng (+15% LT) & Top Ngày`,
         value: [
-          '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** 2 cố định (`/daily`, `150 EXP`) + **3 xoay vòng** từ 10 hoạt động • Hoàn tất **5/5** thưởng **+130 LT** + quà + **3 Hợp Đồng Tuần**.',
-          '• **Tháp 500 Tầng:** Buff **+10%**, random chiến lực **±12%/trận**, NPC dùng **Linh Vực từ F70+** *(+Thần Thức F150, +Thần Cảnh F250)*, tỉ lệ Thần Thoại tăng tới **100% từ F100+**.',
+          '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** 2 cố định + 3 xoay vòng *(5/5: **+130 LT** + quà)* & 3 Hợp Đồng Tuần.',
+          '• **Tháp 500 Tầng (`1k → 125k` Lực):** Thưởng Linh Thạch mỗi tầng & mốc Milestone **tăng +15%**, NPC dùng **Linh Vực từ F70+**.',
+          '• **Top Chat & Voice Ngày (`00:00`):** `/top loai:chat` & `/top loai:voice` thưởng **500 / 400 / 300 LT** mỗi ngày.',
         ].join('\n'),
         inline: false,
       },
@@ -303,40 +304,41 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Kinh tế v1.4.7: /daily, /job (8 ca), /roll + /autosell, /nhiemvu xoay vòng (+10% LT), Tháp 500 tầng, /farm, /exchange, Minigame, /marry & /giatoc.',
+    content: 'Kinh tế v1.5: +2.000 LT /updates, Tháp 500 tầng (+15% LT), Top Chat/Voice ngày, Pity 350, /shop tự Equip 0 LT, /farm & Minigame.',
   },
 
   explorer: {
     id: 'explorer',
-    title: `${em('explorer_world_map_v14')} Khám Phá Đại Lục & Bản Đồ 4K (/explorer)`,
+    title: `${em('explorer_world_map_v14')} Khám Phá Đại Lục & Thuận Hệ Địa Hình (/explorer)`,
     icon: em('explorer_world_map_v14'),
-    description: '12 địa danh (10k → 1M Lực), 4 mốc giờ, Thức Ăn Bổ Trợ, Sinh Tử & nhặt 60% đồ rơi.',
+    description: '12 địa danh cân bằng mới (3.5k → 112k Lực), +5% LT cơ bản (210–315 LT/h), Thuận Hệ Địa Hình (+6% Sống / +10% LT) & nhặt 60% đồ rơi.',
     image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
     sections: [
       {
-        heading: '1. 12 Địa Danh Đại Lục Cửu Châu',
+        heading: '1. 12 Địa Danh Đại Lục Cửu Châu (Kèm Hệ Địa Hình Thuận Lợi)',
         content: V14_EXPLORER_MAPS.map(
-          (m) => `• #${m.order} ${m.name} (${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • ×${m.reward_multiplier})`,
+          (m) => `• #${m.order} ${m.name} (${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • Hệ ${(m.favored_elements || []).join('/')} • ×${m.reward_multiplier})`,
         ).join('\n'),
       },
       {
-        heading: '2. Cơ Chế Sinh Tử & Phần Thưởng',
-        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng 200–300 LT/h × hệ số + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Lực >= Map sống 90%–100%; yếu hơn map tử vong tăng dần về 100% (thua từ 2× lực = 0% sống sót, Hộ Mệnh Đan không cứu được). Pet Độc Nhất trọng thương hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ, Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
+        heading: '2. Thuận Hệ Địa Hình, Cơ Chế Sinh Tử & Phần Thưởng',
+        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng cơ bản 210–315 LT/giờ × hệ số (+5% mới) + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Thuận Hệ Địa Hình: Nếu Linh Thú hoặc Linh Vực mang đi có Hệ trùng với Hệ thuận lợi của Map, tự động nhận thêm +6% Tỉ Lệ Sống Sót và +10% Linh Thạch thu hoạch!\n• Lực >= Map sống 90%–100%; yếu hơn map rủi ro tăng dần về 100% (thua từ 2× lực = 0% sống sót). Pet Độc Nhất trọng thương hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ, Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
       },
     ],
     fields: [
       {
-        name: `${em('explorer_world_map_v14')} 12 Địa Danh Đại Lục Cửu Châu`,
+        name: `${em('explorer_world_map_v14')} 12 Địa Danh (3.5k → 112k • Hệ Thuận Lợi)`,
         value: V14_EXPLORER_MAPS.map(
-          (m) => `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • ×${m.reward_multiplier})*`,
+          (m) => `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • Hệ **${(m.favored_elements || []).join('/')}** • ×${m.reward_multiplier})*`,
         ).join('\n'),
         inline: false,
       },
       {
-        name: `${em('enchant_stone_absolute')} Quy Tắc Sinh Tử & Nhặt Đồ 60%`,
+        name: `${em('su_sparkle')} Thuận Hệ Địa Hình (+6% Sống • +10% LT) & Quà (+5% LT)`,
         value: [
-          '• **Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số` + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
-          '• **Sinh tử:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần về **100%** *(thua từ 2× lực = **0% sống sót**, Hộ Mệnh Đan không cứu được)*. Pháp Bảo thường rơi khi tử nạn chờ người qua sau *(mốc `>=` giờ rơi)* nhặt **60%**.',
+          '• **Thuận Hệ Địa Hình:** Khi **Pet** hoặc **Linh Vực** xuất hành khớp với **Hệ của Map** *(ví dụ Map #1 Hệ Mộc/Thổ)*, đội hình được cộng ngay **+6% Tỉ Lệ Sống Sót** và **+10% Linh Thạch**!',
+          '• **Thưởng (`2/3/6/12h`):** **`210–315 LT/giờ × hệ số`** *(+5%)* + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
+          '• **Sinh tử & Nhặt đồ:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần *(thua từ 2× lực = **0%**, Đan không cứu được)*. Pháp Bảo thường rơi tại map chờ người đi sau nhặt **60%**.',
         ].join('\n'),
         inline: false,
       },
@@ -346,7 +348,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Khám Phá /explorer qua 12 địa danh (10k → 1M Lực) theo mốc 2/3/6/12h, hỗ trợ thức ăn & cơ chế nhặt 60% bảo vật rơi.',
+    content: 'Khám Phá /explorer v1.5 qua 12 địa danh (3.5k → 112k Lực), +5% LT (210–315 LT/h), Thuận Hệ Địa Hình (+6% sống / +10% LT) & nhặt 60% bảo vật rơi.',
   },
 };
 

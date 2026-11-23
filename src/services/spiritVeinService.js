@@ -152,7 +152,8 @@ function buildBossCombatant(tier) {
     maxHp: tier.stats.hp,
     currentHp: tier.stats.hp,
     shield: 0,
-    critRate: tier.tier_group === 'high' ? 22 : 12,
+    critRate: tier.tier_group === 'high' ? 0.22 : 0.12,
+    aoeSplashPct: Number(tier.aoe_splash_pct || 0),
     powerScore: tier.boss_power,
   };
 }

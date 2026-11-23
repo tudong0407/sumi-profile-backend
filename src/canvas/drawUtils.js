@@ -500,6 +500,111 @@ export function drawProceduralAvatar(ctx, x, y, size, isOwner, initialLetter) {
  * - novice: Lv.1–39 (Luyện Khí – Trúc Cơ) — Bạch Ngọc / Thanh Lam sắc nét
  */
 const frameOverlayCache = new Map();
+const frameSilhouetteCache = new Map();
+
+function buildFrameSilhouetteCanvas(frameImg, srcSize = 512) {
+  const c = createCanvas(srcSize, srcSize);
+  const sCtx = c.getContext('2d');
+  sCtx.drawImage(frameImg, 0, 0, srcSize, srcSize);
+  const imgData = sCtx.getImageData(0, 0, srcSize, srcSize);
+  const data = imgData.data;
+  const total = srcSize * srcSize;
+
+  // Exterior flood-fill from all 4 image edges through transparent pixels (alpha < 80)
+  const isExterior = new Uint8Array(total);
+  const q = [];
+  for (let x = 0; x < srcSize; x += 1) {
+    for (const y of [0, srcSize - 1]) {
+      const idx = y * srcSize + x;
+      if (!isExterior[idx] && data[idx * 4 + 3] < 80) {
+        isExterior[idx] = 1;
+        q.push(idx);
+      }
+    }
+  }
+  for (let y = 0; y < srcSize; y += 1) {
+    for (const x of [0, srcSize - 1]) {
+      const idx = y * srcSize + x;
+      if (!isExterior[idx] && data[idx * 4 + 3] < 80) {
+        isExterior[idx] = 1;
+        q.push(idx);
+      }
+    }
+  }
+  let head = 0;
+  while (head < q.length) {
+    const idx = q[head++];
+    const x = idx % srcSize;
+    const y = (idx / srcSize) | 0;
+    if (x > 0) {
+      const n = idx - 1;
+      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    }
+    if (x + 1 < srcSize) {
+      const n = idx + 1;
+      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    }
+    if (y > 0) {
+      const n = idx - srcSize;
+      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    }
+    if (y + 1 < srcSize) {
+      const n = idx + srcSize;
+      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    }
+  }
+
+  // Erode silhouette inward by 2px from exterior boundary so avatar never peeks past outer edge
+  const eroded = new Uint8Array(total);
+  for (let y = 0; y < srcSize; y += 1) {
+    for (let x = 0; x < srcSize; x += 1) {
+      const idx = y * srcSize + x;
+      if (isExterior[idx]) continue;
+      let nearExt = false;
+      for (let dy = -2; dy <= 2 && !nearExt; dy += 1) {
+        for (let dx = -2; dx <= 2; dx += 1) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || nx >= srcSize || ny < 0 || ny >= srcSize || isExterior[ny * srcSize + nx]) {
+            nearExt = true;
+            break;
+          }
+        }
+      }
+      if (!nearExt) eroded[idx] = 1;
+    }
+  }
+
+  const maskData = sCtx.createImageData(srcSize, srcSize);
+  const m = maskData.data;
+  for (let i = 0; i < total; i += 1) {
+    if (eroded[i]) {
+      const p = i * 4;
+      m[p] = 255;
+      m[p + 1] = 255;
+      m[p + 2] = 255;
+      m[p + 3] = 255;
+    }
+  }
+  sCtx.putImageData(maskData, 0, 0);
+  return c;
+}
+
+function getFrameSilhouetteMaskSync(frameImg, tier) {
+  if (!frameImg) return null;
+  if (frameSilhouetteCache.has(tier)) return frameSilhouetteCache.get(tier);
+  try {
+    const mask = buildFrameSilhouetteCanvas(frameImg, frameImg.width || 512);
+    if (frameSilhouetteCache.size >= 24) {
+      const oldest = frameSilhouetteCache.keys().next().value;
+      if (oldest) frameSilhouetteCache.delete(oldest);
+    }
+    frameSilhouetteCache.set(tier, mask);
+    return mask;
+  } catch {
+    return null;
+  }
+}
 
 export async function preloadAvatarFrameOverlay(frameId) {
   const fid = String(frameId || '').trim();
@@ -518,6 +623,7 @@ export async function preloadAvatarFrameOverlay(frameId) {
       if (oldest) frameOverlayCache.delete(oldest);
     }
     frameOverlayCache.set(fid, img);
+    getFrameSilhouetteMaskSync(img, fid);
     return img;
   } catch {
     return null;
@@ -546,31 +652,32 @@ export function resolveAvatarBorderTier({ isOwner = false, level = 1, avatarFram
 }
 
 export const AVATAR_FRAME_METRICS = {
-  frame_bamboo_ink: { cx: 259.5, cy: 248.0, rTuck: 192 },
-  frame_plum_blossom: { cx: 260.7, cy: 252.7, rTuck: 186 },
-  frame_lantern_glow: { cx: 241.8, cy: 247.2, rTuck: 179 },
-  frame_obsidian_ring: { cx: 249.8, cy: 246.4, rTuck: 188 },
-  frame_royal_legacy: { cx: 251.0, cy: 252.5, rTuck: 178 },
-  jade_lotus: { cx: 261.5, cy: 247.7, rTuck: 171 },
-  frost_crystal: { cx: 256.4, cy: 248.5, rTuck: 162 },
-  frame_moon_ripple: { cx: 258.5, cy: 258.1, rTuck: 174 },
-  frame_thunder_seal: { cx: 258.1, cy: 258.0, rTuck: 170 },
-  frame_crimson_cloud: { cx: 251.6, cy: 249.3, rTuck: 172 },
-  amethyst_celestial: { cx: 253.0, cy: 257.6, rTuck: 160 },
-  crimson_phoenix: { cx: 261.5, cy: 270.7, rTuck: 161 },
-  frame_star_nebula: { cx: 256.1, cy: 255.5, rTuck: 178 },
-  frame_white_lotus: { cx: 252.9, cy: 251.6, rTuck: 166 },
-  frame_solar_crow: { cx: 251.6, cy: 255.7, rTuck: 148 },
-  frame_azure_dragon: { cx: 260.8, cy: 252.4, rTuck: 158 },
-  frame_kitsune_mythic: { cx: 248.5, cy: 262.3, rTuck: 151 },
-  frame_chaos_primordial: { cx: 257.2, cy: 265.7, rTuck: 158 },
-  frame_emperor_dragon: { cx: 252.9, cy: 255.0, rTuck: 142 },
-  frame_eternal_aurora: { cx: 244.8, cy: 243.2, rTuck: 157 },
+  frame_bamboo_ink: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_plum_blossom: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_lantern_glow: { cx: 256, cy: 256, rTuck: 166, rUnder: 184 },
+  frame_obsidian_ring: { cx: 256, cy: 256, rTuck: 166, rUnder: 184 },
+  frame_royal_legacy: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  jade_lotus: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frost_crystal: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_moon_ripple: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_thunder_seal: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_crimson_cloud: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  amethyst_celestial: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  crimson_phoenix: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_star_nebula: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_white_lotus: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_solar_crow: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_azure_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_kitsune_mythic: { cx: 256, cy: 256, rTuck: 166, rUnder: 192 },
+  frame_chaos_primordial: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
+  frame_emperor_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
+  frame_eternal_aurora: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
 };
 
 /**
  * Vẽ Avatar tròn khử răng cưa bằng Supersampling 4x + Radial Feather Mask và Khung Viền đồng tâm tuyệt đối.
- * Khắc phục triệt để lỗi răng cưa, mờ nét và lệch tâm giữa avatar & khung viền.
+ * Khi dùng PNG frame overlay: chuẩn hóa bán kính lọt dưới gờ khung (rUnder) kết hợp Exterior Silhouette Mask
+ * để lấp kín 100% khe trống bên trong khung và không tràn ra ngoài viền.
  */
 export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY, radius, options = {}) {
   const {
@@ -585,10 +692,13 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   const tier = resolveAvatarBorderTier({ isOwner, level, avatarFrame });
   const isCustomFrame = Boolean(AVATAR_FRAME_BY_ID[tier] && tier !== 'default');
   const pngOverlay = isCustomFrame ? (options.frameOverlayImg || getCachedAvatarFrameOverlaySync(tier)) : null;
+  const frameMetrics = pngOverlay ? (AVATAR_FRAME_METRICS[tier] || { cx: 256, cy: 256, rTuck: 166, rUnder: 186 }) : null;
   const avScale = pngOverlay
     ? (Number(options.avatarRadiusScale) > 0 ? Number(options.avatarRadiusScale) : 0.90)
     : 1;
-  const drawAvatarRadius = radius * avScale;
+  const visibleHoleRadius = radius * avScale;
+  const underFillMult = frameMetrics ? ((frameMetrics.rUnder || 186) / (frameMetrics.rTuck || 166)) : 1;
+  const drawAvatarRadius = visibleHoleRadius * underFillMult;
   // Tỷ lệ viền & hào quang chuẩn theo radius (r>=56 giữ s=1 cho /profile & /rank; r=24 thu nhỏ thanh mảnh cho /battle)
   const s = Math.max(0.42, Math.min(1, radius / 56));
 
@@ -659,11 +769,48 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   ssCtx.fill();
 
   // Hạ mẫu mượt xuống canvas chính tại đúng tâm (centerX, centerY)
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(ssCanvas, centerX - drawAvatarRadius, centerY - drawAvatarRadius, diameter, diameter);
-  ctx.restore();
+  if (pngOverlay && frameMetrics) {
+    const srcW = pngOverlay.width || 512;
+    const srcH = pngOverlay.height || 512;
+    const normScale = srcW / 512;
+    const k = visibleHoleRadius / ((frameMetrics.rTuck || 166) * normScale);
+    const drawW = srcW * k;
+    const drawH = srcH * k;
+    const drawX = centerX - (frameMetrics.cx * normScale) * k;
+    const drawY = centerY - (frameMetrics.cy * normScale) * k;
+
+    const silMask = getFrameSilhouetteMaskSync(pngOverlay, tier);
+    if (silMask) {
+      const boxW = Math.max(8, Math.ceil(drawW));
+      const boxH = Math.max(8, Math.ceil(drawH));
+      const comp = createCanvas(boxW, boxH);
+      const compCtx = comp.getContext('2d');
+      compCtx.imageSmoothingEnabled = true;
+      compCtx.imageSmoothingQuality = 'high';
+      const relX = centerX - drawX;
+      const relY = centerY - drawY;
+      compCtx.drawImage(ssCanvas, relX - drawAvatarRadius, relY - drawAvatarRadius, diameter, diameter);
+      compCtx.globalCompositeOperation = 'destination-in';
+      compCtx.drawImage(silMask, 0, 0, boxW, boxH);
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(comp, drawX, drawY, drawW, drawH);
+      ctx.restore();
+    } else {
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(ssCanvas, centerX - drawAvatarRadius, centerY - drawAvatarRadius, diameter, diameter);
+      ctx.restore();
+    }
+  } else {
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(ssCanvas, centerX - drawAvatarRadius, centerY - drawAvatarRadius, diameter, diameter);
+    ctx.restore();
+  }
 
   // 3. Vẽ Hệ Vòng Viền Đồng Tâm (chung 1 tọa độ centerX, centerY — không bao giờ lệch 1px)
   ctx.save();
@@ -743,11 +890,11 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     }
   } else if (isCustomFrame) {
     if (pngOverlay) {
-      const metrics = AVATAR_FRAME_METRICS[tier] || { cx: 256, cy: 256, rTuck: 170 };
+      const metrics = frameMetrics || AVATAR_FRAME_METRICS[tier] || { cx: 256, cy: 256, rTuck: 166 };
       const srcW = pngOverlay.width || 512;
       const srcH = pngOverlay.height || 512;
       const normScale = srcW / 512;
-      const k = drawAvatarRadius / (metrics.rTuck * normScale);
+      const k = visibleHoleRadius / (metrics.rTuck * normScale);
       const drawW = srcW * k;
       const drawH = srcH * k;
       const drawX = centerX - (metrics.cx * normScale) * k;

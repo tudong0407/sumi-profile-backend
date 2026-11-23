@@ -336,13 +336,13 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.equal(fullReset.success, false);
     assert.equal(fullReset.error, 'TOWER_ATTEMPTS_FULL');
 
-    // Challenge Tower Floor 1 (win) -> +22 floor + 10 bonus = +32 LT (with Lv.5 starter pet beating F1)
+    // Challenge Tower Floor 1 (win) -> round((22 + 10) * 1.15) = +37 LT (with Lv.5 starter pet beating F1)
     await supabase.from('users').update({ linh_thach: 100 }).eq('user_id', USER_V11_A);
     await supabase.from('user_pets').update({ level: 5 }).eq('user_id', USER_V11_A).eq('is_active', true);
     const towerWin = await challengeTower(USER_V11_A, { preRender: false, seed: 11, rng: () => 0.5 });
     assert.equal(towerWin.success, true);
     assert.equal(towerWin.won, true);
-    assert.equal(towerWin.reward_linh_thach, 22 + 10);
+    assert.equal(towerWin.reward_linh_thach, 37);
     assert.equal(towerWin.attempts_used, 1);
 
     // Use reset card -> restores 0/5 and leaves 13 cards

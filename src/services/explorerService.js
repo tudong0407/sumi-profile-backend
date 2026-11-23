@@ -44,6 +44,7 @@ import {
 } from './profileService.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { trackQuestActivity } from './questService.js';
+import { evaluateSetBonus, DOMAIN_TO_PET_ELEMENTS } from './battleEngine/setBonusEngine.js';
 
 export const VALID_EXPLORER_DURATIONS = [2, 3, 6, 12];
 export const EXPLORER_FOOD_EFFECTS = {
@@ -51,6 +52,57 @@ export const EXPLORER_FOOD_EFFECTS = {
   food_yield_tea: { label: 'Tụ Bảo Tiên Trà (+18% Linh Thạch)', survivalBonus: 0, yieldBonus: 0.18, timeReduction: 0 },
   food_speed_fruit: { label: 'Ngự Phong Tốc Quả (-25% Thời Gian)', survivalBonus: 0, yieldBonus: 0, timeReduction: 0.25 },
 };
+export const EXPLORER_TERRAIN_SURVIVAL_BONUS = 0.06;
+export const EXPLORER_TERRAIN_YIELD_BONUS = 0.10;
+export const EXPLORER_BASE_LT_PER_HOUR_MIN = 210; // +5% so với 200 cũ
+export const EXPLORER_BASE_LT_PER_HOUR_MAX = 315; // +5% so với 300 cũ
+
+export function evaluateExplorerTerrainBonus(mapDef, petOrType = null, domainOrIds = null) {
+  const favored = Array.isArray(mapDef?.favored_elements) ? mapDef.favored_elements : [];
+  if (favored.length === 0) {
+    return { active: false, survivalBonus: 0, yieldBonus: 0, matchedElements: [], favoredElements: [] };
+  }
+
+  const matched = new Set();
+  let petElem = '';
+  if (typeof petOrType === 'string') {
+    petElem = PET_BY_TYPE[petOrType]?.element || '';
+  } else if (petOrType && typeof petOrType === 'object') {
+    petElem = petOrType.element || PET_BY_TYPE[petOrType.pet_type || petOrType.type]?.element || '';
+  }
+  if (petElem && favored.includes(petElem)) {
+    matched.add(petElem);
+  }
+
+  const domainCandidates = [];
+  if (Array.isArray(domainOrIds)) {
+    for (const id of domainOrIds) {
+      if (id && DOMAIN_BY_ID[id]) domainCandidates.push(DOMAIN_BY_ID[id]);
+    }
+  } else if (typeof domainOrIds === 'string' && DOMAIN_BY_ID[domainOrIds]) {
+    domainCandidates.push(DOMAIN_BY_ID[domainOrIds]);
+  } else if (domainOrIds && typeof domainOrIds === 'object') {
+    const did = domainOrIds.entity_id || domainOrIds.domain_id || domainOrIds.id;
+    const cat = did && DOMAIN_BY_ID[did] ? DOMAIN_BY_ID[did] : domainOrIds;
+    if (cat?.element) domainCandidates.push(cat);
+  }
+
+  for (const dom of domainCandidates) {
+    const mapped = DOMAIN_TO_PET_ELEMENTS[String(dom?.element || '').trim()] || [];
+    for (const el of mapped) {
+      if (favored.includes(el)) matched.add(el);
+    }
+  }
+
+  const active = matched.size > 0;
+  return {
+    active,
+    survivalBonus: active ? EXPLORER_TERRAIN_SURVIVAL_BONUS : 0,
+    yieldBonus: active ? EXPLORER_TERRAIN_YIELD_BONUS : 0,
+    matchedElements: Array.from(matched),
+    favoredElements: favored,
+  };
+}
 
 const explorerLocks = new Map();
 const memUiSelections = new Map();
@@ -76,16 +128,17 @@ async function withExplorerLock(userId, fn) {
  * - 50% < Lực/Map < 100%: Giảm tuyến tính mượt từ 80% xuống >0% (+8% từ Hộ Mệnh Linh Đan, cap 88%).
  * - Lực <= 50% Map (thua >= 2x lực chiến): Chắc chắn 0% sống sót (100% tử vong), Hộ Mệnh Linh Đan không thể cứu.
  */
-export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null) {
+export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null, terrainBonus = 0) {
   const petPower = Math.max(0, Number(petPowerRaw) || 0);
   const mapPower = Math.max(1, Number(mapPowerRaw) || 10000);
   const foodCfg = foodId ? EXPLORER_FOOD_EFFECTS[foodId] : null;
   const foodBonus = Number(foodCfg?.survivalBonus || 0);
+  const tBonus = Math.max(0, Number(terrainBonus) || 0);
 
   if (petPower >= mapPower) {
     const diffRatio = (petPower - mapPower) / mapPower;
     const diffSteps = Math.floor(diffRatio / 0.10 + 1e-9);
-    const survivalRate = Math.min(1.0, Math.max(0.05, 0.90 + diffSteps * 0.05 + foodBonus));
+    const survivalRate = Math.min(1.0, Math.max(0.05, 0.90 + diffSteps * 0.05 + foodBonus + tBonus));
     return {
       survivalRate: Number(survivalRate.toFixed(4)),
       deathRate: Number((1 - survivalRate).toFixed(4)),
@@ -114,7 +167,8 @@ export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null)
   }
 
   const baseSurvival = Math.max(0.01, 0.80 * ((ratio - 0.50) / 0.50));
-  const survivalRate = Math.min(0.88, Math.max(0.01, baseSurvival + foodBonus));
+  const maxCap = Math.min(0.94, 0.88 + tBonus);
+  const survivalRate = Math.min(maxCap, Math.max(0.01, baseSurvival + foodBonus + tBonus));
   const deathRate = Math.max(0.0, 1.0 - survivalRate);
   return {
     survivalRate: Number(survivalRate.toFixed(4)),
@@ -147,7 +201,7 @@ function explorerError(status, error, title, message, extra = {}) {
  * Tính tổng lực chiến cho 1 bộ Loadout Khám Phá (Pet + 3 Pháp Bảo + Linh Vực),
  * đồng bộ 100% công thức Chiến Lực của /profile (Khắc Ấn, Pháp Bảo, Hôn Nhân, Role/Cảnh Giới).
  */
-export function computeExplorerLoadoutPower(petRow, equipRows = [], _domainRow = null, buffContext = {}) {
+export function computeExplorerLoadoutPower(petRow, equipRows = [], domainRow = null, buffContext = {}) {
   if (!petRow) return 0;
   const petGrade = normalizeEnchantGrade(petRow.enchant_grade || 'D');
   const petMult = getEnchantMultiplier(petGrade);
@@ -174,10 +228,12 @@ export function computeExplorerLoadoutPower(petRow, equipRows = [], _domainRow =
   let bonusDef = 0;
   let bonusSpd = 0;
   let bonusHp = 0;
+  const eqBySlot = {};
   for (const eq of equipRows || []) {
     if (!eq) continue;
     const def = EQUIPMENT_BY_ID[eq.item_id];
     if (!def) continue;
+    eqBySlot[def.item_type] = def;
     const itemMult = getEnchantMultiplier(normalizeEnchantGrade(eq.enchant_grade || 'D'));
     bonusAtk += Math.round((Number(def.bonus_atk) || 0) * itemMult);
     bonusDef += Math.round((Number(def.bonus_def) || 0) * itemMult);
@@ -195,6 +251,21 @@ export function computeExplorerLoadoutPower(petRow, equipRows = [], _domainRow =
   const rolePetPowerPct = Number(buffContext?.rolePetPowerPct || 0);
   if (rolePetPowerPct > 0) {
     finalPower = Math.round(finalPower * (1 + rolePetPowerPct / 100));
+  }
+
+  const petCatalog = PET_BY_TYPE[petRow.pet_type || petRow.type] || null;
+  const domId = domainRow?.entity_id || domainRow?.domain_id || null;
+  const domCatalog = domId ? DOMAIN_BY_ID[domId] : (domainRow?.element ? domainRow : null);
+  const setBonus = evaluateSetBonus({
+    pet: {
+      element: petRow.element || petCatalog?.element || '',
+      rarity_key: petCatalog?.rarity_key || petRow.rarity_key || 'common',
+    },
+    equipment: eqBySlot,
+    domainLoadout: { domain: domCatalog || null },
+  });
+  if (setBonus.statBonusPct > 0) {
+    finalPower = Math.round(finalPower * (1 + setBonus.statBonusPct / 100));
   }
 
   return Math.max(100, Math.round(finalPower));
@@ -674,11 +745,13 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     await saveUiState(cleanId, { selected_duration: validHrs });
 
     const mapLines = V14_EXPLORER_MAPS.map((m) => {
-      const surv = computeExplorerSurvival(details.power, m.recommended_power, null);
+      const terrain = evaluateExplorerTerrainBonus(m, details.chosenPet, details.domain);
+      const surv = computeExplorerSurvival(details.power, m.recommended_power, null, terrain.survivalBonus);
       const dropCnt = (availDrops || []).filter((d) => d.map_id === m.map_id && Number(d.min_duration_hours) <= validHrs).length;
       const dropHint = dropCnt > 0 ? ` • ${uiEm('ui_gift_box')} **${dropCnt} đồ rơi!**` : '';
+      const terrainHint = terrain.active ? ` • ${em('su_sparkle')} **Thuận Hệ (${terrain.matchedElements.join('/')}: +6% sống/+10% LT)**` : '';
       const survLabel = surv.tooWeak ? `Sống: **0%** ${uiEm('ui_skull_ko')}` : `Sống: **${surv.survivalPct}%**`;
-      return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k)* — ${survLabel}${dropHint}`;
+      return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • Hệ ${m.favored_elements.join('/')})* — ${survLabel}${terrainHint}${dropHint}`;
     });
 
     return {
@@ -689,7 +762,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       title: `${em('explorer_world_map_v14')} BƯỚC 2/3 — CHỌN ĐỊA DANH KHÁM PHÁ (MỐC ${validHrs} GIỜ)`,
       description: [
         `• **Đội Hình:** ${details.chosenPet ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}**` : '*Chưa chọn*'} — **${details.power.toLocaleString('vi-VN')} Lực**`,
-        `• Chọn 1 trong **12 Địa Danh** ở Dropdown bên dưới *(quà cơ bản ~${(validHrs * 200).toLocaleString('vi-VN')}–${(validHrs * 300).toLocaleString('vi-VN')} LT × hệ số map + cơ hội rơi ${em('enchant_stone_absolute')} 0.5%)*:`,
+        `• Chọn 1 trong **12 Địa Danh** ở Dropdown bên dưới *(quà cơ bản ~${(validHrs * EXPLORER_BASE_LT_PER_HOUR_MIN).toLocaleString('vi-VN')}–${(validHrs * EXPLORER_BASE_LT_PER_HOUR_MAX).toLocaleString('vi-VN')} LT × hệ số map + cơ hội rơi ${em('enchant_stone_absolute')} 0.5%)*:`,
         '',
         ...mapLines,
       ].join('\n'),
@@ -711,8 +784,12 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     ]);
     const fc = Object.fromEntries((invFoods || []).map((r) => [r.item_id, Number(r.quantity || 0)]));
     const hrs = Number(ui.selected_duration || 2);
-    const survBase = computeExplorerSurvival(details.power, mapDef.recommended_power, null);
-    const survFoodA = computeExplorerSurvival(details.power, mapDef.recommended_power, 'food_survival_pill');
+    const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
+    const survBase = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus);
+    const survFoodA = computeExplorerSurvival(details.power, mapDef.recommended_power, 'food_survival_pill', terrain.survivalBonus);
+    const terrainLine = terrain.active
+      ? `• **Thuận Hệ Địa Hình:** ${em('su_sparkle')} **Đang Kích Hoạt (${terrain.matchedElements.join(', ')})** — Cộng **+6% Sống Sót & +10% Linh Thạch**!`
+      : `• **Hệ Địa Hình Thuận Lợi:** \`${(mapDef.favored_elements || []).join(' • ')}\` *(khớp Hệ Pet/Linh Vực để nhận +6% Sống & +10% LT)*`;
 
     return {
       success: true,
@@ -722,6 +799,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       title: `${uiEm('ui_compass_dir')} BƯỚC 3/3 — XÁC NHẬN XUẤT PHÁT: ${mapDef.name.toUpperCase()}`,
       description: [
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty} • Yêu cầu ${mapDef.recommended_power.toLocaleString('vi-VN')} Lực • Hệ số ×${mapDef.reward_multiplier})*`,
+        terrainLine,
         `• **Thời Gian:** **${hrs} giờ** *(dùng ${em('food_speed_fruit')} giảm còn **${(hrs * 0.75).toFixed(2)} giờ**)*`,
         survBase.tooWeak
           ? `• **Tỉ Lệ Sống Sót Dự Kiến:** **0%** ${uiEm('ui_skull_ko')} *(Lực chiến thua từ 2× trở lên — chắc chắn tử nạn, ${em('food_survival_pill')} không thể cứu!)*`
@@ -776,7 +854,8 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     const ui = await saveUiState(cleanId, { selected_food_id: foodId });
     const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
     const hrs = Number(ui.selected_duration || 2);
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId);
+    const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
     const effHours = foodId === 'food_speed_fruit' ? +(hrs * 0.75).toFixed(2) : hrs;
 
     return {
@@ -791,19 +870,21 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       title: `${em('crash_fly')} SẴN SÀNG XUẤT PHÁT — ${mapDef.name.toUpperCase()}`,
       description: [
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
+        terrain.active ? `• **Thuận Hệ Địa Hình (${terrain.matchedElements.join('/')}):** **+6% Sống Sót • +10% LT**` : '',
         `• **Thời Gian Thực Tế:** **${effHours} giờ** *(Mốc thưởng ${hrs} giờ)*`,
         `• **Thức Ăn Mang Theo:** ${em(foodId)} **${EXPLORER_FOOD_EFFECTS[foodId].label}** *(đang có ×${ownedQty} — tiêu hao ×1)*`,
         `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)${formatSurvivalSuffix(surv)}`,
         '',
         `Bấm **[${em('crash_fly')} Xác Nhận Xuất Phát]** để đưa Linh Thú lên đường ngay!`,
-      ].join('\n'),
+      ].filter(Boolean).join('\n'),
     };
   }
 
   const ui = await saveUiState(cleanId, { selected_food_id: null });
   const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
   const hrs = Number(ui.selected_duration || 2);
-  const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, null);
+  const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
+  const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus);
 
   return {
     success: true,
@@ -816,12 +897,13 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     title: `${em('crash_fly')} SẴN SÀNG XUẤT PHÁT — ${mapDef.name.toUpperCase()}`,
     description: [
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
+      terrain.active ? `• **Thuận Hệ Địa Hình (${terrain.matchedElements.join('/')}):** **+6% Sống Sót • +10% LT**` : '',
       `• **Thời Gian Thực Tế:** **${hrs} giờ** *(Mốc thưởng ${hrs} giờ)*`,
       `• **Thức Ăn Mang Theo:** *Không mang thức ăn*`,
       `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)${formatSurvivalSuffix(surv)}`,
       '',
       `Bấm **[${em('crash_fly')} Xác Nhận Xuất Phát]** để đưa Linh Thú lên đường ngay!`,
-    ].join('\n'),
+    ].filter(Boolean).join('\n'),
   };
 }
 
@@ -862,7 +944,8 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
     const details = await resolveUserLoadoutDetails(cleanId);
     const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
     const hrs = Number(ui.selected_duration || 2);
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId);
+    const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
     const effHours = foodId === 'food_speed_fruit' ? +(hrs * 0.75).toFixed(2) : hrs;
 
     const desc = [
@@ -1000,7 +1083,8 @@ export async function startExpedition(userId, opts = {}) {
       throw new Error(`Start expedition failed: ${expErr.message}`);
     }
 
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId);
+    const terrain = evaluateExplorerTerrainBonus(mapDef, pet, details.domain);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
     const mainPetNotice = pet.is_active
       ? `\n${uiEm('ui_warn')} *Bạn đang dùng **Pet Chính** để khám phá — Pet này tạm khóa khỏi PvP/PvE/Tháp/Địa Mạch (bạn có thể dùng \`/linhthu\` đổi sang Pet phụ khác để vẫn chiến đấu bình thường!).*`
       : '';
@@ -1008,6 +1092,7 @@ export async function startExpedition(userId, opts = {}) {
     const startDesc = [
       `• **Linh Thú:** ${petEmoji(pet.pet_type)} **${pet.pet_name}** (${details.power.toLocaleString('vi-VN')} Lực)`,
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty} • ${mapDef.recommended_power.toLocaleString('vi-VN')} Lực)*`,
+      terrain.active ? `• **Thuận Hệ Địa Hình (${terrain.matchedElements.join('/')}):** **+6% Sống Sót • +10% Linh Thạch**` : '',
       `• **Thời Gian:** **${(effectiveSeconds / 3600).toFixed(2)} giờ** *(Mốc ${durationHours}h${foodId ? ` • Đã dùng ${em(foodId)}` : ''})*`,
       `• **Tỉ Lệ Sống Sót:** **${surv.survivalPct}%**${formatSurvivalSuffix(surv)}`,
       mainPetNotice,
@@ -1121,7 +1206,9 @@ export async function claimExpedition(userId, opts = {}) {
         { remaining_text: rem },
       );
     }
-    const surv = computeExplorerSurvival(exp.pet_power, exp.map_power, exp.food_item_id);
+    const lockedDomainIds = Array.isArray(exp.locked_domain_ids) ? exp.locked_domain_ids : [];
+    const terrain = evaluateExplorerTerrainBonus(mapDef, { pet_type: exp.pet_type }, lockedDomainIds);
+    const surv = computeExplorerSurvival(exp.pet_power, exp.map_power, exp.food_item_id, terrain.survivalBonus);
     const survivalRoll = opts.forceOutcome === 'survive' ? 0.0 : opts.forceOutcome === 'die' ? 0.9999 : rng();
     const survived = survivalRoll < surv.survivalRate;
 
@@ -1132,10 +1219,10 @@ export async function claimExpedition(userId, opts = {}) {
       // 1. Trả Pet về trạng thái 'ready'
       await supabase.from('user_pets').update({ status: 'ready' }).eq('pet_id', exp.pet_id);
 
-      // 2. Tính Linh Thạch: 200-300 LT/giờ * giờ * hệ số map * thức ăn B
+      // 2. Tính Linh Thạch (+5% mới: 210-315 LT/giờ) * giờ * hệ số map * (1 + thức ăn B + Thuận Hệ +10%)
       const foodYieldBonus = exp.food_item_id ? Number(EXPLORER_FOOD_EFFECTS[exp.food_item_id]?.yieldBonus || 0) : 0;
-      const basePerHour = 200 + rng() * 100;
-      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * (1 + foodYieldBonus));
+      const basePerHour = (200 + rng() * 100) * 1.05;
+      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * (1 + foodYieldBonus + terrain.yieldBonus));
 
       const { data: uRow } = await supabase.from('users').select('linh_thach').eq('user_id', cleanId).maybeSingle();
       if (uRow) {
@@ -1229,6 +1316,7 @@ export async function claimExpedition(userId, opts = {}) {
       const lines = [
         `${uiEm('ui_party_celebrate')} **KHÁM PHÁ THÀNH CÔNG — TRỞ VỀ AN TOÀN!**`,
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(Mốc ${exp.duration_hours}h • Sống sót ${surv.survivalPct}%)*`,
+        terrain.active ? `• **Thuận Hệ Địa Hình (${terrain.matchedElements.join('/')}):** **+6% Sống Sót • +10% Linh Thạch**` : '',
         `• **Linh Thạch Thu Hoạch:** **+${earnedLt.toLocaleString('vi-VN')}** ${ltIcon}`,
         lootText ? `• **Vật Phẩm Nhặt Được:** ${lootText}` : '',
         gotAbsoluteStone ? `• ${em('su_sparkle')} **CỰC PHẨM 0.5%:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn — khuyên dùng A → S)*!` : '',

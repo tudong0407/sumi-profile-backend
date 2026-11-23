@@ -83,17 +83,24 @@ export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
 export const TOWER_WIN_BONUS_LT = 10;
 export const TOWER_LOSS_PENALTY_LT = 5;
 
+export function computeTowerFloorRewardLt(floor) {
+  const f = Math.max(1, Number(floor) || 1);
+  const isBoss = f % 5 === 0;
+  const baseLt = (20 + Math.floor(f * 2)) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
+  return Math.round(baseLt * 1.15);
+}
+
 export const TOWER_MILESTONE_BONUSES = {
-  50: { lt: 500, enchantStones: 5, tickets: 0 },
-  100: { lt: 1000, enchantStones: 10, tickets: 1 },
-  150: { lt: 2000, enchantStones: 15, tickets: 2 },
-  200: { lt: 4000, enchantStones: 22, tickets: 3 },
-  250: { lt: 5500, enchantStones: 28, tickets: 4 },
-  300: { lt: 7000, enchantStones: 35, tickets: 5 },
-  350: { lt: 8500, enchantStones: 40, tickets: 6 },
-  400: { lt: 10500, enchantStones: 46, tickets: 7 },
-  450: { lt: 12500, enchantStones: 52, tickets: 8 },
-  500: { lt: 15000, enchantStones: 60, tickets: 10, absoluteStones: 1 },
+  50: { lt: 575, enchantStones: 5, tickets: 0 },
+  100: { lt: 1150, enchantStones: 10, tickets: 1 },
+  150: { lt: 2300, enchantStones: 15, tickets: 2 },
+  200: { lt: 4600, enchantStones: 22, tickets: 3 },
+  250: { lt: 6325, enchantStones: 28, tickets: 4 },
+  300: { lt: 8050, enchantStones: 35, tickets: 5 },
+  350: { lt: 9775, enchantStones: 40, tickets: 6 },
+  400: { lt: 12075, enchantStones: 46, tickets: 7 },
+  450: { lt: 14375, enchantStones: 52, tickets: 8 },
+  500: { lt: 17250, enchantStones: 60, tickets: 10, absoluteStones: 1 },
 };
 
 const TOWER_BOSS_NAMES = [
@@ -679,18 +686,20 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
     : Math.round(100 + (f - 250) * (50 / 250));
   const star = Math.min(10, Math.max(1, 1 + Math.floor((f - 1) / 48)));
 
-  // Hạng Khắc Ấn phân tầng rõ rệt D -> S
+  // Hạng Khắc Ấn phân tầng mượt D -> S
   let enchantGrade = 'D';
-  if (f < 100) {
-    enchantGrade = f < 60 ? 'D' : (rng() < 0.45 ? 'C' : 'D');
-  } else if (f < 200) {
+  if (f < 80) {
+    enchantGrade = f < 50 ? 'D' : (rng() < 0.45 ? 'C' : 'D');
+  } else if (f < 180) {
     enchantGrade = rng() < 0.45 ? 'B' : 'C';
-  } else if (f < 300) {
+  } else if (f < 280) {
     enchantGrade = rng() < 0.45 ? 'A' : 'B';
-  } else if (f < 400) {
-    enchantGrade = isBoss && rng() < 0.25 ? 'S' : 'A';
+  } else if (f < 350) {
+    enchantGrade = (isBoss && rng() < 0.25) ? 'S' : 'A';
+  } else if (f < 420) {
+    enchantGrade = (isBoss || rng() < 0.55) ? 'S' : 'A';
   } else {
-    enchantGrade = (f >= 450 || isBoss || rng() < 0.55) ? 'S' : 'A';
+    enchantGrade = 'S';
   }
 
   // Pet Mythic rate: F1 = 0%, +10% mỗi 10 tầng -> F100+ = 100%
@@ -780,13 +789,13 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
     }
   }
 
-  // Buff tổng +10% & Random chiến lực ±12% mỗi lượt leo
+  // Buff tổng +10% & Random chiến lực ±12% mỗi lượt leo, cân mượt hướng tới ~125k ở F500 (phù hợp trần người thường 150k)
   const baseCurve = f <= 4
     ? (0.68 + (f - 1) * 0.08)
-    : (0.78 + Math.pow((f - 1) / (TOWER_MAX_FLOOR - 1), 1.35) * 9.5);
+    : (0.78 + Math.pow((f - 1) / (TOWER_MAX_FLOOR - 1), 1.52) * 11.75);
   const buff10 = 1.10;
   const randomVariance = 0.88 + rng() * 0.24;
-  const bossMult = isMilestoneBoss ? 1.18 : (isBoss ? 1.12 : 1.0);
+  const bossMult = isMilestoneBoss ? 1.14 : (isBoss ? 1.09 : 1.0);
   const statScale = baseCurve * buff10 * randomVariance * bossMult;
 
   const baseAtk = Math.round(pickedPet.base_atk * statScale);
@@ -924,7 +933,7 @@ export async function challengeTower(userId, options = {}) {
     let rewardAbsoluteStones = 0;
 
     if (won) {
-      rewardLt = (20 + Math.floor(targetFloor * 2)) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
+      rewardLt = computeTowerFloorRewardLt(targetFloor);
       if (isBoss) {
         rewardStarStones += 1;
         rewardEnchantStones += 1;

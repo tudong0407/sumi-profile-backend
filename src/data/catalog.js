@@ -545,10 +545,10 @@ export const ENCHANT_GRADE_ORDER = ['D', 'C', 'B', 'A', 'S'];
 
 export const ENCHANT_GRADES = {
   D: { grade: 'D', label: 'Hạng D', bonusPct: 0, multiplier: 1.00, dropWeight: 40, color: '#94a3b8', emoji: gradeEmoji('D'), emoji_key: gradeEmojiKey('D') },
-  C: { grade: 'C', label: 'Hạng C', bonusPct: 6, multiplier: 1.06, dropWeight: 32, color: '#22c55e', emoji: gradeEmoji('C'), emoji_key: gradeEmojiKey('C') },
-  B: { grade: 'B', label: 'Hạng B', bonusPct: 14, multiplier: 1.14, dropWeight: 20, color: '#3b82f6', emoji: gradeEmoji('B'), emoji_key: gradeEmojiKey('B') },
-  A: { grade: 'A', label: 'Hạng A', bonusPct: 24, multiplier: 1.24, dropWeight: 8, color: '#a855f7', emoji: gradeEmoji('A'), emoji_key: gradeEmojiKey('A') },
-  S: { grade: 'S', label: 'Hạng S', bonusPct: 40, multiplier: 1.40, dropWeight: 0, color: '#f59e0b', emoji: gradeEmoji('S'), emoji_key: gradeEmojiKey('S') },
+  C: { grade: 'C', label: 'Hạng C', bonusPct: 8, multiplier: 1.08, dropWeight: 32, color: '#22c55e', emoji: gradeEmoji('C'), emoji_key: gradeEmojiKey('C') },
+  B: { grade: 'B', label: 'Hạng B', bonusPct: 18, multiplier: 1.18, dropWeight: 20, color: '#3b82f6', emoji: gradeEmoji('B'), emoji_key: gradeEmojiKey('B') },
+  A: { grade: 'A', label: 'Hạng A', bonusPct: 32, multiplier: 1.32, dropWeight: 8, color: '#a855f7', emoji: gradeEmoji('A'), emoji_key: gradeEmojiKey('A') },
+  S: { grade: 'S', label: 'Hạng S', bonusPct: 50, multiplier: 1.50, dropWeight: 0, color: '#f59e0b', emoji: gradeEmoji('S'), emoji_key: gradeEmojiKey('S') },
 };
 
 export const ENCHANT_UPGRADE_CONFIG = {

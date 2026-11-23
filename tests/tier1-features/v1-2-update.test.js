@@ -344,10 +344,10 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
 
   it('6. Pha 3A: Enchant D->S pity +5% no downgrade, statsCompiler multiplier without double-apply, Pre-render 98 cards & Fuyumi /info card', async () => {
     assert.equal(getEnchantMultiplier('D'), 1.0);
-    assert.equal(getEnchantMultiplier('C'), 1.06);
-    assert.equal(getEnchantMultiplier('B'), 1.14);
-    assert.equal(getEnchantMultiplier('A'), 1.24);
-    assert.equal(getEnchantMultiplier('S'), 1.40);
+    assert.equal(getEnchantMultiplier('C'), 1.08);
+    assert.equal(getEnchantMultiplier('B'), 1.18);
+    assert.equal(getEnchantMultiplier('A'), 1.32);
+    assert.equal(getEnchantMultiplier('S'), 1.50);
 
     const baseProfile = {
       user_id: USER_V12_A,
@@ -356,7 +356,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
       pet: { name: 'Hóa Thạch', type: 'hoa_thach_nham_nham', element: 'Thổ', level: 20, star: 2, atk: 200, def: 200, spd: 200, enchant_grade: 'S', enchant_applied: false, equipment: {} },
     };
     const cS = await compileCombatant(baseProfile, 'attacker');
-    const cPreApplied = await compileCombatant({ ...baseProfile, pet: { ...baseProfile.pet, atk: 280, enchant_applied: true } }, 'attacker');
+    const cPreApplied = await compileCombatant({ ...baseProfile, pet: { ...baseProfile.pet, atk: 300, enchant_applied: true } }, 'attacker');
     const cD = await compileCombatant({ ...baseProfile, pet: { ...baseProfile.pet, enchant_grade: 'D' } }, 'attacker');
     assert.ok(cS.atk > cD.atk, 'Grade S must boost compiled ATK');
     assert.equal(cS.atk, cPreApplied.atk, 'Must not double-apply enchant multiplier when enchant_applied is true');

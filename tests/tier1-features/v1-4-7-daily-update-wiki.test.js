@@ -70,7 +70,7 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
     assert.equal(CHAT_EXP_MAX, 35);
     assert.equal(LATEST_VERSION, '1.5');
     assert.equal(getUpdateAckReward('1.4.7'), 800);
-    assert.equal(getUpdateAckReward('1.5'), 1500);
+    assert.equal(getUpdateAckReward('1.5'), 2000);
 
     if (!supabase) return;
     await ensureUserInitialized(USER_UP, { username: 'AckRewardTester' });

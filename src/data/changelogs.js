@@ -7,35 +7,41 @@ import { em, gradeEmoji } from '../config/emojiHelper.js';
 
 export const LATEST_VERSION = '1.5';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
-export const BIG_UPDATE_ACK_REWARD_LT = 1500;
+export const BIG_UPDATE_ACK_REWARD_LT = 2000;
 
 /**
- * Bản nháp Chính Thức cho Nhịp 2 (Ver 1.5 Big Update — +1.500 LT quà /updates).
+ * Bản nháp Chính Thức cho Ver 1.5 Big Update (+2.000 LT quà /updates).
  * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level & KHÔNG dùng emoji Unicode Windows.
  */
 export const V15_DRAFT_CHANGELOG = {
   version: '1.5',
-  title: 'BIG UPDATE v1.5 — HỆ THỐNG SET, PITY 350, 20 VIỀN AVATAR & TOP CHAT/VOICE',
+  title: 'BIG UPDATE v1.5 — CÂN BẰNG PVE, SET BUFF, PITY 350, 20 VIỀN AVATAR & TOP NGÀY',
   released_at: '2026-11-24',
   color: '#ec4899',
   is_big_update: true,
-  ack_reward_lt: 1500,
-  summary: 'Kích hoạt Buff SET 2 tầng (Full Hệ & Set Thần Thoại), Pity Thần Thoại 350 lượt (2% Độc Nhất), 20 Viền Avatar mới, Top Chat & Top Voice ngày (500/400/300 LT), nâng cấp nhanh Linh Thú, phân giải nhanh Linh Vực, đồng bộ 100% Emoji SuMi độc quyền & sửa HAX/HP chiến báo Linh Mạch.',
+  ack_reward_lt: 2000,
+  summary: 'Tăng +550% chỉ số Pet Lv.100 & Khắc Ấn D→S (+0/+8/+18/+32/+50%), cân bằng /explorer (3.5k→112k, +5% LT & Thuận Hệ Địa Hình), /linhmach (8k→135k & Dư Chấn AoE 35%), Tháp 500 tầng (+15% LT mỗi tầng & truy lĩnh), Buff SET, Pity 350, 20 Viền Avatar khít 100%, Top Chat/Voice ngày & +2.000 LT xác nhận!',
   sections: [
     {
-      heading: `${em('su_sparkle')} Tính Năng Mới: Buff SET, Pity 350 & Top Chat/Voice Ngày`,
+      heading: `${em('su_sparkle')} Tính Năng Mới & Nâng Chỉ Số Toàn Diện`,
       bullets: [
-        '**Hệ Thống Buff SET (2 Tầng Không Cộng Dồn):** Full Hệ Thường `4/4` (**+8%**) • `5/5` (**+12%** toàn chỉ số); Set Thần Thoại cùng hệ `2/3/4/5` (**+6% / +12% / +18% / +25%** toàn chỉ số, mốc `5/5` thêm **+10% Xuyên Giáp** & **+1 Linh Mạch khởi đầu trận**).',
-        '**Pity Thần Thoại (`350` Lượt):** Tách riêng 3 bể `Linh Thú`, `Pháp Bảo`, `Linh Vực` *(reset khi nổ Thần Thoại; chạm 350 chắc chắn nhận Thần Thoại với **98% Thường / 2% Độc Nhất**)*.',
-        '**Top Chat & Top Voice Ngày (`00:00 UTC+7`):** Dùng `/top loai:chat` & `/top loai:voice`; tự động trao **500 / 400 / 300 LT** riêng cho Top 1–3 Chat và Top 1–3 Voice mỗi ngày tại `#bot-cmds`.',
+        '**Tăng Trần Sức Mạnh & Khắc Ấn Mới:** Linh Thú `Lv.1 → Lv.100` tăng lên **`+550%`** *(kèm `10★` đạt **`7.85×`** chỉ số gốc)*; hệ số Khắc Ấn `/enchant` tăng thành **`D +0% • C +8% • B +18% • A +32% • S +50%`** *(đã tự động cập nhật lại chỉ số Pet toàn server)*.',
+        '**Hệ Thống Buff SET (2 Tầng Không Cộng Dồn):** Full Hệ Thường `4/4` (**+8%**) • `5/5` (**+12%**); Set Thần Thoại cùng hệ `2/3/4/5` (**+6% / +12% / +18% / +25%** toàn chỉ số, mốc `5/5` thêm **+10% Xuyên Giáp** & **+1 Linh Mạch đầu trận**).',
+        '**Pity Thần Thoại (`350` Lượt) & Top Chat/Voice Ngày (`00:00`):** Pity 350 tách riêng 3 bể `Linh Thú`, `Pháp Bảo`, `Linh Vực` *(98% Thường / 2% Độc Nhất)*. `/top loai:chat|voice` tự trao **500 / 400 / 300 LT** mỗi ngày tại `#bot-cmds`.',
       ],
     },
     {
-      heading: `${em('frame_unlock_token', em('su_sparkle'))} 20 Viền Avatar Mới & Nâng Cấp Tiện Ích`,
+      heading: `${em('explorer_world_map_v14')} Cân Bằng /explorer, /linhmach & Tháp 500 Tầng`,
       bullets: [
-        '**Quầy Viền Avatar (`/shop`):** Ra mắt **20 Viền Avatar** (300–4.000 LT), hiển thị đồng bộ trên `/profile`, `/rank`, `/battle` & `/linhmach`! Quầy Background & Viền dùng trực tiếp Tier Emoji gọn đẹp.',
-        '**Nâng Cấp & Phân Giải Nhanh:** `/linhthu` thêm `muc_dich` nâng thẳng tới Lv.100 hoặc 10 Sao trong 1 lệnh; `/linhvuc` & `/dismantle` hỗ trợ `all_dup`, `all_common`, `all_rare`, `all_epic` và danh sách mã.',
-        '**Sửa Lỗi Chiến Báo & Tối Ưu Tốc Độ:** Kích hoạt full HAX Engine (Khiên, Bất Tử, Phản DMG) và sửa thanh HP Boss trong `/linhmach`; hiển thị LT tích lũy & dự kiến mỗi mỏ; `/wiki` chỉnh tại chỗ + ảnh Khắc Hệ; tăng tốc render `/battle` & `/thap`; thay thế **100% Emoji SuMi** & tặng **+1.500 LT** khi xác nhận bản cập nhật mới!',
+        '**`/explorer` Dễ Thở Hơn (+5% LT & Thuận Hệ Địa Hình):** Cân 12 Map về **`3.5k → 112k`**; tăng `+5%` LT cơ bản (**`210–315 LT/giờ × hệ số`**). Cơ chế **Thuận Hệ Địa Hình**: khi **Pet hoặc Linh Vực** mang đi khớp **Hệ của Map** *(xem trong bảng chọn Map hoặc `/wiki`)* sẽ được cộng ngay **`+6%` Tỉ Lệ Sống Sót** và **`+10%` Linh Thạch**!',
+        '**`/linhmach` (`8k → 135k`) & Tháp (`1k → 125k`, +15% LT):** Boss S+ cân bằng về `135.000` *(một người `~80k` + 2 đồng đội gánh đủ thắng)*, riêng Boss `A / S / S+` tung **Dư Chấn AoE `35%`** quét cả hậu phương. Tháp 500 tầng tăng mượt & **tăng `+15%` LT mỗi tầng** *(đã cấp bù truy lĩnh cho người đã leo)*.',
+      ],
+    },
+    {
+      heading: `${em('frame_unlock_token', em('su_sparkle'))} 20 Viền Avatar, Shop/Inv Gọn Đẹp & Quà +2.000 LT`,
+      bullets: [
+        '**20 Viền Avatar Khít 100% & Đổi Ngay Trong `/shop`:** Mua Viền & Background trong `/shop`; ảnh nền/viền được ẩn khỏi `/inv` cho gọn, hiển thị `[Đã sở hữu]` / `[Đang trang bị]` trong `/shop` & bấm **Mua Ngay** trên đồ đã có sẽ **tự động Equip (`0 LT`)**.',
+        '**Tiện Ích & Quà Đền Bù `+2.000 LT`:** `/linhthu` `muc_dich` nâng thẳng Lv/Sao, `/dismantle` & `/linhvuc` `all_dup/common/rare/epic`, HAX & Web Logs 48h `/linhmach` chuẩn hóa, đồng bộ **100% Emoji SuMi** & nâng quà `/updates` v1.5 lên **`+2.000 LT`** *(đã bù `+500 LT` cho ai đã nhận `1.500 LT`)*.',
       ],
     },
   ],

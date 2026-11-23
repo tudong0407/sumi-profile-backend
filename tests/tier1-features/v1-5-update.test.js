@@ -290,7 +290,7 @@ describe('Tier 1 - SuMi Family Ver 1.5 Update Suite (Phase 1)', () => {
     }
 
     assert.equal(V15_DRAFT_CHANGELOG.version, '1.5');
-    assert.equal(V15_DRAFT_CHANGELOG.ack_reward_lt, 1500);
+    assert.equal(V15_DRAFT_CHANGELOG.ack_reward_lt, 2000);
     const draftJson = JSON.stringify(V15_DRAFT_CHANGELOG).toLowerCase();
     assert.ok(!draftJson.includes('nerf') && !draftJson.includes('thu hồi quyền') && !draftJson.includes('role cấp'));
 

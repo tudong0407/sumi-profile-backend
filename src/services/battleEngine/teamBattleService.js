@@ -520,6 +520,37 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       if (target.currentHp === 0) {
         highlights.push(`**Hiệp ${turn}:** ${actor.name} hạ gục **${target.name}** (${dmgToApply.toLocaleString('vi-VN')} ST)!`);
       }
+
+      // 3h. Dư Chấn AoE 35% cho Boss Linh Mạch Hạng Cao (A / S / S+)
+      const aoeSplashPct = Number(actor.aoeSplashPct || 0);
+      if (aoeSplashPct > 0 && dmgToApply > 0 && actor.currentHp > 0) {
+        const backline = enemies.filter((m) => m.id !== target.id && m.currentHp > 0);
+        if (backline.length > 0) {
+          const splashParts = [];
+          for (const ally of backline) {
+            const rawSplash = Math.max(1, Math.round(attackPhase.damage * aoeSplashPct));
+            const splashRecv = triggerDamageReceived(ally, rawSplash, actor, rng, { isTrueDamage: false });
+            let splashApply = Math.max(0, Number(splashRecv.finalDamage || 0));
+            if ((ally.shield || 0) > 0 && splashApply > 0) {
+              if (ally.shield >= splashApply) {
+                ally.shield -= splashApply;
+                splashApply = 0;
+              } else {
+                splashApply -= ally.shield;
+                ally.shield = 0;
+              }
+            }
+            ally.currentHp = Math.max(0, ally.currentHp - splashApply);
+            if (ally.currentHp === 0) {
+              triggerLethalInterception(ally, actor, rng);
+            }
+            splashParts.push(`**${ally.name}** -${splashApply.toLocaleString('vi-VN')} *(còn ${ally.currentHp.toLocaleString('vi-VN')})*`);
+          }
+          if (splashParts.length > 0) {
+            thisTurnLines.push(`    ${em('su_crit_boom')} **[Dư Chấn AoE ${Math.round(aoeSplashPct * 100)}%]** Quét hậu phương: ${splashParts.join(' • ')}`);
+          }
+        }
+      }
     }
 
     if (thisTurnLines.length > 0) {

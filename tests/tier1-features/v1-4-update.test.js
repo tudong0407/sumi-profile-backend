@@ -197,11 +197,11 @@ test('v1.4 [2b] Spirit Veins Golden Hours, Fatigue, Leader-only Domain, SPD orde
   assert.equal(getVnHourInfo(new Date('2026-11-22T09:15:00Z')).isGoldenHour, false); // 16:15 UTC+7
 
   const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
-  assert.ok(sp.boss_power >= 8000000, 'S+ Boss must be >= 8M power');
+  assert.ok(sp.boss_power >= 135000, 'S+ Boss must be >= 135k power');
   assert.ok(sp.lt_per_min >= 50 && sp.lt_per_min <= 60, 'S+ LT/min must be 50-60');
 
   const fTier = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'F');
-  assert.ok(fTier.boss_power >= 20000, 'F Boss must be >= 20k power');
+  assert.ok(fTier.boss_power >= 8000, 'F Boss must be >= 8k power');
   assert.ok(fTier.lt_per_min >= 5 && fTier.lt_per_min <= 7, 'F LT/min must be 5-7');
 
   // Build synthetic 3-member team vs S+ Boss and 3v3
@@ -542,12 +542,12 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 
   // 3. Fuyumi power parity + Real compileCombatant() -> Solo (1vBoss), Duo (2vBoss), Trio (3v3) Linh Mạch renders & Web Logs
   const fuyumiProfile = await getProfileData(FUYUMI_USER_ID);
-  assert.equal(fuyumiProfile.pet.power, 21410404);
+  assert.equal(fuyumiProfile.pet.power, 22939719);
 
   const fuyumiCompiled = applyFatigueToCombatant(await compileCombatant(FUYUMI_USER_ID, 'attacker'), 0);
   assert.equal(fuyumiCompiled.pet.pet_type, 'cuu_vi_hong_ho');
   assert.equal(fuyumiCompiled.pet.pet_name, 'Cửu Vĩ Hồng Hồ');
-  assert.ok(fuyumiCompiled.powerScore >= 21410404, 'Compiled Linh Mạch combatant must preserve real powerScore (+ Set Bonus v1.5)');
+  assert.ok(fuyumiCompiled.powerScore >= 22939719, 'Compiled Linh Mạch combatant must preserve real powerScore (+ Set Bonus v1.5)');
 
   const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
   const bossSp = [{
@@ -637,7 +637,8 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
   // 4. Fuyumi Explorer Hub power parity + Live DB test for Default Loadout, Idle Claim Error, Free Food Block, Buy Food, Chat Level-Role Sync
   const fuyumiHub = await getExplorerHub(FUYUMI_USER_ID);
   assert.equal(fuyumiHub.success, true);
-  assert.equal(fuyumiHub.loadout_power, 21410404, 'Fuyumi /explorer hub power must match /profile 21.410.404 exactly!');
+  const expectedHubPower = Math.round(fuyumiProfile.pet.power * (1 + (fuyumiProfile.set_bonus?.statBonusPct || 0) / 100));
+  assert.equal(fuyumiHub.loadout_power, expectedHubPower, 'Fuyumi /explorer hub power must match /profile + Set Bonus!');
 
   const testUid = '999900000000014101';
   const cleanup = async () => {

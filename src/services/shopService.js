@@ -112,8 +112,21 @@ function resolveShopEntry(category, itemId) {
   return null;
 }
 
-function buildCategorySummary(cat, page = 1) {
+function normalizeEquippedBgId(rawBg) {
+  const raw = String(rawBg || '').trim();
+  if (!raw) return 'default_background.png';
+  if (BACKGROUND_BY_ID[raw]) return raw;
+  const matched = BACKGROUND_CATALOG.find((b) => b.file === raw || `assets/${b.file}` === raw);
+  return matched?.bg_id || raw;
+}
+
+function buildCategorySummary(cat, page = 1, ownershipCtx = {}) {
   const lt = em('su_linhthach');
+  const ownedBgSet = ownershipCtx.ownedBgSet || new Set();
+  const equippedBgId = ownershipCtx.equippedBgId || '';
+  const ownedFrameSet = ownershipCtx.ownedFrameSet || new Set();
+  const equippedFrameId = ownershipCtx.equippedFrameId || '';
+
   if (cat === 'rings') {
     return MARRY_RINGS.map((r) =>
       `• ${ringEmoji(r.item_id)} **${r.name}** *(${r.rarity})* — **${r.price.toLocaleString('vi-VN')}** ${lt} • +${r.exp_bonus_pct}% EXP & +${r.power_bonus_pct}% Chiến Lực`
@@ -154,9 +167,14 @@ function buildCategorySummary(cat, page = 1) {
     const totalPages = Math.max(1, Math.ceil(bgs.length / pageSize));
     const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
     const slice = bgs.slice((safePage - 1) * pageSize, safePage * pageSize);
-    return slice.map((b) =>
-      `• ${tierEmoji(b.rarity_key)} **${b.name}** — **${b.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
+    return slice.map((b) => {
+      const statusTag = b.bg_id === equippedBgId
+        ? ' • **[Đang trang bị]**'
+        : ownedBgSet.has(b.bg_id)
+          ? ' • **[Đã sở hữu]**'
+          : ` — **${b.price.toLocaleString('vi-VN')}** ${lt}`;
+      return `• ${tierEmoji(b.rarity_key)} **${b.name}**${statusTag}`;
+    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Chọn bên dưới để xem trước, mua hoặc đổi ngay (0 LT nếu đã sở hữu)*`;
   }
   if (cat === 'frames') {
     const frames = AVATAR_FRAMES.filter((f) => f.price > 0);
@@ -164,9 +182,14 @@ function buildCategorySummary(cat, page = 1) {
     const totalPages = Math.max(1, Math.ceil(frames.length / pageSize));
     const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
     const slice = frames.slice((safePage - 1) * pageSize, safePage * pageSize);
-    return slice.map((f) =>
-      `• ${tierEmoji(f.rarity_key)} **${f.name}** — **${f.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${frames.length} mẫu Viền Avatar (\`/profile\`, \`/rank\`, \`/battle\`, \`/linhmach\`)*`;
+    return slice.map((f) => {
+      const statusTag = f.frame_id === equippedFrameId
+        ? ' • **[Đang trang bị]**'
+        : ownedFrameSet.has(f.frame_id)
+          ? ' • **[Đã sở hữu]**'
+          : ` — **${f.price.toLocaleString('vi-VN')}** ${lt}`;
+      return `• ${tierEmoji(f.rarity_key)} **${f.name}**${statusTag}`;
+    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Chọn bên dưới để xem trước, mua hoặc đeo ngay (0 LT nếu đã sở hữu)*`;
   }
   return '';
 }
@@ -178,13 +201,52 @@ export async function getShopCatalog(category = 'all', options = {}) {
   const cat = String(category || 'all').trim().toLowerCase();
   const cleanUserId = sanitizeUserId(options.userId || '');
   let balance = null;
+  const ownershipCtx = {
+    ownedBgSet: new Set(),
+    equippedBgId: '',
+    ownedFrameSet: new Set(),
+    equippedFrameId: '',
+  };
 
   if (cleanUserId && supabase) {
     const { user } = await ensureUserInitialized(cleanUserId, {
       username: pickCleanDisplayValue(options.username, options.fallbackUsername),
       avatarUrl: pickCleanDisplayValue(options.avatarUrl),
     });
-    if (user) balance = Number(user.linh_thach || 0);
+    if (user) {
+      balance = Number(user.linh_thach || 0);
+      ownershipCtx.equippedBgId = normalizeEquippedBgId(user.background_url);
+      ownershipCtx.equippedFrameId = String(user.avatar_frame || 'default').trim();
+      if (cat === 'backgrounds') {
+        const { data: bgRows } = await supabase
+          .from('user_inventory')
+          .select('item_id')
+          .eq('user_id', cleanUserId)
+          .gt('quantity', 0);
+        for (const r of bgRows || []) {
+          if (BACKGROUND_BY_ID[r.item_id]) ownershipCtx.ownedBgSet.add(r.item_id);
+        }
+        if (ownershipCtx.equippedBgId && ownershipCtx.equippedBgId !== 'default_background.png') {
+          ownershipCtx.ownedBgSet.add(ownershipCtx.equippedBgId);
+        }
+      } else if (cat === 'frames') {
+        const [{ data: frRows }, { data: tokRow }] = await Promise.all([
+          supabase.from('user_frames').select('frame_id').eq('user_id', cleanUserId),
+          supabase.from('user_inventory').select('quantity').eq('user_id', cleanUserId).eq('item_id', 'frame_unlock_token').gt('quantity', 0).maybeSingle(),
+        ]);
+        for (const r of frRows || []) {
+          if (r.frame_id) ownershipCtx.ownedFrameSet.add(r.frame_id);
+        }
+        if (tokRow) {
+          for (const lf of ['frame_royal_legacy', 'jade_lotus', 'amethyst_celestial', 'crimson_phoenix', 'frost_crystal']) {
+            ownershipCtx.ownedFrameSet.add(lf);
+          }
+        }
+        if (ownershipCtx.equippedFrameId && AVATAR_FRAME_BY_ID[ownershipCtx.equippedFrameId]) {
+          ownershipCtx.ownedFrameSet.add(ownershipCtx.equippedFrameId);
+        }
+      }
+    }
   }
 
   const paidBgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
@@ -222,7 +284,7 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
         `• **Viền Avatar (${paidFrames.length} mẫu)**: Đổi khung viền trên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`.`,
       ].filter((x) => x !== undefined).join('\n')
-    : buildCategorySummary(cat, safePage);
+    : buildCategorySummary(cat, safePage, ownershipCtx);
 
   return {
     success: true,
@@ -295,16 +357,27 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
       if (own) { alreadyOwned = true; ownedNote = '*(Đã sở hữu Pháp Bảo này)*'; }
     } else if (resolved.category === 'backgrounds') {
       const { data: own } = await supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', resolved.item_id).gt('quantity', 0).maybeSingle();
-      if (own) { alreadyOwned = true; ownedNote = '*(Đã mở khóa nền này — dùng `/equip`)*'; }
+      const isEquipped = normalizeEquippedBgId(user.background_url) === resolved.item_id;
+      if (isEquipped) {
+        alreadyOwned = true;
+        ownedNote = '*(Đang trang bị)*';
+      } else if (own) {
+        alreadyOwned = true;
+        ownedNote = '*(Đã sở hữu — bấm Mua Ngay để Trang Bị 0 LT hoặc dùng `/equip`)*';
+      }
     } else if (resolved.category === 'frames') {
       const [{ data: ownFrame }, { data: legacyTok }] = await Promise.all([
         supabase.from('user_frames').select('frame_id').eq('user_id', cleanId).eq('frame_id', resolved.item_id).maybeSingle(),
         supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'frame_unlock_token').gt('quantity', 0).maybeSingle(),
       ]);
       const LEGACY_GRANTED = new Set(['frame_royal_legacy', 'jade_lotus', 'amethyst_celestial', 'crimson_phoenix', 'frost_crystal']);
-      if (ownFrame || (legacyTok && LEGACY_GRANTED.has(resolved.item_id))) {
+      const isEquipped = String(user.avatar_frame || '').trim() === resolved.item_id;
+      if (isEquipped) {
         alreadyOwned = true;
-        ownedNote = '*(Đã mở khóa viền này — dùng `/equip`)*';
+        ownedNote = '*(Đang trang bị)*';
+      } else if (ownFrame || (legacyTok && LEGACY_GRANTED.has(resolved.item_id))) {
+        alreadyOwned = true;
+        ownedNote = '*(Đã sở hữu — bấm Mua Ngay để Trang Bị 0 LT hoặc dùng `/equip`)*';
       }
     } else if (resolved.category === 'roles') {
       const { data: own } = await supabase.from('user_roles').select('*').eq('user_id', cleanId).eq('role_id', resolved.item_id).maybeSingle();
@@ -404,8 +477,10 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
-      `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip ma_id:${it.bg_id}\``,
+      alreadyOwned
+        ? `${lt} **Trạng thái**: **Đã sở hữu** *(Bấm **Mua Ngay** để đổi sang mẫu này với giá **0 LT**)*`
+        : `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${em('su_wiki_scroll')} Hoặc dùng lệnh: \`/equip ma_id:${it.bg_id}\``,
     ].join('\n');
   } else if (resolved.category === 'frames') {
     price = disc(it.price);
@@ -414,9 +489,11 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} Khung Viền Avatar \`/profile\`, \`/rank\`, \`/battle\`, \`/linhmach\` ${ownedNote}`.trim(),
-      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      alreadyOwned
+        ? `${lt} **Trạng thái**: **Đã sở hữu** *(Bấm **Mua Ngay** để đeo viền này với giá **0 LT**)*`
+        : `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_sparkle')} ${it.description}`,
-      `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip ma_id:${it.frame_id}\``,
+      `${em('su_wiki_scroll')} Hoặc dùng lệnh: \`/equip ma_id:${it.frame_id}\``,
     ].join('\n');
   }
 
@@ -428,12 +505,12 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     description,
     color,
     image_url: imageUrl,
-    price,
+    price: alreadyOwned && (resolved.category === 'backgrounds' || resolved.category === 'frames') ? 0 : price,
     shop_discount_pct: shopDiscountPct,
     balance,
     balance_fmt: balance.toLocaleString('vi-VN'),
     already_owned: alreadyOwned,
-    can_afford: balance >= price,
+    can_afford: alreadyOwned && (resolved.category === 'backgrounds' || resolved.category === 'frames') ? true : balance >= price,
     is_role_package: resolved.category === 'roles',
   };
 }
@@ -548,20 +625,55 @@ export async function buyShopItem(userId, payload = {}) {
         .eq('item_id', it.bg_id)
         .gt('quantity', 0)
         .maybeSingle();
-      if (existingBg) {
-        return { success: false, status: 400, error: 'ALREADY_OWNED', message: `Bạn đã mở khóa Ảnh Nền **${it.name}** rồi! Dùng \`/equip ma_id:${it.bg_id}\` để đổi.` };
+      if (existingBg || normalizeEquippedBgId(user.background_url) === it.bg_id) {
+        const nowIsoEquip = new Date().toISOString();
+        await supabase
+          .from('users')
+          .update({ background_url: it.bg_id, updated_at: nowIsoEquip })
+          .eq('user_id', cleanId);
+        const balNow = Number(user.linh_thach || 0);
+        return {
+          success: true,
+          equipped: true,
+          already_owned: true,
+          category: 'backgrounds',
+          item_id: it.bg_id,
+          item_name: it.name,
+          quantity: 1,
+          cost: 0,
+          linh_thach: balNow,
+          linh_thach_fmt: balNow.toLocaleString('vi-VN'),
+          message: `${em('su_sparkle')} Đã trang bị Ảnh Nền **${it.name}** lên \`/profile\` & \`/rank\` *(Miễn phí **0 LT** vì bạn đã sở hữu)*!\n• Số dư hiện tại: **${balNow.toLocaleString('vi-VN')} Linh Thạch**`,
+        };
       }
     } else if (resolved.category === 'frames') {
       totalCost = it.price;
       displayName = it.name;
-      const { data: existingFrame } = await supabase
-        .from('user_frames')
-        .select('frame_id')
-        .eq('user_id', cleanId)
-        .eq('frame_id', it.frame_id)
-        .maybeSingle();
-      if (existingFrame) {
-        return { success: false, status: 400, error: 'ALREADY_OWNED', message: `Bạn đã sở hữu Viền Avatar **${it.name}** rồi! Dùng \`/equip ma_id:${it.frame_id}\` để đeo.` };
+      const [{ data: existingFrame }, { data: legacyTok }] = await Promise.all([
+        supabase.from('user_frames').select('frame_id').eq('user_id', cleanId).eq('frame_id', it.frame_id).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'frame_unlock_token').gt('quantity', 0).maybeSingle(),
+      ]);
+      const LEGACY_GRANTED = new Set(['frame_royal_legacy', 'jade_lotus', 'amethyst_celestial', 'crimson_phoenix', 'frost_crystal']);
+      if (existingFrame || (legacyTok && LEGACY_GRANTED.has(it.frame_id)) || String(user.avatar_frame || '').trim() === it.frame_id) {
+        const nowIsoEquip = new Date().toISOString();
+        await Promise.all([
+          supabase.from('users').update({ avatar_frame: it.frame_id, updated_at: nowIsoEquip }).eq('user_id', cleanId),
+          supabase.from('user_frames').upsert({ user_id: cleanId, frame_id: it.frame_id, purchased_at: nowIsoEquip }, { onConflict: 'user_id,frame_id' }),
+        ]);
+        const balNow = Number(user.linh_thach || 0);
+        return {
+          success: true,
+          equipped: true,
+          already_owned: true,
+          category: 'frames',
+          item_id: it.frame_id,
+          item_name: it.name,
+          quantity: 1,
+          cost: 0,
+          linh_thach: balNow,
+          linh_thach_fmt: balNow.toLocaleString('vi-VN'),
+          message: `${em('su_sparkle')} Đã trang bị Viền Avatar **${it.name}** lên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\` *(Miễn phí **0 LT** vì bạn đã sở hữu)*!\n• Số dư hiện tại: **${balNow.toLocaleString('vi-VN')} Linh Thạch**`,
+        };
       }
     } else {
       totalCost = it.price * quantity;

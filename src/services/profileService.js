@@ -2,6 +2,8 @@ import { supabase } from '../config/supabase.js';
 import {
   FUYUMI_USER_ID,
   PET_BY_TYPE,
+  EQUIPMENT_BY_ID,
+  normalizeRarityKey,
   STARTER_PET,
   createStarterPetObject,
   formatRarityLabel,
@@ -670,6 +672,7 @@ export async function getProfileData(userId, overrides = {}) {
                 item_type: item.item_type,
                 slot: slotKey,
                 rarity: item.rarity,
+                rarity_key: EQUIPMENT_BY_ID[item.item_id]?.rarity_key || normalizeRarityKey(item.rarity),
                 element: item.element,
                 enchant_grade: itemGrade,
                 enchant_bonus_pct: getEnchantBonusPct(itemGrade),

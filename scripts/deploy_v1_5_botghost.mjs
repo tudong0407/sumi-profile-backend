@@ -261,13 +261,13 @@ function chunkArray(arr, size = 25) {
 }
 
 // ============================================================================
-// 1. REBUILD /updates (Ver 1.5 Big Update +1.500 LT, edit tại chỗ)
+// 1. REBUILD /updates (Ver 1.5 Big Update +2.000 LT, edit tại chỗ)
 // ============================================================================
 function buildUpdateVersionOptions() {
   return [
     {
       label: 'Phiên bản v1.5 (Mới nhất • Big Update)',
-      description: 'Buff SET 2 tầng, Pity 350 (2% Độc Nhất), 20 Viền Avatar & Top Chat/Voice (+1.500 LT)',
+      description: 'Cân bằng PvE, +550% Pet, Khắc Ấn mới, Buff SET, Pity 350 & Quà +2.000 LT',
       emoji_id: uidId('su_sparkle'),
       value: '1.5',
     },
@@ -807,7 +807,7 @@ function patchLinhthuV15(origTree) {
 
   if (!byId.has('opt_muc_dich')) {
     const gb = new V15GraphBuilder();
-    gb.option('muc_dich', 'integer', 'Mục tiêu cấp (tối đa 100) hoặc sao (tối đa 10) muốn nâng thẳng', {
+    gb.option('muc_dich', 'int', 'Mục tiêu cấp (tối đa 100) hoặc sao (tối đa 10) muốn nâng thẳng', {
       required: false,
       x: 780,
       y: 0,
@@ -902,19 +902,19 @@ function patchKeepAliveV15(origTree) {
 }
 
 // ============================================================================
-// 4. AI MENTION KNOWLEDGE BLOCK (v1.5 — ZERO mention of Level Role nerf!)
+// 4. AI MENTION KNOWLEDGE BLOCK (v1.1 -> v1.5 COMPLETE — ZERO mention of Level Role nerf!)
 // ============================================================================
 function buildV15KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
-    'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY v1.5):',
-    '• HỒ SƠ, 20 VIỀN AVATAR & TOP CHAT/VOICE NGÀY (/profile, /rank, /shop, /exp, /top): Thẻ /profile, /rank, /battle & /linhmach hiển thị đồng bộ 20 Viền Avatar mới (mua tại Quầy Viền Avatar trong /shop, 300–4.000 LT, trang bị bằng /equip). Chat nhận 23–35 EXP (45s), Voice nhận 85–135 EXP/5 phút; /exp xem % Boost. Từ v1.5 mở Top Chat Ngày (/top loai:chat) & Top Voice Ngày (/top loai:voice), tự động trao 500 / 400 / 300 LT riêng cho Top 1–3 mỗi bảng lúc 00:00 (UTC+7) tại #bot-cmds (và 19:00 Chủ Nhật tổng kết Top Tuần).',
-    '• BUFF SET 2 TẦNG & PITY THẦN THOẠI 350 (/roll, /autosell, /linhvuc): Kích hoạt Buff SET không cộng dồn khi ghép Pet + 3 Pháp Bảo + Linh Vực: Full Hệ Thường 4/4 (+8%) hoặc 5/5 (+12% toàn chỉ số); Set Thần Thoại cùng hệ 2/3/4/5 (+6%/+12%/+18%/+25% toàn chỉ số, mốc 5/5 thêm +10% Xuyên Giáp & +1 Linh Mạch đầu trận). Hệ thống Pity 350 tách riêng 3 bể Linh Thú, Pháp Bảo, Linh Vực (chạm 350 chắc chắn nổ Thần Thoại với 98% Thường / 2% Độc Nhất).',
-    '• NÂNG CẤP NHANH & PHÂN GIẢI NHANH (/linhthu, /linhvuc, /dismantle): /linhthu thêm option muc_dich nâng thẳng tới Lv.100 hoặc 10 Sao trong 1 lệnh. /linhvuc & /dismantle hỗ trợ phân giải hàng loạt all_dup, all_common, all_rare, all_epic hoặc danh sách ID (bảo vệ món đang đeo, đang khám phá, Thần Thoại & Độc Nhất).',
-    '• ĐẤU TRƯỜNG, LINH MẠCH & THÁP 500 TẦNG (/battle, /party, /linhmach, /nhiemvu): Sửa toàn diện HAX Engine (Khiên, Bất Tử, Phản DMG) & thanh HP Boss trong /linhmach; hiển thị LT tích lũy & dự kiến tại mỗi mỏ; tối ưu tốc độ render /battle & /thap; Web Battle Logs lưu 48 giờ. Tháp 500 tầng, Daily Quest 5 nhiệm vụ. Big Update v1.5 tặng ngay +1.500 LT khi bấm Xác Nhận (/updates).',
-    '• KHÁM PHÁ, NÔNG TRẠI, MINIGAME & CẨM NANG (/explorer, /farm, /exchange, /coinflip, /slots, /blackjack, /crash, /giatoc, /wiki, /updates): /explorer mở 12 map (10k->1M, 2–12h). /wiki v1.5 chuyển mục ngay tại chỗ, giữ menu 7 mục & sơ đồ Ngũ Vực, tra đủ 90 Linh Thú & 165 Pháp Bảo; đồng bộ 100% Emoji SuMi độc quyền.',
+    'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.5):',
+    '• [CẢNH GIỚI & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút (chấm công nền 12 phút); công thức lên cấp 60*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (chỉ nhận 1 lần/Lv). 8 Level Roles tự cộng dồn Buff EXP/Daily LT/Pet Power; /doiqua đổi 1.000 EXP lấy 10 LT; /exp xem tổng % Boost. /top có đủ 6 bảng (level, power, wealth, marry, chat, voice); Top Chat Ngày & Top Voice Ngày tự động trao 500 / 400 / 300 LT riêng cho Top 1–3 mỗi ngày lúc 00:00 (UTC+7) tại #bot-cmds, và 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
+    '• [LINH THÚ, KHẮC ẤN & BUFF SET] (/linhthu, /pet, /phapbao, /equip, /unequip, /enchant, /dismantle, /linhvuc): Linh Thú tăng trưởng Lv.1→Lv.100 đạt +550% (+5.5556%/cấp) và 1★→10★ đạt +135% (tổng 7.85× chỉ số gốc ở Lv.100 10★). /linhthu hỗ trợ muc_dich nâng thẳng tới cấp/sao chọn sẵn. Khắc Ấn /enchant nâng D (+0%) -> C (+8%) -> B (+18%) -> A (+32%) -> S (+50%) kèm Pity +5%/lần trượt (Thiên Đạo Tuyệt Ấn Thạch 100%). Buff SET 2 tầng không cộng dồn: Full Hệ Thường 4/4 (+8%) hoặc 5/5 (+12% toàn chỉ số); Set Thần Thoại cùng hệ 2/3/4/5 (+6%/+12%/+18%/+25% toàn chỉ số, mốc 5/5 thêm +10% Xuyên Giáp & +1 Linh Mạch đầu trận). /dismantle & /linhvuc hỗ trợ xóa/phân giải nhanh all_dup, all_common, all_rare, all_epic hoặc danh sách ID.',
+    '• [GACHA, PITY 350 & CỬA HÀNG] (/roll, /autosell, /shop, /inv, /info): /roll (50 LT/lượt, 450/10) có 4 bể: equipment (165 món), pet (90 loài), domain (60 LT • 30 Linh Vực / 15 Thần Thức / 15 Thần Cảnh), role (40 Role). Tỉ lệ 60.5% Phàm, 25% Linh, 14% Tiên, 0.5% Thần Thoại; Pity Thần Thoại 350 lượt tách riêng 3 bể pet/equipment/domain (98% Thường / 2% Độc Nhất). /autosell tự bán đồ trùng phẩm chất Phàm/Linh/Tiên cả cho Linh Vực. /shop có 7 quầy + Shop Ngày giảm 15–40%, bán 20 Background & 20 Viền Avatar (300–4.000 LT, hiển thị khít 100% trên /profile, /rank, /battle & /linhmach). Ảnh nền & Viền đã mua ẩn khỏi /inv cho gọn và gắn nhãn [Đã sở hữu]/[Đang trang bị] ngay trong /shop (bấm Mua Ngay trên đồ đã mua sẽ tự động Equip miễn phí 0 LT, hoặc dùng /equip).',
+    '• [ĐẤU TRƯỜNG, LINH MẠCH & THÁP 500 TẦNG] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE tự do 25/ngày +10/-5 LT, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố (Lôi, Ám, Quang, Hỗn Độn), HAX Engine (Khiên, Bất Tử, Phản DMG), Linh Vực từ Hiệp 2 & Đạo Áp Cấp 2; Web Battle Logs lưu 48h. /party & /linhmach mở 6 khung giờ vàng (08/12/18/20/21/22h UTC+7), spawn 3 mỏ F→S+ (8.000→135.000 Lực Chiến, 6–56 LT/phút +15% Kho Gia Tộc, hiện LT tích lũy & dự kiến thời gian thực); Boss Hạng A/S/S+ tung Dư Chấn AoE 35% quét cả đội phía sau (cần lập Tổ Đội 3 người cùng gánh). /nhiemvu gồm 5 Quest Ngày xoay vòng (5/5: +130 LT + quà), 3 Hợp Đồng Tuần và Tháp 500 Tầng (1.000→125.000 Lực Chiến, thưởng LT mỗi tầng & mốc Milestone tăng +15%, reset tối đa 5 thẻ/ngày).',
+    '• [KHÁM PHÁ, NÔNG TRẠI, MINIGAME & CỘNG ĐỒNG] (/explorer, /farm, /exchange, /job, /daily, /marry, /giatoc, /tangqua, /coinflip, /slots, /blackjack, /crash, /wiki, /updates): /explorer mở 12 Địa danh (3.500→112.000 Lực Chiến, mốc 2/3/6/12h), thưởng tăng +5% lên 210–315 LT/giờ × hệ số + 0.5% Đá Tuyệt Ấn Thạch + nhặt 60% đồ rơi; cơ chế Thuận Hệ Địa Hình (+6% Sống Sót & +10% LT khi Pet/Linh Vực khớp Hệ của Map). /farm (4–6 ô trồng 6/12/24h) đổi Linh Quả ở /exchange; /job 6 nghề (8 ca/ngày); /daily (40–60 LT + Streak 7d); Minigame cược 10–10.000 LT; /wiki edit tại chỗ đủ 7 mục; Big Update /updates v1.5 tặng ngay +2.000 LT khi bấm Xác Nhận.',
   ];
   if (includeFuyumiSecret) {
-    lines.push('• BỘ TỐI THƯỢNG THẦN THOẠI ĐỘC NHẤT (TIỂU THƯ FUYUMI SỞ HỮU — CHỈ TIỂU THƯ BIẾT): Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng bộ Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
+    lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
   }
   return lines.join('\n');
 }
@@ -1002,12 +1002,12 @@ function walkAndSweepV15(obj, { scrubUnicode = true } = {}) {
     }
   }
 
-  // Sync +1.500 LT Update Ack button label & done embed title
+  // Sync +2.000 LT Update Ack button label & done embed title
   if (obj.type === 'button' && typeof obj.label === 'string' && /Tôi Đã Đọc & Xác Nhận/i.test(obj.label)) {
-    obj.label = 'Tôi Đã Đọc & Xác Nhận (+1.500 LT)';
+    obj.label = 'Tôi Đã Đọc & Xác Nhận (+2.000 LT)';
   }
   if (typeof obj.title === 'string' && /ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i.test(obj.title)) {
-    obj.title = obj.title.replace(/ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i, 'ĐÃ XÁC NHẬN CẬP NHẬT (+1.500 LT)');
+    obj.title = obj.title.replace(/ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i, 'ĐÃ XÁC NHẬN CẬP NHẬT (+2.000 LT)');
   }
 }
 
@@ -1186,7 +1186,13 @@ async function main() {
       enabled: c.enabled,
     });
     console.log(`[Deployed] /${c.name}:`, JSON.stringify(res));
-    if (!res?.ok) throw new Error(`Failed deploying /${c.name}: ${JSON.stringify(res)}`);
+    if (!res?.ok) {
+      if (c.groupId !== PROFILE_GROUP_ID) {
+        console.warn(`[WARN] Non-Tu-Tien command /${c.name} had pre-existing UI issue, continuing...`);
+        continue;
+      }
+      throw new Error(`Failed deploying /${c.name}: ${JSON.stringify(res)}`);
+    }
     await new Promise((r) => setTimeout(r, 1100));
   }
 
