@@ -62,8 +62,8 @@ export async function getUserPartyRecord(userId) {
 
 export async function getPartyStatus(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', title: '⚠️ LỖI TỔ ĐỘI', description: 'ID không hợp lệ.', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   await ensureUserInitialized(cleanId, {
     username: pickCleanDisplayValue(opts.username, opts.fallbackUsername),
@@ -87,7 +87,7 @@ export async function getPartyStatus(userId, opts = {}) {
 
   if (!party) {
     const inviteLines = pendingInvites.map((inv, i) =>
-      `• **#${i + 1}** Lời mời từ <@${inv.inviter_id}> *(hết hạn lúc ${new Date(inv.expires_at).toLocaleTimeString('vi-VN')})*`
+      `• **#${i + 1}** Lời mời từ <@${inv.inviter_id}> *(hết hạn <t:${Math.floor(new Date(inv.expires_at).getTime() / 1000)}:R>)*`
     );
     return {
       success: true,
@@ -100,7 +100,7 @@ export async function getPartyStatus(userId, opts = {}) {
         '• Bạn hiện chưa tham gia Tổ Đội nào *(đi đơn lẻ vẫn có thể khiêu chiến Linh Mạch, nhưng ghép đội **3 người** sẽ dễ hạ Boss S/S+ hơn nhiều!)*',
         pendingInvites.length > 0 ? `\n**Lời Mời Đang Chờ (${pendingInvites.length}):**\n${inviteLines.join('\n')}` : '',
         '',
-        '• Chọn **Dropdown Mời Đồng Đội** bên dưới để lập đội ngay, hoặc bấm **[✅ Chấp Nhận Lời Mời]** nếu có người vừa mời bạn!',
+        '• Dùng `/party moi_dong_doi:@bạn` để mời đồng đội (tối đa 3 người), hoặc bấm **[✅ Chấp Nhận Lời Mời]** nếu có người vừa mời bạn!',
       ].filter(Boolean).join('\n'),
     };
   }
@@ -175,7 +175,7 @@ export async function inviteToParty(inviterId, rawTargetId, opts = {}) {
   if (cleanInviter === cleanTarget) {
     return { success: false, status: 400, error: 'SELF_INVITE', message: 'Bạn không thể tự mời chính mình vào tổ đội!' };
   }
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   return withPartyLock(`party:${cleanInviter}`, async () => {
     await Promise.all([
@@ -235,15 +235,15 @@ export async function inviteToParty(inviterId, rawTargetId, opts = {}) {
       party_id: party.party_id,
       invite_id: inv.invite_id,
       invitee_id: cleanTarget,
-      message: `${em('su_crossed_swords')} Đã gửi lời mời Tổ Đội tới <@${cleanTarget}>! *(Hiệu lực 15 phút — mời <@${cleanTarget}> dùng \`/party\` và bấm **[✅ Chấp Nhận Lời Mời]**)*`,
+      message: `${em('su_crossed_swords')} Đã gửi lời mời Tổ Đội tới <@${cleanTarget}>! *(Hiệu lực 15 phút — <@${cleanTarget}> có thể bấm **[Chấp Nhận Lời Mời]** hoặc **[Từ Chối Lời Mời]** ngay bên dưới, hoặc dùng \`/party\`)*`,
     };
   });
 }
 
 export async function respondPartyInvite(userId, decision = 'accept', inviteId = null) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', title: '⚠️ LỖI TỔ ĐỘI', description: 'ID không hợp lệ.', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   return withPartyLock(`invite:${cleanId}`, async () => {
     const nowIso = new Date().toISOString();
@@ -307,8 +307,8 @@ export async function respondPartyInvite(userId, decision = 'accept', inviteId =
 
 export async function leaveOrDisbandParty(userId) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', title: '⚠️ LỖI TỔ ĐỘI', description: 'ID không hợp lệ.', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   const party = await getUserPartyRecord(cleanId);
   if (!party) {
@@ -336,7 +336,7 @@ export async function kickPartyMember(leaderId, rawTargetId) {
   const cleanTarget = sanitizeUserId(String(rawTargetId || '').replace(/[<@!>]/g, ''));
   if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
   if (cleanLeader === cleanTarget) return { success: false, status: 400, error: 'SELF_KICK', message: 'Không thể tự đuổi chính mình — hãy dùng nút Rời Đội!' };
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   const party = await getUserPartyRecord(cleanLeader);
   if (!party || party.leader_id !== cleanLeader) {
@@ -354,7 +354,7 @@ export async function transferPartyLeader(leaderId, rawTargetId) {
   const cleanLeader = sanitizeUserId(leaderId);
   const cleanTarget = sanitizeUserId(String(rawTargetId || '').replace(/[<@!>]/g, ''));
   if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
-  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   const party = await getUserPartyRecord(cleanLeader);
   if (!party || party.leader_id !== cleanLeader) {

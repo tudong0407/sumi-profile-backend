@@ -78,7 +78,10 @@ async function withExplorerLock(userId, fn) {
 }
 
 /**
- * Công thức sống sót & tử vong chuẩn xác theo đặc tả v1.4.
+ * Công thức sống sót & tử vong /explorer:
+ * - Lực >= Map: 90% (+5% mỗi +10% vượt trội, tối đa 100% ở >= 120%; +8% từ Hộ Mệnh Linh Đan).
+ * - 50% < Lực/Map < 100%: Giảm tuyến tính mượt từ 80% xuống >0% (+8% từ Hộ Mệnh Linh Đan, cap 88%).
+ * - Lực <= 50% Map (thua >= 2x lực chiến): Chắc chắn 0% sống sót (100% tử vong), Hộ Mệnh Linh Đan không thể cứu.
  */
 export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null) {
   const petPower = Math.max(0, Number(petPowerRaw) || 0);
@@ -96,22 +99,43 @@ export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null)
       survivalPct: Math.round(survivalRate * 100),
       deathPct: Math.round((1 - survivalRate) * 100),
       advantage: true,
+      tooWeak: false,
       diffSteps,
     };
   }
 
+  const ratio = petPower / mapPower;
   const deficitRatio = (mapPower - petPower) / mapPower;
   const diffSteps = Math.floor(deficitRatio / 0.10 + 1e-9);
-  const deathRate = Math.min(0.95, Math.max(0.0, 0.20 + diffSteps * 0.10 - foodBonus));
-  const survivalRate = Math.max(0.05, 1.0 - deathRate);
+
+  if (ratio <= 0.50 + 1e-9) {
+    return {
+      survivalRate: 0,
+      deathRate: 1,
+      survivalPct: 0,
+      deathPct: 100,
+      advantage: false,
+      tooWeak: true,
+      diffSteps,
+    };
+  }
+
+  const baseSurvival = Math.max(0.01, 0.80 * ((ratio - 0.50) / 0.50));
+  const survivalRate = Math.min(0.88, Math.max(0.01, baseSurvival + foodBonus));
+  const deathRate = Math.max(0.0, 1.0 - survivalRate);
   return {
     survivalRate: Number(survivalRate.toFixed(4)),
     deathRate: Number(deathRate.toFixed(4)),
     survivalPct: Math.round(survivalRate * 100),
     deathPct: Math.round(deathRate * 100),
     advantage: false,
+    tooWeak: false,
     diffSteps,
   };
+}
+
+function formatSurvivalSuffix(surv) {
+  return surv.tooWeak ? ' 💀 *(Quá yếu so với map — chắc chắn tử nạn!)*' : '';
 }
 
 function explorerError(status, error, title, message, extra = {}) {
@@ -660,7 +684,8 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       const surv = computeExplorerSurvival(details.power, m.recommended_power, null);
       const dropCnt = (availDrops || []).filter((d) => d.map_id === m.map_id && Number(d.min_duration_hours) <= validHrs).length;
       const dropHint = dropCnt > 0 ? ` • 🎁 **${dropCnt} đồ rơi!**` : '';
-      return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k)* — Sống: **${surv.survivalPct}%**${dropHint}`;
+      const survLabel = surv.tooWeak ? 'Sống: **0%** 💀' : `Sống: **${surv.survivalPct}%**`;
+      return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k)* — ${survLabel}${dropHint}`;
     });
 
     return {
@@ -705,7 +730,9 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       description: [
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty} • Yêu cầu ${mapDef.recommended_power.toLocaleString('vi-VN')} Lực • Hệ số ×${mapDef.reward_multiplier})*`,
         `• **Thời Gian:** **${hrs} giờ** *(dùng ${em('food_speed_fruit')} giảm còn **${(hrs * 0.75).toFixed(2)} giờ**)*`,
-        `• **Tỉ Lệ Sống Sót Dự Kiến:** **${survBase.survivalPct}%** *(dùng ${em('food_survival_pill')} tăng lên **${survFoodA.survivalPct}%**)*`,
+        survBase.tooWeak
+          ? `• **Tỉ Lệ Sống Sót Dự Kiến:** **0%** 💀 *(Lực chiến thua từ 2× trở lên — chắc chắn tử nạn, ${em('food_survival_pill')} không thể cứu!)*`
+          : `• **Tỉ Lệ Sống Sót Dự Kiến:** **${survBase.survivalPct}%** *(dùng ${em('food_survival_pill')} tăng lên **${survFoodA.survivalPct}%**)*`,
         `• **Thức Ăn Trong Túi:** ${em('food_survival_pill')}×${fc.food_survival_pill || 0} *(180 LT)* | ${em('food_yield_tea')}×${fc.food_yield_tea || 0} *(220 LT)* | ${em('food_speed_fruit')}×${fc.food_speed_fruit || 0} *(250 LT)*`,
         `• **Cảnh Báo Nguy Hiểm:** Nếu tử nạn, Pet không Độc Nhất sẽ **mất vĩnh viễn** và Pháp Bảo không Độc Nhất sẽ **rớt lại trên bản đồ**!`,
         '',
@@ -773,7 +800,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
         `• **Thời Gian Thực Tế:** **${effHours} giờ** *(Mốc thưởng ${hrs} giờ)*`,
         `• **Thức Ăn Mang Theo:** ${em(foodId)} **${EXPLORER_FOOD_EFFECTS[foodId].label}** *(đang có ×${ownedQty} — tiêu hao ×1)*`,
-        `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)`,
+        `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)${formatSurvivalSuffix(surv)}`,
         '',
         `Bấm **[${em('crash_fly')} Xác Nhận Xuất Phát]** để đưa Linh Thú lên đường ngay!`,
       ].join('\n'),
@@ -798,7 +825,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
       `• **Thời Gian Thực Tế:** **${hrs} giờ** *(Mốc thưởng ${hrs} giờ)*`,
       `• **Thức Ăn Mang Theo:** *Không mang thức ăn*`,
-      `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)`,
+      `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)${formatSurvivalSuffix(surv)}`,
       '',
       `Bấm **[${em('crash_fly')} Xác Nhận Xuất Phát]** để đưa Linh Thú lên đường ngay!`,
     ].join('\n'),
@@ -851,7 +878,7 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
       `• **Thời Gian Thực Tế:** **${effHours} giờ** *(Mốc thưởng ${hrs} giờ)*`,
       `• **Thức Ăn Mang Theo:** ${em(foodId)} **${EXPLORER_FOOD_EFFECTS[foodId].label}**`,
-      `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)`,
+      `• **Tỉ Lệ Sống Sót Cuối:** **${surv.survivalPct}%** (Tử vong: ${surv.deathPct}%)${formatSurvivalSuffix(surv)}`,
       '',
       `Bấm **[${em('crash_fly')} Xác Nhận Xuất Phát]** để đưa Linh Thú lên đường ngay!`,
     ].join('\n');
@@ -989,7 +1016,7 @@ export async function startExpedition(userId, opts = {}) {
       `• **Linh Thú:** ${petEmoji(pet.pet_type)} **${pet.pet_name}** (${details.power.toLocaleString('vi-VN')} Lực)`,
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty} • ${mapDef.recommended_power.toLocaleString('vi-VN')} Lực)*`,
       `• **Thời Gian:** **${(effectiveSeconds / 3600).toFixed(2)} giờ** *(Mốc ${durationHours}h${foodId ? ` • Đã dùng ${em(foodId)}` : ''})*`,
-      `• **Tỉ Lệ Sống Sót:** **${surv.survivalPct}%**`,
+      `• **Tỉ Lệ Sống Sót:** **${surv.survivalPct}%**${formatSurvivalSuffix(surv)}`,
       mainPetNotice,
     ].filter(Boolean).join('\n');
 
@@ -1448,7 +1475,7 @@ export async function getExplorerMapBoard(userId = null) {
     '',
     `**📜 Quy Tắc & Phần Thưởng (/explorer):**`,
     `• **Mốc Thời Gian:** \`2 / 3 / 6 / 12 giờ\` • Thu hoạch \`200–300 LT/giờ × hệ số map\` + quà shop + **0.5%** ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn)* + **0.01%** Vũ Khí Thần Thoại + **60%** nhặt Pháp Bảo rơi của người đi trước *(cùng địa danh & mốc ≥ giờ rơi)*.`,
-    `• **Sinh Tử & Rớt Đồ:** Vượt lực map từ \`90% → 100%\` sống sót; yếu hơn map tử vong từ \`20% → 95%\`. Pet thường tử nạn mất vĩnh viễn; Pet Độc Nhất trọng thương hồi sinh bằng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ**; Pháp Bảo Độc Nhất & Linh Vực an toàn tuyệt đối.`,
+    `• **Sinh Tử & Rớt Đồ:** Vượt lực map từ \`90% → 100%\` sống sót; yếu hơn map tử vong tăng dần về \`100%\` *(thua từ 2× lực chiến = **0% sống sót**, Hộ Mệnh Đan không thể cứu)*. Pet thường tử nạn mất vĩnh viễn; Pet Độc Nhất trọng thương hồi sinh bằng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ**; Pháp Bảo Độc Nhất & Linh Vực an toàn tuyệt đối.`,
     `• **Thức Ăn Khám Phá (mua tại \`/shop\` hoặc ngay khi xuất phát):** ${em('food_survival_pill')} **Hộ Mệnh Linh Đan** *(+8% sống sót • 180 LT)* • ${em('food_yield_tea')} **Tụ Bảo Tiên Trà** *(+18% LT • 220 LT)* • ${em('food_speed_fruit')} **Ngự Phong Tốc Quả** *(-25% thời gian • 250 LT)*.`,
   ];
 

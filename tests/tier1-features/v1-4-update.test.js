@@ -32,7 +32,13 @@ import {
 import { generateDailyShopSlots } from '../../src/services/dailyShopService.js';
 import {
   GOLDEN_HOURS_VN,
+  VEIN_SLOTS_PER_HOUR,
+  FATIGUE_GAIN_PER_CAPTURE,
+  FATIGUE_MAX_PCT,
+  FATIGUE_DECAY_PER_HOUR,
   getVnHourInfo,
+  deterministicPickWeightedTier,
+  computeCurrentFatigueInfo,
 } from '../../src/services/spiritVeinService.js';
 import {
   simulateTeamBattle,
@@ -219,9 +225,47 @@ test('v1.4 [2b] Spirit Veins Golden Hours, Fatigue, Leader-only Domain, SPD orde
     makeUnit('u3', 'Lôi Đế', 'loi_dinh_kim_ho', 38000, 44000, null, null, null, 2),
   ];
 
-  // Fatigue verification: stack 1 = -25%, stack 2 = -50%
+  // Fatigue verification: stack 1 = -25%, stack 2 = -50%, custom -15% decay step
   assert.equal(teamA[1].fatiguePenaltyPct, 25);
   assert.equal(teamA[2].fatiguePenaltyPct, 50);
+
+  const decayedUnit = applyFatigueToCombatant(teamA[0], { fatiguePct: 15 });
+  assert.equal(decayedUnit.fatiguePenaltyPct, 15);
+  assert.equal(decayedUnit.atk, Math.round(teamA[0].atk * 0.85));
+
+  // Spirit Vein 3-mine weighted spawn & hourly -10% fatigue decay
+  assert.equal(VEIN_SLOTS_PER_HOUR, 3);
+  assert.equal(FATIGUE_GAIN_PER_CAPTURE, 25);
+  assert.equal(FATIGUE_MAX_PCT, 75);
+  assert.equal(FATIGUE_DECAY_PER_HOUR, 10);
+
+  const weightSum = V14_SPIRIT_VEIN_TIERS.reduce((acc, t) => acc + Number(t.spawn_weight || 0), 0);
+  assert.equal(weightSum, 100);
+  const sPlusTier = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
+  assert.equal(sPlusTier?.spawn_weight, 5);
+
+  const pickedTiers = new Set();
+  for (let i = 0; i < 100; i += 1) {
+    const picked = deterministicPickWeightedTier(`2026-11-23_12_slot_${(i % 3) + 1}_seed_${i}`);
+    assert.ok(picked && picked.tier_code, 'Weighted tier picker must always return a valid tier');
+    pickedTiers.add(picked.tier_code);
+  }
+  assert.ok(pickedTiers.size >= 4, 'Weighted picker should sample multiple tiers over 100 seeds');
+
+  const baseTs = Date.UTC(2026, 10, 23, 5, 0, 0);
+  const f0 = computeCurrentFatigueInfo({ fatigue_pct: 25, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs);
+  const f1 = computeCurrentFatigueInfo({ fatigue_pct: 25, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs + 1 * 3600000);
+  const f2 = computeCurrentFatigueInfo({ fatigue_pct: 25, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs + 2 * 3600000);
+  const f3 = computeCurrentFatigueInfo({ fatigue_pct: 25, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs + 3 * 3600000);
+  assert.equal(f0.fatiguePct, 25);
+  assert.equal(f1.fatiguePct, 15);
+  assert.equal(f2.fatiguePct, 5);
+  assert.equal(f3.fatiguePct, 0);
+
+  const fMax1 = computeCurrentFatigueInfo({ fatigue_pct: 75, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs + 1 * 3600000);
+  const fMax8 = computeCurrentFatigueInfo({ fatigue_pct: 75, fatigue_updated_at: new Date(baseTs).toISOString() }, baseTs + 8 * 3600000);
+  assert.equal(fMax1.fatiguePct, 65);
+  assert.equal(fMax8.fatiguePct, 0);
 
   const bossSp = [{
     id: 'boss_sp',
@@ -262,15 +306,45 @@ test('v1.4 [2b] Spirit Veins Golden Hours, Fatigue, Leader-only Domain, SPD orde
 });
 
 test('v1.4 [2c] Explorer Survival/Death Math + Full Live DB Stress Test (Main/Sub Pet Swap, Gear Lock, Death/Drop, 60% Salvage, Elixir, Absolute Stone)', async () => {
-  // 1. Exact survival formula verification
+  // 1. Exact survival formula verification (v1.4.7 nerfed below-map + 2x weaker = strict 0%)
   assert.equal(V14_EXPLORER_MAPS.length, 12);
   assert.equal(computeExplorerSurvival(100000, 100000).survivalPct, 90);
   assert.equal(computeExplorerSurvival(110000, 100000).survivalPct, 95); // +10% -> +5%
   assert.equal(computeExplorerSurvival(120000, 100000).survivalPct, 100); // +20% -> 100%
   assert.equal(computeExplorerSurvival(100000, 100000, 'food_survival_pill').survivalPct, 98); // +8% Food A
-  assert.equal(computeExplorerSurvival(95000, 100000).deathPct, 20);  // < map, <10% diff -> 20% death
-  assert.equal(computeExplorerSurvival(89000, 100000).deathPct, 30);  // 11% deficit -> 20% + 10% = 30% death
-  assert.equal(computeExplorerSurvival(70000, 100000).deathPct, 50);  // 30% deficit -> 20% + 30% = 50% death
+  assert.deepEqual(
+    {
+      s: computeExplorerSurvival(95000, 100000).survivalPct,
+      d: computeExplorerSurvival(95000, 100000).deathPct,
+    },
+    { s: 72, d: 28 },
+  );
+  assert.deepEqual(
+    {
+      s: computeExplorerSurvival(80000, 100000).survivalPct,
+      d: computeExplorerSurvival(80000, 100000).deathPct,
+    },
+    { s: 48, d: 52 },
+  );
+  assert.deepEqual(
+    {
+      s: computeExplorerSurvival(70000, 100000).survivalPct,
+      d: computeExplorerSurvival(70000, 100000).deathPct,
+    },
+    { s: 32, d: 68 },
+  );
+  assert.equal(computeExplorerSurvival(60000, 100000, 'food_survival_pill').survivalPct, 24); // 16% + 8% Food A
+  const halfWeak = computeExplorerSurvival(50000, 100000);
+  assert.equal(halfWeak.survivalPct, 0);
+  assert.equal(halfWeak.deathPct, 100);
+  assert.equal(halfWeak.tooWeak, true);
+  const halfWeakFood = computeExplorerSurvival(50000, 100000, 'food_survival_pill');
+  assert.equal(halfWeakFood.survivalPct, 0); // Anti-bypass: Food A cannot rescue >= 2x weaker
+  assert.equal(halfWeakFood.deathPct, 100);
+  assert.equal(halfWeakFood.tooWeak, true);
+  assert.equal(computeExplorerSurvival(17801, 55000).survivalPct, 0);
+  assert.equal(computeExplorerSurvival(17801, 25000).survivalPct, 34);
+  assert.equal(computeExplorerSurvival(1000, 1000000, 'food_survival_pill').survivalPct, 0);
 
   if (!supabase) return;
 
@@ -384,7 +458,7 @@ test('v1.4 [2c] Explorer Survival/Death Math + Full Live DB Stress Test (Main/Su
     // F) Player B explores SAME map (map_04_thach_mon) with >= 6h & survives -> 60% salvage picks up 1 dropped item with preserved grade!
     const { data: petB } = await supabase.from('user_pets').insert({
       user_id: userB, pet_type: 'bach_kim_ho_tu', pet_name: 'Pet B', pet_rarity: 'Tiên Phẩm', element: 'Kim',
-      level: 50, star: 5, atk: 2000, def: 1500, spd: 1200, power_score: 250000, is_active: true, is_unique: false, status: 'ready', enchant_grade: 'B', quantity: 1,
+      level: 80, star: 8, atk: 45000, def: 30000, spd: 20000, power_score: 250000, is_active: true, is_unique: false, status: 'ready', enchant_grade: 'B', quantity: 1,
     }).select('*').single();
 
     await saveExplorerLoadout(userB, { petId: String(petB.pet_id) });

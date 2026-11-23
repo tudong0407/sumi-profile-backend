@@ -185,6 +185,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'F',
     tier_group: 'low',
+    spawn_weight: 20,
     boss_id: 'vein_mine_f',
     boss_name: 'Thạch Linh Thủ Mộ Giả',
     boss_power: 25000,
@@ -196,6 +197,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'E',
     tier_group: 'low',
+    spawn_weight: 19,
     boss_id: 'vein_mine_e',
     boss_name: 'Hắc Giáp Nham Khôi',
     boss_power: 90000,
@@ -207,6 +209,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'D',
     tier_group: 'low',
+    spawn_weight: 17,
     boss_id: 'vein_mine_d',
     boss_name: 'Thanh Mộc Cổ Mãng',
     boss_power: 280000,
@@ -218,6 +221,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'C',
     tier_group: 'low',
+    spawn_weight: 14,
     boss_id: 'vein_mine_c',
     boss_name: 'Huyết Hỏa Địa Long',
     boss_power: 750000,
@@ -229,6 +233,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'B',
     tier_group: 'high',
+    spawn_weight: 11,
     boss_id: 'vein_mine_b',
     boss_name: 'Tử Lôi Trấn Mạch Tôn',
     boss_power: 1800000,
@@ -240,6 +245,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'A',
     tier_group: 'high',
+    spawn_weight: 8,
     boss_id: 'vein_mine_a',
     boss_name: 'U Minh Huyền Quy Vương',
     boss_power: 3200000,
@@ -251,6 +257,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'S',
     tier_group: 'high',
+    spawn_weight: 6,
     boss_id: 'vein_mine_s',
     boss_name: 'Thái Cổ Tinh Thần Cự Thú',
     boss_power: 5200000,
@@ -262,6 +269,7 @@ export const V14_SPIRIT_VEIN_TIERS = [
   {
     tier_code: 'S+',
     tier_group: 'high',
+    spawn_weight: 5,
     boss_id: 'vein_mine_sp',
     boss_name: 'Hỗn Nguyên Địa Mạch Ma Tôn',
     boss_power: 8500000,

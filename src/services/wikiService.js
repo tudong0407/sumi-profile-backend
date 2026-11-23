@@ -184,7 +184,7 @@ export const WIKI_CATEGORIES = {
         value: [
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
-          `• ${em('vein_mine_sp', '⛰️')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, tổ đội 3 người tranh mỏ \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*.`,
+          `• ${em('vein_mine_sp', '⛰️')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** ngẫu nhiên theo tỉ lệ **F→S+** (\`S+ 5%\`), tổ đội 3 người tranh \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*; thắng mỗi mỏ cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`), tự giảm \`-10%/giờ\`.`,
         ].join('\n'),
         inline: false,
       },
@@ -320,7 +320,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Cơ Chế Sinh Tử & Phần Thưởng',
-        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng 200–300 LT/h × hệ số + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Lực >= Map sống 90%–100%; nếu tử nạn, Pet Độc Nhất trọng thương (hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ), Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
+        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng 200–300 LT/h × hệ số + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Lực >= Map sống 90%–100%; yếu hơn map tử vong tăng dần về 100% (thua từ 2× lực = 0% sống sót, Hộ Mệnh Đan không cứu được). Pet Độc Nhất trọng thương hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ, Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
       },
     ],
     fields: [
@@ -335,7 +335,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('enchant_stone_absolute', '💎')} Quy Tắc Sinh Tử & Nhặt Đồ 60%`,
         value: [
           '• **Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số` + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
-          '• **Sinh tử:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn **20%→95%**. Pháp Bảo thường rơi khi tử nạn chờ người qua sau *(mốc `>=` giờ rơi)* nhặt **60%**.',
+          '• **Sinh tử:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần về **100%** *(thua từ 2× lực = **0% sống sót**, Hộ Mệnh Đan không cứu được)*. Pháp Bảo thường rơi khi tử nạn chờ người qua sau *(mốc `>=` giờ rơi)* nhặt **60%**.',
         ].join('\n'),
         inline: false,
       },

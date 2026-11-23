@@ -2047,7 +2047,7 @@ app.get('/api/party/status/:userId', requireUpdateAck, async (req, res) => {
     const result = await getPartyStatus(req.params.userId, {
       username: getCleanParam(req.query.username),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/status error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_STATUS_FAILED', message: err.message });
@@ -2060,7 +2060,7 @@ app.post('/api/party/invite', requireBackendApiKey, requireUpdateAck, async (req
     const result = await inviteToParty(body.userId || body.leaderId, body.targetUserId || body.target, {
       username: getCleanParam(body.username),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/invite error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_INVITE_FAILED', message: err.message });
@@ -2071,7 +2071,7 @@ app.post('/api/party/respond', requireBackendApiKey, requireUpdateAck, async (re
   try {
     const body = req.body || {};
     const result = await respondPartyInvite(body.userId, body.decision || 'accept', body.inviteId || null);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/respond error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_RESPOND_FAILED', message: err.message });
@@ -2082,7 +2082,7 @@ app.post('/api/party/leave', requireBackendApiKey, requireUpdateAck, async (req,
   try {
     const body = req.body || {};
     const result = await leaveOrDisbandParty(body.userId);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/leave error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_LEAVE_FAILED', message: err.message });
@@ -2093,7 +2093,7 @@ app.post('/api/party/kick', requireBackendApiKey, requireUpdateAck, async (req, 
   try {
     const body = req.body || {};
     const result = await kickPartyMember(body.userId || body.leaderId, body.targetUserId || body.target);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/kick error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_KICK_FAILED', message: err.message });
@@ -2104,7 +2104,7 @@ app.post('/api/party/transfer', requireBackendApiKey, requireUpdateAck, async (r
   try {
     const body = req.body || {};
     const result = await transferPartyLeader(body.userId || body.leaderId, body.targetUserId || body.target);
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/transfer error:', err);
     return res.status(500).json({ success: false, error: 'PARTY_TRANSFER_FAILED', message: err.message });
@@ -2127,10 +2127,10 @@ app.get('/api/vein/overview', async (req, res) => {
 app.post('/api/vein/challenge', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await challengeSpiritVein(body.userId, body.tierGroup || body.group || 'low', {
+    const result = await challengeSpiritVein(body.userId, body.slotIndex ?? body.slot ?? body.tierGroup ?? body.group ?? 1, {
       forceOpen: Boolean(body.forceOpen),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/vein/challenge error:', err);
     return res.status(500).json({ success: false, error: 'VEIN_CHALLENGE_FAILED', message: err.message });

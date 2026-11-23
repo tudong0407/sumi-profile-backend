@@ -93,10 +93,19 @@ export async function loadTeamBattleReport(battleId) {
   return getCachedTeamBattle(cleanId) || await loadBattleLogRecord({ battleId: cleanId, battleKind: 'team' });
 }
 
-export function applyFatigueToCombatant(combatant, fatigueStacks = 0) {
+export function applyFatigueToCombatant(combatant, fatigueInput = 0) {
   const baseUnit = normalizeUnitPetAndPower(combatant);
-  const stacks = Math.max(0, Math.min(3, Math.floor(Number(fatigueStacks) || 0)));
-  const penaltyPct = Math.min(0.75, stacks * 0.25);
+  let rawPct = 0;
+  if (fatigueInput && typeof fatigueInput === 'object') {
+    rawPct = Number(fatigueInput.fatiguePct ?? fatigueInput.fatigue_pct ?? 0);
+  } else {
+    const num = Math.max(0, Number(fatigueInput) || 0);
+    // Tương thích ngược: <= 3 là số stack cũ (25%/stack), > 3 là % mệt mỏi trực tiếp (0..75)
+    rawPct = num <= 3 ? num * 25 : num;
+  }
+  const penaltyPctInt = Math.min(75, Math.max(0, Math.round(rawPct)));
+  const penaltyPct = penaltyPctInt / 100;
+  const stacks = penaltyPctInt > 0 ? Math.min(3, Math.ceil(penaltyPctInt / 25)) : 0;
   const mult = Math.max(0.25, 1 - penaltyPct);
 
   const atk = Math.max(10, Math.round(Number(baseUnit.atk || 100) * mult));
@@ -113,7 +122,8 @@ export function applyFatigueToCombatant(combatant, fatigueStacks = 0) {
     currentHp: maxHp,
     shield: Number(baseUnit.shield || 0),
     fatigueStacks: stacks,
-    fatiguePenaltyPct: Math.round(penaltyPct * 100),
+    fatiguePct: penaltyPctInt,
+    fatiguePenaltyPct: penaltyPctInt,
     powerScore: Math.round(Number(baseUnit.powerScore || 0) * mult),
     state: createInitialCombatState(),
   };
