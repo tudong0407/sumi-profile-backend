@@ -3868,5 +3868,263 @@
     "name": "xich_xa_hoa_long",
     "animated": false,
     "tag": "<:xich_xa_hoa_long:1573412284548776140>"
+  },
+  "gacha_ticket_domain": {
+    "id": "1574471799570309180",
+    "name": "gacha_ticket_domain",
+    "animated": false,
+    "tag": "<:gacha_ticket_domain:1574471799570309180>"
+  },
+  "ui_toggle_on": {
+    "id": "1574471812325179513",
+    "name": "ui_toggle_on",
+    "animated": false,
+    "tag": "<:ui_toggle_on:1574471812325179513>"
+  },
+  "ui_toggle_off": {
+    "id": "1574471828049625088",
+    "name": "ui_toggle_off",
+    "animated": false,
+    "tag": "<:ui_toggle_off:1574471828049625088>"
+  },
+  "ui_lock": {
+    "id": "1574471840653377698",
+    "name": "ui_lock",
+    "animated": false,
+    "tag": "<:ui_lock:1574471840653377698>"
+  },
+  "ui_bulb_tip": {
+    "id": "1574471855006548071",
+    "name": "ui_bulb_tip",
+    "animated": false,
+    "tag": "<:ui_bulb_tip:1574471855006548071>"
+  },
+  "ui_check": {
+    "id": "1574471868306558976",
+    "name": "ui_check",
+    "animated": false,
+    "tag": "<:ui_check:1574471868306558976>"
+  },
+  "ui_cross": {
+    "id": "1574471880075776191",
+    "name": "ui_cross",
+    "animated": false,
+    "tag": "<:ui_cross:1574471880075776191>"
+  },
+  "ui_warn": {
+    "id": "1574471892511891537",
+    "name": "ui_warn",
+    "animated": false,
+    "tag": "<:ui_warn:1574471892511891537>"
+  },
+  "ui_clock_timer": {
+    "id": "1574471905568759890",
+    "name": "ui_clock_timer",
+    "animated": false,
+    "tag": "<:ui_clock_timer:1574471905568759890>"
+  },
+  "ui_refresh": {
+    "id": "1574471918562844832",
+    "name": "ui_refresh",
+    "animated": false,
+    "tag": "<:ui_refresh:1574471918562844832>"
+  },
+  "ui_flag_capture": {
+    "id": "1574471930805879025",
+    "name": "ui_flag_capture",
+    "animated": false,
+    "tag": "<:ui_flag_capture:1574471930805879025>"
+  },
+  "ui_skull_ko": {
+    "id": "1574471943820943541",
+    "name": "ui_skull_ko",
+    "animated": false,
+    "tag": "<:ui_skull_ko:1574471943820943541>"
+  },
+  "ui_heal_band": {
+    "id": "1574471956504256582",
+    "name": "ui_heal_band",
+    "animated": false,
+    "tag": "<:ui_heal_band:1574471956504256582>"
+  },
+  "ui_wind_spd": {
+    "id": "1574471969363988531",
+    "name": "ui_wind_spd",
+    "animated": false,
+    "tag": "<:ui_wind_spd:1574471969363988531>"
+  },
+  "ui_crown_king": {
+    "id": "1574471981275811850",
+    "name": "ui_crown_king",
+    "animated": false,
+    "tag": "<:ui_crown_king:1574471981275811850>"
+  },
+  "ui_nav_first": {
+    "id": "1574471993640747220",
+    "name": "ui_nav_first",
+    "animated": false,
+    "tag": "<:ui_nav_first:1574471993640747220>"
+  },
+  "ui_nav_prev": {
+    "id": "1574472008127746160",
+    "name": "ui_nav_prev",
+    "animated": false,
+    "tag": "<:ui_nav_prev:1574472008127746160>"
+  },
+  "ui_nav_next": {
+    "id": "1574472019716866183",
+    "name": "ui_nav_next",
+    "animated": false,
+    "tag": "<:ui_nav_next:1574472019716866183>"
+  },
+  "ui_nav_last": {
+    "id": "1574472037597184091",
+    "name": "ui_nav_last",
+    "animated": false,
+    "tag": "<:ui_nav_last:1574472037597184091>"
+  },
+  "ui_clipboard_log": {
+    "id": "1574472050922225867",
+    "name": "ui_clipboard_log",
+    "animated": false,
+    "tag": "<:ui_clipboard_log:1574472050922225867>"
+  },
+  "ui_surrender_flag": {
+    "id": "1574472061928210543",
+    "name": "ui_surrender_flag",
+    "animated": false,
+    "tag": "<:ui_surrender_flag:1574472061928210543>"
+  },
+  "ui_compass_dir": {
+    "id": "1574472073739509771",
+    "name": "ui_compass_dir",
+    "animated": false,
+    "tag": "<:ui_compass_dir:1574472073739509771>"
+  },
+  "ui_medal_1": {
+    "id": "1574472084091048054",
+    "name": "ui_medal_1",
+    "animated": false,
+    "tag": "<:ui_medal_1:1574472084091048054>"
+  },
+  "ui_medal_2": {
+    "id": "1574472095922913421",
+    "name": "ui_medal_2",
+    "animated": false,
+    "tag": "<:ui_medal_2:1574472095922913421>"
+  },
+  "ui_medal_3": {
+    "id": "1574472109286105179",
+    "name": "ui_medal_3",
+    "animated": false,
+    "tag": "<:ui_medal_3:1574472109286105179>"
+  },
+  "ui_chat_bubble": {
+    "id": "1574472133994881034",
+    "name": "ui_chat_bubble",
+    "animated": false,
+    "tag": "<:ui_chat_bubble:1574472133994881034>"
+  },
+  "ui_voice_mic": {
+    "id": "1574472154404233297",
+    "name": "ui_voice_mic",
+    "animated": false,
+    "tag": "<:ui_voice_mic:1574472154404233297>"
+  },
+  "ui_speaker_sound": {
+    "id": "1574472169423905009",
+    "name": "ui_speaker_sound",
+    "animated": false,
+    "tag": "<:ui_speaker_sound:1574472169423905009>"
+  },
+  "ui_music_note": {
+    "id": "1574472182141288590",
+    "name": "ui_music_note",
+    "animated": false,
+    "tag": "<:ui_music_note:1574472182141288590>"
+  },
+  "ui_mute_voice": {
+    "id": "1574472194149449930",
+    "name": "ui_mute_voice",
+    "animated": false,
+    "tag": "<:ui_mute_voice:1574472194149449930>"
+  },
+  "ui_announce_horn": {
+    "id": "1574472210741985413",
+    "name": "ui_announce_horn",
+    "animated": false,
+    "tag": "<:ui_announce_horn:1574472210741985413>"
+  },
+  "ui_user_avatar": {
+    "id": "1574472222943350824",
+    "name": "ui_user_avatar",
+    "animated": false,
+    "tag": "<:ui_user_avatar:1574472222943350824>"
+  },
+  "ui_kick_boot": {
+    "id": "1574472276718387240",
+    "name": "ui_kick_boot",
+    "animated": false,
+    "tag": "<:ui_kick_boot:1574472276718387240>"
+  },
+  "ui_gift_box": {
+    "id": "1574472289032999042",
+    "name": "ui_gift_box",
+    "animated": false,
+    "tag": "<:ui_gift_box:1574472289032999042>"
+  },
+  "ui_backpack_inv": {
+    "id": "1574472314806993109",
+    "name": "ui_backpack_inv",
+    "animated": false,
+    "tag": "<:ui_backpack_inv:1574472314806993109>"
+  },
+  "ui_party_celebrate": {
+    "id": "1574472330292494458",
+    "name": "ui_party_celebrate",
+    "animated": false,
+    "tag": "<:ui_party_celebrate:1574472330292494458>"
+  },
+  "ui_coin_gold": {
+    "id": "1574472345102450699",
+    "name": "ui_coin_gold",
+    "animated": false,
+    "tag": "<:ui_coin_gold:1574472345102450699>"
+  },
+  "ui_heart_couple": {
+    "id": "1574472364404510793",
+    "name": "ui_heart_couple",
+    "animated": false,
+    "tag": "<:ui_heart_couple:1574472364404510793>"
+  },
+  "ui_heart_broken": {
+    "id": "1574472378732249300",
+    "name": "ui_heart_broken",
+    "animated": false,
+    "tag": "<:ui_heart_broken:1574472378732249300>"
+  },
+  "ui_suit_spade": {
+    "id": "1574472392657346632",
+    "name": "ui_suit_spade",
+    "animated": false,
+    "tag": "<:ui_suit_spade:1574472392657346632>"
+  },
+  "ui_suit_heart": {
+    "id": "1574472406981156996",
+    "name": "ui_suit_heart",
+    "animated": false,
+    "tag": "<:ui_suit_heart:1574472406981156996>"
+  },
+  "ui_suit_diamond": {
+    "id": "1574472422046826628",
+    "name": "ui_suit_diamond",
+    "animated": false,
+    "tag": "<:ui_suit_diamond:1574472422046826628>"
+  },
+  "ui_suit_club": {
+    "id": "1574472433279172799",
+    "name": "ui_suit_club",
+    "animated": false,
+    "tag": "<:ui_suit_club:1574472433279172799>"
   }
 }

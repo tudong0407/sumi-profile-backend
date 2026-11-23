@@ -11,6 +11,7 @@ import {
   loadBadgeImage,
   drawRoundRect,
   drawAntiAliasedAvatarWithBorder,
+  preloadAvatarFrameOverlay,
   drawStarSparkle,
   drawHexBadge,
   drawAutoFitSingleLineText,
@@ -190,7 +191,7 @@ function drawCornerDomainBadge(ctx, dl, domImgs, boxX, boxY, boxW, boxH) {
 
   ctx.save();
   ctx.shadowColor = rar.slotGlow;
-  ctx.shadowBlur = 7;
+  ctx.shadowBlur = 0;
   const brG = ctx.createLinearGradient(boxX, boxY, boxX + boxW, boxY + boxH);
   brG.addColorStop(0, rar.slotBorder[0]);
   brG.addColorStop(1, rar.slotBorder[1]);
@@ -439,11 +440,13 @@ export async function renderBattleCard(battleResult, options = {}) {
     dl?.realm?.realm_id ? loadImageSafe(`domains/${dl.realm.realm_id}.png`, 2000, null) : null,
   ]);
 
-  const [atkAv, defAv, atkPetImg, defPetImg, atkEqImgs, defEqImgs, atkDomImgs, defDomImgs, winnerPetMiniIcon, gD, gC, gB, gA, gS] = await Promise.all([
-    loadImageSafe(atk.avatarUrl, 2500, atk.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
-    loadImageSafe(def.avatarUrl, 2500, def.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
-    loadImageSafe(resolvePetAsset(atk.petType), 2500, 'pets/hoa_thach_nham_nham.png'),
-    loadImageSafe(resolvePetAsset(def.petType), 2500, 'pets/hoa_thach_nham_nham.png'),
+  const [atkAv, defAv, atkFrameOverlay, defFrameOverlay, atkPetImg, defPetImg, atkEqImgs, defEqImgs, atkDomImgs, defDomImgs, winnerPetMiniIcon, gD, gC, gB, gA, gS] = await Promise.all([
+    loadImageSafe(atk.avatarUrl, 1200, atk.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+    loadImageSafe(def.avatarUrl, 1200, def.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+    preloadAvatarFrameOverlay(atk.avatarFrame),
+    preloadAvatarFrameOverlay(def.avatarFrame),
+    loadImageSafe(resolvePetAsset(atk.petType), 1500, 'pets/hoa_thach_nham_nham.png'),
+    loadImageSafe(resolvePetAsset(def.petType), 1500, 'pets/hoa_thach_nham_nham.png'),
     loadEquipIcons(atk.equipment),
     loadEquipIcons(def.equipment),
     loadDomainIcons(atkDomainLoadout),
@@ -494,7 +497,7 @@ export async function renderBattleCard(battleResult, options = {}) {
   // ============================================================================
   // LỚP 2: HAI KHUNG ĐẤU SĨ NỚI RỘNG (w=360, h=456)
   // ============================================================================
-  function drawFighterPanel(fighter, avImg, petImg, eqImgs, domImgs, isWinner, x, side) {
+  function drawFighterPanel(fighter, avImg, frameOverlayImg, petImg, eqImgs, domImgs, isWinner, x, side) {
     const y = 22;
     const w = 360;
     const h = 456;
@@ -516,7 +519,7 @@ export async function renderBattleCard(battleResult, options = {}) {
       ctx.lineWidth = isWinner ? 2.0 : 1.2;
       if (isWinner) {
         ctx.shadowColor = 'rgba(251, 191, 36, 0.45)';
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 0;
       }
     }
     ctx.stroke();
@@ -537,7 +540,8 @@ export async function renderBattleCard(battleResult, options = {}) {
       level: fighter.userLevel || 1,
       username: fighter.name,
       avatarFrame: fighter.avatarFrame,
-      supersampleFactor: 4,
+      frameOverlayImg,
+      supersampleFactor: 2,
       showAura: true,
     });
 
@@ -598,7 +602,7 @@ export async function renderBattleCard(battleResult, options = {}) {
       ctx.save();
       if (isFinal && !isWinner) ctx.globalAlpha = 0.78;
       ctx.shadowColor = rStyle.color;
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 0;
       ctx.drawImage(petImg, petBoxX + (petBoxW - dw) / 2, petBoxY + 12 + (petBoxH - 12 - dh) / 2, dw, dh);
       ctx.restore();
     }
@@ -820,8 +824,8 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.restore();
   }
 
-  drawFighterPanel(atk, atkAv, atkPetImg, atkEqImgs, atkDomImgs, atkWon, 22, 'left');
-  drawFighterPanel(def, defAv, defPetImg, defEqImgs, defDomImgs, !atkWon, 618, 'right');
+  drawFighterPanel(atk, atkAv, atkFrameOverlay, atkPetImg, atkEqImgs, atkDomImgs, atkWon, 22, 'left');
+  drawFighterPanel(def, defAv, defFrameOverlay, defPetImg, defEqImgs, defDomImgs, !atkWon, 618, 'right');
 
   // ============================================================================
   // LỚP 3: CỘT GIỮA — CHỮ VS METALLIC, NGŨ HÀNH, ĐỐI ĐẦU LINH VỰC & WINNER
@@ -865,7 +869,7 @@ export async function renderBattleCard(battleResult, options = {}) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.shadowColor = 'rgba(255, 190, 130, 0.35)';
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = 0;
   ctx.fillText('VS', midCx, vsCy + 1);
   ctx.shadowBlur = 0;
 
@@ -1104,7 +1108,7 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.strokeStyle = '#fbbf24';
     ctx.lineWidth = 1.8;
     ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 0;
     ctx.stroke();
     ctx.shadowBlur = 0;
 

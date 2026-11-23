@@ -2,6 +2,7 @@ import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { AVATAR_FRAME_BY_ID } from '../data/catalog.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,6 +82,10 @@ export function resolveAssetPath(filePathOrName) {
   const bgPath = path.join(ASSETS_DIR, 'backgrounds', basename);
   if (fs.existsSync(bgPath)) {
     return bgPath;
+  }
+  const framePath = path.join(ASSETS_DIR, 'frames', basename);
+  if (fs.existsSync(framePath)) {
+    return framePath;
   }
 
   return null;
@@ -267,7 +272,7 @@ async function loadRemoteImageCached(url, timeoutMs) {
 /**
  * Tải ảnh an toàn có bộ nhớ đệm LRU trong RAM, in-flight coalescing, timeout và fallback
  */
-export async function loadImageSafe(urlOrPath, timeoutMs = 3000, fallbackAssetName = null) {
+export async function loadImageSafe(urlOrPath, timeoutMs = 1200, fallbackAssetName = null) {
   if (urlOrPath) {
     try {
       const resolved = resolveAssetPath(urlOrPath);
@@ -494,19 +499,74 @@ export function drawProceduralAvatar(ctx, x, y, size, isOwner, initialLetter) {
  * - high: Lv.40+ (Kim Đan -> Đại Thừa) — Tử Kim / Huyền Tinh
  * - novice: Lv.1–39 (Luyện Khí – Trúc Cơ) — Bạch Ngọc / Thanh Lam sắc nét
  */
-const CUSTOM_SHOP_FRAMES = new Set([
-  'jade_lotus',
-  'amethyst_celestial',
-  'crimson_phoenix',
-  'frost_crystal',
-]);
+const frameOverlayCache = new Map();
+
+export async function preloadAvatarFrameOverlay(frameId) {
+  const fid = String(frameId || '').trim();
+  if (!fid || fid === 'default' || fid === 'celestial_fox_gold') return null;
+  if (frameOverlayCache.has(fid)) return frameOverlayCache.get(fid);
+  const fPath = path.join(ASSETS_DIR, 'frames', `${fid}.png`);
+  if (!fs.existsSync(fPath)) {
+    frameOverlayCache.set(fid, null);
+    return null;
+  }
+  try {
+    const buf = await fs.promises.readFile(fPath);
+    const img = await loadImage(buf);
+    if (frameOverlayCache.size >= 24) {
+      const oldest = frameOverlayCache.keys().next().value;
+      if (oldest) frameOverlayCache.delete(oldest);
+    }
+    frameOverlayCache.set(fid, img);
+    return img;
+  } catch {
+    return null;
+  }
+}
+
+export function getCachedAvatarFrameOverlaySync(frameId) {
+  const fid = String(frameId || '').trim();
+  if (!fid || fid === 'default' || fid === 'celestial_fox_gold') return null;
+  if (frameOverlayCache.has(fid)) return frameOverlayCache.get(fid);
+  const fPath = path.join(ASSETS_DIR, 'frames', `${fid}.png`);
+  if (!fs.existsSync(fPath)) return null;
+  // Trigger background preload if not yet loaded
+  void preloadAvatarFrameOverlay(fid);
+  return null;
+}
 
 export function resolveAvatarBorderTier({ isOwner = false, level = 1, avatarFrame = 'default' } = {}) {
-  if (isOwner || avatarFrame === 'celestial_fox_gold') return 'owner';
-  if (CUSTOM_SHOP_FRAMES.has(avatarFrame)) return avatarFrame;
+  const frameKey = String(avatarFrame || 'default').trim();
+  if (frameKey && frameKey !== 'default' && frameKey !== 'celestial_fox_gold' && AVATAR_FRAME_BY_ID[frameKey]) {
+    return frameKey;
+  }
+  if (isOwner || frameKey === 'celestial_fox_gold') return 'owner';
   if (Number(level) >= 40) return 'high';
   return 'novice';
 }
+
+export const AVATAR_FRAME_METRICS = {
+  frame_bamboo_ink: { cx: 259.5, cy: 248.0, rTuck: 192 },
+  frame_plum_blossom: { cx: 260.7, cy: 252.7, rTuck: 186 },
+  frame_lantern_glow: { cx: 241.8, cy: 247.2, rTuck: 179 },
+  frame_obsidian_ring: { cx: 249.8, cy: 246.4, rTuck: 188 },
+  frame_royal_legacy: { cx: 251.0, cy: 252.5, rTuck: 178 },
+  jade_lotus: { cx: 261.5, cy: 247.7, rTuck: 171 },
+  frost_crystal: { cx: 256.4, cy: 248.5, rTuck: 162 },
+  frame_moon_ripple: { cx: 258.5, cy: 258.1, rTuck: 174 },
+  frame_thunder_seal: { cx: 258.1, cy: 258.0, rTuck: 170 },
+  frame_crimson_cloud: { cx: 251.6, cy: 249.3, rTuck: 172 },
+  amethyst_celestial: { cx: 253.0, cy: 257.6, rTuck: 160 },
+  crimson_phoenix: { cx: 261.5, cy: 270.7, rTuck: 161 },
+  frame_star_nebula: { cx: 256.1, cy: 255.5, rTuck: 178 },
+  frame_white_lotus: { cx: 252.9, cy: 251.6, rTuck: 166 },
+  frame_solar_crow: { cx: 251.6, cy: 255.7, rTuck: 148 },
+  frame_azure_dragon: { cx: 260.8, cy: 252.4, rTuck: 158 },
+  frame_kitsune_mythic: { cx: 248.5, cy: 262.3, rTuck: 151 },
+  frame_chaos_primordial: { cx: 257.2, cy: 265.7, rTuck: 158 },
+  frame_emperor_dragon: { cx: 252.9, cy: 255.0, rTuck: 142 },
+  frame_eternal_aurora: { cx: 244.8, cy: 243.2, rTuck: 157 },
+};
 
 /**
  * Vẽ Avatar tròn khử răng cưa bằng Supersampling 4x + Radial Feather Mask và Khung Viền đồng tâm tuyệt đối.
@@ -523,35 +583,30 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   } = options;
 
   const tier = resolveAvatarBorderTier({ isOwner, level, avatarFrame });
+  const isCustomFrame = Boolean(AVATAR_FRAME_BY_ID[tier] && tier !== 'default');
+  const pngOverlay = isCustomFrame ? (options.frameOverlayImg || getCachedAvatarFrameOverlaySync(tier)) : null;
+  const avScale = pngOverlay
+    ? (Number(options.avatarRadiusScale) > 0 ? Number(options.avatarRadiusScale) : 0.90)
+    : 1;
+  const drawAvatarRadius = radius * avScale;
   // Tỷ lệ viền & hào quang chuẩn theo radius (r>=56 giữ s=1 cho /profile & /rank; r=24 thu nhỏ thanh mảnh cho /battle)
   const s = Math.max(0.42, Math.min(1, radius / 56));
 
   // 1. Hào quang đồng tâm phía sau Avatar (phân cấp rõ ràng)
   if (showAura) {
     ctx.save();
-    const baseAuraOffset = tier === 'owner' ? 28 : (tier === 'high' || CUSTOM_SHOP_FRAMES.has(tier)) ? 22 : 16;
+    const baseAuraOffset = tier === 'owner' ? 28 : (tier === 'high' || isCustomFrame) ? 22 : 16;
     const auraR = radius + baseAuraOffset * s;
-    const auraGrad = ctx.createRadialGradient(centerX, centerY, radius * 0.82, centerX, centerY, auraR);
+    const auraGrad = ctx.createRadialGradient(centerX, centerY, drawAvatarRadius * 0.82, centerX, centerY, auraR);
     if (tier === 'owner') {
       auraGrad.addColorStop(0, 'rgba(244, 63, 94, 0.58)');
       auraGrad.addColorStop(0.45, 'rgba(251, 191, 36, 0.36)');
       auraGrad.addColorStop(0.78, 'rgba(236, 72, 153, 0.16)');
       auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    } else if (tier === 'jade_lotus') {
-      auraGrad.addColorStop(0, 'rgba(16, 185, 129, 0.45)');
-      auraGrad.addColorStop(0.55, 'rgba(52, 211, 153, 0.22)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    } else if (tier === 'amethyst_celestial') {
-      auraGrad.addColorStop(0, 'rgba(192, 132, 252, 0.48)');
-      auraGrad.addColorStop(0.55, 'rgba(139, 92, 246, 0.22)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    } else if (tier === 'crimson_phoenix') {
-      auraGrad.addColorStop(0, 'rgba(239, 68, 68, 0.5)');
-      auraGrad.addColorStop(0.55, 'rgba(245, 158, 11, 0.24)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    } else if (tier === 'frost_crystal') {
-      auraGrad.addColorStop(0, 'rgba(34, 211, 238, 0.46)');
-      auraGrad.addColorStop(0.55, 'rgba(59, 130, 246, 0.22)');
+    } else if (isCustomFrame) {
+      const pal = AVATAR_FRAME_BY_ID[tier]?.palette || ['#c084fc', '#7e22ce', '#f5d0fe'];
+      auraGrad.addColorStop(0, `${pal[0]}73`);
+      auraGrad.addColorStop(0.55, `${pal[1]}38`);
       auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else if (tier === 'high') {
       auraGrad.addColorStop(0, 'rgba(168, 85, 247, 0.44)');
@@ -570,7 +625,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   }
 
   // 2. Render Avatar trên Offscreen Canvas 4x Supersampling + Radial Feather Mask (khử răng cưa tuyệt đối)
-  const diameter = radius * 2;
+  const diameter = drawAvatarRadius * 2;
   const ssSize = Math.max(64, Math.round(diameter * supersampleFactor));
   const ssRadius = ssSize / 2;
   const ssCanvas = createCanvas(ssSize, ssSize);
@@ -607,22 +662,24 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(ssCanvas, centerX - radius, centerY - radius, diameter, diameter);
+  ctx.drawImage(ssCanvas, centerX - drawAvatarRadius, centerY - drawAvatarRadius, diameter, diameter);
   ctx.restore();
 
   // 3. Vẽ Hệ Vòng Viền Đồng Tâm (chung 1 tọa độ centerX, centerY — không bao giờ lệch 1px)
   ctx.save();
 
-  // 3a. Vòng khóa mép trong (inner seam-seal) đè nhẹ lên rìa avatar để tuyệt đối không lộ viền đen/răng cưa
-  ctx.beginPath();
-  ctx.arc(centerX, centerY, radius - 0.3 * s, 0, Math.PI * 2);
-  ctx.strokeStyle = tier === 'owner'
-    ? 'rgba(255, 241, 180, 0.75)'
-    : tier === 'high'
-      ? 'rgba(233, 213, 255, 0.6)'
-      : 'rgba(224, 242, 254, 0.55)';
-  ctx.lineWidth = Math.max(0.8, 1.4 * s);
-  ctx.stroke();
+  // 3a. Vòng khóa mép trong (inner seam-seal) — bỏ qua khi có PNG frame overlay để không lộ viền trắng
+  if (!pngOverlay) {
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius - 0.3 * s, 0, Math.PI * 2);
+    ctx.strokeStyle = tier === 'owner'
+      ? 'rgba(255, 241, 180, 0.75)'
+      : tier === 'high'
+        ? 'rgba(233, 213, 255, 0.6)'
+        : 'rgba(224, 242, 254, 0.55)';
+    ctx.lineWidth = Math.max(0.8, 1.4 * s);
+    ctx.stroke();
+  }
 
   if (tier === 'owner') {
     // --- VIỀN ĐỘC QUYỀN TIỂU THƯ FUYUMI: CỬU VĨ HOÀNG KIM & HÀO QUANG HỒNG NGỌC ĐA TẦNG ---
@@ -650,10 +707,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     mainGrad.addColorStop(1, '#fef08a');
     ctx.strokeStyle = mainGrad;
     ctx.lineWidth = Math.max(1.8, 4.0 * s);
-    ctx.shadowColor = 'rgba(244, 63, 94, 0.78)';
-    ctx.shadowBlur = 12 * s;
     ctx.stroke();
-    ctx.shadowBlur = 0;
 
     // 7 Ngọc Châu Hồng Ngọc & Hoàng Kim đối xứng vòm trên & hai bên (chừa 6h cho Level Badge)
     const crownGems = [
@@ -671,10 +725,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       ctx.beginPath();
       ctx.arc(gx, gy, g.r * s, 0, Math.PI * 2);
       ctx.fillStyle = g.core;
-      ctx.shadowColor = g.glow;
-      ctx.shadowBlur = 7 * s;
       ctx.fill();
-      ctx.shadowBlur = 0;
       ctx.strokeStyle = g.rim;
       ctx.lineWidth = Math.max(0.7, 1.2 * s);
       ctx.stroke();
@@ -690,39 +741,54 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
       const sy = centerY + outerR * Math.sin(ang);
       drawStarSparkle(ctx, sx, sy, 3.2 * s, '#fef08a', '#f43f5e');
     }
-  } else if (CUSTOM_SHOP_FRAMES.has(tier)) {
-    const shopThemeMap = {
-      jade_lotus: { c1: '#d1fae5', c2: '#10b981', c3: '#059669', orbit: 'rgba(52, 211, 153, 0.55)', glow: 'rgba(16, 185, 129, 0.72)', gemCore: '#ecfdf5', gemGlow: '#34d399' },
-      amethyst_celestial: { c1: '#f3e8ff', c2: '#a855f7', c3: '#6366f1', orbit: 'rgba(192, 132, 252, 0.55)', glow: 'rgba(168, 85, 247, 0.72)', gemCore: '#faf5ff', gemGlow: '#c084fc' },
-      crimson_phoenix: { c1: '#fef3c7', c2: '#f97316', c3: '#dc2626', orbit: 'rgba(251, 146, 60, 0.6)', glow: 'rgba(239, 68, 68, 0.75)', gemCore: '#fffbeb', gemGlow: '#f59e0b' },
-      frost_crystal: { c1: '#ecfeff', c2: '#06b6d4', c3: '#3b82f6', orbit: 'rgba(56, 189, 248, 0.55)', glow: 'rgba(34, 211, 238, 0.72)', gemCore: '#f0f9ff', gemGlow: '#38bdf8' },
-    };
-    const th = shopThemeMap[tier];
-    const outerR = radius + 5.2 * s;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
-    ctx.strokeStyle = th.orbit;
-    ctx.lineWidth = Math.max(0.7, 1.1 * s);
-    ctx.stroke();
+  } else if (isCustomFrame) {
+    if (pngOverlay) {
+      const metrics = AVATAR_FRAME_METRICS[tier] || { cx: 256, cy: 256, rTuck: 170 };
+      const srcW = pngOverlay.width || 512;
+      const srcH = pngOverlay.height || 512;
+      const normScale = srcW / 512;
+      const k = drawAvatarRadius / (metrics.rTuck * normScale);
+      const drawW = srcW * k;
+      const drawH = srcH * k;
+      const drawX = centerX - (metrics.cx * normScale) * k;
+      const drawY = centerY - (metrics.cy * normScale) * k;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(pngOverlay, drawX, drawY, drawW, drawH);
+    } else {
+      const frameMeta = AVATAR_FRAME_BY_ID[tier];
+      const pal = frameMeta?.palette || ['#c084fc', '#7e22ce', '#f5d0fe'];
+      const isMythicFrame = frameMeta?.rarity_key === 'mythic';
+      const isEpicFrame = frameMeta?.rarity_key === 'epic';
 
-    const mainR = radius + 1.6 * s;
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
-    const sGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
-    sGrad.addColorStop(0, th.c1);
-    sGrad.addColorStop(0.45, th.c2);
-    sGrad.addColorStop(1, th.c3);
-    ctx.strokeStyle = sGrad;
-    ctx.lineWidth = Math.max(1.6, 3.6 * s);
-    ctx.shadowColor = th.glow;
-    ctx.shadowBlur = 10 * s;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+      const outerR = radius + (isMythicFrame ? 6.0 : 5.0) * s;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, outerR, 0, Math.PI * 2);
+      ctx.strokeStyle = `${pal[0]}99`;
+      ctx.lineWidth = Math.max(0.8, (isMythicFrame ? 1.5 : 1.1) * s);
+      ctx.stroke();
 
-    for (const ang of [-Math.PI / 2, -Math.PI * 0.78, -Math.PI * 0.22, Math.PI, 0]) {
-      const gx = centerX + mainR * Math.cos(ang);
-      const gy = centerY + mainR * Math.sin(ang);
-      drawStarSparkle(ctx, gx, gy, (ang === -Math.PI / 2 ? 4.4 : 3.0) * s, th.gemCore, th.gemGlow);
+      const mainR = radius + 1.6 * s;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, mainR, 0, Math.PI * 2);
+      const sGrad = ctx.createLinearGradient(centerX - mainR, centerY - mainR, centerX + mainR, centerY + mainR);
+      sGrad.addColorStop(0, pal[2] || pal[0]);
+      sGrad.addColorStop(0.5, pal[0]);
+      sGrad.addColorStop(1, pal[1]);
+      ctx.strokeStyle = sGrad;
+      ctx.lineWidth = Math.max(1.8, (isMythicFrame ? 4.2 : isEpicFrame ? 3.8 : 3.4) * s);
+      ctx.stroke();
+
+      const gemAngles = isMythicFrame
+        ? [-Math.PI / 2, -Math.PI * 0.72, -Math.PI * 0.28, Math.PI, 0, Math.PI * 0.78, Math.PI * 0.22]
+        : isEpicFrame
+          ? [-Math.PI / 2, -Math.PI * 0.78, -Math.PI * 0.22, Math.PI, 0]
+          : [-Math.PI / 2, Math.PI, 0];
+      for (const ang of gemAngles) {
+        const gx = centerX + mainR * Math.cos(ang);
+        const gy = centerY + mainR * Math.sin(ang);
+        drawStarSparkle(ctx, gx, gy, (ang === -Math.PI / 2 ? 4.4 : 2.9) * s, pal[2] || '#ffffff', pal[0]);
+      }
     }
   } else if (tier === 'high') {
     // --- VIỀN CẢNH GIỚI CAO (KIM ĐAN -> ĐẠI THỪA): TỬ KIM / HUYỀN TINH ---
@@ -1026,4 +1092,59 @@ export function drawCenteredAutoFitIconText(ctx, iconImg, text, centerX, centerY
   }
   ctx.restore();
   return chosen;
+}
+
+/**
+ * Render thẻ xem trước Viền Avatar 320x320 PNG cho /shop Quầy Viền Avatar
+ */
+export async function renderFramePreviewBuffer(frameId) {
+  const fid = String(frameId || 'default').trim();
+  const meta = AVATAR_FRAME_BY_ID[fid] || AVATAR_FRAME_BY_ID.default;
+  const overlayImg = await preloadAvatarFrameOverlay(fid);
+
+  const w = 320;
+  const h = 320;
+  const canvas = createCanvas(w, h);
+  const ctx = canvas.getContext('2d');
+
+  // Nền tiên giới tối sang trọng
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#0f0a1e');
+  bg.addColorStop(0.55, '#1e1136');
+  bg.addColorStop(1, '#2b1038');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Vòng trang trí mờ
+  ctx.strokeStyle = 'rgba(246, 213, 122, 0.22)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(10, 10, w - 20, h - 20);
+
+  // Avatar mẫu + Viền Avatar đang xem trước
+  drawAntiAliasedAvatarWithBorder(ctx, null, w / 2, 130, 66, {
+    isOwner: false,
+    level: 60,
+    username: 'SuMi',
+    avatarFrame: fid,
+    frameOverlayImg: overlayImg,
+    supersampleFactor: 2,
+    showAura: true,
+  });
+
+  // Tên viền & giá
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#fde68a';
+  ctx.font = `bold 16px ${FONT_FAMILY}`;
+  ctx.fillText(sanitizeText(meta?.name || fid), w / 2, 248, 280);
+
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = `12px ${FONT_FAMILY}`;
+  const priceTxt = meta?.price > 0 ? `${meta.price.toLocaleString('vi-VN')} Linh Thạch` : 'Mặc Định';
+  ctx.fillText(priceTxt, w / 2, 274, 280);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = `11px ${FONT_FAMILY}`;
+  ctx.fillText(`/equip ma_id:${fid}`, w / 2, 296, 280);
+
+  return canvas.toBuffer('image/png');
 }

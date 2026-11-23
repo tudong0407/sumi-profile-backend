@@ -4,6 +4,7 @@ import {
   drawRoundRect,
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
+  preloadAvatarFrameOverlay,
   sanitizeText,
   resolveAssetPath,
   loadBadgeImage,
@@ -206,14 +207,15 @@ export async function renderProfileCard(data, options = {}) {
   })();
 
   const [
-    bgImage, avatarImg, petImg, weaponImg, gemImg, soulImg,
+    bgImage, avatarImg, frameOverlayImg, petImg, weaponImg, gemImg, soulImg,
     domainImg, senseImg, realmImg,
     icoClan, icoRing, icoLinhThach, icoPaw, icoPetMini, icoFox, icoBolt, icoSwords, icoShield, icoSparkle, icoGemSlot,
     gD, gC, gB, gA, gS,
   ] = await Promise.all([
-    loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
-    loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
-    loadImageSafe(profile.pet?.image_url, 2500, petAsset),
+    loadImageSafe(profile.backgroundUrl, 1200, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
+    loadImageSafe(profile.avatarUrl, 1200, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+    preloadAvatarFrameOverlay(profile.avatarFrame),
+    loadImageSafe(profile.pet?.image_url, 1500, petAsset),
     weaponSource ? loadImageSafe(weaponSource, 2000, weaponFallback) : null,
     gemSource ? loadImageSafe(gemSource, 2000, gemFallback) : null,
     soulSource ? loadImageSafe(soulSource, 2000, soulFallback) : null,
@@ -336,6 +338,7 @@ export async function renderProfileCard(data, options = {}) {
     level: profile.level,
     username: profile.username,
     avatarFrame: profile.avatarFrame,
+    frameOverlayImg,
     supersampleFactor: 4,
     showAura: true,
   });

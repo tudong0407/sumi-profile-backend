@@ -339,7 +339,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• ${em('su_thunder_hax')} **Debuff phe địch:** ${d.debuff_desc}`,
       d.enemy_active_debuff_pierce > 0 ? `• **Xuyên Kháng Lãnh Địa:** Gây \`${Math.round(d.enemy_active_debuff_pierce * 100)}%\` Debuff xuyên qua Lãnh Vực địch` : null,
       d.enemy_buff_suppression > 0 ? `• **Áp Chế Sân Địch:** Giảm \`${Math.round(d.enemy_buff_suppression * 100)}%\` hiệu lực Buff của Lãnh Vực đối phương` : null,
-      d.dao_ap ? `• ${em('dao_ap_crest', '⚡')} **Debuff Cấp 2 « Đạo Áp » (${d.dao_ap.durationTurns} hiệp):** Kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực địch — ${d.dao_ap.label}` : null,
+      d.dao_ap ? `• ${em('dao_ap_crest')} **Debuff Cấp 2 « Đạo Áp » (${d.dao_ap.durationTurns} hiệp):** Kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực địch — ${d.dao_ap.label}` : null,
       `• **Nguồn sở hữu:** ${sourceText}`,
       d.is_exclusive_fuyumi ? null : `• **Thu hồi (\`/linhvuc hanh_dong:dismantle\`):** **${dismantleVal}** ${lt}`,
       `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${d.domain_id}\` để kích hoạt.*`,
@@ -418,7 +418,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       category: 'farm_seed',
       id: s.seed_id,
       name: s.name,
-      title: `${farmEmoji(s.seed_id, '🌱')} NÔNG TRẠI: ${s.name}`,
+      title: `${farmEmoji(s.seed_id)} NÔNG TRẠI: ${s.name}`,
       description: [
         `• **Mã UID:** \`${s.seed_id}\` • **Khu vực:** **${s.plot_label}**`,
         `• **Chi phí gieo/ấp:** **${s.cost_lt.toLocaleString('vi-VN')}** ${lt} • **Chu kỳ:** **${s.growth_hours} giờ**`,
@@ -440,7 +440,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       category: 'exchange',
       id: isRawEssence ? 'farm_essence' : ex.exchange_id,
       name: isRawEssence ? 'Linh Quả Tiên Giới' : ex.name,
-      title: `${farmEmoji('farm_essence', '🍑')} ${isRawEssence ? 'VẬT PHẨM NÔNG TRẠI: Linh Quả Tiên Giới' : `ĐỔI QUÀ NÔNG TRẠI: ${ex.name}`}`,
+      title: `${farmEmoji('farm_essence')} ${isRawEssence ? 'VẬT PHẨM NÔNG TRẠI: Linh Quả Tiên Giới' : `ĐỔI QUÀ NÔNG TRẠI: ${ex.name}`}`,
       description: isRawEssence
         ? [
             `• **Mã UID:** \`farm_essence\``,
@@ -449,7 +449,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
           ].join('\n')
         : [
             `• **Mã UID:** \`${ex.exchange_id}\``,
-            `• **Chi phí quy đổi:** **${ex.cost_essence.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence', '🍑')} **Linh Quả Tiên Giới**`,
+            `• **Chi phí quy đổi:** **${ex.cost_essence.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence')} **Linh Quả Tiên Giới**`,
             `• **Chi tiết:** ${ex.description}`,
             `• *Dùng \`/exchange ma_qua:${ex.exchange_id}\` để quy đổi.*`,
           ].join('\n'),

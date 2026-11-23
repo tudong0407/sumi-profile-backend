@@ -14,6 +14,8 @@ import {
   FONT_FAMILY,
   sanitizeText,
   resolveAssetPath,
+  drawAntiAliasedAvatarWithBorder,
+  preloadAvatarFrameOverlay,
 } from './drawUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,7 +53,7 @@ async function safeLoadImage(pathOrUrl) {
   if (!pathOrUrl) return null;
   try {
     if (/^https?:\/\//i.test(pathOrUrl)) {
-      const resp = await fetch(pathOrUrl, { signal: AbortSignal.timeout(4000) });
+      const resp = await fetch(pathOrUrl, { signal: AbortSignal.timeout(1200) });
       if (!resp.ok) return null;
       const buf = Buffer.from(await resp.arrayBuffer());
       return await loadImage(buf);
@@ -216,11 +218,21 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
   }
   drawPetEnchantBadge(ctx, meta.grade, spX + spriteBox, spY + spriteBox, isDuo ? 28 : 22);
 
-  // Avatar nhỏ góc trên trái của sprite
-  const avImg = await safeLoadImage(unit.avatarUrl);
-  if (avImg) {
-    drawClippedImage(ctx, avImg, x + 10, y + 12, isDuo ? 48 : 42, isDuo ? 24 : 21);
-  }
+  // Avatar khử răng cưa kèm Viền Avatar đồng bộ với /profile & /rank
+  const [avImg, frameOverlayImg] = await Promise.all([
+    safeLoadImage(unit.avatarUrl),
+    preloadAvatarFrameOverlay(unit.avatarFrame),
+  ]);
+  const avR = isDuo ? 24 : 21;
+  drawAntiAliasedAvatarWithBorder(ctx, avImg, x + 10 + avR, y + 12 + avR, avR, {
+    isOwner: String(unit.id) === '757091869183311872',
+    level: unit.userLevel || 1,
+    username: unit.name,
+    avatarFrame: unit.avatarFrame || 'default',
+    frameOverlayImg,
+    supersampleFactor: 2,
+    showAura: true,
+  });
 
   const tx = x + spriteBox + 34;
   const tw = w - (spriteBox + 50);
@@ -337,11 +349,20 @@ async function drawSoloFighterPanel(ctx, unit, x, y, w, h, sideColor) {
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  // Header người chơi: Avatar + Tên + Badge Mệt Mỏi
-  const avImg = await safeLoadImage(unit.avatarUrl);
-  if (avImg) {
-    drawClippedImage(ctx, avImg, x + 28, y + 22, 56, 28);
-  }
+  // Header người chơi: Avatar + Viền Avatar + Tên + Badge Mệt Mỏi
+  const [avImg, frameOverlayImg] = await Promise.all([
+    safeLoadImage(unit.avatarUrl),
+    preloadAvatarFrameOverlay(unit.avatarFrame),
+  ]);
+  drawAntiAliasedAvatarWithBorder(ctx, avImg, x + 56, y + 50, 28, {
+    isOwner: String(unit.id) === '757091869183311872',
+    level: unit.userLevel || 1,
+    username: unit.name,
+    avatarFrame: unit.avatarFrame || 'default',
+    frameOverlayImg,
+    supersampleFactor: 2,
+    showAura: true,
+  });
   ctx.textAlign = 'left';
   ctx.fillStyle = '#ffffff';
   ctx.font = `800 28px ${FONT_FAMILY}`;

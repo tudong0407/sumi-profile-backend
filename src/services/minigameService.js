@@ -6,7 +6,7 @@
 
 import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
-import { em, minigameEmoji } from '../config/emojiHelper.js';
+import { em, minigameEmoji, uiEm } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { trackQuestActivity } from './questService.js';
 
@@ -27,7 +27,7 @@ const SLOT_SYMBOLS = [
   { id: 'slot_scroll', label: 'Cổ Phù', jackpot4: 2.5 },
 ];
 
-const SUITS = ['♠', '♥', '♦', '♣'];
+const SUITS = [`${uiEm('ui_suit_spade')}`, `${uiEm('ui_suit_heart')}`, `${uiEm('ui_suit_diamond')}`, `${uiEm('ui_suit_club')}`];
 const RANKS = [
   { rank: 'A', val: 11 },
   { rank: '2', val: 2 },
@@ -106,7 +106,7 @@ function validateBetAndCooldown(userId, rawBet, userBalance, options = {}) {
 }
 
 function slotIcon(id) {
-  return minigameEmoji(id, '💠');
+  return minigameEmoji(id, `${em('su_linhthach')}`);
 }
 
 function pickDistinctSymbols(count, rng, excludeIds = new Set()) {
@@ -165,8 +165,8 @@ export async function playCoinflip(userId, rawBet, rawChoice = 'heads', options 
       trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
-    const sideLabel = (s) => (s === 'heads' ? `${minigameEmoji('coin_heads', '🪙')} Ngửa (Tiên Ấn)` : `${minigameEmoji('coin_tails', '🌙')} Úp (Liên Ấn)`);
-    const coinSpin = minigameEmoji('coin_spin', '🪙');
+    const sideLabel = (s) => (s === 'heads' ? `${minigameEmoji('coin_heads', `${uiEm('ui_coin_gold')}`)} Ngửa (Tiên Ấn)` : `${minigameEmoji('coin_tails', `${em('su_realm_star')}`)} Úp (Liên Ấn)`);
+    const coinSpin = minigameEmoji('coin_spin', `${uiEm('ui_coin_gold')}`);
     const lt = em('su_linhthach');
 
     return {
@@ -190,8 +190,8 @@ export async function playCoinflip(userId, rawBet, rawChoice = 'heads', options 
       },
       result_embed: {
         title: win
-          ? `${minigameEmoji(outcome === 'heads' ? 'coin_heads' : 'coin_tails', '🪙')} TUNG XU THẮNG LỚN (1:2)!`
-          : `${minigameEmoji(outcome === 'heads' ? 'coin_heads' : 'coin_tails', '🪙')} TUNG XU — CHƯA MAY MẮN`,
+          ? `${minigameEmoji(outcome === 'heads' ? 'coin_heads' : 'coin_tails', `${uiEm('ui_coin_gold')}`)} TUNG XU THẮNG LỚN (1:2)!`
+          : `${minigameEmoji(outcome === 'heads' ? 'coin_heads' : 'coin_tails', `${uiEm('ui_coin_gold')}`)} TUNG XU — CHƯA MAY MẮN`,
         description: [
           `• **Tu Sĩ Chọn:** **${sideLabel(playerChoice)}**`,
           `• **Kết Quả Ra:** **${sideLabel(outcome)}**`,
@@ -280,7 +280,7 @@ export async function playSlots(userId, rawBet, options = {}) {
       trackQuestActivity(cleanId, { minigameDelta: 1 }),
     ]);
 
-    const spinGif = minigameEmoji('slot_spin', '🎰');
+    const spinGif = minigameEmoji('slot_spin', `${em('su_gacha_dice')}`);
     const reelIcons = reels.map((s) => slotIcon(s.id));
     const reelBar = reelIcons.join('  |  ');
     const lt = em('su_linhthach');
@@ -326,7 +326,7 @@ export async function playSlots(userId, rawBet, options = {}) {
       reveal_frames: revealFrames,
       result_embed: {
         title: won
-          ? `${minigameEmoji('slot_fox', '🦊')} KẾT QUẢ TỨ BẢO — ${tierLabel}`
+          ? `${minigameEmoji('slot_fox', `${em('cuu_vi_hong_ho')}`)} KẾT QUẢ TỨ BẢO — ${tierLabel}`
           : `${slotIcon(reels[0].id)} KẾT QUẢ TỨ BẢO — CHƯA MAY MẮN`,
         description: [
           `**[ ${reelBar} ]**`,
@@ -378,7 +378,7 @@ function formatHand(cards, hideSecond = false) {
 }
 
 function drawBiasedCard(deck, rng, biasMode = 'normal') {
-  if (deck.length === 0) return { rank: '7', suit: '♠', val: 7, label: '7♠' };
+  if (deck.length === 0) return { rank: '7', suit: `${uiEm('ui_suit_spade')}`, val: 7, label: `7${uiEm('ui_suit_spade')}` };
   if (biasMode === 'dealer_strong' && rng() < 0.08) {
     const idx = deck.findIndex((c) => c.val >= 9);
     if (idx !== -1) return deck.splice(idx, 1)[0];
@@ -419,9 +419,9 @@ function settleBlackjackOutcome(playerHand, dealerHand, bet, isDouble = false) {
 
 function buildBlackjackEmbed(session, username, balance, settled = null) {
   const lt = em('su_linhthach');
-  const dealGif = minigameEmoji('card_deal', '🃏');
-  const winIcon = minigameEmoji('card_win', '🏆');
-  const bustIcon = minigameEmoji('card_bust', '💥');
+  const dealGif = minigameEmoji('card_deal', `${em('su_gacha_dice')}`);
+  const winIcon = minigameEmoji('card_win', `${em('su_winner_trophy')}`);
+  const bustIcon = minigameEmoji('card_bust', `${em('su_crit_boom')}`);
 
   if (!settled) {
     const pScore = handValue(session.playerHand);
@@ -683,9 +683,9 @@ function sampleMaxSurvivableStepIndex(rng) {
 
 function buildCrashEmbed(session, username, balance, stateTag = 'flying') {
   const lt = em('su_linhthach');
-  const flyGif = minigameEmoji('crash_fly', '🚀');
-  const boomGif = minigameEmoji('crash_boom', '💥');
-  const winIcon = minigameEmoji('crash_cashout', '💰');
+  const flyGif = minigameEmoji('crash_fly', '[Bay]');
+  const boomGif = minigameEmoji('crash_boom', `${em('su_crit_boom')}`);
+  const winIcon = minigameEmoji('crash_cashout', `${uiEm('ui_coin_gold')}`);
 
   const curMult = CRASH_LADDER[session.stepIndex];
   const nextMult = CRASH_LADDER[session.stepIndex + 1] || null;

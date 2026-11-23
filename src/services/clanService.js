@@ -14,7 +14,7 @@ import {
   CLAN_WAR_DURATION_HOURS,
   getClanLevelConfig,
 } from '../data/catalog.js';
-import { em } from '../config/emojiHelper.js';
+import { em, uiEm } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
   ensureUserInitialized,
@@ -226,14 +226,14 @@ export async function getClanInfo(userId, clanQuery = null, opts = {}) {
   const isLeader = Boolean(cleanId && clan.leader_id === cleanId);
 
   const summaryMembers = memberList.slice(0, 12).map((m, idx) =>
-    `• \`#${idx + 1}\` ${m.user_id === clan.leader_id ? '👑 ' : ''}**${m.username}** — Lv.${m.level}`
+    `• \`#${idx + 1}\` ${m.user_id === clan.leader_id ? `${uiEm('ui_crown_king')} ` : ''}**${m.username}** — Lv.${m.level}`
   ).join('\n') || '• Chưa có thành viên.';
 
   const war = activeWars?.[0] || null;
   const summaryWar = war
     ? war.status === 'active'
       ? `${em('su_crossed_swords')} **Đang Clan War 24H**: \`${war.challenger_clan_id}\` (**${war.challenger_score}**) vs \`${war.target_clan_id}\` (**${war.target_score}**) • Cược **${Number(war.bet_amount).toLocaleString('vi-VN')}** ${em('su_linhthach')} • Còn **${formatRemainingTime(war.end_time)}**`
-      : `${em('su_arena')} **Lời thách đấu chờ duyệt**: \`${war.challenger_clan_id}\` ⚔️ \`${war.target_clan_id}\` • Cược **${Number(war.bet_amount).toLocaleString('vi-VN')}** ${em('su_linhthach')}`
+      : `${em('su_arena')} **Lời thách đấu chờ duyệt**: \`${war.challenger_clan_id}\` ${em('su_crossed_swords')} \`${war.target_clan_id}\` • Cược **${Number(war.bet_amount).toLocaleString('vi-VN')}** ${em('su_linhthach')}`
     : '• Hiện chưa có trận Gia Tộc Chiến nào.';
 
   const message = [
@@ -797,7 +797,7 @@ export async function respondClanWar(leaderId, decision = 'accept', opts = {}) {
   const isReject = ['reject', 'decline', 'no'].includes(String(decision || '').toLowerCase());
   if (isReject) {
     await supabase.from('clan_wars').update({ status: 'cancelled' }).eq('war_id', pendingWar.war_id);
-    return { success: true, accepted: false, war_id: pendingWar.war_id, message: `🏳️ Tộc Trưởng **${myClan.clan_name}** đã từ chối chiến thư Bang Chiến.` };
+    return { success: true, accepted: false, war_id: pendingWar.war_id, message: `${uiEm('ui_surrender_flag')} Tộc Trưởng **${myClan.clan_name}** đã từ chối chiến thư Bang Chiến.` };
   }
 
   const { data: challClan } = await supabase.from('clans').select('*').eq('clan_id', pendingWar.challenger_clan_id).single();
@@ -823,7 +823,7 @@ export async function respondClanWar(leaderId, decision = 'accept', opts = {}) {
     start_time: nowIso,
     end_time: endIso,
     pot: bet * 2,
-    message: `${em('su_arena')} **BANG CHIẾN 24H CHÍNH THỨC KHAI HỎA!**\n• **${challClan.clan_name}** ⚔️ **${myClan.clan_name}**\n• Quỹ thưởng: **${(bet * 2).toLocaleString('vi-VN')}** ${em('su_linhthach')} (+5.000 EXP Tộc)\n• Tính điểm qua Chat/Voice EXP & thắng \`/battle\` trong suốt **24 giờ**!`,
+    message: `${em('su_arena')} **BANG CHIẾN 24H CHÍNH THỨC KHAI HỎA!**\n• **${challClan.clan_name}** ${em('su_crossed_swords')} **${myClan.clan_name}**\n• Quỹ thưởng: **${(bet * 2).toLocaleString('vi-VN')}** ${em('su_linhthach')} (+5.000 EXP Tộc)\n• Tính điểm qua Chat/Voice EXP & thắng \`/battle\` trong suốt **24 giờ**!`,
   };
 }
 
@@ -949,7 +949,7 @@ export async function transferClanLeader(leaderId, targetUserId) {
     success: true,
     clan_id: clan.clan_id,
     new_leader_id: cleanTarget,
-    message: `👑 Tộc Trưởng <@${cleanLeader}> đã chính thức truyền ấn tín Gia Tộc **${clan.clan_name}** cho **${member.username}** (<@${cleanTarget}>)!`,
+    message: `${uiEm('ui_crown_king')} Tộc Trưởng <@${cleanLeader}> đã chính thức truyền ấn tín Gia Tộc **${clan.clan_name}** cho **${member.username}** (<@${cleanTarget}>)!`,
   };
 }
 
@@ -1029,7 +1029,7 @@ export async function getClanUiPanel(userId, rawView = 'overview', opts = {}) {
       has_clan: true,
       is_leader: isLeader,
       pending_count: rows.length,
-      title: `📥 DUYỆT ĐƠN XIN GIA NHẬP — ${clan.clan_name.toUpperCase()} (${rows.length})`,
+      title: `${uiEm('ui_clipboard_log')} DUYỆT ĐƠN XIN GIA NHẬP — ${clan.clan_name.toUpperCase()} (${rows.length})`,
       description: rows.length > 0
         ? [
             isLeader
@@ -1057,7 +1057,7 @@ export async function getClanUiPanel(userId, rawView = 'overview', opts = {}) {
 
     const rows = members || [];
     const lines = rows.map((m, idx) =>
-      `• **#${idx + 1}** — ${m.user_id === clan.leader_id ? '👑 ' : ''}**${m.username}** (<@${m.user_id}>) • Lv.${m.level}`
+      `• **#${idx + 1}** — ${m.user_id === clan.leader_id ? `${uiEm('ui_crown_king')} ` : ''}**${m.username}** (<@${m.user_id}>) • Lv.${m.level}`
     );
 
     await saveClanUiSelection(cleanId, { view_mode: 'members', selected_target_id: null, selected_slot_index: null });
@@ -1068,7 +1068,7 @@ export async function getClanUiPanel(userId, rawView = 'overview', opts = {}) {
       has_clan: true,
       is_leader: isLeader,
       member_count: rows.length,
-      title: `📋 DANH SÁCH THÀNH VIÊN — ${clan.clan_name.toUpperCase()} (${rows.length})`,
+      title: `${uiEm('ui_clipboard_log')} DANH SÁCH THÀNH VIÊN — ${clan.clan_name.toUpperCase()} (${rows.length})`,
       description: [
         isLeader
           ? 'Chọn thành viên ở **Dropdown bên dưới** để quản lý (**Kick** / **Nhường Tộc Trưởng**):'
@@ -1154,10 +1154,10 @@ export async function selectClanUiSlot(userId, rawView, rawSlotOrId) {
       success: true,
       view: 'request_selected',
       selected_target_id: picked.id,
-      title: `📥 XỬ LÝ ĐƠN GIA NHẬP — ${picked.label}`,
+      title: `${uiEm('ui_clipboard_log')} XỬ LÝ ĐƠN GIA NHẬP — ${picked.label}`,
       description: [
         `• **Ứng viên đang chọn:** <@${picked.id}> (${picked.label})`,
-        `• Bấm **[✅ Duyệt Vào Tộc]** để kết nạp hoặc **[❌ Từ Chối]** để hủy đơn.`,
+        `• Bấm **[${uiEm('ui_check')} Duyệt Vào Tộc]** để kết nạp hoặc **[${uiEm('ui_cross')} Từ Chối]** để hủy đơn.`,
       ].join('\n'),
     };
   }
@@ -1167,10 +1167,10 @@ export async function selectClanUiSlot(userId, rawView, rawSlotOrId) {
       success: true,
       view: 'member_selected',
       selected_target_id: picked.id,
-      title: `👤 QUẢN LÝ THÀNH VIÊN — ${picked.label}`,
+      title: `${uiEm('ui_user_avatar')} QUẢN LÝ THÀNH VIÊN — ${picked.label}`,
       description: [
         `• **Thành viên đang chọn:** <@${picked.id}> (${picked.label})`,
-        `• Tộc Trưởng có thể bấm **[👢 Trục Xuất (Kick)]** hoặc **[👑 Nhường Tộc Trưởng]** bên dưới.`,
+        `• Tộc Trưởng có thể bấm **[${uiEm('ui_kick_boot')} Trục Xuất (Kick)]** hoặc **[${uiEm('ui_crown_king')} Nhường Tộc Trưởng]** bên dưới.`,
       ].join('\n'),
     };
   }

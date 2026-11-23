@@ -77,7 +77,8 @@ export function createDomainCombatSide(combatant) {
   const indestructible = Boolean(domain.is_exclusive_fuyumi) || Number(domain.base_energy) >= 999;
   const baseEnergy = indestructible ? 999 : Number(domain.base_energy || 3);
   const senseBonus = indestructible ? 0 : Number(sense?.bonus_energy || 0);
-  const maxEnergy = indestructible ? 999 : (baseEnergy + senseBonus + eqBonuses.extraEnergy);
+  const setEnergyBonus = indestructible ? 0 : Number(combatant?.setBonus?.bonusStartingLinhMach || 0);
+  const maxEnergy = indestructible ? 999 : (baseEnergy + senseBonus + eqBonuses.extraEnergy + setEnergyBonus);
 
   return {
     hasDomain: true,
@@ -303,7 +304,7 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
           actor: victim.id,
           action: 'domain_hp_cut',
           skill: enemyMod.daoApActive
-            ? `${em('dao_ap_crest', '⚡')} Đạo Áp Cắt Trần HP (-${Math.round(targetCut * 100)}% HP Tối Đa)`
+            ? `${em('dao_ap_crest')} Đạo Áp Cắt Trần HP (-${Math.round(targetCut * 100)}% HP Tối Đa)`
             : `Thần Cảnh Áp Chế (-${Math.round(targetCut * 100)}% Trần HP Tối Đa)`,
           desc: `Linh Vực từ ${casterName} ép giảm trần máu của ${victim.name} xuống còn ${newMax.toLocaleString('vi-VN')} HP!`,
         });
@@ -348,7 +349,7 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       side.daoApUsed = true;
       if (cfg) {
         side.daoApActiveTurns = cfg.durationTurns;
-        const crest = em('dao_ap_crest', '⚡');
+        const crest = em('dao_ap_crest');
         events.push({
           actor: owner.id,
           action: 'dao_ap_activate',
@@ -505,7 +506,7 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
         actor: owner.id,
         action: 'domain_dot',
         skill: mods.daoApActive
-          ? `${em('dao_ap_crest', '⚡')} Đạo Áp Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`
+          ? `${em('dao_ap_crest')} Đạo Áp Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`
           : `Linh Vực Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`,
       });
     }

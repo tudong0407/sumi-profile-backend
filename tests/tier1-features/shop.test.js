@@ -8,6 +8,7 @@ const TEMP_SHOP_USER = '999999999999999921';
 async function cleanup() {
   if (!supabase) return;
   await supabase.from('shop_selections').delete().eq('user_id', TEMP_SHOP_USER);
+  await supabase.from('user_frames').delete().eq('user_id', TEMP_SHOP_USER);
   await supabase.from('user_inventory').delete().eq('user_id', TEMP_SHOP_USER);
   await supabase.from('user_pets').delete().eq('user_id', TEMP_SHOP_USER);
   await supabase.from('user_roles').delete().eq('user_id', TEMP_SHOP_USER);
@@ -37,8 +38,9 @@ describe('Tier 1 - Phase 2 Shop (/shop catalog, preview, buy, frame/title equip)
     assert.equal(j.categories.pets.length, 26);
     assert.equal(j.categories.equipment.length, 44);
     assert.equal(j.categories.roles.length, 21);
-    assert.equal(j.categories.consumables.length, 12);
+    assert.equal(j.categories.consumables.length, 11);
     assert.equal(j.categories.backgrounds.length, 20);
+    assert.equal(j.categories.frames.length, 20);
     assert.ok(!j.categories.pets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.rarity_key === 'epic' || p.rarity_key === 'mythic'));
     assert.ok(!j.categories.equipment.some((e) => e.rarity_key === 'epic' || e.rarity_key === 'mythic'));
     assert.ok(typeof j.summary_text === 'string' && j.summary_text.length > 0);
@@ -154,13 +156,13 @@ describe('Tier 1 - Phase 2 Shop (/shop catalog, preview, buy, frame/title equip)
     assert.equal(roleDup.status, 400);
   });
 
-  it('5. Consumables frame_unlock_token & title_rename_card unlock custom frame and rename title', async () => {
+  it('5. Frames shop & title_rename_card unlock custom frame and rename title', async () => {
     if (!supabase) return;
 
     await testServer.fetch('/api/shop/buy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: TEMP_SHOP_USER, category: 'consumables', itemId: 'frame_unlock_token' }),
+      body: JSON.stringify({ userId: TEMP_SHOP_USER, category: 'frames', itemId: 'jade_lotus' }),
     });
     await testServer.fetch('/api/shop/buy', {
       method: 'POST',

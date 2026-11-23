@@ -254,3 +254,63 @@ export function gradeEmoji(grade, fallback = '') {
   const valid = ['D', 'C', 'B', 'A', 'S'].includes(g) ? g : 'D';
   return em(gradeEmojiKey(valid), fallback || `[${valid}]`);
 }
+
+/**
+ * Fallback an toàn 0% Unicode Windows cho các Emoji UI v1.5:
+ * Trước khi upload PNG (Nhịp 1), fallback về custom emoji SuMi sẵn có hoặc ký hiệu ASCII sạch;
+ * sau khi upload PNG (Nhịp 2), tự động trả về custom emoji <:ui_...:id> từ custom_emojis.json.
+ */
+export const UI_EMOJI_SAFE_FALLBACKS = {
+  gacha_ticket_domain: () => em('su_gacha_dice', '[Ve Linh Vuc]'),
+  ui_toggle_on: () => '[BAT]',
+  ui_toggle_off: () => '[TAT]',
+  ui_lock: () => em('su_shield_def', '[KHOA]'),
+  ui_bulb_tip: () => em('su_sparkle', '[Meo]'),
+  ui_check: () => '[OK]',
+  ui_cross: () => '[X]',
+  ui_warn: () => '[!]',
+  ui_clock_timer: () => '[Gio]',
+  ui_refresh: () => '[Tai lai]',
+  ui_flag_capture: () => em('su_clan_castle', '[Chiem]'),
+  ui_skull_ko: () => '[KO]',
+  ui_heal_band: () => em('su_sprout', '[Hoi]'),
+  ui_wind_spd: () => '[SPD]',
+  ui_crown_king: () => em('su_winner_trophy', '[Chu]'),
+  ui_nav_first: () => '|<',
+  ui_nav_prev: () => '<',
+  ui_nav_next: () => '>',
+  ui_nav_last: () => '>|',
+  ui_clipboard_log: () => em('su_wiki_scroll', '[Log]'),
+  ui_surrender_flag: () => '[Rut lui]',
+  ui_compass_dir: () => em('explorer_world_map_v14', '[Ban do]'),
+  ui_medal_1: () => '`#1`',
+  ui_medal_2: () => '`#2`',
+  ui_medal_3: () => '`#3`',
+  ui_chat_bubble: () => em('su_stats_chart', '[Chat]'),
+  ui_voice_mic: () => '[Voice]',
+  ui_speaker_sound: () => '[Loa]',
+  ui_music_note: () => '[Nhac]',
+  ui_mute_voice: () => '[Tat]',
+  ui_announce_horn: () => em('su_sparkle', '[Thong bao]'),
+  ui_user_avatar: () => '[TV]',
+  ui_kick_boot: () => '[Duoi]',
+  ui_gift_box: () => em('su_sparkle', '[Qua]'),
+  ui_backpack_inv: () => em('su_pin_sigil', '[Tui]'),
+  ui_party_celebrate: () => em('su_sparkle', '[Chuc mung]'),
+  ui_coin_gold: () => em('su_linhthach', '[Xu]'),
+  ui_heart_couple: () => em('ring_mythic', '[Duyen]'),
+  ui_heart_broken: () => '[Huy]',
+  ui_suit_spade: () => '[Bich]',
+  ui_suit_heart: () => '[Co]',
+  ui_suit_diamond: () => '[Ro]',
+  ui_suit_club: () => '[Chuon]',
+};
+
+export function uiEm(key, customFallback = '') {
+  const k = String(key || '').trim();
+  const entry = getEmojiEntry(k);
+  if (entry?.tag) return entry.tag;
+  const fn = UI_EMOJI_SAFE_FALLBACKS[k];
+  if (typeof fn === 'function') return fn();
+  return customFallback || `[${k}]`;
+}

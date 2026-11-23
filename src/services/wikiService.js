@@ -50,8 +50,8 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.4.7 • Tu Tiên • Linh Thú • Pháp Bảo • Linh Vực • Đấu Trường • Khám Phá',
-  version: '1.4.7',
+  subtitle: 'Cẩm nang v1.5 • Tu Tiên • Linh Thú • Pháp Bảo • Set Buff • Pity 350 • Top Chat/Voice',
+  version: '1.5',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -60,7 +60,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-23T00:00:00.000Z',
+  updated_at: '2026-11-24T00:00:00.000Z',
   total_categories: 7,
 };
 
@@ -69,7 +69,7 @@ export const WIKI_CATEGORIES = {
     id: 'overview',
     title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
     icon: em('su_wiki_scroll'),
-    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.4.7).',
+    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.5).',
     image_url: '',
     sections: [
       {
@@ -77,7 +77,7 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.4.7)',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.5)',
         content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
@@ -88,7 +88,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.4.7)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.5)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
           '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
@@ -104,7 +104,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Hệ thống Tu Tiên SuMi Family v1.4.7: /exp đo Boost, /autosell lọc Gacha, /battle kèm Web Logs 48h, Tháp 500 tầng, Nông Trại, Khám Phá 12 địa danh & tiện ích Server.',
+    content: 'Hệ thống Tu Tiên SuMi Family v1.5: Buff SET 2 tầng, Pity 350, 20 Viền Avatar, Top Chat/Voice ngày, Tháp 500 tầng, Nông Trại, Khám Phá 12 địa danh & tiện ích Server.',
   },
 
   realms: {
@@ -135,13 +135,13 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_medal_role')} Mốc Level Role & Quyền Discord`,
+        name: `${em('su_medal_role')} Mốc Level Role & Quyền Cơ Bản Discord`,
         value: [
-          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp ở sảnh • ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Link, Đổi nick, Emoji ngoại`,
-          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Sticker ngoại, Voice msg, Lập Gia Tộc`,
-          `• ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Thread, Stream • ${levelMilestoneEmoji(45)} \`Lv.45\` (+15%/+10%/+5% Pet): Soundboard`,
-          `• ${levelMilestoneEmoji(60)} \`Lv.60\` (+20%/+15%/+8%): Private Thread • ${levelMilestoneEmoji(80)} \`Lv.80\` (+30%/+25%/+12%): Priority, TTS, Poll`,
-          `• ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50% EXP/LT, +20% Pet): Full Voice, Nick/Thread, Ghim & Miễn Slowmode`,
+          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp • ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Emoji Nitro liên server`,
+          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Nhúng liên kết & Lập Gia Tộc • ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Stream`,
+          `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15%/+10%/+5% Pet): Sticker liên server • ${levelMilestoneEmoji(60)} \`Lv.60\` (+20%/+15%/+8%): Voice Message`,
+          `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30%/+25%/+12%): Soundboard • ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50%/+50%/+20%): Âm thanh liên server`,
+          `• *Đặc quyền nâng cao (Đổi nick, Thread, Ghim, Priority, Poll, Slowmode...) đến từ các Role Quyền Năng trong \`/roll loai:role\`!*`,
         ].join('\n'),
         inline: false,
       },
@@ -153,12 +153,12 @@ export const WIKI_CATEGORIES = {
     id: 'battle',
     title: `${em('su_arena')} Đấu Trường, Ngũ Hành & Linh Vực`,
     icon: em('su_arena'),
-    description: 'Luật 1v1 /battle, Web Logs 48h, Ngũ Hành • Dị Tố, Linh Vực (Hiệp 2+) & Tổ Đội Linh Mạch.',
+    description: 'Luật 1v1 /battle, Buff SET 2 tầng, Web Logs 48h, Ngũ Hành • Dị Tố, Linh Vực (Hiệp 2+) & Tổ Đội Linh Mạch.',
     image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.3.1`,
     sections: [
       {
         heading: '1. Ngũ Hành & Dị Tố',
-        content: '• Kim → Mộc → Thổ → Thủy → Hỏa → Kim (+30% / -20%).\n• Lôi khắc Thủy & Kim (+30% / -20%); Ám ↔ Quang (+25% hai chiều); Hỗn Độn/Hư Không (+20% xuyên giáp, -15% ST nhận).',
+        content: `• Kim → Mộc → Thổ → Thủy → Hỏa → Kim (+30% / -20%).\n• Lôi khắc Thủy & Kim (+30% / -20%); Ám <-> Quang (+25% hai chiều); Hỗn Độn/Hư Không (+20% xuyên giáp, -15% ST nhận).`,
       },
       {
         heading: '2. Đấu Trường 1v1, Web Logs 48h & Linh Vực',
@@ -168,14 +168,15 @@ export const WIKI_CATEGORIES = {
     fields: [
       {
         name: `${em('su_element_wheel')} Ngũ Hành & Tứ Đại Dị Tố`,
-        value: `${elementEmoji('Kim')} Kim → ${elementEmoji('Mộc')} Mộc → ${elementEmoji('Thổ')} Thổ → ${elementEmoji('Thủy')} Thủy → ${elementEmoji('Hỏa')} Hỏa → Kim (\`+30%\` / \`-20%\`)\n• ${elementEmoji('Lôi')} **Lôi** khắc Thủy/Kim (\`+30%\`) • ${elementEmoji('Ám')} **Ám** ↔ ${elementEmoji('Quang')} **Quang** (\`+25%\`) • ${elementEmoji('Hỗn Độn')} **Hỗn Độn/Hư Không** (\`+20%\` xuyên giáp, \`-15%\` ST nhận)`,
+        value: `${elementEmoji('Kim')} Kim → ${elementEmoji('Mộc')} Mộc → ${elementEmoji('Thổ')} Thổ → ${elementEmoji('Thủy')} Thủy → ${elementEmoji('Hỏa')} Hỏa → Kim (\`+30%\` / \`-20%\`)\n• ${elementEmoji('Lôi')} **Lôi** khắc Thủy/Kim (\`+30%\`) • ${elementEmoji('Ám')} **Ám** <-> ${elementEmoji('Quang')} **Quang** (\`+25%\`) • ${elementEmoji('Hỗn Độn')} **Hỗn Độn/Hư Không** (\`+20%\` xuyên giáp, \`-15%\` ST nhận)`,
         inline: false,
       },
       {
         name: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (Hiệp 2+)`,
         value: [
           `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
-          `• **Cơ chế:** Khi 2 Vực giằng co, mỗi bên nhận Buff sân nhà (trừ *Xuyên Kháng*); **Thần Thức** tăng Mạch/Buff, **Thần Cảnh** tăng Debuff. ${em('dao_ap_crest', '⚡')} **Đạo Áp (\`1–3 hiệp\`)** kích hoạt khi Vực Thần Thoại phá Vực địch.`,
+          `• **Cơ chế:** Khi 2 Vực giằng co, mỗi bên nhận Buff sân nhà (trừ *Xuyên Kháng*); **Thần Thức** tăng Mạch/Buff, **Thần Cảnh** tăng Debuff. ${em('dao_ap_crest')} **Đạo Áp (\`1–3 hiệp\`)** kích hoạt khi Vực Thần Thoại phá Vực địch.`,
+          `• **Buff SET (2 Tầng Không Cộng Dồn):** Full Hệ \`4/4\` (**+8%**) • \`5/5\` (**+12%** toàn chỉ số); Set Thần Thoại cùng hệ \`2/3/4/5\` (**+6/+12/+18/+25%** toàn chỉ số, \`5/5\` thêm **+10% Xuyên Giáp** & **+1 Linh Mạch**).`,
         ].join('\n'),
         inline: false,
       },
@@ -184,7 +185,7 @@ export const WIKI_CATEGORIES = {
         value: [
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
-          `• ${em('vein_mine_sp', '⛰️')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** ngẫu nhiên theo tỉ lệ **F→S+** (\`S+ 5%\`), tổ đội 3 người tranh \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*; thắng mỗi mỏ cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`), tự giảm \`-10%/giờ\`.`,
+          `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** ngẫu nhiên theo tỉ lệ **F→S+** (\`S+ 5%\`), tổ đội 3 người tranh \`6–56 LT/phút\` *(+15% Ngân Khố Clan)*; thắng mỗi mỏ cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`), tự giảm \`-10%/giờ\`.`,
         ].join('\n'),
         inline: false,
       },
@@ -285,7 +286,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_tower_boss', '🗼')} Nhiệm Vụ Ngày (+10%) & Tháp 500 Tầng`,
+        name: `${em('su_tower_boss')} Nhiệm Vụ Ngày (+10%) & Tháp 500 Tầng`,
         value: [
           '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** 2 cố định (`/daily`, `150 EXP`) + **3 xoay vòng** từ 10 hoạt động • Hoàn tất **5/5** thưởng **+130 LT** + quà + **3 Hợp Đồng Tuần**.',
           '• **Tháp 500 Tầng:** Buff **+10%**, random chiến lực **±12%/trận**, NPC dùng **Linh Vực từ F70+** *(+Thần Thức F150, +Thần Cảnh F250)*, tỉ lệ Thần Thoại tăng tới **100% từ F100+**.',
@@ -307,8 +308,8 @@ export const WIKI_CATEGORIES = {
 
   explorer: {
     id: 'explorer',
-    title: `${em('explorer_world_map_v14', '🗺️')} Khám Phá Đại Lục & Bản Đồ 4K (/explorer)`,
-    icon: em('explorer_world_map_v14', '🗺️'),
+    title: `${em('explorer_world_map_v14')} Khám Phá Đại Lục & Bản Đồ 4K (/explorer)`,
+    icon: em('explorer_world_map_v14'),
     description: '12 địa danh (10k → 1M Lực), 4 mốc giờ, Thức Ăn Bổ Trợ, Sinh Tử & nhặt 60% đồ rơi.',
     image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
     sections: [
@@ -325,14 +326,14 @@ export const WIKI_CATEGORIES = {
     ],
     fields: [
       {
-        name: `${em('explorer_world_map_v14', '🗺️')} 12 Địa Danh Đại Lục Cửu Châu`,
+        name: `${em('explorer_world_map_v14')} 12 Địa Danh Đại Lục Cửu Châu`,
         value: V14_EXPLORER_MAPS.map(
           (m) => `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k • ×${m.reward_multiplier})*`,
         ).join('\n'),
         inline: false,
       },
       {
-        name: `${em('enchant_stone_absolute', '💎')} Quy Tắc Sinh Tử & Nhặt Đồ 60%`,
+        name: `${em('enchant_stone_absolute')} Quy Tắc Sinh Tử & Nhặt Đồ 60%`,
         value: [
           '• **Thưởng (`2/3/6/12h`):** `200–300 LT/giờ × hệ số` + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
           '• **Sinh tử:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần về **100%** *(thua từ 2× lực = **0% sống sót**, Hộ Mệnh Đan không cứu được)*. Pháp Bảo thường rơi khi tử nạn chờ người qua sau *(mốc `>=` giờ rơi)* nhặt **60%**.',
@@ -340,7 +341,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('food_survival_pill', '🥗')} Thức Ăn & Hồi Sinh (/shop)`,
+        name: `${em('food_survival_pill')} Thức Ăn & Hồi Sinh (/shop)`,
         value: `${em('food_survival_pill')} **Hộ Mệnh Đan** *(180 LT, +8% sống)* • ${em('food_yield_tea')} **Tụ Bảo Trà** *(220 LT, +18% LT)* • ${em('food_speed_fruit')} **Ngự Phong Quả** *(250 LT, -25% giờ)* • ${em('explorer_revive_elixir')} **Hoàn Hồn Lộ** *(2.500 LT, cứu Pet Độc Nhất)*`,
         inline: false,
       },
@@ -383,11 +384,33 @@ export function getWikiData(categoryId = null) {
     };
   }
 
+  const catObj = WIKI_CATEGORIES[resolvedId];
+  const colorMap = {
+    overview: '#ec4899',
+    realms: '#a855f7',
+    battle: '#f43f5e',
+    equipment: '#f59e0b',
+    pets: '#ec4899',
+    economy: '#10b981',
+    explorer: '#10b981',
+  };
+  const fieldLines = Array.isArray(catObj.fields) && catObj.fields.length > 0
+    ? catObj.fields.map((f) => `**${f.name}**\n${f.value}`).join('\n\n')
+    : '';
+  let flatDesc = [catObj.description ? `*${catObj.description}*` : '', fieldLines].filter(Boolean).join('\n\n');
+  if (flatDesc.length > 3950) flatDesc = `${flatDesc.slice(0, 3940)}\n…`;
+
   return {
     success: true,
     ...WIKI_METADATA,
     category: resolvedId,
-    data: WIKI_CATEGORIES[resolvedId],
+    data: catObj,
+    embed_flat: {
+      title: catObj.title,
+      description: flatDesc,
+      image_url: catObj.image_url || '',
+      color: colorMap[resolvedId] || '#ec4899',
+    },
   };
 }
 

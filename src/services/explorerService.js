@@ -35,14 +35,7 @@ import {
   V14_EXPLORER_MAP_BY_ID,
   V14_CONSUMABLES,
 } from '../data/v14ExpansionCatalog.js';
-import {
-  em,
-  petEmoji,
-  itemEmoji,
-  gradeEmoji,
-  domainEmoji,
-  tierEmoji,
-} from '../config/emojiHelper.js';
+import { em, petEmoji, itemEmoji, gradeEmoji, domainEmoji, tierEmoji, uiEm } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
   ensureUserInitialized,
@@ -135,7 +128,7 @@ export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null)
 }
 
 function formatSurvivalSuffix(surv) {
-  return surv.tooWeak ? ' 💀 *(Quá yếu so với map — chắc chắn tử nạn!)*' : '';
+  return surv.tooWeak ? ` ${uiEm('ui_skull_ko')} *(Quá yếu so với map — chắc chắn tử nạn!)*` : '';
 }
 
 function explorerError(status, error, title, message, extra = {}) {
@@ -383,8 +376,8 @@ async function resolveUserLoadoutDetails(userId) {
  */
 export async function getExplorerHub(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI KHÁM PHÁ', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI KHÁM PHÁ`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   await ensureUserInitialized(cleanId, {
     username: pickCleanDisplayValue(opts.username, opts.fallbackUsername),
@@ -425,20 +418,20 @@ export async function getExplorerHub(userId, opts = {}) {
     const isStillMain = Boolean(expPetRow?.is_active);
     canClaim = now.getTime() >= new Date(exp.ends_at).getTime();
     activeBlock = [
-      `🧭 **ĐANG KHÁM PHÁ:** **${mapDef?.name || exp.map_id}** *(${mapDef?.difficulty || ''} • Mốc ${exp.duration_hours} giờ)*`,
-      `• **Linh Thú Xuất Hành:** ${petEmoji(exp.pet_type)} **${exp.pet_name}** (${isStillMain ? '⚠️ Pet Chính đang khóa chiến đấu' : 'Pet Phụ • Đang khám phá'})`,
+      `${uiEm('ui_compass_dir')} **ĐANG KHÁM PHÁ:** **${mapDef?.name || exp.map_id}** *(${mapDef?.difficulty || ''} • Mốc ${exp.duration_hours} giờ)*`,
+      `• **Linh Thú Xuất Hành:** ${petEmoji(exp.pet_type)} **${exp.pet_name}** (${isStillMain ? `${uiEm('ui_warn')} Pet Chính đang khóa chiến đấu` : 'Pet Phụ • Đang khám phá'})`,
       `• **Thời Gian Còn Lại:** **${formatDurationLeft(exp.ends_at, now)}**`,
     ].join('\n');
   }
 
   const injuredBlock = injuredPets.length > 0
-    ? `\n🩹 **Linh Thú Độc Nhất Trọng Thương (${injuredPets.length}):** ${injuredPets.map((p) => `${petEmoji(p.pet_type)} **${p.pet_name}**`).join(', ')} — dùng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** *(đang có ×${foodCounts.explorer_revive_elixir || 0})* để hồi sinh!`
+    ? `\n${uiEm('ui_heal_band')} **Linh Thú Độc Nhất Trọng Thương (${injuredPets.length}):** ${injuredPets.map((p) => `${petEmoji(p.pet_type)} **${p.pet_name}**`).join(', ')} — dùng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** *(đang có ×${foodCounts.explorer_revive_elixir || 0})* để hồi sinh!`
     : '';
 
   const desc = [
     activeBlock,
     '',
-    `**🎒 Đội Hình Khám Phá Hiện Tại (${details.hasSavedLoadout ? 'Đã Lưu' : 'Mặc Định Pet Chính'}):**`,
+    `**${uiEm('ui_backpack_inv')} Đội Hình Khám Phá Hiện Tại (${details.hasSavedLoadout ? 'Đã Lưu' : 'Mặc Định Pet Chính'}):**`,
     `• **Linh Thú:** ${petLine}`,
     `• **Pháp Bảo (3 ô):** ${eqLine}`,
     `• **Linh Vực:** ${domLine}`,
@@ -455,7 +448,7 @@ export async function getExplorerHub(userId, opts = {}) {
     injured_count: injuredPets.length,
     loadout_power: details.power,
     map_image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
-    title: `${em('explorer_world_map_v14', '🗺️')} TRUNG TÂM KHÁM PHÁ ĐẠI LỤC CỬU CHÂU (/explorer)`,
+    title: `${em('explorer_world_map_v14')} TRUNG TÂM KHÁM PHÁ ĐẠI LỤC CỬU CHÂU (/explorer)`,
     description: desc,
     message: desc,
   };
@@ -466,8 +459,8 @@ export async function getExplorerHub(userId, opts = {}) {
  */
 export async function getExplorerLoadoutEditor(userId, rawTab = 'pet') {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI LOADOUT', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI LOADOUT`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   const tab = String(rawTab || 'pet').trim().toLowerCase();
   const details = await resolveUserLoadoutDetails(cleanId);
@@ -482,7 +475,7 @@ export async function getExplorerLoadoutEditor(userId, rawTab = 'pet') {
         slot: idx + 1,
         id: String(p.pet_id),
         label: `#${idx + 1} ${p.pet_name} (Lv.${p.level} • ${p.star}★ • ${p.is_active ? 'Chính' : 'Phụ'})`,
-        line: `• **#${idx + 1}** ${petEmoji(p.pet_type)} **${p.pet_name}** *(Lv.${p.level} • ${p.star}★ • ${petPower.toLocaleString('vi-VN')} Lực • ${p.is_active ? 'Pet Chính' : 'Pet Phụ'}${p.status !== 'ready' ? ` • ⚠️ ${p.status}` : ''})*`,
+        line: `• **#${idx + 1}** ${petEmoji(p.pet_type)} **${p.pet_name}** *(Lv.${p.level} • ${p.star}★ • ${petPower.toLocaleString('vi-VN')} Lực • ${p.is_active ? 'Pet Chính' : 'Pet Phụ'}${p.status !== 'ready' ? ` • ${uiEm('ui_warn')} ${p.status}` : ''})*`,
       };
     });
   } else if (['weapon', 'gem', 'soul'].includes(tab)) {
@@ -515,7 +508,7 @@ export async function getExplorerLoadoutEditor(userId, rawTab = 'pet') {
   return {
     success: true,
     tab,
-    title: `🎒 ${heading}`,
+    title: `${uiEm('ui_backpack_inv')} ${heading}`,
     description: [
       `Chọn số **#1 → #${Math.max(1, items.length)}** ở Dropdown bên dưới (hoặc chọn **0** để tháo ô này):`,
       '',
@@ -530,8 +523,8 @@ export async function getExplorerLoadoutEditor(userId, rawTab = 'pet') {
  */
 export async function saveExplorerLoadout(userId, patch = {}) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI LOADOUT', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI LOADOUT`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   return withExplorerLock(cleanId, async () => {
     const busy = await getUserBusyExplorationAssets(cleanId);
@@ -539,7 +532,7 @@ export async function saveExplorerLoadout(userId, patch = {}) {
       return explorerError(
         400,
         'EXPEDITION_IN_PROGRESS',
-        '⏳ KHÔNG THỂ SỬA LOADOUT LÚC NÀY',
+        `${uiEm('ui_clock_timer')} KHÔNG THỂ SỬA LOADOUT LÚC NÀY`,
         'Đang có chuyến khám phá đang diễn ra! Hãy chờ hoàn thành và nhận quà rồi mới chỉnh sửa Loadout.',
       );
     }
@@ -568,7 +561,7 @@ export async function saveExplorerLoadout(userId, patch = {}) {
           ? editor.items[parseInt(v, 10) - 1]
           : editor.items.find((it) => String(it.id) === v);
         if (!picked) {
-          return explorerError(404, 'LOADOUT_ITEM_NOT_FOUND', '⚠️ KHÔNG TÌM THẤY MỤC', `Không tìm thấy mục '${v}' trong kho ${t}.`);
+          return explorerError(404, 'LOADOUT_ITEM_NOT_FOUND', `${uiEm('ui_warn')} KHÔNG TÌM THẤY MỤC`, `Không tìm thấy mục '${v}' trong kho ${t}.`);
         }
         if (t === 'pet') nextPetId = String(picked.id);
         if (t === 'weapon') nextWeapon = String(picked.id);
@@ -587,12 +580,12 @@ export async function saveExplorerLoadout(userId, patch = {}) {
     // Validate ownership
     if (nextPetId) {
       const petObj = details.allPets.find((p) => String(p.pet_id) === String(nextPetId) || p.pet_type === String(nextPetId));
-      if (!petObj) return explorerError(404, 'PET_NOT_OWNED', '⚠️ CHƯA SỞ HỮU LINH THÚ', 'Bạn không sở hữu Linh Thú này!');
+      if (!petObj) return explorerError(404, 'PET_NOT_OWNED', `${uiEm('ui_warn')} CHƯA SỞ HỮU LINH THÚ`, 'Bạn không sở hữu Linh Thú này!');
       if (petObj.status === 'injured') {
         return explorerError(
           400,
           'PET_INJURED',
-          '🩹 LINH THÚ ĐANG TRỌNG THƯƠNG',
+          `${uiEm('ui_heal_band')} LINH THÚ ĐANG TRỌNG THƯƠNG`,
           `Linh Thú **${petObj.pet_name}** đang bị Trọng Thương — cần dùng Cửu Chuyển Hoàn Hồn Lộ để hồi sinh trước!`,
         );
       }
@@ -602,11 +595,11 @@ export async function saveExplorerLoadout(userId, patch = {}) {
     for (const [idVal, expectedType] of [[nextWeapon, 'weapon'], [nextGem, 'gem'], [nextSoul, 'soul']]) {
       if (!idVal) continue;
       const owned = details.allEquip.find((e) => e.item_id === idVal && EQUIPMENT_BY_ID[e.item_id]?.item_type === expectedType);
-      if (!owned) return explorerError(404, 'EQUIP_NOT_OWNED', '⚠️ CHƯA SỞ HỮU PHÁP BẢO', `Bạn không sở hữu Pháp Bảo \`${idVal}\` đúng loại ${expectedType}!`);
+      if (!owned) return explorerError(404, 'EQUIP_NOT_OWNED', `${uiEm('ui_warn')} CHƯA SỞ HỮU PHÁP BẢO`, `Bạn không sở hữu Pháp Bảo \`${idVal}\` đúng loại ${expectedType}!`);
     }
     if (nextDomain) {
       const ownedDom = details.allDomains.find((d) => d.entity_kind === 'domain' && d.entity_id === nextDomain);
-      if (!ownedDom) return explorerError(404, 'DOMAIN_NOT_OWNED', '⚠️ CHƯA SỞ HỮU LINH VỰC', `Bạn không sở hữu Linh Vực \`${nextDomain}\`!`);
+      if (!ownedDom) return explorerError(404, 'DOMAIN_NOT_OWNED', `${uiEm('ui_warn')} CHƯA SỞ HỮU LINH VỰC`, `Bạn không sở hữu Linh Vực \`${nextDomain}\`!`);
     }
 
     await supabase.from('explorer_loadouts').upsert({
@@ -621,8 +614,8 @@ export async function saveExplorerLoadout(userId, patch = {}) {
 
     const hub = await getExplorerHub(cleanId);
     const updatedMsg = [
-      `✅ **Đã cập nhật Loadout Khám Phá thành công!**`,
-      `👉 *Bạn có thể tiếp tục bấm các nút ô khác ở bảng **[Chỉnh Loadout]** phía trên để gắn thêm đồ, hoặc bấm **[Xuất Phát Khám Phá]** ở bảng chính!*`,
+      `${uiEm('ui_check')} **Đã cập nhật Loadout Khám Phá thành công!**`,
+      `-> *Bạn có thể tiếp tục bấm các nút ô khác ở bảng **[Chỉnh Loadout]** phía trên để gắn thêm đồ, hoặc bấm **[Xuất Phát Khám Phá]** ở bảng chính!*`,
       '',
       hub.description,
     ].join('\n');
@@ -630,7 +623,7 @@ export async function saveExplorerLoadout(userId, patch = {}) {
     return {
       ...hub,
       saved: true,
-      title: '✅ ĐÃ CẬP NHẬT LOADOUT KHÁM PHÁ',
+      title: `${uiEm('ui_check')} ĐÃ CẬP NHẬT LOADOUT KHÁM PHÁ`,
       description: updatedMsg,
       message: updatedMsg,
     };
@@ -665,8 +658,8 @@ async function getFoodShopPrice(userId, foodId) {
  */
 export async function selectExplorerPlanStep(userId, step, rawValue) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI KHÁM PHÁ', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI KHÁM PHÁ`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   const details = await resolveUserLoadoutDetails(cleanId);
   const { data: availDrops } = await supabase
@@ -683,8 +676,8 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     const mapLines = V14_EXPLORER_MAPS.map((m) => {
       const surv = computeExplorerSurvival(details.power, m.recommended_power, null);
       const dropCnt = (availDrops || []).filter((d) => d.map_id === m.map_id && Number(d.min_duration_hours) <= validHrs).length;
-      const dropHint = dropCnt > 0 ? ` • 🎁 **${dropCnt} đồ rơi!**` : '';
-      const survLabel = surv.tooWeak ? 'Sống: **0%** 💀' : `Sống: **${surv.survivalPct}%**`;
+      const dropHint = dropCnt > 0 ? ` • ${uiEm('ui_gift_box')} **${dropCnt} đồ rơi!**` : '';
+      const survLabel = surv.tooWeak ? `Sống: **0%** ${uiEm('ui_skull_ko')}` : `Sống: **${surv.survivalPct}%**`;
       return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${(m.recommended_power / 1000).toLocaleString('vi-VN')}k)* — ${survLabel}${dropHint}`;
     });
 
@@ -693,7 +686,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       step: 'choose_map',
       selected_duration: validHrs,
       map_image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
-      title: `🗺️ BƯỚC 2/3 — CHỌN ĐỊA DANH KHÁM PHÁ (MỐC ${validHrs} GIỜ)`,
+      title: `${em('explorer_world_map_v14')} BƯỚC 2/3 — CHỌN ĐỊA DANH KHÁM PHÁ (MỐC ${validHrs} GIỜ)`,
       description: [
         `• **Đội Hình:** ${details.chosenPet ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}**` : '*Chưa chọn*'} — **${details.power.toLocaleString('vi-VN')} Lực**`,
         `• Chọn 1 trong **12 Địa Danh** ở Dropdown bên dưới *(quà cơ bản ~${(validHrs * 200).toLocaleString('vi-VN')}–${(validHrs * 300).toLocaleString('vi-VN')} LT × hệ số map + cơ hội rơi ${em('enchant_stone_absolute')} 0.5%)*:`,
@@ -706,7 +699,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
   if (step === 'map') {
     const raw = String(rawValue || '').trim();
     const mapDef = V14_EXPLORER_MAP_BY_ID[raw] || V14_EXPLORER_MAPS[parseInt(raw, 10) - 1] || null;
-    if (!mapDef) return explorerError(404, 'MAP_NOT_FOUND', '⚠️ KHÔNG TÌM THẤY ĐỊA DANH', 'Địa danh không hợp lệ!');
+    if (!mapDef) return explorerError(404, 'MAP_NOT_FOUND', `${uiEm('ui_warn')} KHÔNG TÌM THẤY ĐỊA DANH`, 'Địa danh không hợp lệ!');
 
     const [ui, { data: invFoods }] = await Promise.all([
       saveUiState(cleanId, { selected_map_id: mapDef.map_id, selected_food_id: null }),
@@ -726,12 +719,12 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
       step: 'choose_food',
       selected_duration: hrs,
       selected_map_id: mapDef.map_id,
-      title: `🧭 BƯỚC 3/3 — XÁC NHẬN XUẤT PHÁT: ${mapDef.name.toUpperCase()}`,
+      title: `${uiEm('ui_compass_dir')} BƯỚC 3/3 — XÁC NHẬN XUẤT PHÁT: ${mapDef.name.toUpperCase()}`,
       description: [
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty} • Yêu cầu ${mapDef.recommended_power.toLocaleString('vi-VN')} Lực • Hệ số ×${mapDef.reward_multiplier})*`,
         `• **Thời Gian:** **${hrs} giờ** *(dùng ${em('food_speed_fruit')} giảm còn **${(hrs * 0.75).toFixed(2)} giờ**)*`,
         survBase.tooWeak
-          ? `• **Tỉ Lệ Sống Sót Dự Kiến:** **0%** 💀 *(Lực chiến thua từ 2× trở lên — chắc chắn tử nạn, ${em('food_survival_pill')} không thể cứu!)*`
+          ? `• **Tỉ Lệ Sống Sót Dự Kiến:** **0%** ${uiEm('ui_skull_ko')} *(Lực chiến thua từ 2× trở lên — chắc chắn tử nạn, ${em('food_survival_pill')} không thể cứu!)*`
           : `• **Tỉ Lệ Sống Sót Dự Kiến:** **${survBase.survivalPct}%** *(dùng ${em('food_survival_pill')} tăng lên **${survFoodA.survivalPct}%**)*`,
         `• **Thức Ăn Trong Túi:** ${em('food_survival_pill')}×${fc.food_survival_pill || 0} *(180 LT)* | ${em('food_yield_tea')}×${fc.food_yield_tea || 0} *(220 LT)* | ${em('food_speed_fruit')}×${fc.food_speed_fruit || 0} *(250 LT)*`,
         `• **Cảnh Báo Nguy Hiểm:** Nếu tử nạn, Pet không Độc Nhất sẽ **mất vĩnh viễn** và Pháp Bảo không Độc Nhất sẽ **rớt lại trên bản đồ**!`,
@@ -837,12 +830,12 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
  */
 export async function buyAndSelectExplorerFood(userId, rawFoodId) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI MUA THỨC ĂN', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI MUA THỨC ĂN`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   const foodId = String(rawFoodId || '').trim();
   if (!EXPLORER_FOOD_EFFECTS[foodId]) {
-    return explorerError(400, 'INVALID_FOOD', '⚠️ THỨC ĂN KHÔNG HỢP LỆ', 'Vui lòng chọn đúng loại thức ăn khám phá trước khi mua.');
+    return explorerError(400, 'INVALID_FOOD', `${uiEm('ui_warn')} THỨC ĂN KHÔNG HỢP LỆ`, 'Vui lòng chọn đúng loại thức ăn khám phá trước khi mua.');
   }
 
   return withExplorerLock(cleanId, async () => {
@@ -853,7 +846,7 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
       return explorerError(
         400,
         'INSUFFICIENT_LT',
-        '❌ KHÔNG ĐỦ LINH THẠCH',
+        `${uiEm('ui_cross')} KHÔNG ĐỦ LINH THẠCH`,
         `Cần **${finalPrice.toLocaleString('vi-VN')}** ${ltIcon} để mua ${em(foodId)} **${foodDef?.name || foodId}**, nhưng bạn hiện chỉ có **${userLt.toLocaleString('vi-VN')}** ${ltIcon}! Bạn vẫn có thể bấm **[Xuất Phát Không Thức Ăn]**.`,
       );
     }
@@ -873,7 +866,7 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
     const effHours = foodId === 'food_speed_fruit' ? +(hrs * 0.75).toFixed(2) : hrs;
 
     const desc = [
-      `✅ Đã mua **1× ${em(foodId)} ${foodDef?.name || foodId}** với giá **${finalPrice.toLocaleString('vi-VN')}** ${ltIcon}${discountPct > 0 ? ` *(-${discountPct}%)*` : ''} *(Còn **${remainingLt.toLocaleString('vi-VN')}** ${ltIcon})*!`,
+      `${uiEm('ui_check')} Đã mua **1× ${em(foodId)} ${foodDef?.name || foodId}** với giá **${finalPrice.toLocaleString('vi-VN')}** ${ltIcon}${discountPct > 0 ? ` *(-${discountPct}%)*` : ''} *(Còn **${remainingLt.toLocaleString('vi-VN')}** ${ltIcon})*!`,
       '',
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(${mapDef.difficulty})*`,
       `• **Thời Gian Thực Tế:** **${effHours} giờ** *(Mốc thưởng ${hrs} giờ)*`,
@@ -901,8 +894,8 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
  */
 export async function startExpedition(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI KHÁM PHÁ', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI KHÁM PHÁ`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   return withExplorerLock(cleanId, async () => {
     const busy = await getUserBusyExplorationAssets(cleanId);
@@ -910,7 +903,7 @@ export async function startExpedition(userId, opts = {}) {
       return explorerError(
         400,
         'ALREADY_EXPLORING',
-        '🧭 ĐANG CÓ CHUYẾN KHÁM PHÁ CHƯA KẾT THÚC',
+        `${uiEm('ui_compass_dir')} ĐANG CÓ CHUYẾN KHÁM PHÁ CHƯA KẾT THÚC`,
         'Bạn đang có một chuyến khám phá đang diễn ra! Hãy hoàn thành và nhận quà trước khi đi chuyến mới.',
       );
     }
@@ -921,7 +914,7 @@ export async function startExpedition(userId, opts = {}) {
       : (VALID_EXPLORER_DURATIONS.includes(Number(ui.selected_duration)) ? Number(ui.selected_duration) : 2);
     const mapId = opts.mapId || ui.selected_map_id || 'map_01_truc_lam';
     const mapDef = V14_EXPLORER_MAP_BY_ID[mapId];
-    if (!mapDef) return explorerError(404, 'MAP_NOT_FOUND', '⚠️ CHƯA CHỌN ĐỊA DANH', 'Chưa chọn địa danh hợp lệ!');
+    if (!mapDef) return explorerError(404, 'MAP_NOT_FOUND', `${uiEm('ui_warn')} CHƯA CHỌN ĐỊA DANH`, 'Chưa chọn địa danh hợp lệ!');
 
     const foodIdRaw = opts.foodId !== undefined ? opts.foodId : ui.selected_food_id;
     const foodId = foodIdRaw && foodIdRaw !== 'none' && EXPLORER_FOOD_EFFECTS[foodIdRaw] ? foodIdRaw : null;
@@ -929,16 +922,16 @@ export async function startExpedition(userId, opts = {}) {
     const details = await resolveUserLoadoutDetails(cleanId);
     const pet = details.chosenPet;
     if (!pet) {
-      return explorerError(400, 'NO_PET_FOR_EXPLORER', '⚠️ CHƯA CÓ LINH THÚ', 'Bạn chưa có Linh Thú nào trong kho để đi khám phá!');
+      return explorerError(400, 'NO_PET_FOR_EXPLORER', `${uiEm('ui_warn')} CHƯA CÓ LINH THÚ`, 'Bạn chưa có Linh Thú nào trong kho để đi khám phá!');
     }
     if (pet.status === 'exploring') {
-      return explorerError(400, 'PET_BUSY_EXPLORING', '🧭 LINH THÚ ĐANG BẬN', `Linh Thú **${pet.pet_name}** đang đi khám phá rồi!`);
+      return explorerError(400, 'PET_BUSY_EXPLORING', `${uiEm('ui_compass_dir')} LINH THÚ ĐANG BẬN`, `Linh Thú **${pet.pet_name}** đang đi khám phá rồi!`);
     }
     if (pet.status === 'injured') {
       return explorerError(
         400,
         'PET_INJURED',
-        '🩹 LINH THÚ ĐANG TRỌNG THƯƠNG',
+        `${uiEm('ui_heal_band')} LINH THÚ ĐANG TRỌNG THƯƠNG`,
         `Linh Thú **${pet.pet_name}** đang bị Trọng Thương — hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** để hồi sinh trước!`,
       );
     }
@@ -1009,7 +1002,7 @@ export async function startExpedition(userId, opts = {}) {
 
     const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId);
     const mainPetNotice = pet.is_active
-      ? '\n⚠️ *Bạn đang dùng **Pet Chính** để khám phá — Pet này tạm khóa khỏi PvP/PvE/Tháp/Địa Mạch (bạn có thể dùng `/linhthu` đổi sang Pet phụ khác để vẫn chiến đấu bình thường!).*'
+      ? `\n${uiEm('ui_warn')} *Bạn đang dùng **Pet Chính** để khám phá — Pet này tạm khóa khỏi PvP/PvE/Tháp/Địa Mạch (bạn có thể dùng \`/linhthu\` đổi sang Pet phụ khác để vẫn chiến đấu bình thường!).*`
       : '';
 
     const startDesc = [
@@ -1098,8 +1091,8 @@ async function grantEquipmentPreserveGrade(userId, itemId, grade = 'D', source =
  */
 export async function claimExpedition(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI NHẬN THƯỞNG', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI NHẬN THƯỞNG`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   const rng = typeof opts.rng === 'function' ? opts.rng : Math.random;
 
@@ -1109,7 +1102,7 @@ export async function claimExpedition(userId, opts = {}) {
       return explorerError(
         404,
         'NO_ACTIVE_EXPEDITION',
-        `${em('explorer_world_map_v14', '🗺️')} CHƯA CÓ CHUYẾN KHÁM PHÁ NÀO`,
+        `${em('explorer_world_map_v14')} CHƯA CÓ CHUYẾN KHÁM PHÁ NÀO`,
         'Bạn hiện chưa xuất phát chuyến khám phá nào! Hãy bấm **[Xuất Phát Khám Phá]** (hoặc **[Chỉnh Loadout]** trước) để đưa Linh Thú lên đường.',
       );
     }
@@ -1123,7 +1116,7 @@ export async function claimExpedition(userId, opts = {}) {
       return explorerError(
         400,
         'EXPEDITION_NOT_FINISHED',
-        '⏳ CHUYẾN KHÁM PHÁ ĐANG TIẾN HÀNH',
+        `${uiEm('ui_clock_timer')} CHUYẾN KHÁM PHÁ ĐANG TIẾN HÀNH`,
         `• **Linh Thú:** ${petEmoji(exp.pet_type)} **${exp.pet_name}**\n• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(Mốc ${exp.duration_hours} giờ)*\n• **Thời Gian Còn Lại:** **${rem}**\n\nHãy quay lại nhận quà sau khi chuyến khám phá kết thúc nhé!`,
         { remaining_text: rem },
       );
@@ -1230,18 +1223,18 @@ export async function claimExpedition(userId, opts = {}) {
         .eq('expedition_id', exp.expedition_id);
 
       const lootText = Array.from(gainedItems.entries())
-        .map(([iid, qty]) => `${em(iid, '🎁')} ×${qty}`)
+        .map(([iid, qty]) => `${em(iid)} ×${qty}`)
         .join('  ');
 
       const lines = [
-        `🎉 **KHÁM PHÁ THÀNH CÔNG — TRỞ VỀ AN TOÀN!**`,
+        `${uiEm('ui_party_celebrate')} **KHÁM PHÁ THÀNH CÔNG — TRỞ VỀ AN TOÀN!**`,
         `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(Mốc ${exp.duration_hours}h • Sống sót ${surv.survivalPct}%)*`,
         `• **Linh Thạch Thu Hoạch:** **+${earnedLt.toLocaleString('vi-VN')}** ${ltIcon}`,
         lootText ? `• **Vật Phẩm Nhặt Được:** ${lootText}` : '',
-        gotAbsoluteStone ? `• 🌟 **CỰC PHẨM 0.5%:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn — khuyên dùng A → S)*!` : '',
-        mythicWeaponDrop ? `• ⚔️ **KỲ NGỘ 0.01%:** Nhặt được Vũ Khí Thần Thoại ${itemEmoji(mythicWeaponDrop.item_id)} **${mythicWeaponDrop.item_name}**!` : '',
+        gotAbsoluteStone ? `• ${em('su_sparkle')} **CỰC PHẨM 0.5%:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn — khuyên dùng A → S)*!` : '',
+        mythicWeaponDrop ? `• ${em('su_crossed_swords')} **KỲ NGỘ 0.01%:** Nhặt được Vũ Khí Thần Thoại ${itemEmoji(mythicWeaponDrop.item_id)} **${mythicWeaponDrop.item_name}**!` : '',
         salvagedDrop
-          ? `• 💎 **NHẶT BẢO VẬT RƠI TRÊN BẢN ĐỒ (60%):** Nhặt được ${itemEmoji(salvagedDrop.item_id)} ${gradeEmoji(salvagedDrop.enchant_grade)} **${EQUIPMENT_BY_ID[salvagedDrop.item_id]?.item_name || salvagedDrop.item_id}** *(Bậc ${salvagedDrop.enchant_grade} — của tu sĩ đi trước bỏ lại)*!`
+          ? `• ${em('su_linhthach')} **NHẶT BẢO VẬT RƠI TRÊN BẢN ĐỒ (60%):** Nhặt được ${itemEmoji(salvagedDrop.item_id)} ${gradeEmoji(salvagedDrop.enchant_grade)} **${EQUIPMENT_BY_ID[salvagedDrop.item_id]?.item_name || salvagedDrop.item_id}** *(Bậc ${salvagedDrop.enchant_grade} — của tu sĩ đi trước bỏ lại)*!`
           : '',
       ].filter(Boolean);
 
@@ -1251,7 +1244,7 @@ export async function claimExpedition(userId, opts = {}) {
         success: true,
         survived: true,
         outcome,
-        title: `🎉 KẾT QUẢ KHÁM PHÁ — ${mapDef.name.toUpperCase()}`,
+        title: `${uiEm('ui_party_celebrate')} KẾT QUẢ KHÁM PHÁ — ${mapDef.name.toUpperCase()}`,
         description: lines.join('\n'),
         message: lines.join('\n'),
       };
@@ -1264,7 +1257,7 @@ export async function claimExpedition(userId, opts = {}) {
 
     if (petIsUnique) {
       await supabase.from('user_pets').update({ status: 'injured', is_active: false }).eq('pet_id', exp.pet_id);
-      petDeathNote = `🩹 Linh Thú Độc Nhất ${petEmoji(exp.pet_type)} **${exp.pet_name}** bị **Trọng Thương Hôn Mê**! Hãy dùng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** để hồi sinh.`;
+      petDeathNote = `${uiEm('ui_heal_band')} Linh Thú Độc Nhất ${petEmoji(exp.pet_type)} **${exp.pet_name}** bị **Trọng Thương Hôn Mê**! Hãy dùng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** để hồi sinh.`;
     } else {
       const { data: petRow } = await supabase.from('user_pets').select('pet_id, quantity').eq('pet_id', exp.pet_id).maybeSingle();
       if (petRow && Number(petRow.quantity || 1) > 1) {
@@ -1272,7 +1265,7 @@ export async function claimExpedition(userId, opts = {}) {
       } else {
         await supabase.from('user_pets').delete().eq('pet_id', exp.pet_id);
       }
-      petDeathNote = `💀 Linh Thú ${petEmoji(exp.pet_type)} **${exp.pet_name}** đã **tử nạn vĩnh viễn** nơi hiểm địa!`;
+      petDeathNote = `${uiEm('ui_skull_ko')} Linh Thú ${petEmoji(exp.pet_type)} **${exp.pet_name}** đã **tử nạn vĩnh viễn** nơi hiểm địa!`;
     }
 
     // Kiểm tra đảm bảo user luôn còn ít nhất 1 Pet active sẵn sàng (nếu mất con cuối -> cấp 1 Pet Phàm khởi đầu Lv.1!)
@@ -1372,17 +1365,17 @@ export async function claimExpedition(userId, opts = {}) {
       .eq('expedition_id', exp.expedition_id);
 
     const lines = [
-      `☠️ **KHÁM PHÁ THẤT BẠI — LINH THÚ GẶP NẠN!**`,
+      `${uiEm('ui_skull_ko')} **KHÁM PHÁ THẤT BẠI — LINH THÚ GẶP NẠN!**`,
       `• **Địa Danh:** **#${mapDef.order} ${mapDef.name}** *(Sống sót ${surv.survivalPct}%)*`,
       `• ${petDeathNote}`,
-      starterPetGranted ? `• 🌱 *(Bạn vừa mất con Linh Thú cuối cùng — Tông Môn đã cấp tặng 1 Linh Thú Phàm Phẩm Lv.1 để tiếp tục tu luyện!)*` : '',
+      starterPetGranted ? `• ${em('su_sprout')} *(Bạn vừa mất con Linh Thú cuối cùng — Tông Môn đã cấp tặng 1 Linh Thú Phàm Phẩm Lv.1 để tiếp tục tu luyện!)*` : '',
       droppedItems.length > 0
-        ? `• 💨 **Pháp Bảo Bị Rớt Tại ${mapDef.name}:** ${droppedItems.map((d) => `${itemEmoji(d.item_id)} **${d.item_name}** (${d.enchant_grade})`).join(', ')} *(Tu sĩ khác đi tới đây mốc ≥${exp.duration_hours}h có 60% cơ hội nhặt được!)*`
+        ? `• ${uiEm('ui_wind_spd')} **Pháp Bảo Bị Rớt Tại ${mapDef.name}:** ${droppedItems.map((d) => `${itemEmoji(d.item_id)} **${d.item_name}** (${d.enchant_grade})`).join(', ')} *(Tu sĩ khác đi tới đây mốc ≥${exp.duration_hours}h có 60% cơ hội nhặt được!)*`
         : '',
       returnedUniqueItems.length > 0
-        ? `• ✨ **Pháp Bảo Độc Nhất Tự Hộ Chủ Bay Về Kho:** ${returnedUniqueItems.join(', ')}`
+        ? `• ${em('su_sparkle')} **Pháp Bảo Độc Nhất Tự Hộ Chủ Bay Về Kho:** ${returnedUniqueItems.join(', ')}`
         : '',
-      `• 🛡️ **Linh Vực / Thần Thức / Thần Cảnh:** Hoàn toàn nguyên vẹn, đã thu hồi về kho.`,
+      `• ${em('su_shield_def')} **Linh Vực / Thần Thức / Thần Cảnh:** Hoàn toàn nguyên vẹn, đã thu hồi về kho.`,
     ].filter(Boolean);
 
     await trackQuestActivity(cleanId, { explorerDelta: 1 });
@@ -1391,7 +1384,7 @@ export async function claimExpedition(userId, opts = {}) {
       success: true,
       survived: false,
       outcome,
-      title: `☠️ BÁO TỬ KHÁM PHÁ — ${mapDef.name.toUpperCase()}`,
+      title: `${uiEm('ui_skull_ko')} BÁO TỬ KHÁM PHÁ — ${mapDef.name.toUpperCase()}`,
       description: lines.join('\n'),
       message: lines.join('\n'),
     };
@@ -1403,8 +1396,8 @@ export async function claimExpedition(userId, opts = {}) {
  */
 export async function reviveInjuredUniquePet(userId) {
   const cleanId = sanitizeUserId(userId);
-  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', '⚠️ LỖI HỒI SINH', 'ID không hợp lệ.');
-  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', '⚠️ LỖI HỆ THỐNG', 'Supabase chưa sẵn sàng.');
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI HỒI SINH`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
   return withExplorerLock(cleanId, async () => {
     const { data: injured } = await supabase
@@ -1416,7 +1409,7 @@ export async function reviveInjuredUniquePet(userId) {
 
     const targetPet = injured?.[0] || null;
     if (!targetPet) {
-      return explorerError(404, 'NO_INJURED_PET', '🩹 KHÔNG CÓ LINH THÚ TRỌNG THƯƠNG', 'Bạn không có Linh Thú Độc Nhất nào đang bị Trọng Thương!');
+      return explorerError(404, 'NO_INJURED_PET', `${uiEm('ui_heal_band')} KHÔNG CÓ LINH THÚ TRỌNG THƯƠNG`, 'Bạn không có Linh Thú Độc Nhất nào đang bị Trọng Thương!');
     }
 
     const { data: elixir } = await supabase
@@ -1468,12 +1461,12 @@ export async function getExplorerMapBoard(userId = null) {
 
   const lines = V14_EXPLORER_MAPS.map((m) => {
     const countHere = drops.filter((d) => d.map_id === m.map_id && (!cleanId || d.dropped_by_user_id !== cleanId)).length;
-    return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${m.recommended_power.toLocaleString('vi-VN')} Lực • ×${m.reward_multiplier})*${countHere > 0 ? ` — 💎 **${countHere} bảo vật đang rơi!**` : ''}`;
+    return `• **#${m.order} ${m.name}** *(${m.difficulty} • ${m.recommended_power.toLocaleString('vi-VN')} Lực • ×${m.reward_multiplier})*${countHere > 0 ? ` — ${em('su_linhthach')} **${countHere} bảo vật đang rơi!**` : ''}`;
   });
 
   const summary = [
     '',
-    `**📜 Quy Tắc & Phần Thưởng (/explorer):**`,
+    `**${em('su_wiki_scroll')} Quy Tắc & Phần Thưởng (/explorer):**`,
     `• **Mốc Thời Gian:** \`2 / 3 / 6 / 12 giờ\` • Thu hoạch \`200–300 LT/giờ × hệ số map\` + quà shop + **0.5%** ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn)* + **0.01%** Vũ Khí Thần Thoại + **60%** nhặt Pháp Bảo rơi của người đi trước *(cùng địa danh & mốc ≥ giờ rơi)*.`,
     `• **Sinh Tử & Rớt Đồ:** Vượt lực map từ \`90% → 100%\` sống sót; yếu hơn map tử vong tăng dần về \`100%\` *(thua từ 2× lực chiến = **0% sống sót**, Hộ Mệnh Đan không thể cứu)*. Pet thường tử nạn mất vĩnh viễn; Pet Độc Nhất trọng thương hồi sinh bằng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ**; Pháp Bảo Độc Nhất & Linh Vực an toàn tuyệt đối.`,
     `• **Thức Ăn Khám Phá (mua tại \`/shop\` hoặc ngay khi xuất phát):** ${em('food_survival_pill')} **Hộ Mệnh Linh Đan** *(+8% sống sót • 180 LT)* • ${em('food_yield_tea')} **Tụ Bảo Tiên Trà** *(+18% LT • 220 LT)* • ${em('food_speed_fruit')} **Ngự Phong Tốc Quả** *(-25% thời gian • 250 LT)*.`,
@@ -1482,7 +1475,7 @@ export async function getExplorerMapBoard(userId = null) {
   return {
     success: true,
     map_image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
-    title: `${em('explorer_world_map_v14', '🗺️')} BẢN ĐỒ ĐẠI LỤC CỬU CHÂU — 12 ĐỊA DANH KHÁM PHÁ`,
+    title: `${em('explorer_world_map_v14')} BẢN ĐỒ ĐẠI LỤC CỬU CHÂU — 12 ĐỊA DANH KHÁM PHÁ`,
     description: [...lines, ...summary].join('\n'),
   };
 }

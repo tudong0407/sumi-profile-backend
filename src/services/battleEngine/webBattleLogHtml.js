@@ -115,6 +115,7 @@ function renderUnitCardHtml(u, sideCls) {
       <div class="stat-pill"><span>HP</span><strong>${fmt(u.stats?.hp)}</strong></div>
     </div>
     ${petHaxHtml}
+    ${u.setBonus?.active ? `<div class="section-card" style="border-color:rgba(250,204,21,.45);color:#fde68a">✨ <strong>Buff SET:</strong> ${escapeHtml(u.setBonus.badgeText)}</div>` : ''}
     ${domainHtml}
     ${renderEquipmentRowsHtml(u.equipment)}
   </div>`;

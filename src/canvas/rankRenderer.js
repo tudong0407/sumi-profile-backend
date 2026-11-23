@@ -4,6 +4,7 @@ import {
   drawRoundRect,
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
+  preloadAvatarFrameOverlay,
   sanitizeText,
   loadBadgeImage,
   stripLeadingEmojis,
@@ -58,9 +59,10 @@ export async function renderRankCard(data, options = {}) {
   })();
 
   // Tải hình nền, avatar & badge PNG tách nền an toàn
-  const [bgImage, avatarImg, icoClan, icoRing, icoLinhThach] = await Promise.all([
-    loadImageSafe(profile.backgroundUrl, 2500, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
-    loadImageSafe(profile.avatarUrl, 2500, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+  const [bgImage, avatarImg, frameOverlayImg, icoClan, icoRing, icoLinhThach] = await Promise.all([
+    loadImageSafe(profile.backgroundUrl, 1200, isOwner ? 'celestial_palace_pink.png' : 'default_background.png'),
+    loadImageSafe(profile.avatarUrl, 1200, isOwner ? 'fuyumi_avatar.png' : 'default_avatar.png'),
+    preloadAvatarFrameOverlay(data.avatar_frame || 'default'),
     loadBadgeImage('badges/su_clan_castle.png'),
     loadBadgeImage(ringFile),
     loadBadgeImage('badges/su_linhthach.png'),
@@ -158,6 +160,7 @@ export async function renderRankCard(data, options = {}) {
     level: profile.level,
     username: profile.username,
     avatarFrame: data.avatar_frame || 'default',
+    frameOverlayImg,
     supersampleFactor: 4,
     showAura: true,
   });

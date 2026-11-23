@@ -26,7 +26,7 @@ import {
   getBattleCacheStats,
 } from './services/battleService.js';
 import { cleanupExpiredBattleLogs, getBattleLogStoreStats } from './services/battleEngine/battleLogStore.js';
-import { getImageCacheStats } from './canvas/drawUtils.js';
+import { getImageCacheStats, renderFramePreviewBuffer } from './canvas/drawUtils.js';
 import { grantChatExp, handleVoiceExp, processVoiceHeartbeat, getUserExpBoostSummary } from './services/expService.js';
 import {
   claimDaily,
@@ -37,7 +37,7 @@ import {
   getAutoSellConfig,
   updateAutoSellConfig,
 } from './services/economyService.js';
-import { getServerLeaderboard, settleWeeklyPowerLeaderboard } from './services/leaderboardService.js';
+import { getServerLeaderboard, settleWeeklyPowerLeaderboard, settleDailyActivityLeaderboard } from './services/leaderboardService.js';
 import {
   getQuestStatus,
   claimDailyQuests,
@@ -1310,7 +1310,8 @@ app.post('/api/pet/active', requireBackendApiKey, requireUpdateAck, async (req, 
 app.post('/api/pet/upgrade', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await upgradePet(body.userId, body.petId || body.petType, body.mode || 'level');
+    const targetGoal = body.muc_dich ?? body.mucDich ?? body.target ?? body.targetLevel ?? body.targetStar ?? null;
+    const result = await upgradePet(body.userId, body.petId || body.petType, body.mode || 'level', targetGoal);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
     console.error('[Server] /api/pet/upgrade error:', err);
@@ -1369,6 +1370,19 @@ app.post('/api/job/work', requireBackendApiKey, requireUpdateAck, async (req, re
 // ============================================================================
 // PHASE 2: SHOP (/shop) & TIÊN LỮ (/marry, /divorce)
 // ============================================================================
+app.get('/api/shop/frame-preview/:frameId.png', async (req, res) => {
+  try {
+    const cleanFrameId = String(req.params.frameId || 'default').replace(/[^a-z0-9_]/gi, '').slice(0, 64);
+    const buf = await renderFramePreviewBuffer(cleanFrameId);
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.send(buf);
+  } catch (err) {
+    console.error('[Server] /api/shop/frame-preview error:', err);
+    return res.status(500).json({ success: false, error: 'FRAME_PREVIEW_FAILED', message: err.message });
+  }
+});
+
 app.get('/api/shop/catalog', async (req, res) => {
   try {
     const result = await getShopCatalog(req.query.category || 'all', {
@@ -1976,6 +1990,20 @@ app.post('/api/exchange/buy', requireBackendApiKey, requireUpdateAck, async (req
 // ============================================================================
 // v1.4 ROUTES: WEEKLY LEADERBOARD, CLAN V2, DAILY SHOP, PARTY, SPIRIT VEINS, EXPLORER
 // ============================================================================
+
+app.post('/api/leaderboard/settle-daily-activity', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await settleDailyActivityLeaderboard(new Date(), {
+      force: Boolean(body.force),
+      targetDateKey: body.dateKey || body.date_key || null,
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/leaderboard/settle-daily-activity error:', err);
+    return res.status(500).json({ success: false, error: 'DAILY_SETTLE_FAILED', message: err.message });
+  }
+});
 
 app.post('/api/leaderboard/weekly-settle', requireBackendApiKey, async (req, res) => {
   try {

@@ -16,80 +16,82 @@ import {
 } from '../data/catalog.js';
 import { LATEST_VERSION } from '../data/changelogs.js';
 import { computeMarriageBuffs } from './marryService.js';
+import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
+import { em, uiEm } from '../config/emojiHelper.js';
 
 export const ROLE_PERKS_MAP = {
-  '1473419957655175169': '⚔️ Trảm Quyết Tối Thượng',
-  '100_hon_don_chua_te': '⚔️ Trảm Quyết Tối Thượng',
-  '1573185998857183253': '🛡️ Kháng Timeout & Hộ Thể',
-  '1468649836856344689': '🛡️ Kháng Timeout & Hộ Thể',
-  'cuu_vi_toi_thuong': '🛡️ Kháng Timeout & Hộ Thể',
-  '1573186003101941830': '👑 Quản Trị Voice & Chat Danh Dự',
-  'sumi_de_nhat_khach_ton': '👑 Quản Trị Voice & Chat Danh Dự',
-  '1573186007262695644': '🌌 Bá Chủ Voice & Thread',
-  'van_co_chi_ton': '🌌 Bá Chủ Voice & Thread',
-  '1573186011478102096': '✨ Sáng Thế & Buff x2.5 Linh Thạch',
-  'sang_the_than_quan': '✨ Sáng Thế & Buff x2.5 Linh Thạch',
-  '1573186015785521265': '🌸 Huy Hiệu Độc Tôn & Buff +80% EXP',
-  'cuu_vi_yeu_hau': '🌸 Huy Hiệu Độc Tôn & Buff +80% EXP',
-  '1573186019858317422': '🎵 Triệu Hồi Hát Live & Tâm Sự',
-  'linh_am_ho_ca': '🎵 Triệu Hồi Hát Live & Tâm Sự',
-  '1573186024048173076': '🎙️ Quyền Di Chuyển Voice',
-  'phong_thanh_ho_phap': '🎙️ Quyền Di Chuyển Voice',
-  '1264915703438381099': '🎙️ Quyền Di Chuyển Voice',
-  '1573186028196462613': '📢 Quyền Ưu Tiên Nói Voice',
-  'loi_am_ton_gia': '📢 Quyền Ưu Tiên Nói Voice',
-  '1573186032289980416': '🔇 Quyền Tắt Tiếng Voice',
-  'tich_tinh_tan_nhan': '🔇 Quyền Tắt Tiếng Voice',
-  '1573186036585201726': '🎧 Quyền Tắt Tai Nghe Voice',
-  'be_tuc_chan_nhan': '🎧 Quyền Tắt Tai Nghe Voice',
-  '1573186040716468316': '🎭 Tự Do Đổi Biệt Danh',
-  'huyen_dien_dao_quan': '🎭 Tự Do Đổi Biệt Danh',
-  '1573186045468614687': '🏷️ Quản Lý Biệt Danh',
-  'dinh_danh_su_gia': '🏷️ Quản Lý Biệt Danh',
-  '1573186049289756712': '⚡ Miễn Chờ Chat Chậm',
-  'than_hanh_cot_cach': '⚡ Miễn Chờ Chat Chậm',
-  '1573186053500833802': '🖼️ Đăng Ảnh Kênh Giới Hạn',
-  'hoa_do_linh_su': '🖼️ Đăng Ảnh Kênh Giới Hạn',
-  '1573186057778888745': '✨ Dùng Emoji Ngoại Server',
-  'van_tuong_linh_ho': '✨ Dùng Emoji Ngoại Server',
-  '1573186061860077568': '🌟 Dùng Sticker Ngoại',
-  'than_phu_thuong_quan': '🌟 Dùng Sticker Ngoại',
-  '1573186066134073394': '💬 Tạo Chủ Đề Công Khai',
-  'khai_son_tien_phong': '💬 Tạo Chủ Đề Công Khai',
-  '1573186070206742578': '🔒 Tạo Chủ Đề Kín',
-  'mat_tang_ho_ve': '🔒 Tạo Chủ Đề Kín',
-  '1573186074153324608': '📌 Quyền Ghim Tin Nhắn',
-  'tran_thu_phap_vuong': '📌 Quyền Ghim Tin Nhắn',
-  '1027173664069795921': '📌 Quyền Ghim Tin Nhắn',
-  '1573186078402158776': '🔊 Dùng Bảng Âm Thanh',
-  'huyen_am_tien_co': '🔊 Dùng Bảng Âm Thanh',
-  '1573186082768560198': '🎶 Dùng Âm Ngoại Server',
-  'cuu_chau_dien_am': '🎶 Dùng Âm Ngoại Server',
-  '1573186087088554085': '📈 Buff +15% EXP Solo',
-  'linh_hon_tu_luyen': '📈 Buff +15% EXP Solo',
-  '1573186091094245416': '💎 Buff +20% Linh Thạch',
-  'tai_van_hanh_thong': '💎 Buff +20% Linh Thạch',
-  '1573186095120908329': '📺 Phát Trực Tiếp HD 1080p',
-  'tieu_dao_khach': '📺 Phát Trực Tiếp HD 1080p',
-  '1573186099663343747': '🗣️ Gửi Tin Nhắn Giọng Nói TTS',
-  'tram_phong_kiem_khach': '🗣️ Gửi Tin Nhắn Giọng Nói TTS',
-  '1573186103664574524': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
-  'than_thong_thau_thi': '👁️ Đọc Lịch Sử Kênh Lưu Trữ',
+  '1473419957655175169': `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`,
+  '100_hon_don_chua_te': `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`,
+  '1573185998857183253': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
+  '1468649836856344689': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
+  'cuu_vi_toi_thuong': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
+  '1573186003101941830': `${uiEm('ui_crown_king')} Quản Trị Voice & Chat Danh Dự`,
+  'sumi_de_nhat_khach_ton': `${uiEm('ui_crown_king')} Quản Trị Voice & Chat Danh Dự`,
+  '1573186007262695644': `${em('su_realm_star')} Bá Chủ Voice & Thread`,
+  'van_co_chi_ton': `${em('su_realm_star')} Bá Chủ Voice & Thread`,
+  '1573186011478102096': `${em('su_sparkle')} Sáng Thế & Buff x2.5 Linh Thạch`,
+  'sang_the_than_quan': `${em('su_sparkle')} Sáng Thế & Buff x2.5 Linh Thạch`,
+  '1573186015785521265': `${em('su_sakura')} Huy Hiệu Độc Tôn & Buff +80% EXP`,
+  'cuu_vi_yeu_hau': `${em('su_sakura')} Huy Hiệu Độc Tôn & Buff +80% EXP`,
+  '1573186019858317422': `${uiEm('ui_music_note')} Triệu Hồi Hát Live & Tâm Sự`,
+  'linh_am_ho_ca': `${uiEm('ui_music_note')} Triệu Hồi Hát Live & Tâm Sự`,
+  '1573186024048173076': `${uiEm('ui_voice_mic')} Quyền Di Chuyển Voice`,
+  'phong_thanh_ho_phap': `${uiEm('ui_voice_mic')} Quyền Di Chuyển Voice`,
+  '1264915703438381099': `${uiEm('ui_voice_mic')} Quyền Di Chuyển Voice`,
+  '1573186028196462613': `${uiEm('ui_announce_horn')} Quyền Ưu Tiên Nói Voice`,
+  'loi_am_ton_gia': `${uiEm('ui_announce_horn')} Quyền Ưu Tiên Nói Voice`,
+  '1573186032289980416': `${uiEm('ui_mute_voice')} Quyền Tắt Tiếng Voice`,
+  'tich_tinh_tan_nhan': `${uiEm('ui_mute_voice')} Quyền Tắt Tiếng Voice`,
+  '1573186036585201726': `${uiEm('ui_speaker_sound')} Quyền Tắt Tai Nghe Voice`,
+  'be_tuc_chan_nhan': `${uiEm('ui_speaker_sound')} Quyền Tắt Tai Nghe Voice`,
+  '1573186040716468316': `${em('su_sparkle')} Tự Do Đổi Biệt Danh`,
+  'huyen_dien_dao_quan': `${em('su_sparkle')} Tự Do Đổi Biệt Danh`,
+  '1573186045468614687': `${em('su_pin_sigil')} Quản Lý Biệt Danh`,
+  'dinh_danh_su_gia': `${em('su_pin_sigil')} Quản Lý Biệt Danh`,
+  '1573186049289756712': `${em('su_thunder_hax')} Miễn Chờ Chat Chậm`,
+  'than_hanh_cot_cach': `${em('su_thunder_hax')} Miễn Chờ Chat Chậm`,
+  '1573186053500833802': `${em('su_sparkle')} Đăng Ảnh Kênh Giới Hạn`,
+  'hoa_do_linh_su': `${em('su_sparkle')} Đăng Ảnh Kênh Giới Hạn`,
+  '1573186057778888745': `${em('su_sparkle')} Dùng Emoji Ngoại Server`,
+  'van_tuong_linh_ho': `${em('su_sparkle')} Dùng Emoji Ngoại Server`,
+  '1573186061860077568': `${em('su_sparkle')} Dùng Sticker Ngoại`,
+  'than_phu_thuong_quan': `${em('su_sparkle')} Dùng Sticker Ngoại`,
+  '1573186066134073394': `${uiEm('ui_chat_bubble')} Tạo Chủ Đề Công Khai`,
+  'khai_son_tien_phong': `${uiEm('ui_chat_bubble')} Tạo Chủ Đề Công Khai`,
+  '1573186070206742578': `${uiEm('ui_lock')} Tạo Chủ Đề Kín`,
+  'mat_tang_ho_ve': `${uiEm('ui_lock')} Tạo Chủ Đề Kín`,
+  '1573186074153324608': `${em('su_pin_sigil')} Quyền Ghim Tin Nhắn`,
+  'tran_thu_phap_vuong': `${em('su_pin_sigil')} Quyền Ghim Tin Nhắn`,
+  '1027173664069795921': `${em('su_pin_sigil')} Quyền Ghim Tin Nhắn`,
+  '1573186078402158776': `${uiEm('ui_speaker_sound')} Dùng Bảng Âm Thanh`,
+  'huyen_am_tien_co': `${uiEm('ui_speaker_sound')} Dùng Bảng Âm Thanh`,
+  '1573186082768560198': `${uiEm('ui_music_note')} Dùng Âm Ngoại Server`,
+  'cuu_chau_dien_am': `${uiEm('ui_music_note')} Dùng Âm Ngoại Server`,
+  '1573186087088554085': `${em('su_level_up')} Buff +15% EXP Solo`,
+  'linh_hon_tu_luyen': `${em('su_level_up')} Buff +15% EXP Solo`,
+  '1573186091094245416': `${em('su_linhthach')} Buff +20% Linh Thạch`,
+  'tai_van_hanh_thong': `${em('su_linhthach')} Buff +20% Linh Thạch`,
+  '1573186095120908329': `${em('su_sparkle')} Phát Trực Tiếp HD 1080p`,
+  'tieu_dao_khach': `${em('su_sparkle')} Phát Trực Tiếp HD 1080p`,
+  '1573186099663343747': `${uiEm('ui_voice_mic')} Gửi Tin Nhắn Giọng Nói TTS`,
+  'tram_phong_kiem_khach': `${uiEm('ui_voice_mic')} Gửi Tin Nhắn Giọng Nói TTS`,
+  '1573186103664574524': `${em('su_sparkle')} Đọc Lịch Sử Kênh Lưu Trữ`,
+  'than_thong_thau_thi': `${em('su_sparkle')} Đọc Lịch Sử Kênh Lưu Trữ`,
   // 14 Multi-Perk Roles (2-4 chức năng)
-  '1573577773279219763': '⚡📌 Miễn Slowmode & Ghim Tin Nhắn',
-  '1573577776454434899': '🎭✨ Đổi Nick, Emoji/Sticker Ngoại & +10% EXP',
-  '1573577779621138542': '🎙️📢 Di Chuyển & Ưu Tiên Nói Voice',
-  '1573577782380728410': '📺🔊 Stream HD, Soundboard Ngoại & +10% Daily LT',
-  '1573577786218651688': '💬👁️ Thread Kín/Mở, Kênh Ẩn & +12% EXP',
-  '1573577788965781504': '💎🏷️ Buff +25% Daily LT & Giảm 5% Giá Shop',
-  '1573577794091225108': '⚔️⚡ Buff +8% Chiến Lực Pet & Miễn Slowmode',
-  '1573577796742152314': '🎵📢 Ưu Tiên Voice, Âm Ngoại & +12% EXP',
-  '1573577799539892314': '🌬️🔇 Move/Mute Voice, Miễn Slowmode & +20% EXP',
-  '1573577805286080523': '🏷️📌 Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT',
-  '1573577808867762186': '💰✨ +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker',
-  '1573577811786993756': '🔥⚔️ +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode',
-  '1573577814437789797': '🌸💫 +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji',
-  '1573577816690401401': '🌌🛡️ Move/Mute/Deafen Voice, Ghim Tin & +25% EXP',
+  '1573577773279219763': `${em('su_thunder_hax')}${em('su_pin_sigil')} Miễn Slowmode & Ghim Tin Nhắn`,
+  '1573577776454434899': `${em('su_sparkle')}${em('su_sparkle')} Đổi Nick, Emoji/Sticker Ngoại & +10% EXP`,
+  '1573577779621138542': `${uiEm('ui_voice_mic')}${uiEm('ui_announce_horn')} Di Chuyển & Ưu Tiên Nói Voice`,
+  '1573577782380728410': `${em('su_sparkle')}${uiEm('ui_speaker_sound')} Stream HD, Soundboard Ngoại & +10% Daily LT`,
+  '1573577786218651688': `${uiEm('ui_chat_bubble')}${em('su_sparkle')} Thread Kín/Mở, Kênh Ẩn & +12% EXP`,
+  '1573577788965781504': `${em('su_linhthach')}${em('su_pin_sigil')} Buff +25% Daily LT & Giảm 5% Giá Shop`,
+  '1573577794091225108': `${em('su_crossed_swords')}${em('su_thunder_hax')} Buff +8% Chiến Lực Pet & Miễn Slowmode`,
+  '1573577796742152314': `${uiEm('ui_music_note')}${uiEm('ui_announce_horn')} Ưu Tiên Voice, Âm Ngoại & +12% EXP`,
+  '1573577799539892314': `${uiEm('ui_wind_spd')}${uiEm('ui_mute_voice')} Move/Mute Voice, Miễn Slowmode & +20% EXP`,
+  '1573577805286080523': `${em('su_pin_sigil')}${em('su_pin_sigil')} Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT`,
+  '1573577808867762186': `${uiEm('ui_coin_gold')}${em('su_sparkle')} +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker`,
+  '1573577811786993756': `${em('su_el_hoa')}${em('su_crossed_swords')} +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode`,
+  '1573577814437789797': `${em('su_sakura')} +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji`,
+  '1573577816690401401': `${em('su_realm_star')}${em('su_shield_def')} Move/Mute/Deafen Voice, Ghim Tin & +25% EXP`,
 };
 
 export function computeRoleBuffTotalsFromList(roleIds = [], userLevel = 1) {
@@ -156,18 +158,18 @@ export async function computeRoleBuffTotals(userId, userLevel = 1, extraRoleIds 
  */
 export function getRolePerkByName(roleName, roleId) {
   if (roleId && ROLE_PERKS_MAP[roleId]) return ROLE_PERKS_MAP[roleId];
-  if (!roleName) return '✨ Đặc Quyền Tu Tiên';
+  if (!roleName) return `${em('su_sparkle')} Đặc Quyền Tu Tiên`;
   const clean = roleName.toLowerCase();
-  if (clean.includes('hỗn độn')) return '⚔️ Trảm Quyết Tối Thượng';
-  if (clean.includes('cửu vĩ')) return '🛡️ Kháng Timeout & Hộ Thể';
-  if (clean.includes('phong thanh')) return '🎙️ Quyền Di Chuyển Voice';
-  if (clean.includes('thần hành')) return '⚡ Miễn Chờ Chat Chậm';
-  if (clean.includes('trấn thư')) return '📌 Quyền Ghim Tin Nhắn';
-  if (clean.includes('linh âm')) return '🎵 Triệu Hồi Hát Live & Tâm Sự';
-  if (clean.includes('họa đồ')) return '🖼️ Đăng Ảnh Kênh Giới Hạn';
-  if (clean.includes('vạn tượng')) return '✨ Dùng Emoji Ngoại Server';
-  if (clean.includes('tiêu dao')) return '📺 Phát Trực Tiếp HD 1080p';
-  return '✨ Quyền Năng Tiên Giới';
+  if (clean.includes('hỗn độn')) return `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`;
+  if (clean.includes('cửu vĩ')) return `${em('su_shield_def')} Kháng Timeout & Hộ Thể`;
+  if (clean.includes('phong thanh')) return `${uiEm('ui_voice_mic')} Quyền Di Chuyển Voice`;
+  if (clean.includes('thần hành')) return `${em('su_thunder_hax')} Miễn Chờ Chat Chậm`;
+  if (clean.includes('trấn thư')) return `${em('su_pin_sigil')} Quyền Ghim Tin Nhắn`;
+  if (clean.includes('linh âm')) return `${uiEm('ui_music_note')} Triệu Hồi Hát Live & Tâm Sự`;
+  if (clean.includes('họa đồ')) return `${em('su_sparkle')} Đăng Ảnh Kênh Giới Hạn`;
+  if (clean.includes('vạn tượng')) return `${em('su_sparkle')} Dùng Emoji Ngoại Server`;
+  if (clean.includes('tiêu dao')) return `${em('su_sparkle')} Phát Trực Tiếp HD 1080p`;
+  return `${em('su_sparkle')} Quyền Năng Tiên Giới`;
 }
 
 /**
@@ -203,7 +205,7 @@ export function getExpForNextLevel(level) {
 export function getFuyumiProfileMock() {
   return {
     user_id: '757091869183311872',
-    username: 'Fuyumi 🌸',
+    username: `Fuyumi ${em('su_sakura')}`,
     discriminator: '0',
     avatar_url: 'assets/fuyumi_avatar.png',
     avatar_frame: 'celestial_fox_gold',
@@ -220,7 +222,7 @@ export function getFuyumiProfileMock() {
     clan: {
       clan_id: 'thien_ho_than_toc',
       clan_name: 'Thiên Hồ Thần Tộc',
-      clan_tag: '🦊TH',
+      clan_tag: `${em('cuu_vi_hong_ho')}TH`,
       clan_level: 5,
       is_leader: true,
     },
@@ -243,7 +245,7 @@ export function getFuyumiProfileMock() {
       def: 101049,
       spd: 100949,
       power: 10009709,
-      icon: '🦊',
+      icon: `${em('cuu_vi_hong_ho')}`,
       equipment: {
         weapon: {
           item_id: 'weapon_mythic_1',
@@ -262,7 +264,7 @@ export function getFuyumiProfileMock() {
           bonus_crit: 18,
           hax_skill: 'Tuyệt Diệt Bất Tử',
           hax_description: 'Đòn đánh xuyên qua 100% khiên chắn và vô hiệu hóa hoàn toàn cơ chế Bất Tử / Trùng Sinh của đối phương trong 3 lượt đầu!',
-          icon: '⚔️',
+          icon: `${em('su_crossed_swords')}`,
         },
         gem: {
           item_id: 'gem_mythic_3',
@@ -281,7 +283,7 @@ export function getFuyumiProfileMock() {
           bonus_crit: 0,
           hax_skill: 'Thần Hồ Diễm Hộ',
           hax_description: 'Đầu trận tạo khiên hộ thể bằng 100% máu tối đa; khi khiên còn tồn tại, mọi đòn tấn công của đối phương bị giảm 50% uy lực!',
-          icon: '🦊',
+          icon: `${em('cuu_vi_hong_ho')}`,
         },
         soul: {
           item_id: 'soul_mythic_1',
@@ -300,16 +302,16 @@ export function getFuyumiProfileMock() {
           bonus_crit: 0,
           hax_skill: 'Mị Hoặc Chúng Sinh',
           hax_description: 'Mỗi hiệp đấu có 40% xác suất Mị Hoặc đối thủ, ép nó tự tung đòn đánh mạnh nhất vào chính bản thân nó thay vì đánh Pet!',
-          icon: '🦊',
+          icon: `${em('cuu_vi_hong_ho')}`,
         },
       },
     },
     equipped_roles: [
-      { slot: 1, role_id: '1473419957655175169', name: '« 100 • Hỗn Độn Chúa Tể »', perk: '⚔️ Trảm Quyết Tối Thượng', rarity: 'mythic' },
-      { slot: 2, role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: '🛡️ Kháng Timeout & Hộ Thể', rarity: 'mythic' },
-      { slot: 3, role_id: '1573186024048173076', name: '« Phong Thanh Hộ Pháp »', perk: '🎙️ Di Chuyển Voice', rarity: 'rare' },
-      { slot: 4, role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: '⚡ Miễn Chờ Chat Chậm', rarity: 'epic' },
-      { slot: 5, role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', perk: '📌 Ghim Tin Nhắn', rarity: 'legendary' },
+      { slot: 1, role_id: '1473419957655175169', name: '« 100 • Hỗn Độn Chúa Tể »', perk: `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`, rarity: 'mythic' },
+      { slot: 2, role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: `${em('su_shield_def')} Kháng Timeout & Hộ Thể`, rarity: 'mythic' },
+      { slot: 3, role_id: '1573186024048173076', name: '« Phong Thanh Hộ Pháp »', perk: `${uiEm('ui_voice_mic')} Di Chuyển Voice`, rarity: 'rare' },
+      { slot: 4, role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: `${em('su_thunder_hax')} Miễn Chờ Chat Chậm`, rarity: 'epic' },
+      { slot: 5, role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', perk: `${em('su_pin_sigil')} Ghim Tin Nhắn`, rarity: 'legendary' },
     ],
     domain_loadout: {
       domain: DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null,
@@ -681,7 +683,7 @@ export async function getProfileData(userId, overrides = {}) {
                 bonus_crit: Number(item.bonus_crit) || 0,
                 hax_skill: item.hax_skill || null,
                 hax_description: item.hax_description || null,
-                icon: item.icon || (slotKey === 'weapon' ? '⚔️' : slotKey === 'gem' ? '💎' : '🦊'),
+                icon: item.icon || (slotKey === 'weapon' ? `${em('su_crossed_swords')}` : slotKey === 'gem' ? `${em('su_linhthach')}` : `${em('cuu_vi_hong_ho')}`),
               };
               bonusAtk += effAtk;
               bonusDef += effDef;
@@ -762,7 +764,7 @@ export async function getProfileData(userId, overrides = {}) {
             bonus_spd: bonusSpd,
             bonus_hp: bonusHp,
             equipment,
-            icon: catalogPet?.icon || pet.icon || (pet.pet_type === 'cuu_vi_hong_ho' ? '🦊' : '🐾'),
+            icon: catalogPet?.icon || pet.icon || (pet.pet_type === 'cuu_vi_hong_ho' ? `${em('cuu_vi_hong_ho')}` : `${em('su_pet_paw')}`),
           };
         } else if (cleanId !== FUYUMI_USER_ID) {
           // Mọi tu sĩ chưa có pet active đều mặc định xuất trận với Pet Phàm Phẩm khởi đầu
@@ -849,6 +851,17 @@ export async function getProfileData(userId, overrides = {}) {
   }
 
   // 3. Áp dụng các giá trị ghi đè (từ query params như username, avatar, v.v.)
+  baseProfile.set_bonus = evaluateSetBonus({
+    pet: baseProfile.pet
+      ? {
+          element: baseProfile.pet.element,
+          rarity_key: PET_BY_TYPE[baseProfile.pet.pet_type || baseProfile.pet.type]?.rarity_key || baseProfile.pet.rarity_key || 'common',
+        }
+      : null,
+    equipment: baseProfile.pet?.equipment || {},
+    domainLoadout: baseProfile.domain_loadout || {},
+  });
+
   if (overrides.username) {
     baseProfile.username = overrides.username;
   } else if (overrides.fallback_name && overrides.is_fallback_user) {

@@ -10,7 +10,7 @@ import {
   EXCHANGE_ITEMS,
   EXCHANGE_ITEM_BY_ID,
 } from '../data/catalog.js';
-import { em, farmEmoji } from '../config/emojiHelper.js';
+import { em, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
 
@@ -108,7 +108,7 @@ function computePlotSnapshot(row, now) {
       plot_label: plotLabel,
       computed_status: 'ready',
       needs_care: false,
-      summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** — **CHÍN MUỒI** *(Thu +${seed.reward_lt} LT & +${seed.reward_essence} ${farmEmoji('farm_essence', '🍑')})*`,
+      summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** — **CHÍN MUỒI** *(Thu +${seed.reward_lt} LT & +${seed.reward_essence} ${farmEmoji('farm_essence')})*`,
     };
   }
 
@@ -197,7 +197,7 @@ export async function getFarmStatus(userId, options = {}) {
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
   const { cap, plots } = await loadAndSyncPlots(cleanId, user.farm_slots_unlocked, now);
-  const essenceIcon = farmEmoji('farm_essence', '🍑');
+  const essenceIcon = farmEmoji('farm_essence');
   const ltIcon = em('su_linhthach');
   const essence = Number(user.farm_essence || 0);
   const bal = Number(user.linh_thach || 0);
@@ -327,7 +327,7 @@ export async function careAllPlots(userId, options = {}) {
         success: true,
         cared_count: 0,
         message: growingPlots.length > 0
-          ? `💧 Tất cả các ô đang sinh trưởng đều đã đủ linh khí. Vui lòng quay lại khi tới khung giờ tưới nước / cho ăn!`
+          ? `${em('su_el_thuy')} Tất cả các ô đang sinh trưởng đều đã đủ linh khí. Vui lòng quay lại khi tới khung giờ tưới nước / cho ăn!`
           : `Hiện không có ô nào đang sinh trưởng cần chăm sóc.`,
       };
     }
@@ -348,7 +348,7 @@ export async function careAllPlots(userId, options = {}) {
       success: true,
       cared_count: duePlots.length,
       slots: duePlots.map((p) => p.slot_index),
-      message: `💧 Đã tưới Linh Tuyền & cho ăn thành công cho **${duePlots.length} ô** (${duePlots.map((p) => `#${p.slot_index}`).join(', ')})! Đồng hồ sinh trưởng được gia cố an toàn.`,
+      message: `${em('su_el_thuy')} Đã tưới Linh Tuyền & cho ăn thành công cho **${duePlots.length} ô** (${duePlots.map((p) => `#${p.slot_index}`).join(', ')})! Đồng hồ sinh trưởng được gia cố an toàn.`,
     };
   });
 }
@@ -404,7 +404,7 @@ export async function harvestAllPlots(userId, options = {}) {
       trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
-    const essIcon = farmEmoji('farm_essence', '🍑');
+    const essIcon = farmEmoji('farm_essence');
     return {
       success: true,
       harvested_count: readyPlots.length,
@@ -446,7 +446,7 @@ export async function clearWiltedPlots(userId, options = {}) {
     return {
       success: true,
       cleared_count: wilted.length,
-      message: `🧹 Đã dọn dẹp **${wilted.length} ô bị héo** về trạng thái trống.`,
+      message: `${uiEm('ui_refresh')} Đã dọn dẹp **${wilted.length} ô bị héo** về trạng thái trống.`,
     };
   });
 }
@@ -461,7 +461,7 @@ export async function getExchangeCatalog(userId) {
     slots = Number(user?.farm_slots_unlocked || DEFAULT_FARM_SLOTS);
   }
 
-  const essIcon = farmEmoji('farm_essence', '🍑');
+  const essIcon = farmEmoji('farm_essence');
   const lines = EXCHANGE_ITEMS.map((it) =>
     `• ${it.icon} **${it.name}** (\`${it.exchange_id}\`) — Giá: **${it.cost_essence}** ${essIcon} *(${it.description})*`,
   );
@@ -512,7 +512,7 @@ export async function buyExchangeItem(userId, rawExchangeId, rawQty = 1, options
         success: false,
         status: 400,
         error: 'INSUFFICIENT_FARM_ESSENCE',
-        message: `Cần **${totalCost.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence', '🍑')} **Linh Quả Tiên Giới** để đổi **${qty}× ${item.name}** (hiện có **${curEssence.toLocaleString('vi-VN')}**).`,
+        message: `Cần **${totalCost.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence')} **Linh Quả Tiên Giới** để đổi **${qty}× ${item.name}** (hiện có **${curEssence.toLocaleString('vi-VN')}**).`,
       };
     }
 

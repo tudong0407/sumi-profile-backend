@@ -18,6 +18,7 @@ import {
 } from '../data/catalog.js';
 import {
   em,
+  uiEm,
   tierEmoji,
   domainEmoji,
   domainElementEmoji,
@@ -252,7 +253,7 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
         success: false,
         status: 400,
         error: 'DOMAIN_BUSY_EXPLORING',
-        message: `🧭 **${resolved.meta.name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy trang bị món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+        message: `${uiEm('ui_compass_dir')} **${resolved.meta.name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy trang bị món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
       };
     }
 
@@ -325,6 +326,106 @@ export async function dismantleDomainEntity(userId, rawTarget) {
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID tu sĩ không hợp lệ.' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' };
 
+  const qRaw = String(rawTarget || '').trim();
+  const qLower = qRaw.toLowerCase();
+  const BATCH_MODES = new Set(['all_dup', 'all_common', 'all_rare', 'all_epic']);
+  const isBatchKeyword = BATCH_MODES.has(qLower);
+  const commaTokens = !isBatchKeyword && qRaw.includes(',')
+    ? qRaw.split(',').map((t) => t.trim()).filter(Boolean)
+    : null;
+
+  if (isBatchKeyword || (commaTokens && commaTokens.length > 0)) {
+    return withDomainLock(cleanId, async () => {
+      const { user } = await ensureUserInitialized(cleanId);
+      const [{ data: rows }, busyExp] = await Promise.all([
+        supabase.from('user_domains').select('*').eq('user_id', cleanId),
+        getUserBusyExplorationAssets(cleanId),
+      ]);
+
+      const getMeta = (row) => (row.entity_kind === 'domain'
+        ? DOMAIN_BY_ID[row.entity_id]
+        : row.entity_kind === 'sense'
+          ? DIVINE_SENSE_BY_ID[row.entity_id]
+          : DIVINE_REALM_BY_ID[row.entity_id]);
+
+      const isProtected = (row, meta) => {
+        if (!meta) return true;
+        if (meta.is_exclusive_fuyumi || meta.is_unique) return true;
+        if (meta.rarity_key === 'mythic' || meta.rarity_key === 'supreme') return true;
+        return false;
+      };
+
+      const targetRarity = qLower === 'all_common' ? 'common' : qLower === 'all_rare' ? 'rare' : qLower === 'all_epic' ? 'epic' : null;
+      const wantedKeys = commaTokens
+        ? new Set(commaTokens.map((t) => resolveDomainEntityQuery(t)?.meta?.id).filter(Boolean))
+        : null;
+
+      let totalUnits = 0;
+      let totalRefund = 0;
+      const ops = [];
+      const nowIso = new Date().toISOString();
+      const labels = [];
+
+      for (const row of rows || []) {
+        const meta = getMeta(row);
+        if (isProtected(row, meta)) continue;
+        const qty = Math.max(1, Number(row.quantity || 1));
+        const isBusy = Boolean(busyExp?.isExploring && busyExp.busyDomainIds.has(row.entity_id));
+
+        if (qLower === 'all_dup') {
+          if (qty <= 1) continue;
+          const count = qty - 1;
+          const lt = count * (DOMAIN_DISMANTLE_VALUES[meta.rarity_key] || 6);
+          totalUnits += count;
+          totalRefund += lt;
+          labels.push(`${count}× ${meta.name}`);
+          ops.push(supabase.from('user_domains').update({ quantity: 1, updated_at: nowIso }).eq('id', row.id));
+          continue;
+        }
+
+        if (targetRarity && meta.rarity_key !== targetRarity) continue;
+        if (wantedKeys && !wantedKeys.has(row.entity_id)) continue;
+
+        const keepOne = Boolean(row.is_equipped || isBusy);
+        const count = keepOne ? (qty - 1) : qty;
+        if (count <= 0) continue;
+
+        const lt = count * (DOMAIN_DISMANTLE_VALUES[meta.rarity_key] || 6);
+        totalUnits += count;
+        totalRefund += lt;
+        labels.push(`${count}× ${meta.name}`);
+        if (keepOne) {
+          ops.push(supabase.from('user_domains').update({ quantity: 1, updated_at: nowIso }).eq('id', row.id));
+        } else {
+          ops.push(supabase.from('user_domains').delete().eq('id', row.id));
+        }
+      }
+
+      if (totalUnits === 0) {
+        return {
+          success: false,
+          status: 400,
+          error: 'NOTHING_TO_DISMANTLE',
+          message: `${uiEm('ui_warn')} Không có Linh Vực / Thần Thức / Thần Cảnh hợp lệ để phân giải *(đã khóa bảo vệ món đang dùng, đang khám phá, và Thần Thoại / Độc Nhất)*.`,
+        };
+      }
+
+      const nextBal = Number(user?.linh_thach || 0) + totalRefund;
+      ops.push(supabase.from('users').update({ linh_thach: nextBal, updated_at: nowIso }).eq('user_id', cleanId));
+      ops.push(trackQuestActivity(cleanId, { craftDelta: totalUnits }));
+      await Promise.all(ops);
+
+      return {
+        success: true,
+        mode: isBatchKeyword ? qLower : 'batch_list',
+        dismantled_count: totalUnits,
+        refund_linh_thach: totalRefund,
+        linh_thach: nextBal,
+        message: `${em('su_realm_star')} Đã phân giải nhanh **${totalUnits}** Linh Vực/Thần Thức/Thần Cảnh (${labels.slice(0, 6).join(', ')}${labels.length > 6 ? `, +${labels.length - 6} loại khác` : ''}) → Thu hồi **+${totalRefund.toLocaleString('vi-VN')}** ${em('su_linhthach')} *(Số dư: **${nextBal.toLocaleString('vi-VN')} LT**)*.`,
+      };
+    });
+  }
+
   const resolved = resolveDomainEntityQuery(rawTarget);
   if (!resolved) {
     return { success: false, status: 404, error: 'NOT_FOUND', message: `Không tìm thấy mục tiêu '${rawTarget}'.` };
@@ -351,7 +452,7 @@ export async function dismantleDomainEntity(userId, rawTarget) {
     }
     const busyExp = await getUserBusyExplorationAssets(cleanId);
     if (busyExp?.isExploring && busyExp.busyDomainIds.has(resolved.meta.id) && row.quantity <= 1) {
-      return { success: false, status: 400, error: 'DOMAIN_BUSY_EXPLORING', message: `🧭 **${resolved.meta.name}** đang được trang bị trong chuyến Khám Phá (\`/explorer\`) — không thể phân giải lúc này!` };
+      return { success: false, status: 400, error: 'DOMAIN_BUSY_EXPLORING', message: `${uiEm('ui_compass_dir')} **${resolved.meta.name}** đang được trang bị trong chuyến Khám Phá (\`/explorer\`) — không thể phân giải lúc này!` };
     }
 
     const dismantleCount = row.is_equipped ? (row.quantity - 1) : row.quantity;

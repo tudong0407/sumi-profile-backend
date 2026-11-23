@@ -14,7 +14,7 @@ import {
   STARTER_PET,
   getClanLevelConfig,
 } from '../data/catalog.js';
-import { em, realmEmoji } from '../config/emojiHelper.js';
+import { em, realmEmoji, uiEm } from '../config/emojiHelper.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { recordClanWarScore } from './clanService.js';
 import { trackQuestActivity } from './questService.js';
@@ -66,8 +66,95 @@ const LOCKED_XP_ROLES = new Set([
 
 // In-memory fallback store used ONLY when Supabase is unavailable
 const memoryUsers = new Map();
+export const memoryDailyActivityStats = new Map();
 // Per-user async queue lock to prevent burst-message cooldown / starter-pet race conditions
 const userLocks = new Map();
+
+export function getVnDateKey(date = new Date()) {
+  const vn = new Date(date.getTime() + 7 * 3600 * 1000);
+  return vn.toISOString().slice(0, 10);
+}
+
+export function resetMemoryDailyActivityStats() {
+  memoryDailyActivityStats.clear();
+}
+
+export async function recordDailyActivityStat(userId, {
+  username = '',
+  chatExp = 0,
+  chatCount = 0,
+  voiceExp = 0,
+  voiceMinutes = 0,
+  now = new Date(),
+} = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return null;
+  const cExp = Math.max(0, Math.floor(Number(chatExp) || 0));
+  const cCnt = Math.max(0, Math.floor(Number(chatCount) || 0));
+  const vExp = Math.max(0, Math.floor(Number(voiceExp) || 0));
+  const vMin = Math.max(0, Math.floor(Number(voiceMinutes) || 0));
+  if (cExp === 0 && cCnt === 0 && vExp === 0 && vMin === 0) return null;
+
+  const dateKey = getVnDateKey(now instanceof Date ? now : new Date(now));
+  const nowIso = (now instanceof Date ? now : new Date(now)).toISOString();
+
+  // Always maintain in-memory fallback (for offline tests or fallback reads)
+  let dayMap = memoryDailyActivityStats.get(dateKey);
+  if (!dayMap) {
+    dayMap = new Map();
+    memoryDailyActivityStats.set(dateKey, dayMap);
+  }
+  const prevMem = dayMap.get(cleanId) || {
+    date_key: dateKey,
+    user_id: cleanId,
+    username: username || cleanId,
+    chat_exp: 0,
+    chat_count: 0,
+    voice_exp: 0,
+    voice_minutes: 0,
+  };
+  const nextMem = {
+    date_key: dateKey,
+    user_id: cleanId,
+    username: username || prevMem.username || cleanId,
+    chat_exp: prevMem.chat_exp + cExp,
+    chat_count: prevMem.chat_count + cCnt,
+    voice_exp: prevMem.voice_exp + vExp,
+    voice_minutes: prevMem.voice_minutes + vMin,
+    updated_at: nowIso,
+  };
+  dayMap.set(cleanId, nextMem);
+
+  if (!supabase) return nextMem;
+
+  try {
+    const { data: ex } = await supabase
+      .from('daily_activity_stats')
+      .select('chat_exp, chat_count, voice_exp, voice_minutes')
+      .eq('date_key', dateKey)
+      .eq('user_id', cleanId)
+      .maybeSingle();
+
+    const merged = {
+      date_key: dateKey,
+      user_id: cleanId,
+      chat_exp: Number(ex?.chat_exp || 0) + cExp,
+      chat_count: Number(ex?.chat_count || 0) + cCnt,
+      voice_exp: Number(ex?.voice_exp || 0) + vExp,
+      voice_minutes: Number(ex?.voice_minutes || 0) + vMin,
+      updated_at: nowIso,
+    };
+
+    await supabase
+      .from('daily_activity_stats')
+      .upsert(merged, { onConflict: 'date_key,user_id' });
+
+    return { ...merged, username: username || cleanId };
+  } catch (err) {
+    console.warn('[ExpService] recordDailyActivityStat failed:', err.message);
+    return nextMem;
+  }
+}
 
 async function withUserLock(userId, fn) {
   const prev = userLocks.get(userId) || Promise.resolve();
@@ -353,6 +440,15 @@ export async function grantChatExp(params = {}, opts = {}) {
 
     await persistUserExpUpdate(cleanId, patch, persisted);
 
+    if (expGained > 0) {
+      await recordDailyActivityStat(cleanId, {
+        username: user.username,
+        chatExp: expGained,
+        chatCount: 1,
+        now: new Date(nowMs),
+      });
+    }
+
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
     }
@@ -392,7 +488,7 @@ export async function grantChatExp(params = {}, opts = {}) {
       sync_level_role_ids: syncIds.join(','),
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `${em('su_level_up', '✨')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up')} <@${cleanId}> đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });
@@ -544,6 +640,15 @@ export async function handleVoiceExp(params = {}, opts = {}) {
 
     await persistUserExpUpdate(cleanId, patch, persisted);
 
+    if (expGained > 0 || elapsedMinutes > 0) {
+      await recordDailyActivityStat(cleanId, {
+        username: user.username,
+        voiceExp: expGained,
+        voiceMinutes: elapsedMinutes,
+        now: new Date(nowMs),
+      });
+    }
+
     if (user.clan_id && expGained > 0) {
       await recordClanWarScore(user.clan_id, expGained);
     }
@@ -587,7 +692,7 @@ export async function handleVoiceExp(params = {}, opts = {}) {
       sync_level_role_ids: syncIds.join(','),
       initialized_new_user: initializedNewUser,
       level_up_message: prog.leveledUp
-        ? `${em('su_level_up', '✨')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
+        ? `${em('su_level_up')} <@${cleanId}> thiền định Voice đột phá lên **Cấp ${prog.level}** — ${realmEmoji(prog.level)} Cảnh giới **${prog.realm}**!${ltNote}${prog.unlockedRole ? ` Mở khóa danh hiệu **${prog.unlockedRole.name}**.` : ''}`
         : '',
     };
   });
@@ -688,7 +793,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
       success: false,
       status: 400,
       error: 'INVALID_USER_ID',
-      title: '⚠️ KHÔNG THỂ TRA CỨU EXP BOOST',
+      title: `${uiEm('ui_warn')} KHÔNG THỂ TRA CỨU EXP BOOST`,
       description: 'ID thành viên không hợp lệ. Vui lòng chọn đúng thành viên hoặc bỏ trống để xem của bản thân.',
       footer: '',
     };
@@ -736,7 +841,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
   if (user.marry_user_id) {
     const mBuffs = computeMarriageBuffs(user.marry_ring_id || 'ring_common', user.marry_date, now);
     marriageExpPct = Number(mBuffs?.total_exp_bonus_pct || 0);
-    marriageDetail = `${mBuffs?.ring_name || 'Nhẫn Cưới'} • ${mBuffs?.married_days || 0} ngày${mBuffs?.is_anniversary_day ? ' • 🎉 Ngày Kỷ Niệm (+10%)' : ''}`;
+    marriageDetail = `${mBuffs?.ring_name || 'Nhẫn Cưới'} • ${mBuffs?.married_days || 0} ngày${mBuffs?.is_anniversary_day ? ` • ${uiEm('ui_party_celebrate')} Ngày Kỷ Niệm (+10%)` : ''}`;
   }
 
   let clanExpPct = 0;
@@ -778,19 +883,19 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     `• **Tổng Buff EXP Chat:** **+${totalChatBoostPct}%** *(Hệ số **${chatMultiplier}×**)*`,
     `• **Tổng Buff EXP Voice:** **+${totalVoiceBoostPct}%** *(Hệ số **${voiceMultiplier}×**)*`,
     '',
-    '**📊 EXP Trung Bình Thực Nhận Sau Khi Cộng Buff:**',
-    `• ${em('su_chat', '💬')} **1 Tin Nhắn Hợp Lệ** *(cooldown 45s • gốc 23–35, TB 29)*: **${chatMin} – ${chatMax} EXP** *(TB: **${fmtExpNum(chatAvg)} EXP / tin**)*`,
-    `• ${em('su_voice', '🎙️')} **5 Phút Voice** *(chấm công 12p • gốc 85–135, TB 110)*: **${voiceMin} – ${voiceMax} EXP** *(TB: **${fmtExpNum(voiceAvg)} EXP / 5 phút** ≈ **${voiceHourAvg.toLocaleString('vi-VN')} EXP / giờ**)*`,
+    `**${em('su_stats_chart')} EXP Trung Bình Thực Nhận Sau Khi Cộng Buff:**`,
+    `• ${em('su_chat')} **1 Tin Nhắn Hợp Lệ** *(cooldown 45s • gốc 23–35, TB 29)*: **${chatMin} – ${chatMax} EXP** *(TB: **${fmtExpNum(chatAvg)} EXP / tin**)*`,
+    `• ${em('su_voice')} **5 Phút Voice** *(chấm công 12p • gốc 85–135, TB 110)*: **${voiceMin} – ${voiceMax} EXP** *(TB: **${fmtExpNum(voiceAvg)} EXP / 5 phút** ≈ **${voiceHourAvg.toLocaleString('vi-VN')} EXP / giờ**)*`,
     '',
-    '**🧩 Chi Tiết Nguồn Buff Hiện Tại:**',
+    `**${em('su_pin_sigil')} Chi Tiết Nguồn Buff Hiện Tại:**`,
     `• **Mốc Level Role:** ${levelBuff ? `${levelBuff.label} **(+${levelExpPct}%)**` : `**+0%** *(Cần **Lv.${nextLevelBuff?.level || 5}** để mở +${nextLevelBuff?.expPct || 3}%)*`}`,
     `• **Role Quyền Năng Đang Đeo:** ${equippedRolesExpPct > 0 ? `**+${equippedRolesExpPct}%** (${rolesText})` : `**+0%** (${rolesText})`}`,
     `• **Tiên Lữ Song Tu:** **+${marriageExpPct}%** *(${marriageDetail})*`,
     `• **Gia Tộc:** **+${clanExpPct}%** *(${clanDetail})*`,
     '',
     level >= 100
-      ? `✨ **Đã đạt Cảnh Giới tối cao Lv.100!**`
-      : `⏳ **Tiến độ lên Lv.${level + 1}:** Còn **${remainingExp.toLocaleString('vi-VN')} EXP** *(≈ **${estMessages.toLocaleString('vi-VN')} tin nhắn** hoặc **${estVoiceMinutes.toLocaleString('vi-VN')} phút Voice**)*`,
+      ? `${em('su_sparkle')} **Đã đạt Cảnh Giới tối cao Lv.100!**`
+      : `${uiEm('ui_clock_timer')} **Tiến độ lên Lv.${level + 1}:** Còn **${remainingExp.toLocaleString('vi-VN')} EXP** *(≈ **${estMessages.toLocaleString('vi-VN')} tin nhắn** hoặc **${estVoiceMinutes.toLocaleString('vi-VN')} phút Voice**)*`,
   ].join('\n');
 
   return {

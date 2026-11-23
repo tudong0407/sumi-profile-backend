@@ -10,7 +10,16 @@ import crypto from 'crypto';
 import { getElementalAdvantage } from './elementalMatrix.js';
 import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
 import { createInitialCombatState } from './statsCompiler.js';
-import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import {
+  triggerBattleStart,
+  triggerTurnStart,
+  triggerAttackPhase,
+  triggerDamageReceived,
+  triggerPostDamage,
+  triggerLethalInterception,
+  applyHeal,
+} from './haxEngine.js';
+import { em, uiEm, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import {
   PUBLIC_BASE_URL,
   PET_BY_TYPE,
@@ -161,26 +170,54 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
 
   const teamA = (sideARaw || []).slice(0, 3).map((raw, idx) => {
     const u = normalizeUnitPetAndPower(raw);
+    const maxHp = Number(u.maxHp || 1000);
     return {
       ...u,
       side: 'A',
       slotIndex: idx,
-      currentHp: Number(u.currentHp || u.maxHp || 1000),
-      maxHp: Number(u.maxHp || 1000),
+      baseAtk: u.baseAtk ?? u.atk,
+      baseDef: u.baseDef ?? u.def,
+      baseSpd: u.baseSpd ?? u.spd,
+      critRate: Number(u.critRate || 0) > 1 ? Number(u.critRate) / 100 : Number(u.critRate || 0.05),
+      initialMaxHp: maxHp,
+      currentHp: Number(u.currentHp || maxHp),
+      maxHp,
       shield: Number(u.shield || 0),
+      avatarFrame: u.avatarFrame || 'default',
+      hax: u.hax || {
+        pet: u.pet?.hax_skill || u.pet?.hax_description || null,
+        petDesc: u.pet?.hax_description || null,
+        weapon: u.equipment?.weapon?.hax_skill || u.equipment?.weapon?.hax_description || null,
+        gem: u.equipment?.gem?.hax_skill || u.equipment?.gem?.hax_description || null,
+        soul: u.equipment?.soul?.hax_skill || u.equipment?.soul?.hax_description || null,
+      },
       state: u.state || createInitialCombatState(),
     };
   });
 
   const teamB = (sideBRaw || []).slice(0, 3).map((raw, idx) => {
     const u = normalizeUnitPetAndPower(raw);
+    const maxHp = Number(u.maxHp || 1000);
     return {
       ...u,
       side: 'B',
       slotIndex: idx,
-      currentHp: Number(u.currentHp || u.maxHp || 1000),
-      maxHp: Number(u.maxHp || 1000),
+      baseAtk: u.baseAtk ?? u.atk,
+      baseDef: u.baseDef ?? u.def,
+      baseSpd: u.baseSpd ?? u.spd,
+      critRate: Number(u.critRate || 0) > 1 ? Number(u.critRate) / 100 : Number(u.critRate || 0.05),
+      initialMaxHp: maxHp,
+      currentHp: Number(u.currentHp || maxHp),
+      maxHp,
       shield: Number(u.shield || 0),
+      avatarFrame: u.avatarFrame || 'default',
+      hax: u.hax || {
+        pet: u.pet?.hax_skill || u.pet?.hax_description || null,
+        petDesc: u.pet?.hax_description || null,
+        weapon: u.equipment?.weapon?.hax_skill || u.equipment?.weapon?.hax_description || null,
+        gem: u.equipment?.gem?.hax_skill || u.equipment?.gem?.hax_description || null,
+        soul: u.equipment?.soul?.hax_skill || u.equipment?.soul?.hax_description || null,
+      },
       state: u.state || createInitialCombatState(),
     };
   });
@@ -194,6 +231,51 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
   const turnLogs = [];
   const highlights = [];
   const turnDetailLines = [];
+
+  // Kích hoạt HAX Đầu Trận (Khiên đầu trận, Khóa HAX, Cướp Tốc, Miễn Nhiễm...)
+  // Lưu ý: chỉ gọi 1 lần cho cặp Đội Trưởng (leaderA vs leaderB) để tránh nhân đôi khiên/buff!
+  const startHaxLines = [];
+  const seenStartPairs = new Set();
+  const pushStartEvents = (events, filterActorId = null) => {
+    for (const ev of events || []) {
+      if (filterActorId && String(ev.actor) !== String(filterActorId)) continue;
+      const key = `${ev.actor}:${ev.skill}:${ev.desc}`;
+      if (seenStartPairs.has(key)) continue;
+      seenStartPairs.add(key);
+      if (ev.desc) {
+        startHaxLines.push(`  • ${em('su_sparkle')} **[Khai Trận HAX]** ${ev.desc}`);
+      } else if (ev.skill) {
+        startHaxLines.push(`  • ${em('su_sparkle')} **[Khai Trận HAX]** ${ev.skill}`);
+      }
+    }
+  };
+  if (leaderA && leaderB) {
+    pushStartEvents(triggerBattleStart(leaderA, leaderB, rng));
+  }
+  for (const unit of [...teamA.slice(1), ...teamB.slice(1)]) {
+    const enemyLeader = unit.side === 'A' ? leaderB : leaderA;
+    if (!enemyLeader) continue;
+    const dummyEnemy = {
+      id: enemyLeader.id,
+      name: enemyLeader.name,
+      spd: enemyLeader.spd,
+      atk: enemyLeader.atk,
+      def: enemyLeader.def,
+      maxHp: enemyLeader.maxHp,
+      currentHp: enemyLeader.currentHp,
+      shield: 0,
+      equipment: {},
+      hax: {},
+      petType: '',
+      state: createInitialCombatState(),
+    };
+    pushStartEvents(triggerBattleStart(unit, dummyEnemy, rng), unit.id);
+  }
+  if (startHaxLines.length > 0) {
+    turnDetailLines.push('• **Khai Trận HAX (Đầu Trận):**');
+    turnDetailLines.push(...startHaxLines);
+  }
+
   const leaderDomAInit = leaderA?.domainLoadout?.domain || null;
   const leaderDomBInit = leaderB?.domainLoadout?.domain || null;
   const formatTeamDomainLabel = () => {
@@ -212,10 +294,13 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       teamAHp: teamA.map((u) => u.currentHp),
       teamBHp: teamB.map((u) => u.currentHp),
       hpBars: [
-        ...teamA.map((u) => ({ side: 'A', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: u.shield || 0 })),
-        ...teamB.map((u) => ({ side: 'B', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.maxHp, maxHp: u.maxHp, shield: u.shield || 0 })),
+        ...teamA.map((u) => ({ side: 'A', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.initialMaxHp, maxHp: u.initialMaxHp, shield: u.shield || 0 })),
+        ...teamB.map((u) => ({ side: 'B', label: `${u.name} (${u.pet.pet_name})`, hp: u.currentHp, prevHp: u.initialMaxHp, maxHp: u.initialMaxHp, shield: u.shield || 0 })),
       ],
-      events: [`• **Khai Trận:** ${teamA.map((u) => u.name).join(', ')} ⚔️ ${teamB.map((u) => u.name).join(', ')}`],
+      events: [
+        `• **Khai Trận:** ${teamA.map((u) => u.name).join(', ')} ${em('su_crossed_swords')} ${teamB.map((u) => u.name).join(', ')}`,
+        ...startHaxLines.map((l) => l.trim()),
+      ],
     },
   ];
   let turnCount = 0;
@@ -237,11 +322,16 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       for (const ev of domEvents) {
         turnEvents.push(ev);
         if (ev.desc || ev.skill) {
-          thisTurnLines.push(`  • 🌐 **[Linh Vực]** ${ev.desc || ev.skill}`);
+          thisTurnLines.push(`  • ${em('su_realm_star')} **[Linh Vực]** ${ev.desc || ev.skill}`);
         }
         if (['domain_open', 'domain_break', 'dao_ap_activate'].includes(ev.action)) {
           highlights.push(`**Hiệp ${turn}:** ${ev.desc || ev.skill}`);
         }
+      }
+
+      // Đảm bảo currentHp không vượt maxHp sau khi Linh Vực cắt giảm MaxHP
+      for (const u of [...teamA, ...teamB]) {
+        if (u.currentHp > u.maxHp) u.currentHp = u.maxHp;
       }
 
       // Lan tỏa Buff/Debuff Linh Vực Đội Trưởng cho toàn bộ thành viên trong đội
@@ -258,7 +348,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
             if (member.currentHp > 1) {
               const dot = Math.max(1, Math.floor(member.maxHp * dotPct * 0.65));
               member.currentHp = Math.max(1, member.currentHp - dot);
-              thisTurnLines.push(`  • 🔥 **[Thiêu Đốt Vực]** **${member.name}** chịu \`-${dot.toLocaleString('vi-VN')} HP\` *(còn ${member.currentHp.toLocaleString('vi-VN')}/${member.maxHp.toLocaleString('vi-VN')})*`);
+              thisTurnLines.push(`  • ${em('su_el_hoa')} **[Thiêu Đốt Vực]** **${member.name}** chịu \`-${dot.toLocaleString('vi-VN')} HP\` *(còn ${member.currentHp.toLocaleString('vi-VN')}/${member.maxHp.toLocaleString('vi-VN')})*`);
             }
           }
         }
@@ -275,68 +365,139 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       return rng() < 0.5 ? -1 : 1;
     });
 
-    // 3. Từng đấu thủ ra đòn theo đúng thứ tự SPD
+    // 3. Từng đấu thủ ra đòn theo đúng thứ tự SPD (tích hợp full HAX Engine!)
     for (const actor of livingAll) {
       if (actor.currentHp <= 0) continue;
       const enemies = actor.side === 'A' ? teamB : teamA;
       const target = pickFrontlineTarget(enemies);
       if (!target) break;
 
-      const ownBuffs = actor.domainRuntime?.own?.buffs || {};
-      const actorDebuffs = actor.domainRuntime?.incomingDebuffs || {};
-      const targetBuffs = target.domainRuntime?.own?.buffs || {};
-      const targetDebuffs = target.domainRuntime?.incomingDebuffs || {};
-
-      // Kiểm tra Né / Giảm Chính Xác từ Linh Vực
-      const missChance = Math.min(0.45, Number(actorDebuffs.accuracyDownPct || 0) + Number(targetBuffs.dodgeBonusPct || 0));
-      if (missChance > 0 && rng() < missChance) {
-        turnEvents.push({ actor: actor.id, target: target.id, action: 'miss', dmg: 0 });
-        thisTurnLines.push(`  • 💨 **${actor.name}** tung đòn vào **${target.name}** nhưng bị **Né Tránh / Lệch Hướng** *(0 ST)*`);
+      // 3a. Pha Đầu Lượt (triggerTurnStart: hồi máu, giải khống chế, choáng/đóng băng, đốt DoT)
+      const turnStartRes = triggerTurnStart(actor, target, rng, turn);
+      for (const ev of turnStartRes?.events || []) {
+        if (ev?.desc || ev?.skill) {
+          thisTurnLines.push(`  • ${em('su_sparkle')} **[HAX Đầu Lượt]** ${ev.desc || ev.skill}`);
+        }
+      }
+      if (actor.currentHp <= 0) {
+        const liSelf = triggerLethalInterception(actor, target, rng);
+        if (liSelf.survived && liSelf.skill) {
+          thisTurnLines.push(`  • ${em('su_shield_def')} **[Bất Tử]** **${actor.name}**: ${liSelf.skill}`);
+        }
+      }
+      if (actor.currentHp <= 0 || turnStartRes?.skipTurn) {
+        if (turnStartRes?.skipTurn && actor.currentHp > 0) {
+          turnEvents.push({ actor: actor.id, target: target.id, action: 'stun', dmg: 0 });
+        }
         continue;
       }
 
-      // Ngũ Hành & Dị Tố
+      const ownBuffs = actor.domainRuntime?.own?.buffs || {};
+      const actorDebuffs = actor.domainRuntime?.incomingDebuffs || {};
+
+      // 3b. Sát thương cơ bản & Ngũ Hành
       const elemAdv = getElementalAdvantage(actor.pet?.element || actor.element || 'Kim', target.pet?.element || target.element || 'Kim');
-      const defPierce = Math.min(0.80, Number(ownBuffs.defPiercePct || 0) + Number(targetDebuffs.defReductionPct || 0) + (elemAdv.armorPierce || 0));
-      const effDef = Math.max(0, target.def * (1 - defPierce));
+      const rawBaseDamage = Math.max(20, Math.round(actor.atk * (1.25 + rng() * 0.25)));
 
-      // Công thức sát thương cân bằng
-      const mitigation = 100 / (100 + effDef / Math.max(1, actor.atk) * 55);
-      let rawDmg = actor.atk * (1.25 + rng() * 0.25) * mitigation * Number(elemAdv.multiplier || 1.0);
+      // 3c. Pha Tấn Công HAX (triggerAttackPhase: Crit, Né, Xuyên Giáp, Kết Liễu, Hút Máu...)
+      const attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, {
+        multiplier: Number(elemAdv.multiplier || 1.0),
+        isTrueDamage: Boolean(elemAdv.isTrueDamage),
+        elementAdvantage: elemAdv.label,
+      });
 
-      // Bạo kích (hỗ trợ cả critRate thập phân 0.05..1.0 từ compileCombatant lẫn % nguyên 22 từ Boss)
-      const rawCrit = Number(actor.critRate || 0);
-      const critFromStat = rawCrit > 1 ? rawCrit / 100 : rawCrit;
-      const critChance = Math.min(0.75, Math.max(0.12, critFromStat));
-      const isCrit = rng() < critChance;
-      if (isCrit) {
-        const critBonus = Math.max(1.15, 1.55 + Number(targetDebuffs.critTakenBonusPct || 0) - Number(targetBuffs.critResistPct || 0));
-        rawDmg *= critBonus;
+      if (attackPhase.isMiss) {
+        turnEvents.push({ actor: actor.id, target: target.id, action: 'miss', dmg: 0 });
+        thisTurnLines.push(`  • ${uiEm('ui_wind_spd')} **${actor.name}** tung đòn vào **${target.name}** nhưng bị **${attackPhase.haxTriggered || 'Né Tránh'}** *(0 ST)*`);
+        continue;
       }
 
-      const finalDmg = Math.max(1, Math.round(rawDmg));
-      let remainingDmg = finalDmg;
+      // 3d. Pha Nhận Sát Thương HAX (triggerDamageReceived: Miễn Thương, Khiên, Phản Sát Thương!)
+      const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng, {
+        ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
+        isTrueDamage: Boolean(attackPhase.isTrueDamage),
+      });
+
+      const notes = [];
+      if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
+      for (const ev of damageRecv.events || []) {
+        if (ev?.skill) notes.push(ev.skill);
+      }
+
+      let dmgToApply = damageRecv.finalDamage;
       let absorbedByShield = 0;
 
-      // Khiên chắn
-      if (target.shield > 0) {
-        const shieldPierce = Math.min(0.80, Number(ownBuffs.shieldPiercePct || 0));
-        const directPart = Math.round(remainingDmg * shieldPierce);
-        const shieldPart = remainingDmg - directPart;
-        absorbedByShield = Math.min(target.shield, shieldPart);
-        target.shield -= absorbedByShield;
-        remainingDmg = directPart + (shieldPart - absorbedByShield);
+      if ((target.shield || 0) > 0) {
+        const piercePct = Math.min(1, Math.max(0, Number(attackPhase.shieldPiercePct || ownBuffs.shieldPiercePct || 0)));
+        const shieldMult = Math.max(1.0, Number(attackPhase.shieldDamageMult) || 1.0);
+        const bypassDmg = Math.floor(dmgToApply * piercePct);
+        let shieldableDmg = dmgToApply - bypassDmg;
+
+        const shieldCost = Math.ceil(shieldableDmg * shieldMult);
+        if (target.shield >= shieldCost) {
+          target.shield -= shieldCost;
+          absorbedByShield = shieldableDmg;
+          shieldableDmg = 0;
+        } else {
+          absorbedByShield = Math.floor(target.shield / shieldMult);
+          shieldableDmg = Math.max(0, shieldableDmg - absorbedByShield);
+          target.shield = 0;
+        }
+        dmgToApply = bypassDmg + shieldableDmg;
+
+        if (target.shield === 0) {
+          if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
+            const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
+            dmgToApply += breakBonus;
+            notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
+          }
+          if (target.state?.shieldExplodePct > 0) {
+            const pct = target.state.shieldExplodePct;
+            target.state.shieldExplodePct = 0;
+            const explodeDmg = Math.floor(target.maxHp * pct);
+            actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
+            notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST)`);
+            if (actor.currentHp <= 0) {
+              const li = triggerLethalInterception(actor, target, rng);
+              if (li.survived && li.skill) notes.push(li.skill);
+            }
+          }
+        }
       }
 
-      target.currentHp = Math.max(0, target.currentHp - remainingDmg);
+      target.currentHp = Math.max(0, target.currentHp - dmgToApply);
 
-      // Hút máu từ Linh Vực
+      // 3e. Hút máu (HAX + Linh Vực)
       let healAmt = 0;
-      const lsPct = Number(ownBuffs.lifestealPct || 0);
-      if (lsPct > 0 && remainingDmg > 0 && actor.currentHp > 0) {
+      const totalLifestealPct = Math.min(0.85, Number(attackPhase.lifestealPct || 0) + Number(ownBuffs.lifestealPct || 0));
+      if (totalLifestealPct > 0 && dmgToApply > 0 && actor.currentHp > 0) {
         const healPenalty = Math.min(0.85, Number(actorDebuffs.healReductionPct || 0));
-        healAmt = Math.floor(remainingDmg * lsPct * (1 - healPenalty));
-        if (healAmt > 0) actor.currentHp = Math.min(actor.maxHp, actor.currentHp + healAmt);
+        healAmt = applyHeal(actor, dmgToApply * totalLifestealPct * (1 - healPenalty));
+        if (healAmt > 0) notes.push(`Hút +${healAmt.toLocaleString('vi-VN')} HP`);
+      }
+
+      // 3f. Phản sát thương (Damage Reflection từ Bảo Ngọc / Pet / HAX)
+      if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
+        actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
+        notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST`);
+        if (actor.currentHp <= 0) {
+          const liActor = triggerLethalInterception(actor, target, rng);
+          if (liActor.survived && liActor.skill) notes.push(liActor.skill);
+        }
+      }
+
+      // 3g. Chặn Đòn Chí Tử (Bất Tử / Kim Thân Hộ Mệnh) hoặc Hậu Sát Thương
+      if (target.currentHp > 0) {
+        const postEvents = triggerPostDamage(target, actor) || [];
+        for (const pev of postEvents) {
+          if (pev?.skill) notes.push(pev.skill);
+        }
+      } else {
+        const lethalInterception = triggerLethalInterception(target, actor, rng);
+        if (lethalInterception.survived && lethalInterception.skill) {
+          notes.push(lethalInterception.skill);
+          highlights.push(`**Hiệp ${turn}:** ${target.name} kích hoạt **${lethalInterception.skill}**!`);
+        }
       }
 
       turnEvents.push({
@@ -344,20 +505,20 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         actorName: actor.name,
         target: target.id,
         targetName: target.name,
-        action: isCrit ? 'crit' : 'attack',
-        dmg: remainingDmg,
+        action: attackPhase.isCrit ? 'crit' : 'attack',
+        dmg: dmgToApply,
         ko: target.currentHp === 0,
       });
 
-      const critTag = isCrit ? '💥 **BẠO KÍCH!** ' : '⚔️ ';
+      const critTag = attackPhase.isCrit ? `${em('su_crit_boom')} **BẠO KÍCH!** ` : `${em('su_crossed_swords')} `;
       const elemTag = elemAdv?.label ? ` *(${elemAdv.label})*` : '';
       const shieldTag = absorbedByShield > 0 ? ` *(khiên chặn ${absorbedByShield.toLocaleString('vi-VN')})*` : '';
-      const healTag = healAmt > 0 ? ` *(hút +${healAmt.toLocaleString('vi-VN')} HP)*` : '';
-      const koTag = target.currentHp === 0 ? ' — ☠️ **HẠ GỤC!**' : ` *(HP còn ${target.currentHp.toLocaleString('vi-VN')}/${target.maxHp.toLocaleString('vi-VN')})*`;
-      thisTurnLines.push(`  • ${critTag}**${actor.name}** → **${target.name}**${elemTag}: **-${remainingDmg.toLocaleString('vi-VN')} ST**${shieldTag}${healTag}${koTag}`);
+      const haxTag = notes.length > 0 ? ` • *[${notes.join(' | ')}]*` : '';
+      const koTag = target.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ` *(HP còn ${target.currentHp.toLocaleString('vi-VN')}/${target.maxHp.toLocaleString('vi-VN')})*`;
+      thisTurnLines.push(`  • ${critTag}**${actor.name}** → **${target.name}**${elemTag}: **-${dmgToApply.toLocaleString('vi-VN')} ST**${shieldTag}${haxTag}${koTag}`);
 
       if (target.currentHp === 0) {
-        highlights.push(`**Hiệp ${turn}:** ${actor.name} hạ gục **${target.name}** (${remainingDmg.toLocaleString('vi-VN')} ST)!`);
+        highlights.push(`**Hiệp ${turn}:** ${actor.name} hạ gục **${target.name}** (${dmgToApply.toLocaleString('vi-VN')} ST)!`);
       }
     }
 
@@ -408,23 +569,24 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       .join(', ') || 'Không';
     const fatTxt = u.fatiguePenaltyPct > 0 ? ` • Mệt -${u.fatiguePenaltyPct}%` : '';
     const domTxt = idx === 0 && u.domainLoadout?.domain ? ` • Vực Đội Trưởng: **${u.domainLoadout.domain.name}**` : '';
-    return `• ${idx === 0 ? '👑 ' : ''}**${u.name}** (${u.pet.pet_name} • Hệ ${u.pet.element} • Lv.${u.pet.level} • ${u.pet.star}★${fatTxt}) — \`${Number(u.powerScore).toLocaleString('vi-VN')} Lực\` | ATK \`${u.atk.toLocaleString('vi-VN')}\` • DEF \`${u.def.toLocaleString('vi-VN')}\` • SPD \`${u.spd.toLocaleString('vi-VN')}\` • HP \`${u.maxHp.toLocaleString('vi-VN')}\` | Pháp Bảo: ${eqList}${domTxt}`;
+    const setTxt = u.setBonus?.active ? ` • ${u.setBonus.badgeText}` : '';
+    return `• ${idx === 0 ? `${uiEm('ui_crown_king')} ` : ''}**${u.name}** (${u.pet.pet_name} • Hệ ${u.pet.element} • Lv.${u.pet.level} • ${u.pet.star}★${fatTxt}) — \`${Number(u.powerScore).toLocaleString('vi-VN')} Lực\` | ATK \`${u.atk.toLocaleString('vi-VN')}\` • DEF \`${u.def.toLocaleString('vi-VN')}\` • SPD \`${u.spd.toLocaleString('vi-VN')}\` • HP \`${u.initialMaxHp.toLocaleString('vi-VN')}\` | Pháp Bảo: ${eqList}${domTxt}${setTxt}`;
   };
 
   const untruncatedLogLines = [
     `**1. Đội Hình & Chỉ Số Đầu Trận (${opts.veinLabel || 'Chiếm Đoạt Linh Mạch'})**`,
-    `🚩 **Phe Khiêu Chiến (${teamA.length} người):**`,
+    `${uiEm('ui_flag_capture')} **Phe Khiêu Chiến (${teamA.length} người):**`,
     ...teamA.map(formatRosterLine),
-    `🛡️ **Phe Phòng Thủ (${teamB[0]?.isBoss ? 'BOSS LINH MẠCH' : `${teamB.length} người`}):**`,
+    `${em('su_shield_def')} **Phe Phòng Thủ (${teamB[0]?.isBoss ? 'BOSS LINH MẠCH' : `${teamB.length} người`}):**`,
     ...teamB.map(formatRosterLine),
     '',
     '**2. Diễn Biến Từng Hiệp (Theo Thứ Tự SPD)**',
     ...turnDetailLines,
     '',
     `**3. Kết Quả Trận Đấu (${turnCount} Hiệp)**`,
-    `• **KẾT QUẢ:** ${winnerSide === 'A' ? '🏆 **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG!**' : '🛡️ **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH!**'}`,
+    `• **KẾT QUẢ:** ${winnerSide === 'A' ? `${em('su_winner_trophy')} **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG!**` : `${em('su_shield_def')} **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH!**`}`,
     `• **Phe A còn sống:** ${teamA.filter((u) => u.currentHp > 0).length}/${teamA.length} • **Phe B còn sống:** ${teamB.filter((u) => u.currentHp > 0).length}/${teamB.length}`,
-    `• 📜 **Xem Bản Web Đầy Đủ:** [Mở Chiến Báo Chi Tiết](${webLogUrl})`,
+    `• ${em('su_wiki_scroll')} **Xem Bản Web Đầy Đủ:** [Mở Chiến Báo Chi Tiết](${webLogUrl})`,
   ];
 
   let fullBattleLog = '';
@@ -456,12 +618,16 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       id: u.id,
       name: u.name,
       avatarUrl: u.avatarUrl || null,
+      avatarFrame: u.avatarFrame || 'default',
+      userLevel: u.userLevel || 1,
+      setBonus: u.setBonus || null,
       pet: u.pet,
       equipment: u.equipment || {},
       atk: u.atk,
       def: u.def,
       spd: u.spd,
-      maxHp: u.maxHp,
+      maxHp: u.initialMaxHp,
+      effectiveMaxHp: u.maxHp,
       currentHp: u.currentHp,
       powerScore: u.powerScore || 0,
       fatigueStacks: u.fatigueStacks || 0,
@@ -473,12 +639,16 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       id: u.id,
       name: u.name,
       avatarUrl: u.avatarUrl || null,
+      avatarFrame: u.avatarFrame || 'default',
+      userLevel: u.userLevel || 1,
+      setBonus: u.setBonus || null,
       pet: u.pet,
       equipment: u.equipment || {},
       atk: u.atk,
       def: u.def,
       spd: u.spd,
-      maxHp: u.maxHp,
+      maxHp: u.initialMaxHp,
+      effectiveMaxHp: u.maxHp,
       currentHp: u.currentHp,
       powerScore: u.powerScore || 0,
       fatigueStacks: u.fatigueStacks || 0,
@@ -517,7 +687,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
     imageUrl: `${PUBLIC_BASE_URL}/api/vein/battle/${battleId}.webp`,
     summaryLine: [
       `${em('su_crossed_swords')} **${opts.veinLabel || 'CHIẾN BÁO TỔ ĐỘI'}** (${turnCount} Hiệp)`,
-      `• **Kết Quả:** ${winnerSide === 'A' ? '🏆 **ĐỘI KHIÊU CHIẾN THẮNG LỢI!**' : '🛡️ **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH!**'}`,
+      `• **Kết Quả:** ${winnerSide === 'A' ? `${em('su_winner_trophy')} **ĐỘI KHIÊU CHIẾN THẮNG LỢI!**` : `${em('su_shield_def')} **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH!**`}`,
       leaderDomA || leaderDomB
         ? `• **Linh Vực Đội Trưởng:** ${leaderDomA ? `${domainElementEmoji(leaderDomA.element)} ${leaderDomA.name}` : 'Không'} vs ${leaderDomB ? `${domainElementEmoji(leaderDomB.element)} ${leaderDomB.name}` : 'Không'}`
         : '',
@@ -667,7 +837,7 @@ function buildTeamStructuredUnits(units = [], leaderDomObj = null) {
       };
     };
     return {
-      roleBadge: u.isBoss ? 'BOSS' : (idx === 0 ? '👑 Đội Trưởng' : `Thành Viên #${idx + 1}`),
+      roleBadge: u.isBoss ? 'BOSS' : (idx === 0 ? `${uiEm('ui_crown_king')} Đội Trưởng` : `Thành Viên #${idx + 1}`),
       playerName: u.name || 'Tu Sĩ',
       petIconTag: petEmoji(p.pet_type, em('su_pet_paw')),
       petName: p.pet_name || catPet?.pet_name || 'Linh Thú',
@@ -723,8 +893,8 @@ export async function renderTeamBattleLogHtml(battleId) {
   };
   const winnerSummaryHtml = stripDiscordTagsToHtml(
     r.winnerSide === 'A'
-      ? `🏆 **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG** sau **${r.turnCount} hiệp**!`
-      : `🛡️ **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH** sau **${r.turnCount} hiệp**!`,
+      ? `${em('su_winner_trophy')} **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG** sau **${r.turnCount} hiệp**!`
+      : `${em('su_shield_def')} **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH** sau **${r.turnCount} hiệp**!`,
   );
 
   const html = renderInteractiveBattleLogPage({

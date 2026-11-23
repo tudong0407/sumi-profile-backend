@@ -31,22 +31,10 @@ import {
   formatRarityLabel,
   normalizeRarityKey,
 } from '../data/catalog.js';
-import {
-  em,
-  itemEmoji,
-  petEmoji,
-  tierEmoji,
-  roleTierEmoji,
-  elementEmoji,
-  gradeEmoji,
-  ringEmoji,
-  domainEmoji,
-  senseEmoji,
-  realmEmojiById,
-  farmEmoji,
-} from '../config/emojiHelper.js';
+import { em, itemEmoji, petEmoji, tierEmoji, roleTierEmoji, elementEmoji, gradeEmoji, ringEmoji, domainEmoji, senseEmoji, realmEmojiById, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
+import { dismantleDomainEntity } from './domainService.js';
 import { trackQuestActivity } from './questService.js';
 
 const RARITY_RANK = { supreme: 5, mythic: 4, epic: 3, rare: 2, common: 1 };
@@ -386,8 +374,8 @@ export async function getInventory(userId, options = {}) {
     const realmMeta = DIVINE_REALM_BY_ID[inv.item_id];
     const icon = cMeta?.icon
       || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id)
-        : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', '🍑')
-        : (bgMeta || frameMeta) ? em('frame_unlock_token')
+        : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', em('su_sprout'))
+        : (bgMeta || frameMeta) ? em('frame_unlock_token', em('su_sparkle'))
         : domainMeta ? domainEmoji(inv.item_id, em('su_arena'))
         : senseMeta ? senseEmoji(inv.item_id, em('su_sparkle'))
         : realmMeta ? realmEmojiById(inv.item_id, em('su_arena'))
@@ -449,7 +437,7 @@ export async function getInventory(userId, options = {}) {
         const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
         const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
         const elemIcon = p.element_icon || elementEmoji(elemName);
-        const statusTag = p.status === 'exploring' ? ' *[🧭 Đang Khám Phá]*' : p.status === 'injured' ? ' *[🩹 Trọng Thương]*' : '';
+        const statusTag = p.status === 'exploring' ? ` *[${uiEm('ui_compass_dir')} Đang Khám Phá]*` : p.status === 'injured' ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*` : '';
         const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
         if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
         out.push(line);
@@ -509,7 +497,7 @@ export async function getInventory(userId, options = {}) {
   }
   const domainHeaderLine = domainParts.length > 0 ? `• **Linh Vực Xuất Trận:** ${domainParts.join(' • ')}` : '';
   const essencePart = farmEssence > 0
-    ? ` • ${farmEmoji('farm_essence', '🍑')} **Linh Quả:** \`${farmEssence.toLocaleString('vi-VN')}\``
+    ? ` • ${farmEmoji('farm_essence')} **Linh Quả:** \`${farmEssence.toLocaleString('vi-VN')}\``
     : '';
 
   const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\`${essencePart} • ${em('frame_unlock_token')} **Ảnh Nền:** ${bgName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
@@ -985,7 +973,7 @@ export async function equipTarget(userId, payload = {}) {
         success: false,
         status: 400,
         error: 'ITEM_BUSY_EXPLORING',
-        message: `🧭 Pháp bảo **${itemMeta.item_name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy gắn món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+        message: `${uiEm('ui_compass_dir')} Pháp bảo **${itemMeta.item_name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy gắn món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
       };
     }
 
@@ -1133,49 +1121,35 @@ export async function equipTarget(userId, payload = {}) {
 
     if (frameKey === 'default') {
       await supabase.from('users').update({ avatar_frame: 'default', updated_at: new Date().toISOString() }).eq('user_id', cleanId);
-      return { success: true, category: 'frame', avatar_frame: 'default', message: `${em('frame_unlock_token')} Đã khôi phục khung viền Avatar mặc định theo cảnh giới.` };
+      return { success: true, category: 'frame', avatar_frame: 'default', message: `${em('frame_unlock_token', em('su_sparkle'))} Đã khôi phục khung viền Avatar mặc định theo cảnh giới.` };
     }
 
-    const unlockItemId = `frame_${frameKey}`;
-    const { data: unlocked } = await supabase
-      .from('user_inventory')
-      .select('quantity')
-      .eq('user_id', cleanId)
-      .eq('item_id', unlockItemId)
-      .maybeSingle();
+    const LEGACY_GRANTED_FRAMES = new Set(['frame_royal_legacy', 'jade_lotus', 'amethyst_celestial', 'crimson_phoenix', 'frost_crystal']);
+    const isOwnerBypass = cleanId === FUYUMI_USER_ID;
 
-    if (!unlocked || Number(unlocked.quantity || 0) < 1) {
-      const { data: tokenRow } = await supabase
-        .from('user_inventory')
-        .select('quantity')
-        .eq('user_id', cleanId)
-        .eq('item_id', 'frame_unlock_token')
-        .maybeSingle();
+    if (!isOwnerBypass) {
+      const [{ data: ownedFrame }, { data: legacyUnlock }, { data: legacyToken }] = await Promise.all([
+        supabase.from('user_frames').select('frame_id').eq('user_id', cleanId).eq('frame_id', frameKey).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', `frame_${frameKey}`).gt('quantity', 0).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'frame_unlock_token').gt('quantity', 0).maybeSingle(),
+      ]);
 
-      if (!tokenRow || Number(tokenRow.quantity || 0) < 1) {
+      const hasAccess = Boolean(ownedFrame || legacyUnlock || (legacyToken && LEGACY_GRANTED_FRAMES.has(frameKey)));
+      if (!hasAccess) {
         return {
           success: false,
           status: 403,
-          error: 'FRAME_TOKEN_REQUIRED',
-          message: `Bạn cần **1 Lệnh Bài Khung Viền Độc Bản** (\`frame_unlock_token\`) trong \`/shop\` để mở khóa khung **${frameMeta.name}**!`,
+          error: 'FRAME_NOT_OWNED',
+          message: `Bạn chưa sở hữu Viền Avatar **${frameMeta.name}**! Hãy vào \`/shop\` → **Quầy Viền Avatar** để mua (${Number(frameMeta.price || 0).toLocaleString('vi-VN')} ${em('su_linhthach')}).`,
         };
       }
-
-      const nowIso = new Date().toISOString();
-      await Promise.all([
-        supabase
-          .from('user_inventory')
-          .update({ quantity: Number(tokenRow.quantity) - 1, updated_at: nowIso })
-          .eq('user_id', cleanId)
-          .eq('item_id', 'frame_unlock_token'),
-        supabase.from('user_inventory').upsert({
+      if (!ownedFrame) {
+        await supabase.from('user_frames').upsert({
           user_id: cleanId,
-          item_id: unlockItemId,
-          item_category: 'frame_unlock',
-          quantity: 1,
-          updated_at: nowIso,
-        }, { onConflict: 'user_id,item_id' }),
-      ]);
+          frame_id: frameKey,
+          purchased_at: new Date().toISOString(),
+        }, { onConflict: 'user_id,frame_id' });
+      }
     }
 
     await supabase
@@ -1187,7 +1161,7 @@ export async function equipTarget(userId, payload = {}) {
       success: true,
       category: 'frame',
       avatar_frame: frameKey,
-      message: `${em('frame_unlock_token')} Đã mở khóa và trang bị khung Avatar **${frameMeta.name}**!`,
+      message: `${em('frame_unlock_token', em('su_sparkle'))} Đã trang bị khung Avatar **${frameMeta.name}** trên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`!`,
     };
   }
 
@@ -1385,7 +1359,8 @@ export async function dismantleTarget(userId, payload = {}) {
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', remove_role_id: '', message: 'Supabase chưa sẵn sàng.' };
 
   const rawCat = String(payload.category || payload.loai || '').trim().toLowerCase();
-  const category = ['role', 'item', 'pet'].includes(rawCat) ? rawCat : '';
+  const normalizedCat = rawCat === 'linhvuc' ? 'domain' : rawCat;
+  const category = ['role', 'item', 'pet', 'domain'].includes(normalizedCat) ? normalizedCat : '';
   const rawTarget = String(payload.targetId || payload.maId || '').trim();
   if (!rawTarget) {
     return {
@@ -1393,8 +1368,13 @@ export async function dismantleTarget(userId, payload = {}) {
       status: 400,
       error: 'MISSING_TARGET',
       remove_role_id: '',
-      message: 'Vui lòng nhập Mã ID, tên Role/Pháp Bảo/Linh Thú hoặc số Slot #1–5 muốn phá (xem trong `/inv`).',
+      message: 'Vui lòng nhập Mã ID, tên Role/Pháp Bảo/Linh Thú/Linh Vực hoặc từ khóa (`all_dup`, `all_common`, `all_rare`, `all_epic`) muốn phá.',
     };
+  }
+
+  if (category === 'domain') {
+    const domRes = await dismantleDomainEntity(cleanId, rawTarget);
+    return { remove_role_id: '', ...domRes };
   }
 
   return withDismantleLock(cleanId, async () => {
@@ -1959,10 +1939,10 @@ export async function dismantleTarget(userId, payload = {}) {
 
         if (qty <= 1) {
           if (matchedPet.status === 'exploring') {
-            return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', remove_role_id: '', remove_role_csv: '', message: `🧭 Không thể phân rã **${matchedPet.pet_name}** khi đang đi Khám Phá Bản Đồ (\`/explorer\`)!` };
+            return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', remove_role_id: '', remove_role_csv: '', message: `${uiEm('ui_compass_dir')} Không thể phân rã **${matchedPet.pet_name}** khi đang đi Khám Phá Bản Đồ (\`/explorer\`)!` };
           }
           if (matchedPet.status === 'injured') {
-            return { success: false, status: 400, error: 'PET_INJURED', remove_role_id: '', remove_role_csv: '', message: `🩹 Không thể phân rã **${matchedPet.pet_name}** khi đang Trọng Thương!` };
+            return { success: false, status: 400, error: 'PET_INJURED', remove_role_id: '', remove_role_csv: '', message: `${uiEm('ui_heal_band')} Không thể phân rã **${matchedPet.pet_name}** khi đang Trọng Thương!` };
           }
           if (matchedPet.pet_type === 'hoa_thach_nham_nham') {
             return { success: false, status: 400, error: 'STARTER_PET_PROTECTED', remove_role_id: '', remove_role_csv: '', message: 'Không thể phân rã Linh Thú khởi đầu **Hóa Thạch Nham Nham Thú**!' };
@@ -2050,7 +2030,7 @@ export async function setActivePet(userId, petIdentifier) {
       success: false,
       status: 400,
       error: 'PET_BUSY_EXPLORING',
-      message: `🧭 Linh Thú **${target.pet_name}** hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên chưa thể chọn làm Linh Thú xuất trận! Hãy chọn một Linh Thú khác đang rảnh.`,
+      message: `${uiEm('ui_compass_dir')} Linh Thú **${target.pet_name}** hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên chưa thể chọn làm Linh Thú xuất trận! Hãy chọn một Linh Thú khác đang rảnh.`,
     };
   }
   if (target.status === 'injured') {
@@ -2058,7 +2038,7 @@ export async function setActivePet(userId, petIdentifier) {
       success: false,
       status: 400,
       error: 'PET_INJURED',
-      message: `🩹 Linh Thú Độc Nhất **${target.pet_name}** đang bị **Trọng Thương**! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` để hồi sinh trước khi xuất trận.`,
+      message: `${uiEm('ui_heal_band')} Linh Thú Độc Nhất **${target.pet_name}** đang bị **Trọng Thương**! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` để hồi sinh trước khi xuất trận.`,
     };
   }
 
@@ -2073,7 +2053,7 @@ export async function setActivePet(userId, petIdentifier) {
   };
 }
 
-export async function upgradePet(userId, petIdentifier, mode = 'level') {
+export async function upgradePet(userId, petIdentifier, mode = 'level', targetGoal = null) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
@@ -2092,16 +2072,37 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
   }
 
   const baseMeta = PET_BY_TYPE[target.pet_type] || { base_atk: target.atk, base_def: target.def, base_spd: target.spd };
+  const parsedGoal = targetGoal !== null && targetGoal !== undefined && String(targetGoal).trim() !== ''
+    ? Math.floor(Number(targetGoal))
+    : null;
 
   if (mode === 'star') {
     const currentStar = Number(target.star || 1);
     if (currentStar >= 10) {
       return { success: false, status: 400, error: 'MAX_STAR', message: `**${target.pet_name}** đã đạt tối đa **10 Sao** ${em('su_realm_star')}!` };
     }
-    const stoneCost = currentStar;
-    const ltCost = currentStar * 200;
-    const currentBal = Number(user.linh_thach || 0);
+    const nextStar = parsedGoal !== null
+      ? Math.min(10, Math.max(currentStar + 1, parsedGoal))
+      : currentStar + 1;
 
+    if (parsedGoal !== null && parsedGoal <= currentStar) {
+      return { success: false, status: 400, error: 'INVALID_TARGET_STAR', message: `Mục tiêu Sao (\`${parsedGoal}\`) phải lớn hơn bậc sao hiện tại (**${currentStar}★**)!` };
+    }
+
+    let stoneCost = 0;
+    let ltCost = 0;
+    let newAtk = Number(target.atk || 0);
+    let newDef = Number(target.def || 0);
+    let newSpd = Number(target.spd || 0);
+    for (let s = currentStar; s < nextStar; s += 1) {
+      stoneCost += s;
+      ltCost += s * 200;
+      newAtk = Math.round(newAtk + baseMeta.base_atk * 0.15);
+      newDef = Math.round(newDef + baseMeta.base_def * 0.15);
+      newSpd = Math.round(newSpd + baseMeta.base_spd * 0.15);
+    }
+
+    const currentBal = Number(user.linh_thach || 0);
     const { data: stoneRow } = await supabase
       .from('user_inventory')
       .select('quantity')
@@ -2115,14 +2116,10 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
         success: false,
         status: 400,
         error: 'INSUFFICIENT_MATERIALS',
-        message: `Cần **${stoneCost}** ${em('pet_star_stone')} **Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost}** ${em('su_linhthach')} **Linh Thạch** (có ${currentBal}) để đột phá **${currentStar + 1} Sao** ${em('su_realm_star')}!`,
+        message: `Cần **${stoneCost.toLocaleString('vi-VN')}** ${em('pet_star_stone')} **Tinh Thạch Nâng Sao** (có ${ownedStones}) và **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** (có ${currentBal.toLocaleString('vi-VN')}) để đột phá **${currentStar}★ → ${nextStar}★** ${em('su_realm_star')}!`,
       };
     }
 
-    const nextStar = currentStar + 1;
-    const newAtk = Math.round(target.atk + baseMeta.base_atk * 0.15);
-    const newDef = Math.round(target.def + baseMeta.base_def * 0.15);
-    const newSpd = Math.round(target.spd + baseMeta.base_spd * 0.15);
     const oldPower = Number(target.power_score || 0);
     const deltaPower = (newAtk - Number(target.atk || 0)) * 3
       + (newDef - Number(target.def || 0)) * 2
@@ -2142,9 +2139,11 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
       pet_name: target.pet_name,
       old_star: currentStar,
       new_star: nextStar,
+      cost_lt: ltCost,
+      cost_stones: stoneCost,
       linh_thach: currentBal - ltCost,
       power_score: newPower,
-      message: `${em('pet_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** lên **${nextStar} Sao** ${em('su_realm_star')} (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+      message: `${em('pet_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** (**${currentStar}★ → ${nextStar}★** ${em('su_realm_star')}) • Tiêu hao **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} + **${stoneCost}** ${em('pet_star_stone')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**.`,
     };
   }
 
@@ -2153,21 +2152,35 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
   if (currentLvl >= 100) {
     return { success: false, status: 400, error: 'MAX_PET_LEVEL', message: `**${target.pet_name}** đã đạt cấp tối đa **Lv.100**!` };
   }
-  const ltCost = currentLvl * 50;
+  const nextLvl = parsedGoal !== null
+    ? Math.min(100, Math.max(currentLvl + 1, parsedGoal))
+    : currentLvl + 1;
+
+  if (parsedGoal !== null && parsedGoal <= currentLvl) {
+    return { success: false, status: 400, error: 'INVALID_TARGET_LEVEL', message: `Mục tiêu Cấp (\`${parsedGoal}\`) phải lớn hơn cấp hiện tại (**Lv.${currentLvl}**)!` };
+  }
+
+  let ltCost = 0;
+  let newAtk = Number(target.atk || 0);
+  let newDef = Number(target.def || 0);
+  let newSpd = Number(target.spd || 0);
+  for (let lvl = currentLvl; lvl < nextLvl; lvl += 1) {
+    ltCost += lvl * 50;
+    newAtk = Math.round(newAtk + Math.max(5, baseMeta.base_atk * 0.05));
+    newDef = Math.round(newDef + Math.max(5, baseMeta.base_def * 0.05));
+    newSpd = Math.round(newSpd + Math.max(4, baseMeta.base_spd * 0.05));
+  }
+
   const currentBal = Number(user.linh_thach || 0);
   if (currentBal < ltCost) {
     return {
       success: false,
       status: 400,
       error: 'INSUFFICIENT_LINH_THACH',
-      message: `Cần **${ltCost}** ${em('su_linhthach')} **Linh Thạch** để nâng **${target.pet_name}** lên Lv.${currentLvl + 1} (hiện có ${currentBal}).`,
+      message: `Cần **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** để nâng **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) *(hiện có ${currentBal.toLocaleString('vi-VN')})*.`,
     };
   }
 
-  const nextLvl = currentLvl + 1;
-  const newAtk = Math.round(target.atk + Math.max(5, baseMeta.base_atk * 0.05));
-  const newDef = Math.round(target.def + Math.max(5, baseMeta.base_def * 0.05));
-  const newSpd = Math.round(target.spd + Math.max(4, baseMeta.base_spd * 0.05));
   const oldPower = Number(target.power_score || 0);
   const deltaPower = (newAtk - Number(target.atk || 0)) * 3
     + (newDef - Number(target.def || 0)) * 2
@@ -2187,9 +2200,10 @@ export async function upgradePet(userId, petIdentifier, mode = 'level') {
     pet_name: target.pet_name,
     old_level: currentLvl,
     new_level: nextLvl,
+    cost_lt: ltCost,
     linh_thach: currentBal - ltCost,
     power_score: newPower,
-    message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** đạt **Lv.${nextLvl}** (Chiến Lực: **${newPower.toLocaleString('vi-VN')}**).`,
+    message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) • Tổng chi phí: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**!`,
   };
 }
 
@@ -2293,10 +2307,10 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
     // Chặn khắc ấn tài sản đang bận đi Khám Phá (/explorer)
     if (busyExp?.isExploring) {
       if (matchedKind === 'pet' && String(targetRow.pet_id) === String(busyExp.busyPetId)) {
-        return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', message: `🧭 Linh Thú **${targetName}** đang đi Khám Phá Bản Đồ — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
+        return { success: false, status: 400, error: 'PET_BUSY_EXPLORING', message: `${uiEm('ui_compass_dir')} Linh Thú **${targetName}** đang đi Khám Phá Bản Đồ — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
       }
       if (matchedKind === 'item' && busyExp.busyEquipIds.has(String(targetRow.item_id))) {
-        return { success: false, status: 400, error: 'ITEM_BUSY_EXPLORING', message: `🧭 Pháp Bảo **${targetName}** đang được trang bị cho chuyến Khám Phá — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
+        return { success: false, status: 400, error: 'ITEM_BUSY_EXPLORING', message: `${uiEm('ui_compass_dir')} Pháp Bảo **${targetName}** đang được trang bị cho chuyến Khám Phá — vui lòng chờ hoàn thành rồi mới Khắc Ấn!` };
       }
     }
 
@@ -2328,7 +2342,7 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
           success: false,
           status: 400,
           error: 'NO_ABSOLUTE_STONE',
-          message: `Bạn hiện không có ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** nào trong túi! *(Rơi 0.5% khi đi khám phá \`/explorer\`)*`,
+          message: `Bạn hiện không có ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** nào trong túi! *(Rơi 0.5% khi đi khám phá \`/explorer\`)*`,
         };
       }
       const newGrade = quote.to;
@@ -2348,7 +2362,7 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
       const oldBonus = getEnchantBonusPct(currentGrade);
       const newBonus = getEnchantBonusPct(newGrade);
       const advisory = currentGrade !== 'A'
-        ? `\n• 💡 *Khuyến cáo: ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** cực hiếm (0.5%) — lần sau đạo hữu nên ưu tiên giữ lại để đột phá bậc **A → S** nhé!*`
+        ? `\n• ${uiEm('ui_bulb_tip')} *Khuyến cáo: ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** cực hiếm (0.5%) — lần sau đạo hữu nên ưu tiên giữ lại để đột phá bậc **A → S** nhé!*`
         : '';
 
       return {
@@ -2366,9 +2380,9 @@ export async function enchantTarget(userId, rawTypeOrPayload, rawTargetArg = '',
         applied_rate_pct: 100,
         remaining_absolute_stones: remainingAbs,
         message: [
-          `${em('enchant_stone_absolute', '💎')} **THIÊN ĐẠO TUYỆT ẤN — ĐỘT PHÁ 100% THÀNH CÔNG!**`,
+          `${em('enchant_stone_absolute')} **THIÊN ĐẠO TUYỆT ẤN — ĐỘT PHÁ 100% THÀNH CÔNG!**`,
           `• ${targetIcon} **${targetName}**: ${gradeEmoji(currentGrade)} **Hạng ${currentGrade}** (+${oldBonus}%) → ${gradeEmoji(newGrade)} **Hạng ${newGrade}** (**+${newBonus}% chỉ số gốc**)!`,
-          `• Tiêu hao: **-1** ${em('enchant_stone_absolute', '💎')} **Thiên Đạo Tuyệt Ấn Thạch** *(còn ${remainingAbs})* — Miễn phí Linh Thạch!`,
+          `• Tiêu hao: **-1** ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(còn ${remainingAbs})* — Miễn phí Linh Thạch!`,
         ].join('\n') + advisory,
       };
     }

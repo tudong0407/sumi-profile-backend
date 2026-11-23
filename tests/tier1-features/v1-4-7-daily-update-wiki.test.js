@@ -65,11 +65,12 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
     assert.ok(diffDaySeen, 'Different dates should rotate different quest combinations');
   });
 
-  it('2. Chat EXP base is +15% (23-35) and acknowledgeUpdate awards +800 LT once (safe against double-click)', async () => {
+  it('2. Chat EXP base is +15% (23-35) and acknowledgeUpdate awards active version LT once (safe against double-click)', async () => {
     assert.equal(CHAT_EXP_MIN, 23);
     assert.equal(CHAT_EXP_MAX, 35);
-    assert.equal(LATEST_VERSION, '1.4.7');
+    assert.equal(LATEST_VERSION, '1.5');
     assert.equal(getUpdateAckReward('1.4.7'), 800);
+    assert.equal(getUpdateAckReward('1.5'), 1500);
 
     if (!supabase) return;
     await ensureUserInitialized(USER_UP, { username: 'AckRewardTester' });
@@ -79,23 +80,24 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
       .eq('user_id', USER_UP);
     clearUpdateGateCache(USER_UP);
 
+    const expectedReward = getUpdateAckReward(LATEST_VERSION);
     const gate = await checkUpdateGate(USER_UP);
     assert.equal(gate.blocked, true);
-    assert.equal(gate.ack_reward_lt, 800);
+    assert.equal(gate.ack_reward_lt, expectedReward);
     assert.equal(gate.payload.footer, '');
 
-    // Concurrent double-click must only award +800 LT once!
+    // Concurrent double-click must only award LT once!
     const [ack1, ack2] = await Promise.all([acknowledgeUpdate(USER_UP), acknowledgeUpdate(USER_UP)]);
     const totalGranted = (ack1.granted_lt || 0) + (ack2.granted_lt || 0);
-    assert.equal(totalGranted, 800, `Expected exactly +800 LT granted once across double clicks, got ${totalGranted}`);
+    assert.equal(totalGranted, expectedReward, `Expected exactly +${expectedReward} LT granted once across double clicks, got ${totalGranted}`);
 
     const { data: userAfter } = await supabase
       .from('users')
       .select('linh_thach, last_seen_update_version')
       .eq('user_id', USER_UP)
       .single();
-    assert.equal(userAfter.linh_thach, 900);
-    assert.equal(userAfter.last_seen_update_version, '1.4.7');
+    assert.equal(userAfter.linh_thach, 100 + expectedReward);
+    assert.equal(userAfter.last_seen_update_version, LATEST_VERSION);
 
     // Subsequent status call confirms 5-quest structure in live DB
     const qStatus = await getQuestStatus(USER_UP);
@@ -104,7 +106,7 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
     assert.equal(qStatus.footer, '');
   });
 
-  it('3. /updates & /wiki are concise, updated to v1.4.7, include all missing commands, and catalog totals match 165/90', async () => {
+  it('3. /updates & /wiki are concise, updated to v1.5, include all missing commands, and catalog totals match 165/90', async () => {
     const ch = getChangelogPayload('1.4.7');
     assert.equal(ch.success, true);
     assert.equal(ch.ack_reward_lt, 800);
@@ -114,7 +116,7 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
     assert.match(ch.description, /500/);
     assert.match(ch.description, /800/);
 
-    assert.equal(WIKI_METADATA.version, '1.4.7');
+    assert.equal(WIKI_METADATA.version, '1.5');
     const ov = getWikiData('overview');
     const ovText = JSON.stringify(ov.data);
     for (const cmd of ['/autosell', '/unequip', '/pet', '/play', '/queue', '/music', '/sound', '/giveaway_create', '/sticky-set', '/sticky-off']) {

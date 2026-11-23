@@ -314,7 +314,7 @@ export async function getOrCreateDailyShopRotation(date = new Date()) {
 function formatSlotIcon(slot) {
   if (slot.kind === 'pet') return petEmoji(slot.item_id, em('su_pet_paw'));
   if (slot.kind === 'equipment') return itemEmoji(slot.item_id, em('su_crossed_swords'));
-  return em(slot.item_id, '🎁');
+  return em(slot.item_id);
 }
 
 export async function getDailyShopCatalog(userId = null, opts = {}) {
@@ -348,7 +348,7 @@ export async function getDailyShopCatalog(userId = null, opts = {}) {
     supreme: 'Tối Thượng',
   };
   const lt = em('su_linhthach');
-  const emblem = em('daily_shop_emblem', '🏮');
+  const emblem = em('daily_shop_emblem');
   const enrichedSlots = slots.map((s) => {
     const bought = buyMap.get(s.slot_index) || 0;
     const remaining = Math.max(0, Number(s.daily_limit || 1) - bought);
@@ -577,7 +577,7 @@ export async function buyDailyShopSlot(userId, rawSlotIndex, opts = {}) {
       bought_count: boughtCount + 1,
       daily_limit: dailyLimit,
       message: [
-        `${em('daily_shop_emblem', '🏮')} **MUA THÀNH CÔNG TẠI SHOP NGÀY!**`,
+        `${em('daily_shop_emblem')} **MUA THÀNH CÔNG TẠI SHOP NGÀY!**`,
         grantNote,
         `• **Thanh toán:** **-${finalPrice.toLocaleString('vi-VN')}** ${lt} *(Giảm ${slot.discount_pct}%${discountPct > 0 ? ` + Role -${discountPct}%` : ''})*`,
         `• **Số dư còn lại:** **${nextBal.toLocaleString('vi-VN')}** ${lt} • Hạn mức hôm nay: \`${boughtCount + 1}/${dailyLimit}\``,

@@ -12,7 +12,7 @@ import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
 import { V14_SPIRIT_VEIN_TIERS } from '../data/v14ExpansionCatalog.js';
 import { DOMAIN_BY_ID } from '../data/catalog.js';
-import { em } from '../config/emojiHelper.js';
+import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
 import { getUserPartyRecord } from './partyService.js';
 import { compileCombatant } from './battleEngine/statsCompiler.js';
@@ -340,42 +340,74 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
       user_fatigue_info: userFatigueInfo,
       user_fatigue_stacks: userFatigueStacks,
       veins: [],
-      title: `${em('vein_mine_sp', '⛰️')} CHIẾM ĐOẠT LINH MẠCH — NGOÀI KHUNG GIỜ VÀNG`,
+      title: `${em('vein_mine_sp')} CHIẾM ĐOẠT LINH MẠCH — NGOÀI KHUNG GIỜ VÀNG`,
       description: [
         `• Hiện tại đang ngoài khung giờ mở Linh Mạch.`,
         `• **6 Khung Giờ Vàng mỗi ngày (UTC+7):** \`08:00\`, \`12:00\`, \`18:00\`, \`20:00\`, \`21:00\`, \`22:00\` *(mỗi đợt mở 60 phút gồm **3 Mỏ** xuất hiện theo tỉ lệ Hạng F → S+)*.`,
         `• **Đợt tiếp theo:** **${info.nextGoldenHourLabel}**`,
         `• **Tỉ lệ ra mỏ:** F \`20%\` • E \`19%\` • D \`17%\` • C \`14%\` • B \`11%\` • A \`8%\` • S \`6%\` • S+ \`5%\``,
         userFatiguePct > 0
-          ? `• ⚠️ **Mệt mỏi hiện tại:** **-${userFatiguePct}%** *(giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*.`
+          ? `• ${uiEm('ui_warn')} **Mệt mỏi hiện tại:** **-${userFatiguePct}%** *(giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*.`
           : `• Hãy tranh thủ lập Tổ Đội 3 người bằng \`/party\` trước giờ mở mỏ nhé!`,
       ].join('\n'),
     };
   }
 
-  const lines = activeVeins.map((v) => {
-    const icon = em(v.boss_id || 'vein_mine_f', '⛰️');
+  const nowMs = now.getTime();
+  const enrichedVeins = activeVeins.map((v) => {
+    const members = Array.isArray(v.holder_member_ids) ? v.holder_member_ids.filter(Boolean) : [];
+    const memberCount = members.length;
+    let accruedPerMember = 0;
+    let projectedPerMember = 0;
+
+    if (v.holder_leader_id && memberCount > 0) {
+      const capMs = v.captured_at ? new Date(v.captured_at).getTime() : nowMs;
+      const endMs = v.ends_at ? new Date(v.ends_at).getTime() : nowMs;
+      const effectiveNowMs = Math.min(nowMs, endMs);
+      const heldMins = Math.max(0, Math.floor((effectiveNowMs - capMs) / 60000));
+      const totalProjectedMins = Math.max(0, Math.floor((endMs - capMs) / 60000));
+      const rate = Number(v.lt_per_min || 6);
+      accruedPerMember = Math.floor((heldMins * rate) / memberCount);
+      projectedPerMember = Math.floor((totalProjectedMins * rate) / memberCount);
+    }
+
+    return {
+      ...v,
+      accrued_per_member: accruedPerMember,
+      projected_per_member: projectedPerMember,
+    };
+  });
+
+  const mineBlocks = enrichedVeins.map((v) => {
+    const icon = em(v.boss_id || 'vein_mine_f', em('vein_mine_f'));
+    const memberCount = (v.holder_member_ids || []).length;
     const holderTxt = v.holder_leader_id
-      ? `🚩 Đang chiếm bởi đội <@${v.holder_leader_id}> (${(v.holder_member_ids || []).length} người${v.holder_clan_id ? ` • 🏰 Gia Tộc \`${v.holder_clan_id}\`` : ''})`
-      : `🛡️ **Chưa có chủ** *(Đánh Boss 3v1 để chiếm ngay!)*`;
+      ? `${uiEm('ui_flag_capture')} Đang chiếm bởi đội <@${v.holder_leader_id}> (${memberCount} người${v.holder_clan_id ? ` • ${em('su_clan_castle')} Gia Tộc \`${v.holder_clan_id}\`` : ''})`
+      : `${em('su_shield_def')} **Chưa có chủ** *(Đánh Boss 3v1 để chiếm ngay!)*`;
+    const incomeTxt = v.holder_leader_id
+      ? `• Đã tích lũy: **+${v.accrued_per_member.toLocaleString('vi-VN')}** ${lt}/người • Dự kiến hết giờ: **~${v.projected_per_member.toLocaleString('vi-VN')}** ${lt}/người`
+      : null;
+
     return [
       `${icon} **[MỎ #${v.slot_index} — HẠNG ${v.tier_code}] ${v.boss_name}**`,
       `• Lực Chiến Boss: **${Number(v.boss_power).toLocaleString('vi-VN')}** • Sản Lượng: **${v.lt_per_min} ${lt}/phút** *(chia đều đội +15% Ngân Khố Tộc nếu cùng Clan)*`,
       `• Trạng Thái: ${holderTxt}`,
-    ].join('\n');
+      incomeTxt,
+    ].filter(Boolean).join('\n');
   });
 
   const fatigueLine = userFatiguePct > 0
-    ? `\n⚠️ **Mệt Mỏi Hiện Tại:** **-${userFatiguePct}% Chiến Lực** *(Còn **${userFatigueInfo.remainingPowerPct}%** sức mạnh • Tự giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*`
-    : `\n✨ **Trạng Thái Chiến Đấu:** Sung mãn (**100% Chiến Lực**, 0% Mệt Mỏi • chiếm thành công +25%, giảm **-10%/giờ**).`;
+    ? `${uiEm('ui_warn')} **Mệt Mỏi Hiện Tại:** **-${userFatiguePct}% Chiến Lực** *(Còn **${userFatigueInfo.remainingPowerPct}%** sức mạnh • Tự giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*`
+    : `${em('su_sparkle')} **Trạng Thái Chiến Đấu:** Sung mãn (**100% Chiến Lực**, 0% Mệt Mỏi • chiếm thành công +25%, giảm **-10%/giờ**).`;
 
   const description = [
-    `⏰ **Khung Giờ Vàng:** \`${String(info.hour).padStart(2, '0')}:00 – ${String((info.hour + 1) % 24).padStart(2, '0')}:00\` *(Còn **${info.remainingMinutes} phút** • Tỉ lệ S+ **5%**)*`,
+    `${uiEm('ui_clock_timer')} **Khung Giờ Vàng:** \`${String(info.hour).padStart(2, '0')}:00 – ${String((info.hour + 1) % 24).padStart(2, '0')}:00\` *(Còn **${info.remainingMinutes} phút** • Tỉ lệ S+ **5%**)*`,
     '',
-    ...lines,
+    mineBlocks.join('\n\n───────────────────\n\n'),
+    '',
     fatigueLine,
     '',
-    `*Bấm **[⚔️ Chiếm Mỏ #1]**, **[⚔️ Chiếm Mỏ #2]** hoặc **[🔥 Chiếm Mỏ #3]** bên dưới (hỗ trợ cả đi lẻ hoặc Tổ Đội 3 người \`/party\`)!*`,
+    `*Bấm **[${em('su_crossed_swords')} Chiếm Mỏ #1]**, **[${em('su_crossed_swords')} Chiếm Mỏ #2]** hoặc **[${em('su_el_hoa')} Chiếm Mỏ #3]** bên dưới (hỗ trợ cả đi lẻ hoặc Tổ Đội 3 người \`/party\`)!*`,
   ].join('\n');
 
   return {
@@ -386,8 +418,8 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
     user_fatigue_pct: userFatiguePct,
     user_fatigue_info: userFatigueInfo,
     user_fatigue_stacks: userFatigueStacks,
-    veins: activeVeins,
-    title: `${em('vein_mine_sp', '⛰️')} CHIẾM ĐOẠT LINH MẠCH — ĐANG MỞ (${String(info.hour).padStart(2, '0')}:00)`,
+    veins: enrichedVeins,
+    title: `${em('vein_mine_sp')} CHIẾM ĐOẠT LINH MẠCH — ĐANG MỞ (${String(info.hour).padStart(2, '0')}:00)`,
     description,
     message: description,
   };
@@ -437,7 +469,7 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
       success: false,
       status: 403,
       error: 'NOT_COMMAND_OWNER',
-      message: `⚠️ Bảng \`/linhmach\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/linhmach\` để khiêu chiến Linh Mạch nhé!`,
+      message: `${uiEm('ui_warn')} Bảng \`/linhmach\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/linhmach\` để khiêu chiến Linh Mạch nhé!`,
     };
   }
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
@@ -606,13 +638,13 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
     const outcomeMsg = [
       battle.summaryLine,
       won
-        ? `🚩 **CHIẾM MỎ THÀNH CÔNG!** Đội của <@${cleanId}> (**${memberIds.length} người**) đã tiếp quản **Linh Mạch Hạng ${vein.tier_code}** (**${vein.lt_per_min} ${lt}/phút**, chia đều ~**${perMinEach} ${lt}/phút/người**${sharedClanId ? ' + **15% vào Ngân Khố Gia Tộc**' : ''})!`
-        : `💔 **KHIÊU CHIẾN THẤT BẠI!** ${isPvpTakeover ? `Đội của <@${vein.holder_leader_id}> vẫn giữ vững Linh Mạch Hạng ${vein.tier_code}!` : `BOSS **${vein.boss_name}** quá hùng mạnh — hãy rủ đủ Tổ Đội 3 người bằng \`/party\` nhé!`}`,
+        ? `${uiEm('ui_flag_capture')} **CHIẾM MỎ THÀNH CÔNG!** Đội của <@${cleanId}> (**${memberIds.length} người**) đã tiếp quản **Linh Mạch Hạng ${vein.tier_code}** (**${vein.lt_per_min} ${lt}/phút**, chia đều ~**${perMinEach} ${lt}/phút/người**${sharedClanId ? ' + **15% vào Ngân Khố Gia Tộc**' : ''})!`
+        : `${uiEm('ui_heart_broken')} **KHIÊU CHIẾN THẤT BẠI!** ${isPvpTakeover ? `Đội của <@${vein.holder_leader_id}> vẫn giữ vững Linh Mạch Hạng ${vein.tier_code}!` : `BOSS **${vein.boss_name}** quá hùng mạnh — hãy rủ đủ Tổ Đội 3 người bằng \`/party\` nhé!`}`,
       oldHolderSettlement?.paidTotal > 0
         ? `• *(Đội cũ đã được tất toán **${oldHolderSettlement.paidTotal.toLocaleString('vi-VN')}** ${lt} cho **${oldHolderSettlement.minutes} phút** giữ mỏ trước đó)*`
         : '',
       battle.highlights.length > 0 ? `\n**Diễn Biến Tiêu Biểu:**\n${battle.highlights.slice(0, 4).map((h) => `• ${h}`).join('\n')}` : '',
-      battle.webLogUrl ? `• 📜 [Xem Full Nhật Ký Chiến Báo Trên Web](${battle.webLogUrl})` : '',
+      battle.webLogUrl ? `• ${em('su_wiki_scroll')} [Xem Full Nhật Ký Chiến Báo Trên Web](${battle.webLogUrl})` : '',
     ].filter(Boolean).join('\n');
 
     const outcomeTitle = `${em('vein_mine_sp')} CHIẾN BÁO MỎ #${vein.slot_index || 1} — HẠNG ${vein.tier_code}`;

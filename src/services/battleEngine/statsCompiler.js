@@ -11,6 +11,7 @@ import {
 } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 import { V13_PET_HAX, V13_EQUIP_HAX } from './v13HaxRegistry.js';
+import { evaluateSetBonus } from './setBonusEngine.js';
 
 function resolveDomainLoadout(profile) {
   const raw = profile?.domain_loadout || profile?.domainLoadout || {};
@@ -182,10 +183,27 @@ export async function compileCombatant(userOrId, role = 'attacker') {
       }
     : rawDomainLoadout;
 
+  const setBonus = evaluateSetBonus({
+    pet: { element, rarity_key: petRarityKey },
+    equipment: { weapon, gem, soul },
+    domainLoadout,
+  });
+
+  let finalMaxHp = maxHp;
+  if (setBonus.statBonusPct > 0) {
+    const setMult = 1 + (setBonus.statBonusPct / 100);
+    finalAtk = Math.round(finalAtk * setMult);
+    finalDef = Math.round(finalDef * setMult);
+    finalSpd = Math.round(finalSpd * setMult);
+    finalMaxHp = Math.round(finalMaxHp * setMult);
+  }
+
   const computedPower = finalAtk * 3 + finalDef * 2 + finalSpd * 2 + level * 50;
   const powerScore = Math.max(
     100,
-    strippedBusyEquip ? computedPower : (Number(pet.power || pet.power_score || 0) || computedPower),
+    (strippedBusyEquip || setBonus.statBonusPct > 0)
+      ? Math.max(computedPower, Math.round((Number(pet.power || pet.power_score || 0) || computedPower) * (1 + (setBonus.statBonusPct || 0) / 100)))
+      : (Number(pet.power || pet.power_score || 0) || computedPower),
   );
 
   return {
@@ -227,9 +245,10 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     spd: finalSpd,
     critRate,
     bonusCrit,
-    maxHp,
-    currentHp: maxHp,
+    maxHp: finalMaxHp,
+    currentHp: finalMaxHp,
     shield: 0,
+    setBonus,
     equipment: { weapon, gem, soul },
     domainLoadout,
     domainRuntime: { own: null, incomingDebuffs: {} },

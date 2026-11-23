@@ -14,11 +14,7 @@ import {
   MARRY_RING_RANK,
   PUBLIC_BASE_URL,
 } from '../data/catalog.js';
-import {
-  em,
-  ringEmoji,
-  tierEmoji,
-} from '../config/emojiHelper.js';
+import { em, ringEmoji, tierEmoji, uiEm } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
   ensureUserInitialized,
@@ -149,13 +145,13 @@ export async function getMarriageStatus(userId, opts = {}) {
       user_id: cleanId,
       username: user.username,
       image_url: '',
-      message: `${ringEmoji('ring_common', '💍')} **${user.username}** hiện đang **Độc thân tu đạo**.\nHãy mua Nhẫn Cưới trong \`/shop\` và dùng \`/marry hanh_dong:propose\` để kết duyên Tiên Lữ!`,
+      message: `${ringEmoji('ring_common')} **${user.username}** hiện đang **Độc thân tu đạo**.\nHãy mua Nhẫn Cưới trong \`/shop\` và dùng \`/marry hanh_dong:propose\` để kết duyên Tiên Lữ!`,
     };
   }
 
   const now = opts.now instanceof Date ? opts.now : new Date();
   const buffs = computeMarriageBuffs(user.marry_ring_id || 'ring_common', user.marry_date, now);
-  const ringTag = ringEmoji(buffs.ring_id, '💍');
+  const ringTag = ringEmoji(buffs.ring_id);
   const tierTag = tierEmoji(buffs.ring.rarity_key);
   const anniversaryNote = buffs.is_anniversary_day
     ? `\n${em('su_sparkle')} **NGÀY KỶ NIỆM ĐẶC BIỆT!** Đang nhận thêm **+10% EXP** hôm nay!`
@@ -287,7 +283,7 @@ export async function proposeMarriage(proposerId, targetId, ringId = 'ring_commo
 
     if (insErr) throw new Error(`Create proposal failed: ${insErr.message}`);
 
-    const ringTag = ringEmoji(resolvedRingId, '💍');
+    const ringTag = ringEmoji(resolvedRingId);
     const imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${resolvedRingId}.png`;
 
     return {
@@ -387,7 +383,7 @@ export async function respondMarriage(responderId, decision = 'accept', opts = {
         proposer_id: proposal.proposer_id,
         target_id: proposal.target_id,
         image_url: '',
-        message: `💔 **<@${proposal.target_id}>** đã khéo léo từ chối lời cầu hôn của **<@${proposal.proposer_id}>**.`,
+        message: `${uiEm('ui_heart_broken')} **<@${proposal.target_id}>** đã khéo léo từ chối lời cầu hôn của **<@${proposal.proposer_id}>**.`,
       };
     }
 
@@ -442,7 +438,7 @@ export async function respondMarriage(responderId, decision = 'accept', opts = {
     ]);
 
     const dateFmt = formatVnDate(nowIso);
-    const ringTag = ringEmoji(ring.item_id, '💍');
+    const ringTag = ringEmoji(ring.item_id);
     const imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${ring.item_id}.png`;
 
     return {
@@ -573,7 +569,7 @@ export async function divorceMarriage(userId, opts = {}) {
       user_id: cleanId,
       former_spouse_id: formerSpouseId,
       former_spouse_name: formerSpouseName,
-      message: `💔 **ĐOẠN TUYỆT TIÊN DUYÊN** — **${user.username}** và **${formerSpouseName}** đã chính thức ly hôn. Nhẫn cưới và toàn bộ buff cặp đôi đã được thu hồi.`,
+      message: `${uiEm('ui_heart_broken')} **ĐOẠN TUYỆT TIÊN DUYÊN** — **${user.username}** và **${formerSpouseName}** đã chính thức ly hôn. Nhẫn cưới và toàn bộ buff cặp đôi đã được thu hồi.`,
     };
   });
 }

@@ -738,7 +738,9 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
   const totalDefRed = Math.min(0.75, (target.state.defDebuffPct || 0) + Number(targetDomInDeb.defReductionPct || 0));
   const baseDefTarget = elemData.isTrueDamage ? 0 : Math.max(0, Math.round(target.def * (1 - totalDefRed)));
 
-  let defPiercePct = sumV13Prop(actorV13, 'defPiercePct') + Number(actorDomOwn.defPiercePct || 0);
+  let defPiercePct = sumV13Prop(actorV13, 'defPiercePct')
+    + Number(actorDomOwn.defPiercePct || 0)
+    + (Number(actor?.setBonus?.defPiercePct || 0) / 100);
   if (hasPet(actor, 'thai_duong_kim_o')) { defPiercePct += 0.65; haxNotes.push('Xuyên Giáp 65%'); }
   else if (hasPet(actor, 'hoa_diem_ho')) { defPiercePct += 0.50; haxNotes.push('Thiêu Hồn Xuyên 50% Giáp'); }
   else if (hasPet(actor, 'bach_kim_ho_tu')) { defPiercePct += 0.35; haxNotes.push('Phá Giáp Trảm 35%'); }
@@ -1191,7 +1193,7 @@ export function triggerPostDamage(target, attacker) {
     events.push({
       actor: target.id,
       action: 'hp_swap',
-      skill: `Sinh Mệnh Nghịch Chuyển (Đổi ${Math.round(targetPct * 100)}% ↔ ${Math.round(attackerPct * 100)}% HP)`,
+      skill: `Sinh Mệnh Nghịch Chuyển (Đổi ${Math.round(targetPct * 100)}% <-> ${Math.round(attackerPct * 100)}% HP)`,
     });
   }
 
@@ -1249,7 +1251,7 @@ export function triggerPostDamage(target, attacker) {
       events.push({
         actor: target.id,
         action: 'hp_swap',
-        skill: `Thái Ất Đảo Nghịch (Đổi ${Math.round(targetPct * 100)}% ↔ ${Math.round(attackerPct * 100)}% HP)`,
+        skill: `Thái Ất Đảo Nghịch (Đổi ${Math.round(targetPct * 100)}% <-> ${Math.round(attackerPct * 100)}% HP)`,
       });
     }
     if (!target.state.phaseShiftUsed && h.phaseShift && (target.currentHp / target.maxHp) < h.phaseShift.hpRatio) {

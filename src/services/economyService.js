@@ -28,6 +28,7 @@ import {
 } from '../data/catalog.js';
 import {
   em,
+  uiEm,
   tierEmoji,
   roleTierEmoji,
   itemEmoji,
@@ -60,6 +61,40 @@ export const DEFAULT_AUTOSELL_CONFIG = {
   keep_new: false,
 };
 
+export const MYTHIC_PITY_THRESHOLD = 350;
+export const PITY_UNIQUE_CHANCE = 0.02;
+export const PITY_ENABLED_POOLS = ['pet', 'equipment', 'domain'];
+
+export function normalizePityState(raw) {
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try { obj = JSON.parse(raw); } catch { obj = {}; }
+  }
+  if (!obj || typeof obj !== 'object') obj = {};
+  return {
+    pet: Math.max(0, Math.floor(Number(obj.pet) || 0)),
+    equipment: Math.max(0, Math.floor(Number(obj.equipment) || 0)),
+    domain: Math.max(0, Math.floor(Number(obj.domain) || 0)),
+  };
+}
+
+export function advanceMythicPityStep(pityObj, pool, naturalRarityKey, rng = Math.random) {
+  const nextPity = normalizePityState(pityObj);
+  if (!PITY_ENABLED_POOLS.includes(pool)) {
+    return { nextPity, rarityKey: naturalRarityKey, pityTriggered: false, wantUnique: null };
+  }
+  nextPity[pool] += 1;
+  if (nextPity[pool] >= MYTHIC_PITY_THRESHOLD) {
+    nextPity[pool] = 0;
+    const wantUnique = rng() < PITY_UNIQUE_CHANCE;
+    return { nextPity, rarityKey: 'mythic', pityTriggered: true, wantUnique };
+  }
+  if (naturalRarityKey === 'mythic' || naturalRarityKey === 'supreme') {
+    nextPity[pool] = 0;
+  }
+  return { nextPity, rarityKey: naturalRarityKey, pityTriggered: false, wantUnique: null };
+}
+
 export function normalizeAutoSellConfig(raw) {
   let obj = raw;
   if (typeof raw === 'string') {
@@ -85,13 +120,13 @@ function parseAutoSellToggle(val) {
 }
 
 function formatAutoSellStatusLines(cfg) {
-  const badge = (on) => (on ? '🟢 **BẬT** *(Tự bán)*' : '⚫ **TẮT** *(Giữ lại)*');
+  const badge = (on) => (on ? `${uiEm('ui_toggle_on')} **BẬT** *(Tự bán)*` : `${uiEm('ui_toggle_off')} **TẮT** *(Giữ lại)*`);
   return [
     `• ${tierEmoji('common')} **Phàm Phẩm** (\`pham_pham\`): ${badge(cfg.common)}`,
     `• ${tierEmoji('rare')} **Linh Phẩm** (\`linh_pham\`): ${badge(cfg.rare)}`,
     `• ${tierEmoji('epic')} **Tiên Phẩm** (\`tien_pham\`): ${badge(cfg.epic)}`,
-    `• ${tierEmoji('mythic')} **Thần Thoại:** 🔒 **Luôn Bảo Vệ** *(Không bao giờ tự bán)*`,
-    `• ${em('su_sparkle')} **Giữ Món Mới (\`giu_mon_moi\`):** ${cfg.keep_new ? '🟢 **BẬT** *(Giữ bản đầu tiên chưa sở hữu, chỉ bán khi trùng)*' : '⚫ **TẮT** *(Bán ngay cả khi chưa sở hữu)*'}`,
+    `• ${tierEmoji('mythic')} **Thần Thoại:** ${uiEm('ui_lock')} **Luôn Bảo Vệ** *(Không bao giờ tự bán)*`,
+    `• ${em('su_sparkle')} **Giữ Món Mới (\`giu_mon_moi\`):** ${cfg.keep_new ? `${uiEm('ui_toggle_on')} **BẬT** *(Giữ bản đầu tiên chưa sở hữu, chỉ bán khi trùng)*` : `${uiEm('ui_toggle_off')} **TẮT** *(Bán ngay cả khi chưa sở hữu)*`}`,
   ].join('\n');
 }
 
@@ -153,7 +188,7 @@ export async function updateAutoSellConfig(userId, options = {}) {
         '',
         formatAutoSellStatusLines(next),
         '',
-        '💡 *Cách đổi nhanh:* `/autosell pham_pham:Bật linh_pham:Bật giu_mon_moi:Tắt`',
+        `${uiEm('ui_bulb_tip')} *Cách đổi nhanh:* \`/autosell pham_pham:Bật linh_pham:Bật giu_mon_moi:Tắt\``,
       ].join('\n'),
       message: `${hasChange ? 'Đã cập nhật' : 'Trạng thái'} AutoSell: Phàm=${next.common ? 'BẬT' : 'TẮT'} • Linh=${next.rare ? 'BẬT' : 'TẮT'} • Tiên=${next.epic ? 'BẬT' : 'TẮT'} • Giữ món mới=${next.keep_new ? 'BẬT' : 'TẮT'}`,
       footer: '',
@@ -600,6 +635,8 @@ export async function rollGacha(userId, options = {}) {
       if (key === 'mythic' || key === 'supreme') return false;
       return Boolean(autoSellCfg[key]);
     };
+    let pityState = normalizePityState(user.gacha_pity);
+    let anyPityTriggered = false;
     const results = [];
     const addedDiscordRoleIds = new Set();
     let refundLinhThach = 0;
@@ -608,7 +645,13 @@ export async function rollGacha(userId, options = {}) {
     let autoSellLinhThach = 0;
 
     for (let i = 0; i < count; i += 1) {
-      const rarityKey = rollRarityByRate(rng);
+      const naturalRarityKey = rollRarityByRate(rng);
+      const pityStep = advanceMythicPityStep(pityState, pool, naturalRarityKey, rng);
+      pityState = pityStep.nextPity;
+      const rarityKey = pityStep.rarityKey;
+      const isPityRoll = pityStep.pityTriggered;
+      const wantUnique = pityStep.wantUnique;
+      if (isPityRoll) anyPityTriggered = true;
 
       if (pool === 'role') {
         let roleCandidates = GACHA_ROLE_CATALOG.filter((r) => r.rarity_key === rarityKey);
@@ -667,7 +710,7 @@ export async function rollGacha(userId, options = {}) {
             expiresAt = new Date(baseMs + durTier.days * 86400000).toISOString();
           }
 
-          const perk = ROLE_PERKS_MAP[picked.role_id] || picked.perk || '✨ Quyền Năng Tiên Giới';
+          const perk = ROLE_PERKS_MAP[picked.role_id] || picked.perk || `${em('su_sparkle')} Quyền Năng Tiên Giới`;
           const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
           const usedSlots = new Set((userRoles || [])
             .filter((r) => r.is_equipped && r.equipped_slot && (r.is_permanent || !r.expires_at || new Date(r.expires_at) > nowDate))
@@ -746,6 +789,15 @@ export async function rollGacha(userId, options = {}) {
             .in('item_id', [...MYTHIC_UNIQUE_ITEM_IDS]);
           const takenSet = new Set((ownedMythics || []).map((r) => r.item_id));
           candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.item_id)));
+          if (isPityRoll) {
+            const nonUniques = candidates.filter((c) => !c.is_unique);
+            const availUniques = candidates.filter((c) => c.is_unique);
+            if (wantUnique && availUniques.length > 0) {
+              candidates = availUniques;
+            } else if (nonUniques.length > 0) {
+              candidates = nonUniques;
+            }
+          }
           if (candidates.length === 0) {
             refundLinhThach += 300;
             bonusStarStones += 5;
@@ -873,6 +925,15 @@ export async function rollGacha(userId, options = {}) {
             .in('entity_id', [...uniqueSet]);
           const takenSet = new Set((takenUniqueRows || []).map((r) => r.entity_id));
           candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.id)));
+          if (isPityRoll) {
+            const nonUniques = candidates.filter((c) => !c.is_unique);
+            const availUniques = candidates.filter((c) => c.is_unique);
+            if (wantUnique && availUniques.length > 0) {
+              candidates = availUniques;
+            } else if (nonUniques.length > 0) {
+              candidates = nonUniques;
+            }
+          }
           if (candidates.length === 0) {
             refundLinhThach += 300;
             bonusStarStones += 5;
@@ -963,6 +1024,15 @@ export async function rollGacha(userId, options = {}) {
             .in('pet_type', [...MYTHIC_UNIQUE_PET_TYPES]);
           const takenPets = new Set((ownedUniquePets || []).map((r) => r.pet_type));
           candidates = candidates.filter((p) => !(p.is_unique && takenPets.has(p.pet_type)));
+          if (isPityRoll) {
+            const nonUniques = candidates.filter((p) => !p.is_unique);
+            const availUniques = candidates.filter((p) => p.is_unique);
+            if (wantUnique && availUniques.length > 0) {
+              candidates = availUniques;
+            } else if (nonUniques.length > 0) {
+              candidates = nonUniques;
+            }
+          }
           if (candidates.length === 0) {
             refundLinhThach += 300;
             bonusStarStones += 5;
@@ -1085,11 +1155,20 @@ export async function rollGacha(userId, options = {}) {
 
     let finalBalance = Number(user.linh_thach || 0);
     const totalBonusLt = refundLinhThach + autoSellLinhThach;
+    const nowIso = new Date().toISOString();
+    const userPatch = {};
     if (totalBonusLt > 0) {
       finalBalance += totalBonusLt;
+      userPatch.linh_thach = finalBalance;
+    }
+    if (PITY_ENABLED_POOLS.includes(pool)) {
+      userPatch.gacha_pity = pityState;
+    }
+    if (Object.keys(userPatch).length > 0) {
+      userPatch.updated_at = nowIso;
       await supabase
         .from('users')
-        .update({ linh_thach: finalBalance, updated_at: new Date().toISOString() })
+        .update(userPatch)
         .eq('user_id', cleanId);
     }
     if (bonusStarStones > 0) {
@@ -1112,7 +1191,7 @@ export async function rollGacha(userId, options = {}) {
     const resultLines = results.map((r) => {
       if (r.kind === 'autosell_item' || r.kind === 'autosell_pet' || r.kind === 'autosell_domain' || r.kind === 'autosell_role') {
         const upgNote = r.grade_upgraded ? ` *(Kế thừa ${r.prev_grade} → ${r.enchant_grade}!)*` : '';
-        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — 💰 **[AutoSell +${r.sell_lt} LT]**${upgNote}`;
+        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${uiEm('ui_coin_gold')} **[AutoSell +${r.sell_lt} LT]**${upgNote}`;
       }
       if (r.kind === 'duplicate_domain') {
         return `• ${r.emoji || em('su_realm_star')} **${r.name}** (${r.rarity}) — Trùng +1 (Kho: **×${r.quantity}**)`;
@@ -1142,16 +1221,21 @@ export async function rollGacha(userId, options = {}) {
     const costLabel = paidWith === 'linh_thach'
       ? `\`${cost}\` ${em('su_linhthach')}`
       : `\`${count}\` Vé Gacha (\`0\` ${em('su_linhthach')})`;
+    const pityCur = PITY_ENABLED_POOLS.includes(pool) ? pityState[pool] : null;
+    const pityLine = PITY_ENABLED_POOLS.includes(pool)
+      ? `${em('su_realm_star')} **Pity Thần Thoại (${poolLabel})**: \`${pityCur}/${MYTHIC_PITY_THRESHOLD}\`${anyPityTriggered ? ` — ${em('su_sparkle')} **KÍCH HOẠT BẢO HIỂM THẦN THOẠI 350!**` : ''}`
+      : null;
     const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('pet_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
     const dupHeaderLine = (pool === 'role' || refundLinhThach > 0 || bonusStarStones > 0)
       ? `${em('pet_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
       : null;
     const autoSellHeaderLine = autoSellCount > 0
-      ? `💰 **AutoSell tự bán (\`/autosell\`)**: \`${autoSellCount}\` món → **+${autoSellLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
+      ? `${uiEm('ui_coin_gold')} **AutoSell tự bán (\`/autosell\`)**: \`${autoSellCount}\` món → **+${autoSellLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
       : null;
     const fullMessage = [
       `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,
       `${em('su_linhthach')} **Số dư còn lại**: \`${finalBalance.toLocaleString('vi-VN')}\` Linh Thạch`,
+      pityLine,
       dupHeaderLine,
       autoSellHeaderLine,
       `${em('su_sparkle')} **Kết quả**:`,
@@ -1172,6 +1256,10 @@ export async function rollGacha(userId, options = {}) {
       autosell_count: autoSellCount,
       autosell_linh_thach: autoSellLinhThach,
       bonus_star_stones: bonusStarStones,
+      pity_current: pityCur,
+      pity_max: MYTHIC_PITY_THRESHOLD,
+      pity_triggered: anyPityTriggered,
+      gacha_pity: pityState,
       linh_thach: finalBalance,
       linh_thach_fmt: finalBalance.toLocaleString('vi-VN'),
       add_role_ids: roleIdsList,

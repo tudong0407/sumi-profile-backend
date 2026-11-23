@@ -11,7 +11,7 @@ import {
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
 } from '../../data/catalog.js';
-import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById, uiEm } from '../../config/emojiHelper.js';
 import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
 import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
@@ -558,7 +558,7 @@ function formatEquipDetailedLines(c, compact = false) {
       return `${icon} **${item.item_name}**${tag}`;
     };
     return [
-      `• Pháp Bảo: ${shortDesc(w, '⚔️', 'VK')} • ${shortDesc(g, '💎', 'Ngọc')} • ${shortDesc(s, '🔥', 'Hồn')}`,
+      `• Pháp Bảo: ${shortDesc(w, `${em('su_crossed_swords')}`, 'VK')} • ${shortDesc(g, `${em('su_linhthach')}`, 'Ngọc')} • ${shortDesc(s, `${em('su_el_hoa')}`, 'Hồn')}`,
     ];
   }
   const desc = (item, label) => {
@@ -599,7 +599,7 @@ function buildFullBattleLog({
     const d2a = elementMatchup?.defenderToAttacker;
     if (a2d?.isTrueDamage && !d2a?.isTrueDamage) return 'Hỗn Độn xuyên giáp (+20% DMG)';
     if (d2a?.isTrueDamage && !a2d?.isTrueDamage) return 'Hỗn Độn xuyên giáp (+20% DMG)';
-    if (a2d?.multiplier >= 1.25 && d2a?.multiplier >= 1.25) return 'Ám ↔ Quang Tương Sát (+25% DMG)';
+    if (a2d?.multiplier >= 1.25 && d2a?.multiplier >= 1.25) return `Ám <-> Quang Tương Sát (+25% DMG)`;
     if (a2d?.multiplier > 1.0) return `${attacker.element} khắc ${defender.element} (+${Math.round((a2d.multiplier - 1) * 100)}% DMG)`;
     if (d2a?.multiplier > 1.0) return `${defender.element} khắc ${attacker.element} (+${Math.round((d2a.multiplier - 1) * 100)}% DMG)`;
     return 'Ngũ Hành Cân Bằng';
@@ -670,7 +670,7 @@ function buildFullBattleLog({
     const actorObj = t.actor === 'attacker' ? attacker : defender;
     const targetObj = t.actor === 'attacker' ? defender : attacker;
     if (t.action === 'skip') {
-      const sIcon = compactMode ? '🛡️' : em('su_shield_def');
+      const sIcon = compactMode ? `${em('su_shield_def')}` : em('su_shield_def');
       return `• **H${t.turn}** [${actorObj.petName}]: ${sIcon} ${t.haxTriggered || 'Mất lượt'}`;
     }
     if (t.action === 'miss') {
@@ -678,7 +678,7 @@ function buildFullBattleLog({
         ? `• **H${t.turn}** **${actorObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`
         : `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
     }
-    const cIcon = compactMode ? '💥' : em('su_crit_boom');
+    const cIcon = compactMode ? `${em('su_crit_boom')}` : em('su_crit_boom');
     const critTag = t.isCrit ? ` ${cIcon} **CRIT**` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
     if (compactMode) {
@@ -698,7 +698,7 @@ function buildFullBattleLog({
 
   const discordFooterLines = [
     ...webFooterLines,
-    ...(webLogUrl ? [`• 🌐 **Bản Web đầy đủ 100% hiệp:** [Mở Xem Chi Tiết Trên Web](${webLogUrl})`] : []),
+    ...(webLogUrl ? [`• ${em('su_realm_star')} **Bản Web đầy đủ 100% hiệp:** [Mở Xem Chi Tiết Trên Web](${webLogUrl})`] : []),
   ];
 
   const untruncatedLogLines = [
@@ -1178,7 +1178,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         success: false,
         status: 400,
         error: 'PET_BUSY_EXPLORING',
-        message: `🧭 Linh Thú chính **${activePetRow.pet_name}** của bạn hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên không thể tham gia PvP/PvE!\n• Bạn có thể dùng \`/linhthu\` chuyển sang một **Linh Thú phụ đang rảnh** làm Pet chính để tiếp tục chiến đấu bình thường.`,
+        message: `${uiEm('ui_compass_dir')} Linh Thú chính **${activePetRow.pet_name}** của bạn hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên không thể tham gia PvP/PvE!\n• Bạn có thể dùng \`/linhthu\` chuyển sang một **Linh Thú phụ đang rảnh** làm Pet chính để tiếp tục chiến đấu bình thường.`,
       };
     }
     if (activePetRow?.status === 'injured') {
@@ -1186,7 +1186,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         success: false,
         status: 400,
         error: 'PET_INJURED',
-        message: `🩹 Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** sau chuyến khám phá! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi sang Linh Thú khác.`,
+        message: `${uiEm('ui_heal_band')} Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** sau chuyến khám phá! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi sang Linh Thú khác.`,
       };
     }
   }
@@ -1716,10 +1716,19 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     nowMs: nowCreatedMs,
   });
 
-  // CHỈ pre-render tối đa 2-6 khung Discord (KHÔNG pre-render toàn bộ hiệp web!).
-  const preRenderTask = safeOptions.preRender !== false
+  // Ver 1.5 Speed-up:
+  // - Tháp (preRenderMode === 'final_only' hoặc mode === 'tower'): CHỈ pre-render đúng 1 khung Kết Quả Cuối (giảm ~80% CPU).
+  // - 1v1 (/battle): CHỈ pre-render Khung 1 + Khung Cuối; các khung giữa render on-demand 0.62x khi mở Web Log.
+  const isFinalOnly = safeOptions.preRenderMode === 'final_only' || mode === 'tower';
+  const framesToPreRender = safeOptions.preRender === false
+    ? []
+    : isFinalOnly
+      ? framesMeta.filter((f) => f.isFinal)
+      : framesMeta.filter((f) => f.index === 1 || f.isFinal);
+
+  const preRenderTask = framesToPreRender.length > 0
     ? Promise.all(
-      framesMeta.map(async (f) => {
+      framesToPreRender.map(async (f) => {
         try {
           const buf = await renderBattleCardQueued(`battle:${battleId}:${f.index}:webp`, finalResult, {
             scale: f.scale,

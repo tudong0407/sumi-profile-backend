@@ -16,7 +16,7 @@ import {
   DIVINE_REALM_CATALOG,
   WEEKLY_CONTRACTS_CONFIG,
 } from '../data/catalog.js';
-import { em } from '../config/emojiHelper.js';
+import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
@@ -487,7 +487,7 @@ export async function getQuestStatus(userId, options = {}) {
   const weeklyAllDone = weeklyContracts.every((c) => c.done);
   const weeklyClaimable = weeklyContracts.some((c) => c.done && !c.claimed) || (weeklyAllDone && !state.weekly_bonus_claimed);
 
-  const mark = (done, claimed = false) => (claimed ? '🏅' : done ? '✅' : '⬜');
+  const mark = (done, claimed = false) => (claimed ? `${em('su_medal_role')}` : done ? `${uiEm('ui_check')}` : `[ ]`);
   const nextFloor = Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1);
   const bandStart = Math.floor((nextFloor - 1) / 100) * 100 + 1;
   const bandEnd = Math.min(TOWER_MAX_FLOOR, bandStart + 99);
@@ -510,7 +510,7 @@ export async function getQuestStatus(userId, options = {}) {
     `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt} LT + ${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
     ``,
     `**3. Tháp Thí Luyện ${TOWER_MAX_FLOOR} Tầng (${nextTierName})**`,
-    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/15\` ${em('tower_reset_card', '🗼')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('enchant_stone')}`,
+    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/15\` ${em('tower_reset_card')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('enchant_stone')}`,
     `• Dùng \`/nhiemvu hanh_dong:tower\` khiêu chiến **Tầng ${nextFloor}** *(Win +${TOWER_WIN_BONUS_LT} LT / Lose -${TOWER_LOSS_PENALTY_LT} LT • Linh Vực mở từ F70 • Boss 5 tầng rơi +1 Tinh Thạch & +1 Đá Khắc Ấn)*!`,
     state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
   ].filter(Boolean);
@@ -633,7 +633,7 @@ export async function claimDailyQuests(userId, options = {}) {
       claimedBonus
         ? `${em('su_winner_trophy')} **HOÀN TẤT 5/5 NHIỆM VỤ HÀNG NGÀY!**`
         : `${em('su_sparkle')} **NHẬN THƯỞNG NHIỆM VỤ HÀNG NGÀY**`,
-      ...claimedNames.map((n) => `• ✅ ${n}`),
+      ...claimedNames.map((n) => `• ${uiEm('ui_check')} ${n}`),
       claimedBonus
         ? `• ${em('su_winner_trophy')} **Thưởng Tổng 5/5:** **+${DAILY_QUEST_REWARD_LT}** ${em('su_linhthach')} • **+1** ${em('gacha_ticket_equip')} • **+1** ${em('pet_star_stone')} • **+1** ${em('enchant_stone')}`
         : null,
@@ -860,7 +860,7 @@ export async function challengeTower(userId, options = {}) {
         success: false,
         status: 400,
         error: 'PET_BUSY_EXPLORING',
-        message: `🧭 Linh Thú chính **${activePetRow.pet_name}** đang đi **Khám Phá Bản Đồ** (\`/explorer\`), tạm khóa leo Tháp Thí Luyện! Hãy đổi sang Linh Thú phụ khác bằng \`/linhthu\` để tiếp tục leo tháp.`,
+        message: `${uiEm('ui_compass_dir')} Linh Thú chính **${activePetRow.pet_name}** đang đi **Khám Phá Bản Đồ** (\`/explorer\`), tạm khóa leo Tháp Thí Luyện! Hãy đổi sang Linh Thú phụ khác bằng \`/linhthu\` để tiếp tục leo tháp.`,
       };
     }
     if (activePetRow?.status === 'injured') {
@@ -868,7 +868,7 @@ export async function challengeTower(userId, options = {}) {
         success: false,
         status: 400,
         error: 'PET_INJURED',
-        message: `🩹 Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** — hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi Linh Thú khác.`,
+        message: `${uiEm('ui_heal_band')} Linh Thú chính **${activePetRow.pet_name}** đang bị **Trọng Thương** — hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` hoặc đổi Linh Thú khác.`,
       };
     }
 
@@ -901,6 +901,7 @@ export async function challengeTower(userId, options = {}) {
       battleKind: 'tower',
       maxTurns: 30,
       preRender: options.preRender !== false,
+      preRenderMode: 'final_only',
       skipQuestTracking: true,
       seed: options.seed,
     });
@@ -1112,7 +1113,7 @@ export async function claimWeeklyQuests(userId, options = {}) {
       linh_thach_fmt: newBal.toLocaleString('vi-VN'),
       message: [
         `${em('su_winner_trophy')} **NHẬN THƯỞNG HỢP ĐỒNG TUẦN THÀNH CÔNG!**`,
-        ...claimedLabels.map((lbl) => `• ✅ ${lbl}`),
+        ...claimedLabels.map((lbl) => `• ${uiEm('ui_check')} ${lbl}`),
         `• Tổng nhận: **+${totalLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch** • **+${totalStones}** ${em('enchant_stone')} **Đá Khắc Ấn**`,
         `• Số dư hiện tại: **${newBal.toLocaleString('vi-VN')} Linh Thạch**`,
       ].join('\n'),
@@ -1139,7 +1140,7 @@ export async function resetTowerAttempts(userId, options = {}) {
         success: false,
         status: 400,
         error: 'TOWER_ATTEMPTS_FULL',
-        message: `${em('tower_reset_card', '🗼')} Lượt đi Tháp hôm nay của bạn đang đầy **${TOWER_DAILY_ATTEMPTS_LIMIT}/${TOWER_DAILY_ATTEMPTS_LIMIT}**, không cần reset *(chưa tiêu hao thẻ)*!`,
+        message: `${em('tower_reset_card')} Lượt đi Tháp hôm nay của bạn đang đầy **${TOWER_DAILY_ATTEMPTS_LIMIT}/${TOWER_DAILY_ATTEMPTS_LIMIT}**, không cần reset *(chưa tiêu hao thẻ)*!`,
       };
     }
 
@@ -1156,7 +1157,7 @@ export async function resetTowerAttempts(userId, options = {}) {
         success: false,
         status: 400,
         error: 'NO_TOWER_RESET_CARD',
-        message: `${em('tower_reset_card', '🗼')} Bạn chưa có **Thẻ Reset Lượt Đi Tháp** trong túi đồ! Hãy mua trong \`/shop\` với giá **200 Linh Thạch** *(giới hạn 5 thẻ/ngày)*.`,
+        message: `${em('tower_reset_card')} Bạn chưa có **Thẻ Reset Lượt Đi Tháp** trong túi đồ! Hãy mua trong \`/shop\` với giá **200 Linh Thạch** *(giới hạn 5 thẻ/ngày)*.`,
       };
     }
 
@@ -1174,7 +1175,7 @@ export async function resetTowerAttempts(userId, options = {}) {
       attempts_used: 0,
       attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
       remaining_cards: remainingCards,
-      message: `${em('tower_reset_card', '🗼')} Đã tiêu **1 Thẻ Reset Lượt Đi Tháp**!\n• Lượt khiêu chiến Tháp hôm nay đã hồi đầy **0/${TOWER_DAILY_ATTEMPTS_LIMIT}** *(sẵn sàng đánh tiếp 5 lượt)*.\n• Thẻ còn lại trong túi: **${remainingCards}/15**`,
+      message: `${em('tower_reset_card')} Đã tiêu **1 Thẻ Reset Lượt Đi Tháp**!\n• Lượt khiêu chiến Tháp hôm nay đã hồi đầy **0/${TOWER_DAILY_ATTEMPTS_LIMIT}** *(sẵn sàng đánh tiếp 5 lượt)*.\n• Thẻ còn lại trong túi: **${remainingCards}/15**`,
       footer: '',
     };
   });

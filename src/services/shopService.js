@@ -19,6 +19,8 @@ import {
   SHOP_ROLE_BY_ID,
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
+  AVATAR_FRAMES,
+  AVATAR_FRAME_BY_ID,
   PUBLIC_BASE_URL,
   rollDefaultEnchantGrade,
 } from '../data/catalog.js';
@@ -26,6 +28,7 @@ import {
   em,
   ringEmoji,
   tierEmoji,
+  tierEmojiKey,
   roleTierEmoji,
   petEmoji,
   itemEmoji,
@@ -54,7 +57,7 @@ function applyShopDiscount(price, discountPct) {
   return Math.max(1, Math.round(p * (1 - pct / 100)));
 }
 
-export const SHOP_CATEGORIES = ['rings', 'pets', 'equipment', 'roles', 'consumables', 'backgrounds'];
+export const SHOP_CATEGORIES = ['rings', 'pets', 'equipment', 'roles', 'consumables', 'backgrounds', 'frames'];
 
 const SHOP_PETS_BY_ID = Object.fromEntries(SHOP_PETS.map((p) => [p.pet_type, p]));
 const SHOP_EQUIP_BY_ID = Object.fromEntries(SHOP_EQUIPMENT.map((e) => [e.item_id, e]));
@@ -101,6 +104,9 @@ function resolveShopEntry(category, itemId) {
     }
     if (c === 'backgrounds' && BACKGROUND_BY_ID[rawId] && BACKGROUND_BY_ID[rawId].price > 0) {
       return { category: 'backgrounds', item_id: rawId, item: BACKGROUND_BY_ID[rawId] };
+    }
+    if (c === 'frames' && AVATAR_FRAME_BY_ID[rawId] && AVATAR_FRAME_BY_ID[rawId].price > 0) {
+      return { category: 'frames', item_id: rawId, item: AVATAR_FRAME_BY_ID[rawId] };
     }
   }
   return null;
@@ -149,8 +155,18 @@ function buildCategorySummary(cat, page = 1) {
     const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
     const slice = bgs.slice((safePage - 1) * pageSize, safePage * pageSize);
     return slice.map((b) =>
-      `• ${em('frame_unlock_token')} **${b.name}** *(${b.rarity})* — **${b.price.toLocaleString('vi-VN')}** ${lt}`
-    ).join('\n') + `\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
+      `• ${tierEmoji(b.rarity_key)} **${b.name}** — **${b.price.toLocaleString('vi-VN')}** ${lt}`
+    ).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${bgs.length} mẫu Background Hồ Sơ (300 - 4.000 LT)*`;
+  }
+  if (cat === 'frames') {
+    const frames = AVATAR_FRAMES.filter((f) => f.price > 0);
+    const pageSize = 10;
+    const totalPages = Math.max(1, Math.ceil(frames.length / pageSize));
+    const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
+    const slice = frames.slice((safePage - 1) * pageSize, safePage * pageSize);
+    return slice.map((f) =>
+      `• ${tierEmoji(f.rarity_key)} **${f.name}** — **${f.price.toLocaleString('vi-VN')}** ${lt}`
+    ).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — tổng cộng ${frames.length} mẫu Viền Avatar (\`/profile\`, \`/rank\`, \`/battle\`, \`/linhmach\`)*`;
   }
   return '';
 }
@@ -172,6 +188,7 @@ export async function getShopCatalog(category = 'all', options = {}) {
   }
 
   const paidBgs = BACKGROUND_CATALOG.filter((b) => b.price > 0);
+  const paidFrames = AVATAR_FRAMES.filter((f) => f.price > 0);
   const catalogData = {
     rings: MARRY_RINGS,
     pets: SHOP_PETS,
@@ -179,13 +196,14 @@ export async function getShopCatalog(category = 'all', options = {}) {
     roles: SHOP_ROLE_PACKAGES,
     consumables: SHOP_CONSUMABLES,
     backgrounds: paidBgs,
+    frames: paidFrames,
   };
 
   if (cat && cat !== 'all' && !SHOP_CATEGORIES.includes(cat)) {
     return { success: false, status: 404, error: 'CATEGORY_NOT_FOUND', message: `Danh mục '${category}' không tồn tại.` };
   }
 
-  const pageSize = cat === 'equipment' ? 12 : cat === 'backgrounds' ? 10 : 24;
+  const pageSize = cat === 'equipment' ? 12 : (cat === 'backgrounds' || cat === 'frames') ? 10 : 24;
   const fullCatItems = (cat && cat !== 'all') ? (catalogData[cat] || []) : [];
   const totalPages = Math.max(1, Math.ceil(fullCatItems.length / pageSize));
   const safePage = Math.min(Math.max(1, parseInt(options.page || '1', 10) || 1), totalPages);
@@ -195,13 +213,15 @@ export async function getShopCatalog(category = 'all', options = {}) {
     ? [
         `${em('su_linhthach')} **CHÀO MỪNG ĐẾN VỚI TIÊN BẢO CÁC (SHOP SUMI FAMILY)**`,
         balance !== null ? `• Số dư hiện tại: **${balance.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**` : '',
+        '',
         `• **Nhẫn Cưới (4 cấp)**: Kết duyên Tiên Lữ, tăng EXP & Chiến Lực đôi.`,
         `• **Linh Thú (${SHOP_PETS.length} loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
         `• **Pháp Bảo (${SHOP_EQUIPMENT.length} món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
         `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
-        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha (Pháp Bảo/Linh Thú/Linh Vực), Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu, Khung Viền.`,
+        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha (Pháp Bảo/Linh Thú/Linh Vực), Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
-      ].filter(Boolean).join('\n')
+        `• **Viền Avatar (${paidFrames.length} mẫu)**: Đổi khung viền trên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`.`,
+      ].filter((x) => x !== undefined).join('\n')
     : buildCategorySummary(cat, safePage);
 
   return {
@@ -218,7 +238,8 @@ export async function getShopCatalog(category = 'all', options = {}) {
           page_items: pageItems,
           dropdown_options: pageItems.slice(0, 25).map((it) => ({
             label: String(it.name || it.item_name || it.pet_name || it.item_id || it.pet_type || '').slice(0, 100),
-            value: String(it.item_id || it.pet_type || it.role_id || it.bg_id || '').slice(0, 100),
+            value: String(it.item_id || it.pet_type || it.role_id || it.bg_id || it.frame_id || '').slice(0, 100),
+            emoji_key: (cat === 'backgrounds' || cat === 'frames') ? tierEmojiKey(it.rarity_key) : undefined,
           })),
         }
       : { categories: catalogData }),
@@ -274,7 +295,17 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
       if (own) { alreadyOwned = true; ownedNote = '*(Đã sở hữu Pháp Bảo này)*'; }
     } else if (resolved.category === 'backgrounds') {
       const { data: own } = await supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', resolved.item_id).gt('quantity', 0).maybeSingle();
-      if (own) { alreadyOwned = true; ownedNote = '*(Đã mở khóa nền này — dùng `/equip background`)*'; }
+      if (own) { alreadyOwned = true; ownedNote = '*(Đã mở khóa nền này — dùng `/equip`)*'; }
+    } else if (resolved.category === 'frames') {
+      const [{ data: ownFrame }, { data: legacyTok }] = await Promise.all([
+        supabase.from('user_frames').select('frame_id').eq('user_id', cleanId).eq('frame_id', resolved.item_id).maybeSingle(),
+        supabase.from('user_inventory').select('quantity').eq('user_id', cleanId).eq('item_id', 'frame_unlock_token').gt('quantity', 0).maybeSingle(),
+      ]);
+      const LEGACY_GRANTED = new Set(['frame_royal_legacy', 'jade_lotus', 'amethyst_celestial', 'crimson_phoenix', 'frost_crystal']);
+      if (ownFrame || (legacyTok && LEGACY_GRANTED.has(resolved.item_id))) {
+        alreadyOwned = true;
+        ownedNote = '*(Đã mở khóa viền này — dùng `/equip`)*';
+      }
     } else if (resolved.category === 'roles') {
       const { data: own } = await supabase.from('user_roles').select('*').eq('user_id', cleanId).eq('role_id', resolved.item_id).maybeSingle();
       if (own?.is_permanent) {
@@ -368,13 +399,24 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     ].join('\n');
   } else if (resolved.category === 'backgrounds') {
     price = disc(it.price);
-    title = `${em('frame_unlock_token')} ${it.name}`;
+    title = `${tierEmoji(it.rarity_key)} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/${it.file}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
-      `${tierEmoji(it.rarity_key)} **${it.rarity}** • Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),
+      `${tierEmoji(it.rarity_key)} Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),
       `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
-      `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip loai:background ma_id:${it.bg_id}\``,
+      `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip ma_id:${it.bg_id}\``,
+    ].join('\n');
+  } else if (resolved.category === 'frames') {
+    price = disc(it.price);
+    title = `${tierEmoji(it.rarity_key)} ${it.name}`;
+    imageUrl = `${PUBLIC_BASE_URL}/api/shop/frame-preview/${it.frame_id}.png`;
+    color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
+    description = [
+      `${tierEmoji(it.rarity_key)} Khung Viền Avatar \`/profile\`, \`/rank\`, \`/battle\`, \`/linhmach\` ${ownedNote}`.trim(),
+      `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
+      `${em('su_sparkle')} ${it.description}`,
+      `${em('su_wiki_scroll')} Mã trang bị sau khi mua: \`/equip ma_id:${it.frame_id}\``,
     ].join('\n');
   }
 
@@ -507,7 +549,19 @@ export async function buyShopItem(userId, payload = {}) {
         .gt('quantity', 0)
         .maybeSingle();
       if (existingBg) {
-        return { success: false, status: 400, error: 'ALREADY_OWNED', message: `Bạn đã mở khóa Ảnh Nền **${it.name}** rồi! Dùng \`/equip loai:background ma_id:${it.bg_id}\` để đổi.` };
+        return { success: false, status: 400, error: 'ALREADY_OWNED', message: `Bạn đã mở khóa Ảnh Nền **${it.name}** rồi! Dùng \`/equip ma_id:${it.bg_id}\` để đổi.` };
+      }
+    } else if (resolved.category === 'frames') {
+      totalCost = it.price;
+      displayName = it.name;
+      const { data: existingFrame } = await supabase
+        .from('user_frames')
+        .select('frame_id')
+        .eq('user_id', cleanId)
+        .eq('frame_id', it.frame_id)
+        .maybeSingle();
+      if (existingFrame) {
+        return { success: false, status: 400, error: 'ALREADY_OWNED', message: `Bạn đã sở hữu Viền Avatar **${it.name}** rồi! Dùng \`/equip ma_id:${it.frame_id}\` để đeo.` };
       }
     } else {
       totalCost = it.price * quantity;
@@ -638,6 +692,13 @@ export async function buyShopItem(userId, payload = {}) {
       } else if (resolved.category === 'rings') {
         extraNote = `\n• Dùng \`/marry hanh_dong:propose nhan:${resolved.item_id}\` để cầu hôn hoặc \`/marry hanh_dong:upgrade_ring\` để nâng nhẫn!`;
       }
+    } else if (resolved.category === 'frames') {
+      await supabase.from('user_frames').upsert({
+        user_id: cleanId,
+        frame_id: resolved.item_id,
+        purchased_at: nowIso,
+      }, { onConflict: 'user_id,frame_id' });
+      extraNote = `\n• Dùng \`/equip ma_id:${resolved.item_id}\` để đeo ngay lên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`!`;
     } else if (resolved.category === 'pets') {
       rolledGrade = rollDefaultEnchantGrade();
       await supabase.from('user_pets').insert({
