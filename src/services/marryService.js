@@ -15,6 +15,7 @@ import {
   PUBLIC_BASE_URL,
 } from '../data/catalog.js';
 import { em, ringEmoji, tierEmoji, uiEm } from '../config/emojiHelper.js';
+import { resolvePublicAssetPath } from '../canvas/drawUtils.js';
 import {
   sanitizeUserId,
   ensureUserInitialized,
@@ -157,7 +158,7 @@ export async function getMarriageStatus(userId, opts = {}) {
     ? `\n${em('su_sparkle')} **NGÀY KỶ NIỆM ĐẶC BIỆT!** Đang nhận thêm **+10% EXP** hôm nay!`
     : '';
 
-  const imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${buffs.ring_id}.png`;
+  const imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${buffs.ring_id}.png`)}`;
   const lines = [
     `${ringTag} **Tiên Lữ Kết Duyên**: **${user.username}** ${em('su_sparkle')} **${user.marry_username || user.marry_user_id}**`,
     `${tierTag} **Nhẫn Đang Đeo**: **${buffs.ring_name}** *(${buffs.ring_rarity})*`,
@@ -284,7 +285,7 @@ export async function proposeMarriage(proposerId, targetId, ringId = 'ring_commo
     if (insErr) throw new Error(`Create proposal failed: ${insErr.message}`);
 
     const ringTag = ringEmoji(resolvedRingId);
-    const imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${resolvedRingId}.png`;
+    const imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${resolvedRingId}.png`)}`;
 
     return {
       success: true,
@@ -439,7 +440,7 @@ export async function respondMarriage(responderId, decision = 'accept', opts = {
 
     const dateFmt = formatVnDate(nowIso);
     const ringTag = ringEmoji(ring.item_id);
-    const imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${ring.item_id}.png`;
+    const imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${ring.item_id}.png`)}`;
 
     return {
       success: true,
@@ -529,7 +530,7 @@ export async function upgradeMarriageRing(userId, newRingId, opts = {}) {
       new_ring_id: targetRingId,
       ring: nextRing,
       marry_date: user.marry_date,
-      image_url: `${PUBLIC_BASE_URL}/assets/rings/${targetRingId}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${targetRingId}.png`)}`,
       message: `${ringEmoji(targetRingId)} Nâng cấp nhẫn thành công lên **${nextRing.name}** *(${nextRing.rarity})*!\n• Buff nhẫn mới: **+${nextRing.exp_bonus_pct}% EXP** & **+${nextRing.power_bonus_pct}% Chiến Lực đôi**.\n• Ngày kết hôn \`${dateFmt || 'cũ'}\` và chuỗi Streak được giữ nguyên trọn vẹn!`,
     };
   });

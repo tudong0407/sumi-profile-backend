@@ -68,12 +68,23 @@ export function setCachedTurnBuffer(battleId, key, buffer) {
   trimMap(frameBufferCache, MAX_FRAME_BUFFERS);
 }
 
+function isSyntheticTestBattle(participantIds = []) {
+  if (process.env.NODE_ENV === 'test' || process.env.DISABLE_BATTLE_LOG_PERSIST === '1') {
+    return true;
+  }
+  if (Array.isArray(participantIds) && participantIds.length > 0) {
+    return participantIds.every((id) => /^(900000|999|888|1234567890|111111)/.test(String(id || '')));
+  }
+  return false;
+}
+
 export async function saveBattleLogRecord({
   battleId,
   battleKind = '1v1',
   channelId = null,
   participantIds = [],
   payload,
+  persist = true,
   nowMs = Date.now(),
 } = {}) {
   const cleanId = String(battleId || '').trim();
@@ -121,7 +132,7 @@ export async function saveBattleLogRecord({
   }
   trimMap(latestByUserKind, 600);
 
-  if (supabase) {
+  if (supabase && persist !== false && !isSyntheticTestBattle(cleanParticipants)) {
     try {
       await supabase.from('battle_logs').upsert({
         battle_id: cleanId,

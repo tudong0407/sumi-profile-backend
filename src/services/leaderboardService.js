@@ -134,10 +134,26 @@ async function grantInventoryItem(userId, itemId, qty) {
   }
 }
 
+const leaderboardCache = new Map();
+const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
+
+export function clearLeaderboardCache() {
+  leaderboardCache.clear();
+}
+
 export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, options = {}) {
   const cleanType = String(rawType || 'level').trim().toLowerCase();
   const type = VALID_LEADERBOARD_TYPES.includes(cleanType) ? cleanType : 'level';
   const limit = Math.max(1, Math.min(20, Number(limitRaw) || 10));
+
+  const useCache = process.env.NODE_ENV !== 'test' && !options.noCache && !options.dateKey && !options.now;
+  const cacheKey = `${type}:${limit}`;
+  if (useCache) {
+    const cached = leaderboardCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+  }
 
   if (!supabase && type !== 'chat' && type !== 'voice') {
     return {
@@ -341,7 +357,7 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
     ? (entries.map((e) => e.line).join('\n') + dailyRewardNote).slice(0, 1900)
     : `• Chưa có dữ liệu xếp hạng cho mục này.${dailyRewardNote}`;
 
-  return {
+  const result = {
     success: true,
     type,
     limit,
@@ -350,6 +366,10 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
     summary_leaderboard: summaryLeaderboard,
     message: `${title}\n\n${summaryLeaderboard}`,
   };
+  if (useCache) {
+    leaderboardCache.set(cacheKey, { value: result, expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS });
+  }
+  return result;
 }
 
 /**

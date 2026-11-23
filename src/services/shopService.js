@@ -35,6 +35,7 @@ import {
   elementEmoji,
   gradeEmoji,
 } from '../config/emojiHelper.js';
+import { resolvePublicAssetPath } from '../canvas/drawUtils.js';
 
 function getVnDateKey(date = new Date()) {
   const vnTime = new Date(date.getTime() + 7 * 3600 * 1000);
@@ -411,7 +412,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   if (resolved.category === 'rings') {
     price = disc(it.price);
     title = `${ringEmoji(it.item_id)} ${it.name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/assets/rings/${it.item_id}.png`;
+    imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${it.item_id}.png`)}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
     description = [
       `${tierEmoji(it.rarity_key)} **Phẩm Cấp**: **${it.rarity}** ${ownedNote}`.trim(),
@@ -422,7 +423,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   } else if (resolved.category === 'pets') {
     price = disc(it.price);
     title = `${petEmoji(it.pet_type)} ${it.pet_name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${it.pet_type}.png`;
+    imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${it.pet_type}.webp`;
     color = it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
     description = [
       `${tierEmoji(it.rarity_key)} **${it.rarity}** • ${elementEmoji(it.element)} Hệ **${it.element}** ${ownedNote}`.trim(),
@@ -433,7 +434,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   } else if (resolved.category === 'equipment') {
     price = disc(it.price);
     title = `${itemEmoji(it.item_id)} ${it.item_name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.png`;
+    imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp`;
     color = it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8';
     const statParts = [
       it.bonus_atk ? `ATK+${it.bonus_atk}` : '',
@@ -463,7 +464,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   } else if (resolved.category === 'consumables') {
     price = disc(it.price);
     title = `${it.icon} ${it.name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/assets/shop/${it.item_id}.png`;
+    imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`shop/${it.item_id}.png`)}`;
     color = '#38bdf8';
     description = [
       `${em('pet_star_stone')} **Vật Phẩm Tu Tiên** ${ownedNote}`.trim(),
@@ -473,7 +474,7 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   } else if (resolved.category === 'backgrounds') {
     price = disc(it.price);
     title = `${tierEmoji(it.rarity_key)} ${it.name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/assets/${it.file}`;
+    imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(it.file)}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),

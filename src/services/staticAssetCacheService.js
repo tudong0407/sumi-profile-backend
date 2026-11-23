@@ -388,13 +388,20 @@ export function warmStaticAssetsInBackground() {
   }
   return (async () => {
     try {
-      const res = await prerenderAllStaticAssets({
-        formats: ['webp'],
-        force: false,
-        logger: (msg) => console.log(msg),
-      });
-      await warmMythicUniqueCards('webp');
-      return res;
+      if (process.env.PRERENDER_WARM_ALL === '1') {
+        const res = await prerenderAllStaticAssets({
+          formats: ['webp'],
+          force: false,
+          logger: (msg) => console.log(msg),
+        });
+        await warmMythicUniqueCards('webp');
+        return res;
+      }
+      // Nhẹ RAM & khởi động Render: chỉ dựng sẵn biểu đồ Ngũ Hành; các thẻ Wiki dựng on-demand & cache LRU + đĩa
+      await getStaticElementChartBuffer('webp');
+      prerenderState.ready = Math.max(prerenderState.ready, 1);
+      prerenderState.lastCompletedAt = new Date().toISOString();
+      return { success: true, lightweight: true, ready: prerenderState.ready };
     } catch (err) {
       console.warn('[StaticCache] Background warm failed:', err.message);
       return { success: false, error: err.message };

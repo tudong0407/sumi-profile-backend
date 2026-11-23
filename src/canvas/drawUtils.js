@@ -46,49 +46,104 @@ export function sanitizeText(str) {
   return String(str).replace(/\0/g, '').replace(/・/g, ' • ');
 }
 
+const ASSET_EXT_PRIORITY = ['.webp', '.gif', '.png', '.jpg', '.jpeg'];
+const PUBLIC_ASSET_EXT_PRIORITY = ['.gif', '.webp', '.png', '.jpg', '.jpeg'];
+const ASSET_SUBFOLDERS = [
+  'items',
+  'pets',
+  'pets/icons',
+  'domains',
+  'backgrounds',
+  'veins',
+  'badges',
+  'rings',
+  'shop',
+  'farm',
+  'minigames',
+  'maps',
+  'frames',
+];
+const assetPathCache = new Map();
+const ASSET_PATH_CACHE_MAX = 1500;
+
+export function clearAssetPathCache() {
+  assetPathCache.clear();
+}
+
+function cacheResolvedAssetPath(key, resolved) {
+  if (!resolved) return null;
+  if (assetPathCache.has(key)) assetPathCache.delete(key);
+  else if (assetPathCache.size >= ASSET_PATH_CACHE_MAX) {
+    const oldest = assetPathCache.keys().next().value;
+    if (oldest !== undefined) assetPathCache.delete(oldest);
+  }
+  assetPathCache.set(key, resolved);
+  return resolved;
+}
+
+function findFileWithExtFallback(candidatePath, exts = ASSET_EXT_PRIORITY) {
+  if (!candidatePath) return null;
+  if (fs.existsSync(candidatePath)) return candidatePath;
+  const stem = candidatePath.replace(/\.(png|webp|gif|jpe?g)$/i, '');
+  if (!stem) return null;
+  for (const ext of exts) {
+    const alt = `${stem}${ext}`;
+    if (fs.existsSync(alt)) return alt;
+  }
+  return null;
+}
+
 /**
- * Tìm đường dẫn file cục bộ hoặc asset dự phòng
+ * Tìm đường dẫn file cục bộ hoặc asset dự phòng (tự fallback .webp / .gif / .png / .jpg)
  */
-export function resolveAssetPath(filePathOrName) {
+export function resolveAssetPath(filePathOrName, exts = ASSET_EXT_PRIORITY) {
   if (!filePathOrName) return null;
+  const raw = String(filePathOrName).trim();
+  if (!raw) return null;
 
-  if (path.isAbsolute(filePathOrName) && fs.existsSync(filePathOrName)) {
-    return filePathOrName;
-  }
-
-  const cwdPath = path.resolve(process.cwd(), filePathOrName);
-  if (fs.existsSync(cwdPath)) {
-    return cwdPath;
-  }
-
-  const directAssetPath = path.join(ASSETS_DIR, filePathOrName);
-  if (fs.existsSync(directAssetPath)) {
-    return directAssetPath;
-  }
-  const basename = path.basename(filePathOrName);
-  const assetPath = path.join(ASSETS_DIR, basename);
-  if (fs.existsSync(assetPath)) {
-    return assetPath;
+  const isDefaultExts = exts === ASSET_EXT_PRIORITY;
+  const cacheKey = `${isDefaultExts ? 'd' : exts.join(',')}:${raw}`;
+  if (assetPathCache.has(cacheKey)) {
+    const cached = assetPathCache.get(cacheKey);
+    if (fs.existsSync(cached)) return cached;
+    assetPathCache.delete(cacheKey);
   }
 
-  const itemPath = path.join(ASSETS_DIR, 'items', basename);
-  if (fs.existsSync(itemPath)) {
-    return itemPath;
+  if (path.isAbsolute(raw)) {
+    const absFound = findFileWithExtFallback(raw, exts);
+    if (absFound) return cacheResolvedAssetPath(cacheKey, absFound);
   }
-  const petPath = path.join(ASSETS_DIR, 'pets', basename);
-  if (fs.existsSync(petPath)) {
-    return petPath;
-  }
-  const bgPath = path.join(ASSETS_DIR, 'backgrounds', basename);
-  if (fs.existsSync(bgPath)) {
-    return bgPath;
-  }
-  const framePath = path.join(ASSETS_DIR, 'frames', basename);
-  if (fs.existsSync(framePath)) {
-    return framePath;
+
+  const cwdFound = findFileWithExtFallback(path.resolve(process.cwd(), raw), exts);
+  if (cwdFound) return cacheResolvedAssetPath(cacheKey, cwdFound);
+
+  const directFound = findFileWithExtFallback(path.join(ASSETS_DIR, raw), exts);
+  if (directFound) return cacheResolvedAssetPath(cacheKey, directFound);
+
+  const basename = path.basename(raw);
+  const rootAssetFound = findFileWithExtFallback(path.join(ASSETS_DIR, basename), exts);
+  if (rootAssetFound) return cacheResolvedAssetPath(cacheKey, rootAssetFound);
+
+  for (const sub of ASSET_SUBFOLDERS) {
+    const subFound = findFileWithExtFallback(path.join(ASSETS_DIR, sub, basename), exts);
+    if (subFound) return cacheResolvedAssetPath(cacheKey, subFound);
   }
 
   return null;
+}
+
+/**
+ * Chuẩn hóa đường dẫn public `/assets/...` (ưu tiên `.gif` động -> `.webp` -> `.png` -> `.jpg`)
+ */
+export function resolvePublicAssetPath(relPath) {
+  const cleaned = String(relPath || '').replace(/^\/+/, '').replace(/^assets\//i, '').replace(/\\/g, '/');
+  if (!cleaned) return '';
+  const candidate = path.join(ASSETS_DIR, cleaned);
+  const found = findFileWithExtFallback(candidate, PUBLIC_ASSET_EXT_PRIORITY);
+  if (found) {
+    return path.relative(ASSETS_DIR, found).replace(/\\/g, '/');
+  }
+  return cleaned;
 }
 
 /**

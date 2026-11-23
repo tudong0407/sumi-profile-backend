@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getProfileData, sanitizeUserId, isUnresolvedBotGhostVar } from './services/profileService.js';
@@ -180,7 +181,36 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/assets', express.static(path.join(PROJECT_ROOT, 'assets')));
+const ASSETS_PUBLIC_DIR = path.join(PROJECT_ROOT, 'assets');
+const PUBLIC_ASSET_EXT_FALLBACK = ['.webp', '.gif', '.png', '.jpg', '.jpeg'];
+
+app.use('/assets', (req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+  try {
+    const cleanRel = decodeURIComponent(req.path || '').replace(/^\/+/, '');
+    if (!cleanRel) return next();
+    const resolved = path.resolve(ASSETS_PUBLIC_DIR, cleanRel);
+    if (!resolved.startsWith(ASSETS_PUBLIC_DIR + path.sep)) {
+      return res.status(403).end();
+    }
+    if (!fs.existsSync(resolved) && /\.(png|webp|gif|jpe?g)$/i.test(cleanRel)) {
+      const stem = resolved.replace(/\.(png|webp|gif|jpe?g)$/i, '');
+      const relStem = cleanRel.replace(/\.(png|webp|gif|jpe?g)$/i, '');
+      for (const ext of PUBLIC_ASSET_EXT_FALLBACK) {
+        if (fs.existsSync(`${stem}${ext}`)) {
+          const qsIdx = req.url.indexOf('?');
+          const qs = qsIdx >= 0 ? req.url.slice(qsIdx) : '';
+          req.url = `/${relStem}${ext}${qs}`;
+          break;
+        }
+      }
+    }
+  } catch {
+    // ignore malformed path encoding
+  }
+  return next();
+});
+app.use('/assets', express.static(ASSETS_PUBLIC_DIR, { maxAge: '30d', etag: true }));
 
 function getCleanParam(val, fallback) {
   if (val && typeof val === 'string') {
@@ -1770,6 +1800,7 @@ app.post('/api/economy/gift', requireBackendApiKey, requireUpdateAck, async (req
 app.post('/api/roles/cleanup-expired', requireBackendApiKey, async (req, res) => {
   try {
     const result = await cleanupExpiredRoles();
+    cleanupExpiredBattleLogs().catch(() => null);
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
     console.error('[Server] /api/roles/cleanup-expired error:', err);

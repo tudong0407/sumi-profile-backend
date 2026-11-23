@@ -14,6 +14,7 @@ import {
   FONT_FAMILY,
   sanitizeText,
   resolveAssetPath,
+  loadImageSafe,
   drawAntiAliasedAvatarWithBorder,
   preloadAvatarFrameOverlay,
 } from './drawUtils.js';
@@ -50,20 +51,7 @@ function drawRoundRect(ctx, x, y, w, h, r) {
 }
 
 async function safeLoadImage(pathOrUrl) {
-  if (!pathOrUrl) return null;
-  try {
-    if (/^https?:\/\//i.test(pathOrUrl)) {
-      const resp = await fetch(pathOrUrl, { signal: AbortSignal.timeout(1200) });
-      if (!resp.ok) return null;
-      const buf = Buffer.from(await resp.arrayBuffer());
-      return await loadImage(buf);
-    }
-    const local = resolveAssetPath(pathOrUrl);
-    if (!local) return null;
-    return await loadImage(local);
-  } catch {
-    return null;
-  }
+  return loadImageSafe(pathOrUrl, 1500, null);
 }
 
 function drawClippedImage(ctx, img, x, y, size, radius = 14) {

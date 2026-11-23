@@ -66,7 +66,7 @@ describe('Tier 1 - Phase 2 Shop (/shop catalog, preview, buy, frame/title equip)
     const pj = await prevRes.json();
     assert.equal(pj.success, true);
     assert.equal(pj.price, 2000);
-    assert.match(pj.image_url, /assets\/rings\/ring_rare\.png/);
+    assert.match(pj.image_url, /assets\/rings\/ring_rare\.(webp|png|gif)/);
 
     // Buy without itemId reads from shop_selections
     const buyFromSel = await testServer.fetch('/api/shop/buy', {

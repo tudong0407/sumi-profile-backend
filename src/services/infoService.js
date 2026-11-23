@@ -26,6 +26,7 @@ import {
 } from '../data/catalog.js';
 import { GACHA_DISMANTLE_VALUES, normalizeEmojiAwareQuery } from './inventoryService.js';
 import { LATEST_VERSION } from '../data/changelogs.js';
+import { resolvePublicAssetPath } from '../canvas/drawUtils.js';
 import {
   em,
   tierEmoji,
@@ -300,7 +301,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
             : '• **Nguồn kiếm:** Mua tại `/shop` (hoặc thưởng `/nhiemvu` / Tháp Thí Luyện).',
       ].join('\n'),
       color: '#38bdf8',
-      image_url: `${PUBLIC_BASE_URL}/assets/shop/${c.item_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`shop/${c.item_id}.png`)}`,
       footer: '',
     };
   }
@@ -320,7 +321,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• **Mô tả:** ${r.description}`,
       ].join('\n'),
       color: '#fb7185',
-      image_url: `${PUBLIC_BASE_URL}/assets/rings/${r.item_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`rings/${r.item_id}.png`)}`,
       footer: '',
     };
   }
@@ -353,7 +354,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${domainEmoji(d.domain_id, em('su_arena'))} LINH VỰC: ${d.name}`,
       description: lines.join('\n'),
       color: d.rarity_key === 'supreme' ? '#ec4899' : d.rarity_key === 'mythic' ? '#f59e0b' : d.rarity_key === 'epic' ? '#a855f7' : d.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/assets/domains/${d.domain_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`domains/${d.domain_id}.png`)}`,
       footer: '',
     };
   }
@@ -380,7 +381,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${s.sense_id}\` để gắn vào Linh Vực.*`,
       ].filter(Boolean).join('\n'),
       color: s.rarity_key === 'supreme' ? '#ec4899' : '#38bdf8',
-      image_url: `${PUBLIC_BASE_URL}/assets/domains/${s.sense_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`domains/${s.sense_id}.png`)}`,
       footer: '',
     };
   }
@@ -406,7 +407,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• *Dùng \`/linhvuc hanh_dong:equip ma_id:${r.realm_id}\` để gắn vào Linh Vực.*`,
       ].filter(Boolean).join('\n'),
       color: r.rarity_key === 'supreme' ? '#ec4899' : '#f43f5e',
-      image_url: `${PUBLIC_BASE_URL}/assets/domains/${r.realm_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`domains/${r.realm_id}.png`)}`,
       footer: '',
     };
   }
@@ -427,7 +428,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• *Dùng \`/farm hanh_dong:plant hat_giong:${s.seed_id}\` để bắt đầu.*`,
       ].join('\n'),
       color: '#22c55e',
-      image_url: `${PUBLIC_BASE_URL}/assets/farm/${s.seed_id}.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`farm/${s.seed_id}.png`)}`,
       footer: '',
     };
   }
@@ -454,7 +455,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
             `• *Dùng \`/exchange ma_qua:${ex.exchange_id}\` để quy đổi.*`,
           ].join('\n'),
       color: '#f59e0b',
-      image_url: `${PUBLIC_BASE_URL}/assets/farm/farm_essence.png`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath('farm/farm_essence.png')}`,
       footer: '',
     };
   }
@@ -473,7 +474,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         `• **Cách dùng:** \`/equip loai:background ma_id:${b.bg_id}\``,
       ].join('\n'),
       color: '#ec4899',
-      image_url: `${PUBLIC_BASE_URL}/assets/${b.file}`,
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(b.file)}`,
       footer: '',
     };
   }
