@@ -16,6 +16,7 @@ COPY . .
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NODE_OPTIONS="--max-old-space-size=320"
 
 EXPOSE 3000
 

@@ -31,7 +31,9 @@ const uniqueRamCache = new Map();
 const inFlightUnique = new Map();
 const dynamicRamCache = new Map();
 
-const DYNAMIC_CACHE_MAX = 30;
+const STATIC_RAM_CACHE_MAX = 48;
+const UNIQUE_RAM_CACHE_MAX = 20;
+const DYNAMIC_CACHE_MAX = 15;
 const DYNAMIC_CACHE_TTL_MS = 15000;
 
 let prerenderState = {
@@ -108,7 +110,7 @@ function setStaticRam(key, buf) {
   if (!buf) return;
   if (staticRamCache.has(key)) staticRamCache.delete(key);
   staticRamCache.set(key, buf);
-  while (staticRamCache.size > 220) {
+  while (staticRamCache.size > STATIC_RAM_CACHE_MAX) {
     const oldest = staticRamCache.keys().next().value;
     if (!oldest) break;
     staticRamCache.delete(oldest);
@@ -209,11 +211,17 @@ export async function getCachedUniqueItemCard(itemData, format = 'webp') {
 
   const job = (async () => {
     const buf = await renderWikiItemCard(itemData, { format: fmt });
+    if (uniqueRamCache.has(cacheKey)) uniqueRamCache.delete(cacheKey);
     uniqueRamCache.set(cacheKey, {
       ownerKey,
       buffer: buf,
       updatedAt: Date.now(),
     });
+    while (uniqueRamCache.size > UNIQUE_RAM_CACHE_MAX) {
+      const oldest = uniqueRamCache.keys().next().value;
+      if (!oldest) break;
+      uniqueRamCache.delete(oldest);
+    }
     return buf;
   })().finally(() => {
     inFlightUnique.delete(flightKey);

@@ -240,9 +240,17 @@ export async function inviteToParty(inviterId, rawTargetId, opts = {}) {
   });
 }
 
-export async function respondPartyInvite(userId, decision = 'accept', inviteId = null) {
+export async function respondPartyInvite(userId, decision = 'accept', inviteId = null, opts = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', title: '⚠️ LỖI TỔ ĐỘI', description: 'ID không hợp lệ.', message: 'ID không hợp lệ.' };
+  const cleanExpected = opts.expectedUserId ? sanitizeUserId(opts.expectedUserId) : null;
+  if (cleanExpected && cleanExpected !== cleanId) {
+    return { success: false, status: 403, error: 'NOT_INVITEE', message: `⚠️ Lời mời này chỉ dành riêng cho <@${cleanExpected}>! Bạn không thể bấm thay người khác.` };
+  }
+  const cleanOwner = opts.ownerId ? sanitizeUserId(opts.ownerId) : null;
+  if (cleanOwner && cleanOwner !== cleanId) {
+    return { success: false, status: 403, error: 'NOT_COMMAND_OWNER', message: `⚠️ Bảng \`/party\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/party\` để thao tác Tổ Đội của bạn!` };
+  }
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   return withPartyLock(`invite:${cleanId}`, async () => {
@@ -305,9 +313,13 @@ export async function respondPartyInvite(userId, decision = 'accept', inviteId =
   });
 }
 
-export async function leaveOrDisbandParty(userId) {
+export async function leaveOrDisbandParty(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', title: '⚠️ LỖI TỔ ĐỘI', description: 'ID không hợp lệ.', message: 'ID không hợp lệ.' };
+  const cleanOwner = opts.ownerId ? sanitizeUserId(opts.ownerId) : null;
+  if (cleanOwner && cleanOwner !== cleanId) {
+    return { success: false, status: 403, error: 'NOT_COMMAND_OWNER', message: `⚠️ Bảng \`/party\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/party\` để thao tác Tổ Đội của bạn!` };
+  }
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   const party = await getUserPartyRecord(cleanId);
@@ -331,10 +343,14 @@ export async function leaveOrDisbandParty(userId) {
   return { success: true, disbanded: false, message: '🚪 Bạn đã rời khỏi Tổ Đội.' };
 }
 
-export async function kickPartyMember(leaderId, rawTargetId) {
+export async function kickPartyMember(leaderId, rawTargetId, opts = {}) {
   const cleanLeader = sanitizeUserId(leaderId);
+  const cleanOwner = opts.ownerId ? sanitizeUserId(opts.ownerId) : null;
+  if (cleanLeader && cleanOwner && cleanOwner !== cleanLeader) {
+    return { success: false, status: 403, error: 'NOT_COMMAND_OWNER', message: `⚠️ Bảng \`/party\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/party\` để thao tác Tổ Đội của bạn!` };
+  }
   const cleanTarget = sanitizeUserId(String(rawTargetId || '').replace(/[<@!>]/g, ''));
-  if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'Hãy chọn đồng đội bằng `/party duoi_hoac_chuyen:@bạn` trước khi bấm nút Đuổi Thành Viên!' };
   if (cleanLeader === cleanTarget) return { success: false, status: 400, error: 'SELF_KICK', message: 'Không thể tự đuổi chính mình — hãy dùng nút Rời Đội!' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
@@ -350,10 +366,14 @@ export async function kickPartyMember(leaderId, rawTargetId) {
   return { success: true, kicked_id: cleanTarget, message: `👢 Đội Trưởng đã mời <@${cleanTarget}> rời khỏi Tổ Đội.` };
 }
 
-export async function transferPartyLeader(leaderId, rawTargetId) {
+export async function transferPartyLeader(leaderId, rawTargetId, opts = {}) {
   const cleanLeader = sanitizeUserId(leaderId);
+  const cleanOwner = opts.ownerId ? sanitizeUserId(opts.ownerId) : null;
+  if (cleanLeader && cleanOwner && cleanOwner !== cleanLeader) {
+    return { success: false, status: 403, error: 'NOT_COMMAND_OWNER', message: `⚠️ Bảng \`/party\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/party\` để thao tác Tổ Đội của bạn!` };
+  }
   const cleanTarget = sanitizeUserId(String(rawTargetId || '').replace(/[<@!>]/g, ''));
-  if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!cleanLeader || !cleanTarget) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'Hãy chọn đồng đội bằng `/party duoi_hoac_chuyen:@bạn` trước khi bấm nút Chuyển Đội Trưởng!' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', title: '⚠️ LỖI HỆ THỐNG', description: 'Supabase chưa sẵn sàng.', message: 'Supabase chưa sẵn sàng.' };
 
   const party = await getUserPartyRecord(cleanLeader);

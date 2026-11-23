@@ -7,8 +7,11 @@ import {
   EQUIPMENT_CATALOG,
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
 } from '../../data/catalog.js';
-import { em, petEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
 import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
@@ -52,7 +55,7 @@ export const BATTLE_WIN_LT = 10;
 export const BATTLE_LOSS_LT = 5;
 export const BATTLE_COOLDOWN_MS = 5000;
 
-const BATTLE_CACHE_MAX = 120;
+const BATTLE_CACHE_MAX = 30;
 const BATTLE_CACHE_TTL_MS = BATTLE_LOG_TTL_MS;
 const MAX_CANVAS_CONCURRENT = 2;
 const battleReportCache = new Map();
@@ -305,6 +308,95 @@ export async function renderAllBattleTurnsOnDemand(battleId) {
   };
 }
 
+export function getBattleCacheStats() {
+  return {
+    reports: battleReportCache.size,
+    limit: BATTLE_CACHE_MAX,
+  };
+}
+
+function resolveCombatantDomainMeta(c, domSummarySide = null) {
+  const dl = c?.domainLoadout || {};
+  const rawDom = dl.domain || (domSummarySide?.domainId ? DOMAIN_BY_ID[domSummarySide.domainId] : null);
+  const dom = rawDom?.domain_id ? (DOMAIN_BY_ID[rawDom.domain_id] || rawDom) : rawDom;
+  if (!dom) return null;
+
+  const rawSense = dl.sense || (domSummarySide?.senseId ? DIVINE_SENSE_BY_ID[domSummarySide.senseId] : null)
+    || (domSummarySide?.senseName ? Object.values(DIVINE_SENSE_BY_ID).find((x) => x.name === domSummarySide.senseName) : null);
+  const sense = rawSense?.sense_id ? (DIVINE_SENSE_BY_ID[rawSense.sense_id] || rawSense) : rawSense;
+
+  const rawRealm = dl.realm || (domSummarySide?.realmId ? DIVINE_REALM_BY_ID[domSummarySide.realmId] : null)
+    || (domSummarySide?.realmName ? Object.values(DIVINE_REALM_BY_ID).find((x) => x.name === domSummarySide.realmName) : null);
+  const realm = rawRealm?.realm_id ? (DIVINE_REALM_BY_ID[rawRealm.realm_id] || rawRealm) : rawRealm;
+
+  const lm = Number(dom.base_energy || 0) >= 999
+    ? '∞ Linh Mạch'
+    : `${Number(dom.base_energy || 0) + Number(sense?.bonus_energy || 0)} Linh Mạch`;
+
+  return {
+    iconTag: domainEmoji(dom.domain_id, em('su_realm_star')),
+    name: dom.name,
+    elementTag: domainElementEmoji(dom.element, em('su_realm_star')),
+    element: dom.element || '',
+    energyLabel: lm,
+    buffDesc: dom.buff_desc || '',
+    debuffDesc: dom.debuff_desc || '',
+    daoApLabel: dom.dao_ap?.label || '',
+    sense: sense
+      ? {
+          iconTag: senseEmoji(sense.sense_id, em('su_sparkle')),
+          name: sense.name,
+          desc: sense.desc || '',
+        }
+      : null,
+    realm: realm
+      ? {
+          iconTag: realmEmojiById(realm.realm_id, em('su_arena')),
+          name: realm.name,
+          desc: realm.desc || '',
+        }
+      : null,
+  };
+}
+
+function buildStructuredUnitForWeb(c, initHp, domSummarySide = null) {
+  if (!c) return null;
+  const catPet = PET_BY_TYPE[c.petType];
+  const petHaxName = c.petHaxName || c.hax?.pet || catPet?.hax_skill || '';
+  const petHaxDesc = c.petHaxDesc || c.hax?.petDesc || catPet?.hax_description || '';
+  const mapEquip = (rawItem, slotLabel, fallbackIcon) => {
+    if (!rawItem) return { slotLabel, name: '' };
+    const cat = rawItem.item_id ? (EQUIPMENT_BY_ID[rawItem.item_id] || rawItem) : rawItem;
+    return {
+      slotLabel,
+      iconTag: itemEmoji(rawItem.item_id || cat.item_id, fallbackIcon),
+      name: rawItem.item_name || cat.item_name || rawItem.item_id || '',
+      grade: rawItem.enchant_grade || rawItem.enchantGrade || '',
+      haxName: rawItem.hax_skill || cat.hax_skill || '',
+      haxDesc: rawItem.hax_description || cat.hax_description || '',
+    };
+  };
+  return {
+    playerName: c.name || 'Tu Sĩ',
+    petIconTag: c.petIcon || petEmoji(c.petType, em('su_pet_paw')),
+    petName: c.petName || catPet?.pet_name || 'Linh Thú',
+    metaLine: `${c.petRarity || catPet?.rarity || 'Phàm Phẩm'} • Hệ ${c.element || catPet?.element || 'Thổ'} • Lv.${c.level || 1} • ${c.star || 1}★`,
+    stats: {
+      atk: c.atk || 0,
+      def: c.def || 0,
+      spd: c.spd || 0,
+      hp: initHp || c.maxHp || 0,
+    },
+    petHax: petHaxName ? { name: petHaxName, desc: petHaxDesc } : null,
+    domain: resolveCombatantDomainMeta(c, domSummarySide),
+    equipment: [
+      mapEquip(c.equipment?.weapon, 'Vũ Khí', em('su_crossed_swords')),
+      mapEquip(c.equipment?.gem, 'Bảo Ngọc', em('su_linhthach')),
+      mapEquip(c.equipment?.soul, 'Chiến Hồn', em('su_sparkle')),
+    ],
+  };
+}
+
 export async function renderBattleLogHtml(battleId) {
   const cleanId = String(battleId || '').trim();
   const r = await loadBattleReport(cleanId);
@@ -340,6 +432,24 @@ export async function renderBattleLogHtml(battleId) {
 
   const headerEndIdx = (r.untruncatedLogLines || []).findIndex((l) => l.startsWith('**Diễn Biến'));
   const rosterHtmlLines = headerEndIdx > 0 ? r.untruncatedLogLines.slice(0, headerEndIdx) : [];
+  const openingIdx = rosterHtmlLines.findIndex((l) => l.includes('Khai Trận HAX'));
+  const openingEvents = openingIdx >= 0 ? rosterHtmlLines.slice(openingIdx + 1).filter((l) => l.trim()) : [];
+  const matchupLineRaw = rosterHtmlLines.find((l) => l.includes('Tương khắc:')) || '';
+  const matchupNote = matchupLineRaw
+    ? matchupLineRaw.replace(/^•\s*Tương khắc:\s*/i, '').replace(/\*\*/g, '').trim()
+    : '';
+  const leftUnit = buildStructuredUnitForWeb(r.combatants?.attacker, r.initialHp?.attacker, r.domainSummary?.attacker);
+  const rightUnit = buildStructuredUnitForWeb(r.combatants?.defender, r.initialHp?.defender, r.domainSummary?.defender);
+  const rosterStructured = (leftUnit && rightUnit)
+    ? {
+        leftTitle: 'Phe Công',
+        rightTitle: 'Phe Thủ',
+        leftUnits: [leftUnit],
+        rightUnits: [rightUnit],
+        matchupNote,
+        openingEvents,
+      }
+    : null;
   const winnerSummaryHtml = stripDiscordTagsToHtml(
     `${em('su_winner_trophy')} **KẾT QUẢ:** **${r.winner?.name}** (${r.winner?.pet}) chiến thắng **${r.loser?.name}** (${r.loser?.pet}) sau **${r.turnCount} hiệp**!${r.reward_summary ? ` • ${r.reward_summary}` : ''}`,
   );
@@ -354,6 +464,7 @@ export async function renderBattleLogHtml(battleId) {
     turnImageTemplate: `/api/battle/logs/${encodeURIComponent(cleanId)}/turn/{turn}.webp`,
     snapshots: snaps,
     rosterHtmlLines,
+    rosterStructured,
     winnerSummaryHtml,
     themeAccent: '#ec4899',
   });
@@ -458,9 +569,9 @@ function formatEquipDetailedLines(c, compact = false) {
     return `${label}: **${item.item_name}** — *${haxTxt}*`;
   };
   return [
-    `• ${em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
-    `• ${em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
-    `• ${em('cuu_vi_hong_ho')} ${desc(s, 'Chiến Hồn')}`,
+    `• ${w ? itemEmoji(w.item_id, em('su_crossed_swords')) : em('su_crossed_swords')} ${desc(w, 'Vũ Khí')}`,
+    `• ${g ? itemEmoji(g.item_id, em('su_linhthach')) : em('su_linhthach')} ${desc(g, 'Bảo Ngọc')}`,
+    `• ${s ? itemEmoji(s.item_id, em('su_sparkle')) : em('su_sparkle')} ${desc(s, 'Chiến Hồn')}`,
   ];
 }
 
@@ -504,17 +615,20 @@ function buildFullBattleLog({
   const domainLineTxt = (c) => {
     const dl = c.domainLoadout || {};
     if (!dl.domain) return null;
-    const d = dl.domain;
-    const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (dl.sense?.bonus_energy || 0));
+    const d = DOMAIN_BY_ID[dl.domain.domain_id] || dl.domain;
+    const sense = dl.sense ? (DIVINE_SENSE_BY_ID[dl.sense.sense_id] || dl.sense) : null;
+    const realm = dl.realm ? (DIVINE_REALM_BY_ID[dl.realm.realm_id] || dl.realm) : null;
+    const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (sense?.bonus_energy || 0));
     const domElIcon = domainElementEmoji(d.element, em('su_realm_star'));
-    const sensePart = dl.sense
-      ? `${senseEmoji(dl.sense.sense_id, em('su_sparkle'))} ${dl.sense.name}`.trim()
+    const sensePart = sense
+      ? `${senseEmoji(sense.sense_id, em('su_sparkle'))} ${sense.name}${sense.desc ? ` (${sense.desc})` : ''}`.trim()
       : null;
-    const realmPart = dl.realm
-      ? `${realmEmojiById(dl.realm.realm_id, em('su_arena'))} ${dl.realm.name}`.trim()
+    const realmPart = realm
+      ? `${realmEmojiById(realm.realm_id, em('su_arena'))} ${realm.name}${realm.desc ? ` (${realm.desc})` : ''}`.trim()
       : null;
+    const haxParts = [d.buff_desc, d.debuff_desc, d.dao_ap?.label].filter(Boolean).join(' • ');
     const extras = [sensePart, realmPart].filter(Boolean).join(' • ');
-    return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${domElIcon} ${d.element} • ${lm} Linh Mạch${extras ? ` • ${extras}` : ''})*`;
+    return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${domElIcon} ${d.element} • ${lm} Linh Mạch${haxParts ? ` — ${haxParts}` : ''}${extras ? ` | ${extras}` : ''})*`;
   };
 
   const makeHeaderLines = (compact = false) => [

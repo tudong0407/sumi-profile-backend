@@ -29,7 +29,7 @@ import {
   processTurnDomainPhase,
   drainEnemyDomainEnergy,
 } from '../../src/services/battleEngine/domainEngine.js';
-import { generateDailyShopSlots } from '../../src/services/dailyShopService.js';
+import { generateDailyShopSlots, getDailyShopCatalog } from '../../src/services/dailyShopService.js';
 import {
   GOLDEN_HOURS_VN,
   VEIN_SLOTS_PER_HOUR,
@@ -39,13 +39,18 @@ import {
   getVnHourInfo,
   deterministicPickWeightedTier,
   computeCurrentFatigueInfo,
+  challengeSpiritVein,
 } from '../../src/services/spiritVeinService.js';
 import {
   simulateTeamBattle,
   applyFatigueToCombatant,
   getTeamBattleLogPayload,
   renderTeamBattleLogHtml,
+  getTeamBattleCacheStats,
 } from '../../src/services/battleEngine/teamBattleService.js';
+import { respondPartyInvite, leaveOrDisbandParty, kickPartyMember, transferPartyLeader } from '../../src/services/partyService.js';
+import { getImageCacheStats } from '../../src/canvas/drawUtils.js';
+import { getBattleLogStoreStats } from '../../src/services/battleEngine/battleLogStore.js';
 import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
 import { renderTeamBattleCard } from '../../src/canvas/teamBattleRenderer.js';
 import {
@@ -63,7 +68,7 @@ import {
 import { getProfileData } from '../../src/services/profileService.js';
 import { computeMissingLevelRoleIds, grantChatExp, getUserExpBoostSummary } from '../../src/services/expService.js';
 import { setActivePet, enchantTarget, dismantleTarget, equipTarget } from '../../src/services/inventoryService.js';
-import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
+import { simulateBattle, renderBattleLogHtml, getBattleCacheStats } from '../../src/services/battleEngine/battleService.js';
 import { challengeTower } from '../../src/services/questService.js';
 import { getWikiData } from '../../src/services/wikiService.js';
 import { lookupInfo } from '../../src/services/infoService.js';
@@ -844,4 +849,91 @@ test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog',
   } finally {
     await cleanup();
   }
+});
+
+test('v1.4.7c Silent Hotfix: Web Battle Logs 2-Col + Domain HAX, Daily Shop Tiers, Owner/Invitee Guards & RAM Cache Limits', async () => {
+  // 1. Silent hotfix must NOT bump LATEST_VERSION
+  assert.equal(LATEST_VERSION, '1.4.7');
+
+  // 2. Daily Shop shows tier emoji + rarity label on ALL pet/equipment slots (including rare/common), and zero pet tier orbs on consumables
+  const dailyShop = await getDailyShopCatalog(null, { now: new Date('2026-11-23T05:30:00Z') });
+  assert.equal(dailyShop.success, true);
+  assert.equal(dailyShop.slots.length, 10);
+  for (const s of dailyShop.slots) {
+    if (s.kind === 'pet' || s.kind === 'equipment') {
+      assert.match(s.line, /su_tier_(pham|linh|tien|thanthoai|toithuong)/, `Slot #${s.slot_index} (${s.name}) must show tier emoji`);
+      assert.match(s.line, /\*\((Phàm Phẩm|Linh Phẩm|Tiên Phẩm|Thần Thoại|Tối Thượng)\)\*/, `Slot #${s.slot_index} (${s.name}) must show Vietnamese rarity label`);
+    } else {
+      assert.doesNotMatch(s.line, /su_tier_/, `Consumable slot #${s.slot_index} (${s.name}) must NOT show pet/gear tier orb`);
+    }
+  }
+
+  // 3. Owner / Invitee guards on /linhmach & /party
+  const veinWrongOwner = await challengeSpiritVein('111111111111111111', 1, { ownerId: '222222222222222222' });
+  assert.equal(veinWrongOwner.success, false);
+  assert.equal(veinWrongOwner.error, 'NOT_COMMAND_OWNER');
+
+  const ptWrongInvitee = await respondPartyInvite('111111111111111111', 'accept', null, { expectedUserId: '222222222222222222' });
+  assert.equal(ptWrongInvitee.success, false);
+  assert.equal(ptWrongInvitee.error, 'NOT_INVITEE');
+
+  const ptWrongLeave = await leaveOrDisbandParty('111111111111111111', { ownerId: '222222222222222222' });
+  assert.equal(ptWrongLeave.success, false);
+  assert.equal(ptWrongLeave.error, 'NOT_COMMAND_OWNER');
+
+  const ptWrongKick = await kickPartyMember('111111111111111111', '333333333333333333', { ownerId: '222222222222222222' });
+  assert.equal(ptWrongKick.success, false);
+  assert.equal(ptWrongKick.error, 'NOT_COMMAND_OWNER');
+
+  const ptWrongTransfer = await transferPartyLeader('111111111111111111', '333333333333333333', { ownerId: '222222222222222222' });
+  assert.equal(ptWrongTransfer.success, false);
+  assert.equal(ptWrongTransfer.error, 'NOT_COMMAND_OWNER');
+
+  // 4. Web Battle Logs 1v1 & Team show 2-column layout + full Domain/Sense/Realm HAX
+  const bat1v1 = await simulateBattle(FUYUMI_USER_ID, 'pve_free', { mode: 'pve_free', seed: 'v147c-web-roster', preRender: false });
+  assert.equal(bat1v1.success, true);
+  const html1v1 = await renderBattleLogHtml(bat1v1.battleId);
+  assert.equal(html1v1.found, true);
+  assert.match(html1v1.html, /roster-grid-2col/);
+  assert.match(html1v1.html, /roster-divider/);
+  assert.match(html1v1.html, /dom-buff/);
+  assert.match(html1v1.html, /dom-debuff/);
+  assert.match(html1v1.html, /dom-sense/);
+  assert.match(html1v1.html, /dom-realm/);
+  assert.match(html1v1.html, /equip-list/);
+
+  const teamU1 = await compileCombatant(FUYUMI_USER_ID, 'attacker');
+  const spTier = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
+  const bossUnit = [{
+    id: 'boss_sp_check',
+    name: spTier.boss_name,
+    isBoss: true,
+    pet: { pet_type: 'vein_mine_sp', pet_name: spTier.boss_name, element: spTier.element, level: 100, star: 10 },
+    equipment: {},
+    domainLoadout: { domain: DOMAIN_BY_ID[spTier.domain_id] },
+    atk: spTier.stats.atk,
+    def: spTier.stats.def,
+    spd: spTier.stats.spd,
+    maxHp: spTier.stats.hp,
+    powerScore: spTier.boss_power,
+  }];
+  const teamBat = simulateTeamBattle([teamU1], bossUnit, { mode: '3vBoss', veinLabel: 'MỎ #1 • HẠNG S+', rng: () => 0.42 });
+  const htmlTeam = await renderTeamBattleLogHtml(teamBat.battleId);
+  assert.equal(htmlTeam.found, true);
+  assert.match(htmlTeam.html, /roster-grid-2col/);
+  assert.match(htmlTeam.html, /dom-buff/);
+  assert.match(htmlTeam.html, /dom-debuff/);
+
+  // 5. RAM cache limits tightened cleanly for 512MB Render container
+  const imgStats = getImageCacheStats();
+  assert.equal(imgStats.limits.backgrounds, 4);
+  assert.equal(imgStats.limits.localAssets, 40);
+  assert.equal(imgStats.limits.remoteImages, 40);
+
+  const logStats = getBattleLogStoreStats();
+  assert.equal(logStats.recordLimit, 40);
+  assert.equal(logStats.frameBufferLimit, 60);
+
+  assert.equal(getBattleCacheStats().limit, 30);
+  assert.equal(getTeamBattleCacheStats().limit, 20);
 });

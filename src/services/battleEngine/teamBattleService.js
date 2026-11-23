@@ -10,8 +10,15 @@ import crypto from 'crypto';
 import { getElementalAdvantage } from './elementalMatrix.js';
 import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
 import { createInitialCombatState } from './statsCompiler.js';
-import { em, domainElementEmoji } from '../../config/emojiHelper.js';
-import { PUBLIC_BASE_URL } from '../../data/catalog.js';
+import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import {
+  PUBLIC_BASE_URL,
+  PET_BY_TYPE,
+  EQUIPMENT_BY_ID,
+  DOMAIN_BY_ID,
+  DIVINE_SENSE_BY_ID,
+  DIVINE_REALM_BY_ID,
+} from '../../data/catalog.js';
 import { renderTeamBattleCard } from '../../canvas/teamBattleRenderer.js';
 import { withCanvasRenderSlot } from './battleService.js';
 import {
@@ -27,9 +34,16 @@ import {
   stripDiscordTagsToHtml,
 } from './webBattleLogHtml.js';
 
-const TEAM_BATTLE_CACHE_MAX = 80;
+const TEAM_BATTLE_CACHE_MAX = 20;
 const teamBattleCache = new Map();
 const latestTeamBattleByUser = new Map();
+
+export function getTeamBattleCacheStats() {
+  return {
+    reports: teamBattleCache.size,
+    limit: TEAM_BATTLE_CACHE_MAX,
+  };
+}
 
 function normalizeUnitPetAndPower(u) {
   if (!u || typeof u !== 'object') return u;
@@ -609,6 +623,71 @@ export async function getTeamBattleLogPayload({ battleId, userId } = {}) {
   };
 }
 
+function resolveTeamLeaderDomainMeta(leaderDomObj) {
+  if (!leaderDomObj) return null;
+  const dom = leaderDomObj.domain_id ? (DOMAIN_BY_ID[leaderDomObj.domain_id] || leaderDomObj) : leaderDomObj;
+  if (!dom?.name) return null;
+  const rawSense = leaderDomObj.sense;
+  const sense = rawSense?.sense_id ? (DIVINE_SENSE_BY_ID[rawSense.sense_id] || rawSense) : rawSense;
+  const rawRealm = leaderDomObj.realm;
+  const realm = rawRealm?.realm_id ? (DIVINE_REALM_BY_ID[rawRealm.realm_id] || rawRealm) : rawRealm;
+  const maxEnergy = Number(leaderDomObj.maxEnergy || dom.base_energy || 0);
+  const lm = (leaderDomObj.indestructible || maxEnergy >= 999)
+    ? '∞ Linh Mạch'
+    : `${maxEnergy} Linh Mạch`;
+  return {
+    iconTag: domainEmoji(dom.domain_id, em('su_realm_star')),
+    name: dom.name,
+    elementTag: domainElementEmoji(dom.element, em('su_realm_star')),
+    element: dom.element || '',
+    energyLabel: lm,
+    buffDesc: dom.buff_desc || '',
+    debuffDesc: dom.debuff_desc || '',
+    daoApLabel: dom.dao_ap?.label || '',
+    sense: sense?.name ? { iconTag: senseEmoji(sense.sense_id, em('su_sparkle')), name: sense.name, desc: sense.desc || '' } : null,
+    realm: realm?.name ? { iconTag: realmEmojiById(realm.realm_id, em('su_arena')), name: realm.name, desc: realm.desc || '' } : null,
+  };
+}
+
+function buildTeamStructuredUnits(units = [], leaderDomObj = null) {
+  const leaderDomain = resolveTeamLeaderDomainMeta(leaderDomObj);
+  return (units || []).map((u, idx) => {
+    const p = u.pet || {};
+    const catPet = p.pet_type ? PET_BY_TYPE[p.pet_type] : null;
+    const mapEq = (rawItem, slotLabel, fallbackIcon) => {
+      if (!rawItem) return { slotLabel, name: '' };
+      const cat = rawItem.item_id ? (EQUIPMENT_BY_ID[rawItem.item_id] || rawItem) : rawItem;
+      return {
+        slotLabel,
+        iconTag: itemEmoji(rawItem.item_id || cat.item_id, fallbackIcon),
+        name: rawItem.item_name || cat.item_name || rawItem.item_id || '',
+        grade: rawItem.enchant_grade || rawItem.enchantGrade || '',
+        haxName: rawItem.hax_skill || cat.hax_skill || '',
+        haxDesc: rawItem.hax_description || cat.hax_description || '',
+      };
+    };
+    return {
+      roleBadge: u.isBoss ? 'BOSS' : (idx === 0 ? '👑 Đội Trưởng' : `Thành Viên #${idx + 1}`),
+      playerName: u.name || 'Tu Sĩ',
+      petIconTag: petEmoji(p.pet_type, em('su_pet_paw')),
+      petName: p.pet_name || catPet?.pet_name || 'Linh Thú',
+      metaLine: `${p.rarity || catPet?.rarity || 'Phàm Phẩm'} • Hệ ${p.element || catPet?.element || 'Thổ'} • Lv.${p.level || 1} • ${p.star || 1}★`,
+      stats: { atk: u.atk || 0, def: u.def || 0, spd: u.spd || 0, hp: u.maxHp || 0 },
+      fatiguePct: Number(u.fatiguePenaltyPct || 0),
+      petHax: catPet?.hax_skill ? { name: catPet.hax_skill, desc: catPet.hax_description || '' } : null,
+      showDomain: idx === 0,
+      domain: idx === 0 ? leaderDomain : null,
+      equipment: u.isBoss
+        ? []
+        : [
+            mapEq(u.equipment?.weapon, 'Vũ Khí', em('su_crossed_swords')),
+            mapEq(u.equipment?.gem, 'Bảo Ngọc', em('su_linhthach')),
+            mapEq(u.equipment?.soul, 'Chiến Hồn', em('su_sparkle')),
+          ],
+    };
+  });
+}
+
 export async function renderTeamBattleLogHtml(battleId) {
   const cleanId = String(battleId || '').trim();
   const r = await loadTeamBattleReport(cleanId);
@@ -635,6 +714,13 @@ export async function renderTeamBattleLogHtml(battleId) {
 
   const headerEndIdx = (r.untruncatedLogLines || []).findIndex((l) => l.startsWith('**2.'));
   const rosterHtmlLines = headerEndIdx > 0 ? r.untruncatedLogLines.slice(0, headerEndIdx) : [];
+  const rosterStructured = {
+    leftTitle: `Phe Khiêu Chiến (${(r.teamA || []).length} người)`,
+    rightTitle: r.teamB?.[0]?.isBoss ? 'Phe Phòng Thủ (BOSS Linh Mạch)' : `Phe Phòng Thủ (${(r.teamB || []).length} người)`,
+    leftUnits: buildTeamStructuredUnits(r.teamA, r.leaderDomainA),
+    rightUnits: buildTeamStructuredUnits(r.teamB, r.leaderDomainB),
+    openingEvents: (r.highlights || []).slice(0, 6).map((h) => `• ${em('su_thunder_hax')} ${h}`),
+  };
   const winnerSummaryHtml = stripDiscordTagsToHtml(
     r.winnerSide === 'A'
       ? `🏆 **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG** sau **${r.turnCount} hiệp**!`
@@ -651,6 +737,7 @@ export async function renderTeamBattleLogHtml(battleId) {
     turnImageTemplate: `/api/vein/battle/${encodeURIComponent(cleanId)}/turn/{turn}.webp`,
     snapshots: snaps,
     rosterHtmlLines,
+    rosterStructured,
     winnerSummaryHtml,
     themeAccent: '#f59e0b',
   });

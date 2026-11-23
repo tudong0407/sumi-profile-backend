@@ -11,7 +11,9 @@ import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
 import {
   PET_CATALOG,
+  PET_BY_TYPE,
   EQUIPMENT_CATALOG,
+  EQUIPMENT_BY_ID,
   SHOP_CONSUMABLE_BY_ID,
   FUYUMI_USER_ID,
   getEnchantBonusPct,
@@ -338,6 +340,13 @@ export async function getDailyShopCatalog(userId = null, opts = {}) {
     buyMap = new Map((buys || []).map((b) => [Number(b.slot_index), Number(b.bought_count || 0)]));
   }
 
+  const RARITY_LABELS = {
+    common: 'Phàm Phẩm',
+    rare: 'Linh Phẩm',
+    epic: 'Tiên Phẩm',
+    mythic: 'Thần Thoại',
+    supreme: 'Tối Thượng',
+  };
   const lt = em('su_linhthach');
   const emblem = em('daily_shop_emblem', '🏮');
   const enrichedSlots = slots.map((s) => {
@@ -345,8 +354,18 @@ export async function getDailyShopCatalog(userId = null, opts = {}) {
     const remaining = Math.max(0, Number(s.daily_limit || 1) - bought);
     const gradeTag = s.enchant_grade ? ` ${gradeEmoji(s.enchant_grade)} **[Bậc ${s.enchant_grade}]**` : '';
     const icon = formatSlotIcon(s);
-    const tierBadge = ['mythic', 'epic'].includes(s.rarity_key) ? ` ${tierEmoji(s.rarity_key)}` : '';
-    const line = `• **#${s.slot_index}** ${icon}${tierBadge} **${s.name}**${gradeTag} — **${Number(s.price).toLocaleString('vi-VN')}** ${lt} ~~${Number(s.base_price).toLocaleString('vi-VN')}~~ \`-${s.discount_pct}%\` • Còn \`${remaining}/${s.daily_limit}\``;
+    const isGearOrPet = s.kind === 'pet' || s.kind === 'equipment';
+    let tierBadge = '';
+    let rarityLabelTag = '';
+    if (isGearOrPet) {
+      const catEntry = s.kind === 'pet' ? PET_BY_TYPE[s.item_id] : EQUIPMENT_BY_ID[s.item_id];
+      const rk = String(s.rarity_key || catEntry?.rarity_key || 'common').toLowerCase();
+      const rLabel = s.rarity || catEntry?.rarity || RARITY_LABELS[rk] || 'Phàm Phẩm';
+      const tEm = tierEmoji(rk);
+      tierBadge = tEm ? ` ${tEm}` : '';
+      rarityLabelTag = ` *(${rLabel})*`;
+    }
+    const line = `• **#${s.slot_index}** ${icon}${tierBadge} **${s.name}**${rarityLabelTag}${gradeTag} — **${Number(s.price).toLocaleString('vi-VN')}** ${lt} ~~${Number(s.base_price).toLocaleString('vi-VN')}~~ \`-${s.discount_pct}%\` • Còn \`${remaining}/${s.daily_limit}\``;
     return { ...s, bought_count: bought, remaining, line };
   });
 

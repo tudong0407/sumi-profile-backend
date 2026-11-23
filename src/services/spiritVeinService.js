@@ -431,6 +431,15 @@ async function checkTeamPetsReady(memberIds) {
 export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  const cleanOwner = opts.ownerId ? sanitizeUserId(opts.ownerId) : null;
+  if (cleanOwner && cleanOwner !== cleanId) {
+    return {
+      success: false,
+      status: 403,
+      error: 'NOT_COMMAND_OWNER',
+      message: `⚠️ Bảng \`/linhmach\` này thuộc về <@${cleanOwner}>. Hãy tự gõ \`/linhmach\` để khiêu chiến Linh Mạch nhé!`,
+    };
+  }
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
   const targetStr = String(rawSlotOrGroup ?? '1').trim().toLowerCase();
@@ -606,12 +615,16 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
       battle.webLogUrl ? `• 📜 [Xem Full Nhật Ký Chiến Báo Trên Web](${battle.webLogUrl})` : '',
     ].filter(Boolean).join('\n');
 
+    const outcomeTitle = `${em('vein_mine_sp')} CHIẾN BÁO MỎ #${vein.slot_index || 1} — HẠNG ${vein.tier_code}`;
     return {
       success: true,
       won,
       is_pvp_takeover: isPvpTakeover,
       vein_tier: vein.tier_code,
       battle_id: battle.battleId,
+      title: outcomeTitle,
+      description: outcomeMsg,
+      battle_image_url: battle.imageUrl,
       image_url: battle.imageUrl,
       web_log_url: battle.webLogUrl,
       battle,

@@ -195,14 +195,17 @@ export function buildPartyHotfixCmd() {
     y: 0,
   });
 
+  gb.act('pt_set_owner', 'set_unique_variable', { reference: 'cmd_owner', value: '{user_id}', success_handles: false }, { x: 0, y: 120 });
+  gb.link('root', 'pt_set_owner');
+
   embedMsg(gb, 'pt_ack', {
     title: `${uidEm('su_crossed_swords')} TỔ ĐỘI CHIẾN ĐẤU`,
     description: 'Đang kết nối dữ liệu Tổ Đội...',
     color: '#3498DB',
     target: { reply: true },
     editId: 'pt_ack',
-  }, { x: 0, y: 200 });
-  gb.link('root', 'pt_ack');
+  }, { x: 0, y: 260 });
+  gb.link('pt_set_owner', 'pt_ack');
 
   const hasInv = gb.cmp('pt_has_inv', '{option_moi_dong_doi}', '', 'not', {}, { x: 0, y: 380 });
   gb.link('pt_ack', hasInv.condId);
@@ -232,12 +235,22 @@ export function buildPartyHotfixCmd() {
   }, { x: -640, y: 1120 });
   gb.link(cInvOk.yes, 'pt_inv_edit');
 
-  // Inline Accept button right on the invite card (never wipes buttons if non-invitee clicks)
-  gb.advBtn('pt_inv_btn_acc', 'pt_inv_edit', btnCfg('Chấp Nhận Lời Mời', 'SUCCESS', 'su_sparkle', '1', '1', 'hide'), { x: -820, y: 1320 });
-  apiAction(gb, 'pt_inv_acc_api', 'pt_inv_acc_res', 'POST', `${BACKEND_BASE}/api/party/respond`, '{"userId":"{user_id}","decision":"accept"}', { x: -820, y: 1500 });
-  gb.link('pt_inv_btn_acc', 'pt_inv_acc_api');
-  const ptInvAccNoAck = attachUpdateAckBranch(gb, 'pt_inv_acc', 'pt_inv_acc_api', 'pt_inv_acc_res', { editId: null, x: -820, y: 1680 });
-  const cInvAccOk = gb.cmp('pt_inv_acc_ok', '{pt_inv_acc_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: -820, y: 1860 });
+  // Inline Accept button right on the invite card (locked to invitee_id + inviteId so bystanders never wipe buttons)
+  gb.advBtn('pt_inv_btn_acc', 'pt_inv_edit', btnCfg('Chấp Nhận Lời Mời', 'SUCCESS', 'su_sparkle', '1', '1', 'hide'), { x: -860, y: 1320 });
+  const cInvAccOwn = gb.cmp('pt_inv_acc_own', '{user_id}', '{pt_inv_res.response.invitee_id}', 'equal_to', {}, { x: -860, y: 1460 });
+  gb.link('pt_inv_btn_acc', cInvAccOwn.condId);
+  embedMsg(gb, 'pt_inv_acc_denied', {
+    title: `${uidEm('su_crossed_swords')} KHÔNG PHẢI NGƯỜI ĐƯỢC MỜI`,
+    description: '⚠️ Lời mời Tổ Đội này chỉ dành riêng cho <@{pt_inv_res.response.invitee_id}>! Bạn không thể bấm thay người khác.',
+    color: '#f59e0b',
+    target: { reply: true },
+  }, { x: -640, y: 1640 });
+  gb.link(cInvAccOwn.no, 'pt_inv_acc_denied');
+
+  apiAction(gb, 'pt_inv_acc_api', 'pt_inv_acc_res', 'POST', `${BACKEND_BASE}/api/party/respond`, '{"userId":"{user_id}","decision":"accept","inviteId":"{pt_inv_res.response.invite_id}","expectedUserId":"{pt_inv_res.response.invitee_id}"}', { x: -1020, y: 1640 });
+  gb.link(cInvAccOwn.yes, 'pt_inv_acc_api');
+  const ptInvAccNoAck = attachUpdateAckBranch(gb, 'pt_inv_acc', 'pt_inv_acc_api', 'pt_inv_acc_res', { editId: null, x: -1020, y: 1820 });
+  const cInvAccOk = gb.cmp('pt_inv_acc_ok', '{pt_inv_acc_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: -1020, y: 2000 });
   gb.link(ptInvAccNoAck, cInvAccOk.condId);
   embedMsg(gb, 'pt_inv_acc_edit', {
     title: `${uidEm('su_crossed_swords')} GIA NHẬP TỔ ĐỘI THÀNH CÔNG`,
@@ -245,22 +258,32 @@ export function buildPartyHotfixCmd() {
     color: '#2ECC71',
     target: { editId: 'pt_ack' },
     action_id: 'pt_ack',
-  }, { x: -980, y: 2060 });
+  }, { x: -1180, y: 2200 });
   gb.link(cInvAccOk.yes, 'pt_inv_acc_edit');
   embedMsg(gb, 'pt_inv_acc_err', {
     title: `${uidEm('su_crossed_swords')} CHƯA THỂ CHẤP NHẬN`,
     description: '{pt_inv_acc_res.response.message}',
     color: '#E74C3C',
     target: { reply: true },
-  }, { x: -660, y: 2060 });
+  }, { x: -860, y: 2200 });
   gb.link(cInvAccOk.no, 'pt_inv_acc_err');
 
-  // Inline Decline button right on the invite card (never wipes buttons if non-invitee clicks)
-  gb.advBtn('pt_inv_btn_dec', 'pt_inv_edit', btnCfg('Từ Chối Lời Mời', 'SECONDARY', 'su_wiki_scroll', '1', '2', 'hide'), { x: -460, y: 1320 });
-  apiAction(gb, 'pt_inv_dec_api', 'pt_inv_dec_res', 'POST', `${BACKEND_BASE}/api/party/respond`, '{"userId":"{user_id}","decision":"decline"}', { x: -460, y: 1500 });
-  gb.link('pt_inv_btn_dec', 'pt_inv_dec_api');
-  const ptInvDecNoAck = attachUpdateAckBranch(gb, 'pt_inv_dec', 'pt_inv_dec_api', 'pt_inv_dec_res', { editId: null, x: -460, y: 1680 });
-  const cInvDecOk = gb.cmp('pt_inv_dec_ok', '{pt_inv_dec_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: -460, y: 1860 });
+  // Inline Decline button right on the invite card (locked to invitee_id + inviteId)
+  gb.advBtn('pt_inv_btn_dec', 'pt_inv_edit', btnCfg('Từ Chối Lời Mời', 'SECONDARY', 'su_wiki_scroll', '1', '2', 'hide'), { x: -420, y: 1320 });
+  const cInvDecOwn = gb.cmp('pt_inv_dec_own', '{user_id}', '{pt_inv_res.response.invitee_id}', 'equal_to', {}, { x: -420, y: 1460 });
+  gb.link('pt_inv_btn_dec', cInvDecOwn.condId);
+  embedMsg(gb, 'pt_inv_dec_denied', {
+    title: `${uidEm('su_wiki_scroll')} KHÔNG PHẢI NGƯỜI ĐƯỢC MỜI`,
+    description: '⚠️ Lời mời Tổ Đội này chỉ dành riêng cho <@{pt_inv_res.response.invitee_id}>! Bạn không thể bấm thay người khác.',
+    color: '#f59e0b',
+    target: { reply: true },
+  }, { x: -200, y: 1640 });
+  gb.link(cInvDecOwn.no, 'pt_inv_dec_denied');
+
+  apiAction(gb, 'pt_inv_dec_api', 'pt_inv_dec_res', 'POST', `${BACKEND_BASE}/api/party/respond`, '{"userId":"{user_id}","decision":"decline","inviteId":"{pt_inv_res.response.invite_id}","expectedUserId":"{pt_inv_res.response.invitee_id}"}', { x: -520, y: 1640 });
+  gb.link(cInvDecOwn.yes, 'pt_inv_dec_api');
+  const ptInvDecNoAck = attachUpdateAckBranch(gb, 'pt_inv_dec', 'pt_inv_dec_api', 'pt_inv_dec_res', { editId: null, x: -520, y: 1820 });
+  const cInvDecOk = gb.cmp('pt_inv_dec_ok', '{pt_inv_dec_res.response.success}', 'true', 'equal_to', { ignoreCase: true }, { x: -520, y: 2000 });
   gb.link(ptInvDecNoAck, cInvDecOk.condId);
   embedMsg(gb, 'pt_inv_dec_edit', {
     title: `${uidEm('su_wiki_scroll')} ĐÃ TỪ CHỐI LỜI MỜI`,
@@ -268,14 +291,14 @@ export function buildPartyHotfixCmd() {
     color: '#95A5A6',
     target: { editId: 'pt_ack' },
     action_id: 'pt_ack',
-  }, { x: -580, y: 2060 });
+  }, { x: -660, y: 2200 });
   gb.link(cInvDecOk.yes, 'pt_inv_dec_edit');
   embedMsg(gb, 'pt_inv_dec_err', {
     title: `${uidEm('su_wiki_scroll')} KHÔNG THỂ TỪ CHỐI`,
     description: '{pt_inv_dec_res.response.message}',
     color: '#E74C3C',
     target: { reply: true },
-  }, { x: -340, y: 2060 });
+  }, { x: -380, y: 2200 });
   gb.link(cInvDecOk.no, 'pt_inv_dec_err');
 
   embedMsg(gb, 'pt_inv_fail_edit', {
@@ -330,7 +353,7 @@ export function buildPartyHotfixCmd() {
       row: '1',
       weight: '1',
       url: `${BACKEND_BASE}/api/party/respond`,
-      rawBody: '{"userId":"{user_id}","decision":"accept"}',
+      rawBody: '{"userId":"{user_id}","decision":"accept","ownerId":"{cmd_owner}"}',
       okTitle: `${uidEm('su_crossed_swords')} TỔ ĐỘI CHIẾN ĐẤU`,
       okColor: '#2ECC71',
       x: 40,
@@ -343,10 +366,10 @@ export function buildPartyHotfixCmd() {
       row: '1',
       weight: '2',
       url: `${BACKEND_BASE}/api/party/respond`,
-      rawBody: '{"userId":"{user_id}","decision":"decline"}',
+      rawBody: '{"userId":"{user_id}","decision":"decline","ownerId":"{cmd_owner}"}',
       okTitle: `${uidEm('su_wiki_scroll')} ĐÃ TỪ CHỐI LỜI MỜI`,
       okColor: '#95A5A6',
-      x: 340,
+      x: 420,
     },
     {
       id: 'lv',
@@ -356,10 +379,10 @@ export function buildPartyHotfixCmd() {
       row: '1',
       weight: '3',
       url: `${BACKEND_BASE}/api/party/leave`,
-      rawBody: '{"userId":"{user_id}"}',
+      rawBody: '{"userId":"{user_id}","ownerId":"{cmd_owner}"}',
       okTitle: `${uidEm('su_crossed_swords')} CẬP NHẬT TỔ ĐỘI`,
       okColor: '#ec4899',
-      x: 640,
+      x: 800,
     },
     {
       id: 'tr',
@@ -369,10 +392,10 @@ export function buildPartyHotfixCmd() {
       row: '2',
       weight: '1',
       url: `${BACKEND_BASE}/api/party/transfer`,
-      rawBody: '{"userId":"{user_id}","targetUserId":"{option_duoi_hoac_chuyen}"}',
+      rawBody: '{"userId":"{user_id}","targetUserId":"{option_duoi_hoac_chuyen}","ownerId":"{cmd_owner}"}',
       okTitle: `${uidEm('su_winner_trophy')} ĐÃ CHUYỂN ĐỘI TRƯỞNG`,
       okColor: '#3498DB',
-      x: 940,
+      x: 1180,
     },
     {
       id: 'kk',
@@ -382,20 +405,31 @@ export function buildPartyHotfixCmd() {
       row: '2',
       weight: '2',
       url: `${BACKEND_BASE}/api/party/kick`,
-      rawBody: '{"userId":"{user_id}","targetUserId":"{option_duoi_hoac_chuyen}"}',
+      rawBody: '{"userId":"{user_id}","targetUserId":"{option_duoi_hoac_chuyen}","ownerId":"{cmd_owner}"}',
       okTitle: `${uidEm('su_crit_boom')} ĐÃ CẬP NHẬT THÀNH VIÊN`,
       okColor: '#E74C3C',
-      x: 1240,
+      x: 1560,
     },
   ];
 
   for (const b of statusButtons) {
     gb.advBtn(`pt_btn_${b.id}`, 'pt_st_msg', btnCfg(b.label, b.style, b.emoji, b.row, b.weight, 'hide'), { x: b.x, y: 1320 });
-    apiAction(gb, `pt_${b.id}_api`, `pt_${b.id}_res`, 'POST', b.url, b.rawBody, { x: b.x, y: 1500 });
-    gb.link(`pt_btn_${b.id}`, `pt_${b.id}_api`);
+    const cOwn = gb.cmp(`pt_${b.id}_own`, '{user_id}', '{cmd_owner}', 'equal_to', {}, { x: b.x, y: 1460 });
+    gb.link(`pt_btn_${b.id}`, cOwn.condId);
 
-    const btnNoAck = attachUpdateAckBranch(gb, `pt_b_${b.id}`, `pt_${b.id}_api`, `pt_${b.id}_res`, { editId: null, x: b.x, y: 1680 });
-    const cAct = gb.cmp(`pt_${b.id}_ok`, `{pt_${b.id}_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: b.x, y: 1860 });
+    embedMsg(gb, `pt_${b.id}_denied`, {
+      title: `${uidEm('su_crossed_swords')} KHÔNG THỂ BẤM LỆNH CỦA NGƯỜI KHÁC`,
+      description: '⚠️ Bảng quản lý Tổ Đội này thuộc về <@{cmd_owner}>. Hãy tự gõ `/party` để thao tác Tổ Đội của bạn!',
+      color: '#f59e0b',
+      target: { reply: true },
+    }, { x: b.x + 180, y: 1640 });
+    gb.link(cOwn.no, `pt_${b.id}_denied`);
+
+    apiAction(gb, `pt_${b.id}_api`, `pt_${b.id}_res`, 'POST', b.url, b.rawBody, { x: b.x - 40, y: 1640 });
+    gb.link(cOwn.yes, `pt_${b.id}_api`);
+
+    const btnNoAck = attachUpdateAckBranch(gb, `pt_b_${b.id}`, `pt_${b.id}_api`, `pt_${b.id}_res`, { editId: null, x: b.x - 40, y: 1820 });
+    const cAct = gb.cmp(`pt_${b.id}_ok`, `{pt_${b.id}_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: b.x - 40, y: 2000 });
     gb.link(btnNoAck, cAct.condId);
 
     embedMsg(gb, `pt_${b.id}_edit`, {
@@ -404,7 +438,7 @@ export function buildPartyHotfixCmd() {
       color: b.okColor,
       target: { editId: 'pt_ack' },
       action_id: 'pt_ack',
-    }, { x: b.x - 110, y: 2060 });
+    }, { x: b.x - 160, y: 2200 });
     gb.link(cAct.yes, `pt_${b.id}_edit`);
 
     embedMsg(gb, `pt_${b.id}_err`, {
@@ -412,7 +446,7 @@ export function buildPartyHotfixCmd() {
       description: `{pt_${b.id}_res.response.message}`,
       color: '#E74C3C',
       target: { reply: true },
-    }, { x: b.x + 110, y: 2060 });
+    }, { x: b.x + 80, y: 2200 });
     gb.link(cAct.no, `pt_${b.id}_err`);
   }
 
@@ -427,14 +461,17 @@ export function buildLinhMachHotfixCmd() {
   gb.rootSlash('linhmach', 'Chiếm Đoạt Linh Mạch Khung Giờ Vàng — 3 Mỏ F→S+ ngẫu nhiên, giảm -10% Mệt Mỏi/giờ', { ephemeral: false });
   gb.errorHandlerWait();
 
+  gb.act('lm_set_owner', 'set_unique_variable', { reference: 'cmd_owner', value: '{user_id}', success_handles: false }, { x: 0, y: 120 });
+  gb.link('root', 'lm_set_owner');
+
   embedMsg(gb, 'lm_ack', {
     title: `${uidEm('vein_mine_sp')} CHIẾM ĐOẠT LINH MẠCH`,
     description: 'Đang kiểm tra 3 Linh Mạch khung giờ hiện tại...',
     color: '#F1C40F',
     target: { reply: true },
     editId: 'lm_ack',
-  }, { x: 0, y: 200 });
-  gb.link('root', 'lm_ack');
+  }, { x: 0, y: 260 });
+  gb.link('lm_set_owner', 'lm_ack');
 
   apiAction(
     gb,
@@ -477,19 +514,30 @@ export function buildLinhMachHotfixCmd() {
   for (const s of slots) {
     const pfx = `lm_s${s.idx}`;
     gb.advBtn(`lm_btn_${s.idx}`, 'lm_ov_msg', btnCfg(s.label, s.style, s.emoji, '1', s.weight, 'hide'), { x: s.x, y: 960 });
+    const cOwn = gb.cmp(`${pfx}_own`, '{user_id}', '{cmd_owner}', 'equal_to', {}, { x: s.x, y: 1100 });
+    gb.link(`lm_btn_${s.idx}`, cOwn.condId);
+
+    embedMsg(gb, `${pfx}_denied`, {
+      title: `${uidEm('vein_mine_sp')} KHÔNG THỂ BẤM LỆNH CỦA NGƯỜI KHÁC`,
+      description: '⚠️ Bảng `/linhmach` này thuộc về <@{cmd_owner}>. Hãy tự gõ `/linhmach` để khiêu chiến Linh Mạch nhé!',
+      color: '#f59e0b',
+      target: { reply: true },
+    }, { x: s.x + 180, y: 1280 });
+    gb.link(cOwn.no, `${pfx}_denied`);
+
     apiAction(
       gb,
       `${pfx}_api`,
       `${pfx}_res`,
       'POST',
       `${BACKEND_BASE}/api/vein/challenge`,
-      `{"userId":"{user_id}","slotIndex":${s.idx}}`,
-      { x: s.x, y: 1140 },
+      `{"userId":"{user_id}","slotIndex":${s.idx},"ownerId":"{cmd_owner}"}`,
+      { x: s.x - 40, y: 1280 },
     );
-    gb.link(`lm_btn_${s.idx}`, `${pfx}_api`);
+    gb.link(cOwn.yes, `${pfx}_api`);
 
-    const noAck = attachUpdateAckBranch(gb, pfx, `${pfx}_api`, `${pfx}_res`, { editId: null, x: s.x, y: 1320 });
-    const cOk = gb.cmp(`${pfx}_ok`, `{${pfx}_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: s.x, y: 1500 });
+    const noAck = attachUpdateAckBranch(gb, pfx, `${pfx}_api`, `${pfx}_res`, { editId: null, x: s.x - 40, y: 1460 });
+    const cOk = gb.cmp(`${pfx}_ok`, `{${pfx}_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: s.x - 40, y: 1640 });
     gb.link(noAck, cOk.condId);
 
     embedMsg(gb, `${pfx}_win`, {
@@ -499,10 +547,10 @@ export function buildLinhMachHotfixCmd() {
       imageUrl: `{${pfx}_res.response.battle_image_url}`,
       target: { editId: 'lm_ack' },
       action_id: 'lm_ack',
-    }, { x: s.x - 140, y: 1700 });
+    }, { x: s.x - 180, y: 1840 });
     gb.link(cOk.yes, `${pfx}_win`);
 
-    gb.advBtn(`${pfx}_logs_btn`, `${pfx}_win`, btnCfg('Xem Nhật Ký Trận Đấu', 'SECONDARY', 'su_wiki_scroll', '1', '1', 'hide'), { x: s.x - 140, y: 1900 });
+    gb.advBtn(`${pfx}_logs_btn`, `${pfx}_win`, btnCfg('Xem Nhật Ký Trận Đấu', 'SECONDARY', 'su_wiki_scroll', '1', '1', 'hide'), { x: s.x - 180, y: 2040 });
     apiAction(
       gb,
       `${pfx}_log_api`,
@@ -510,11 +558,11 @@ export function buildLinhMachHotfixCmd() {
       'POST',
       `${BACKEND_BASE}/api/vein/logs`,
       `{"battleId":"{${pfx}_res.response.battle_id}","userId":"{user_id}"}`,
-      { x: s.x - 140, y: 2080 },
+      { x: s.x - 180, y: 2220 },
     );
     gb.link(`${pfx}_logs_btn`, `${pfx}_log_api`);
 
-    const cLogOk = gb.cmp(`${pfx}_log_ok`, `{${pfx}_log_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: s.x - 140, y: 2260 });
+    const cLogOk = gb.cmp(`${pfx}_log_ok`, `{${pfx}_log_res.response.success}`, 'true', 'equal_to', { ignoreCase: true }, { x: s.x - 180, y: 2400 });
     gb.link(`${pfx}_log_api`, cLogOk.condId);
 
     embedMsg(gb, `${pfx}_log_msg`, {
@@ -522,7 +570,7 @@ export function buildLinhMachHotfixCmd() {
       description: `{${pfx}_log_res.response.description}`,
       color: '#38bdf8',
       target: { reply: true },
-    }, { x: s.x - 240, y: 2440 });
+    }, { x: s.x - 280, y: 2580 });
     gb.link(cLogOk.yes, `${pfx}_log_msg`);
 
     embedMsg(gb, `${pfx}_log_err`, {
@@ -530,7 +578,7 @@ export function buildLinhMachHotfixCmd() {
       description: 'Không thể tải nhật ký trận đấu lúc này. Vui lòng thử lại sau vài giây!',
       color: '#E74C3C',
       target: { reply: true },
-    }, { x: s.x - 40, y: 2440 });
+    }, { x: s.x - 80, y: 2580 });
     gb.link(cLogOk.no, `${pfx}_log_err`);
 
     embedMsg(gb, `${pfx}_err`, {
@@ -538,7 +586,7 @@ export function buildLinhMachHotfixCmd() {
       description: `{${pfx}_res.response.message}`,
       color: '#E74C3C',
       target: { reply: true },
-    }, { x: s.x + 140, y: 1700 });
+    }, { x: s.x + 100, y: 1840 });
     gb.link(cOk.no, `${pfx}_err`);
   }
 

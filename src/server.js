@@ -23,8 +23,10 @@ import {
   renderSingleBattleTurnOnDemand,
   renderAllBattleTurnsOnDemand,
   renderBattleCardQueued,
+  getBattleCacheStats,
 } from './services/battleService.js';
-import { cleanupExpiredBattleLogs } from './services/battleEngine/battleLogStore.js';
+import { cleanupExpiredBattleLogs, getBattleLogStoreStats } from './services/battleEngine/battleLogStore.js';
+import { getImageCacheStats } from './canvas/drawUtils.js';
 import { grantChatExp, handleVoiceExp, processVoiceHeartbeat, getUserExpBoostSummary } from './services/expService.js';
 import {
   claimDaily,
@@ -124,6 +126,7 @@ import {
   renderTeamBattleLogHtml,
   renderSingleTeamBattleTurnOnDemand,
   renderAllTeamBattleTurnsOnDemand,
+  getTeamBattleCacheStats,
 } from './services/battleEngine/teamBattleService.js';
 import { renderTeamBattleCard } from './canvas/teamBattleRenderer.js';
 import {
@@ -366,12 +369,33 @@ app.get('/', (req, res) => {
  * Health check endpoint
  */
 app.get('/health', (req, res) => {
+  const mem = process.memoryUsage();
+  const toMb = (bytes) => Number((Number(bytes || 0) / (1024 * 1024)).toFixed(2));
+  const prerender = getPrerenderStatus();
   res.json({
     status: 'healthy',
     service: 'sumi-profile-backend',
     version: '1.0.0',
     update_version: LATEST_VERSION,
-    prerender: getPrerenderStatus(),
+    prerender,
+    memory: {
+      rss_mb: toMb(mem.rss),
+      heap_used_mb: toMb(mem.heapUsed),
+      heap_total_mb: toMb(mem.heapTotal),
+      external_mb: toMb(mem.external),
+      array_buffers_mb: toMb(mem.arrayBuffers),
+    },
+    caches: {
+      images: getImageCacheStats(),
+      staticAssets: {
+        staticRam: prerender.staticRamEntries,
+        uniqueRam: prerender.uniqueRamEntries,
+        dynamicRam: prerender.dynamicRamEntries,
+      },
+      battleLogs: getBattleLogStoreStats(),
+      battles: getBattleCacheStats(),
+      teamBattles: getTeamBattleCacheStats(),
+    },
     uptime: process.uptime(),
     supabase_connected: !!supabase,
     timestamp: new Date().toISOString(),
@@ -2070,7 +2094,15 @@ app.post('/api/party/invite', requireBackendApiKey, requireUpdateAck, async (req
 app.post('/api/party/respond', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await respondPartyInvite(body.userId, body.decision || 'accept', body.inviteId || null);
+    const result = await respondPartyInvite(
+      body.userId,
+      body.decision || 'accept',
+      getCleanParam(body.inviteId) || null,
+      {
+        expectedUserId: getCleanParam(body.expectedUserId) || null,
+        ownerId: getCleanParam(body.ownerId) || null,
+      },
+    );
     return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/respond error:', err);
@@ -2081,7 +2113,9 @@ app.post('/api/party/respond', requireBackendApiKey, requireUpdateAck, async (re
 app.post('/api/party/leave', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await leaveOrDisbandParty(body.userId);
+    const result = await leaveOrDisbandParty(body.userId, {
+      ownerId: getCleanParam(body.ownerId) || null,
+    });
     return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/leave error:', err);
@@ -2092,7 +2126,9 @@ app.post('/api/party/leave', requireBackendApiKey, requireUpdateAck, async (req,
 app.post('/api/party/kick', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await kickPartyMember(body.userId || body.leaderId, body.targetUserId || body.target);
+    const result = await kickPartyMember(body.userId || body.leaderId, body.targetUserId || body.target, {
+      ownerId: getCleanParam(body.ownerId) || null,
+    });
     return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/kick error:', err);
@@ -2103,7 +2139,9 @@ app.post('/api/party/kick', requireBackendApiKey, requireUpdateAck, async (req, 
 app.post('/api/party/transfer', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
-    const result = await transferPartyLeader(body.userId || body.leaderId, body.targetUserId || body.target);
+    const result = await transferPartyLeader(body.userId || body.leaderId, body.targetUserId || body.target, {
+      ownerId: getCleanParam(body.ownerId) || null,
+    });
     return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {
     console.error('[Server] /api/party/transfer error:', err);
@@ -2129,6 +2167,7 @@ app.post('/api/vein/challenge', requireBackendApiKey, requireUpdateAck, async (r
     const body = req.body || {};
     const result = await challengeSpiritVein(body.userId, body.slotIndex ?? body.slot ?? body.tierGroup ?? body.group ?? 1, {
       forceOpen: Boolean(body.forceOpen),
+      ownerId: getCleanParam(body.ownerId) || null,
     });
     return res.status(result.status >= 500 ? result.status : 200).json(result);
   } catch (err) {

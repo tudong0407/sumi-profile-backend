@@ -121,15 +121,52 @@ export function drawCoverBackground(ctx, img, width, height, overlayAlpha = 0.56
 /**
  * Bounded LRU cache helpers & decoded image caches (safe for 512MB Render container)
  */
-const BG_CACHE_MAX = 12;
-const LOCAL_ASSET_CACHE_MAX = 160;
-const REMOTE_IMAGE_CACHE_MAX = 80;
+const BG_CACHE_MAX = 4;
+const LOCAL_ASSET_CACHE_MAX = 40;
+const REMOTE_IMAGE_CACHE_MAX = 40;
 const REMOTE_IMAGE_TTL_MS = 15 * 60 * 1000;
+const BG_MAX_DIM = { w: 1280, h: 720 };
+const LOCAL_ASSET_MAX_DIM = { w: 384, h: 384 };
+const REMOTE_AVATAR_MAX_DIM = { w: 256, h: 256 };
 
 const bgImageCache = new Map();
 const localAssetImageCache = new Map();
 const remoteImageCache = new Map();
 const inFlightLoads = new Map();
+
+export function getImageCacheStats() {
+  return {
+    backgrounds: bgImageCache.size,
+    localAssets: localAssetImageCache.size,
+    remoteImages: remoteImageCache.size,
+    inFlight: inFlightLoads.size,
+    limits: {
+      backgrounds: BG_CACHE_MAX,
+      localAssets: LOCAL_ASSET_CACHE_MAX,
+      remoteImages: REMOTE_IMAGE_CACHE_MAX,
+    },
+  };
+}
+
+function downscaleImageForCache(img, maxW, maxH) {
+  if (!img) return null;
+  const w = Number(img.width || 0);
+  const h = Number(img.height || 0);
+  if (w <= 0 || h <= 0 || (w <= maxW && h <= maxH)) return img;
+  const ratio = Math.min(maxW / w, maxH / h);
+  const nw = Math.max(1, Math.round(w * ratio));
+  const nh = Math.max(1, Math.round(h * ratio));
+  try {
+    const c = createCanvas(nw, nh);
+    const cctx = c.getContext('2d');
+    cctx.imageSmoothingEnabled = true;
+    cctx.imageSmoothingQuality = 'high';
+    cctx.drawImage(img, 0, 0, nw, nh);
+    return c;
+  } catch {
+    return img;
+  }
+}
 
 function lruGet(cache, key) {
   if (!cache.has(key)) return undefined;
@@ -170,7 +207,9 @@ async function loadLocalAssetCached(resolvedPath) {
   const p = (async () => {
     try {
       const buffer = await fs.promises.readFile(resolvedPath);
-      const img = await loadImage(buffer);
+      const rawImg = await loadImage(buffer);
+      const dims = isBg ? BG_MAX_DIM : LOCAL_ASSET_MAX_DIM;
+      const img = downscaleImageForCache(rawImg, dims.w, dims.h);
       if (img) lruSet(cache, resolvedPath, img, max);
       return img || null;
     } catch {
@@ -205,7 +244,8 @@ async function loadRemoteImageCached(url, timeoutMs) {
       const res = await fetch(url, { signal: controller.signal });
       if (res.ok) {
         const arrayBuffer = await res.arrayBuffer();
-        const img = await loadImage(Buffer.from(arrayBuffer));
+        const rawImg = await loadImage(Buffer.from(arrayBuffer));
+        const img = downscaleImageForCache(rawImg, REMOTE_AVATAR_MAX_DIM.w, REMOTE_AVATAR_MAX_DIM.h);
         if (img) {
           lruSet(remoteImageCache, url, { img, expiresAt: Date.now() + REMOTE_IMAGE_TTL_MS }, REMOTE_IMAGE_CACHE_MAX);
           return img;

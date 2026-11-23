@@ -9,14 +9,28 @@
 import { supabase } from '../../config/supabase.js';
 
 export const BATTLE_LOG_TTL_MS = 48 * 60 * 60 * 1000; // 48 giờ = 2 ngày
-const MAX_RAM_RECORDS = 150;
-const MAX_FRAME_BUFFERS = 240;
+const MAX_RAM_RECORDS = 40;
+const MAX_FRAME_BUFFERS = 60;
 
 const recordCache = new Map(); // battleId -> { battleKind, channelId, participantIds, payload, createdAtMs, expiresAtMs }
 const latestByChannel = new Map(); // channelId -> battleId
 const latestByUserKind = new Map(); // `${battleKind}:${userId}` -> battleId
 const frameBufferCache = new Map(); // `${battleId}:${key}` -> { buffer, createdAtMs }
 let lastCleanupAtMs = 0;
+
+export function getBattleLogStoreStats() {
+  let frameBytes = 0;
+  for (const v of frameBufferCache.values()) {
+    frameBytes += Number(v?.buffer?.length || 0);
+  }
+  return {
+    records: recordCache.size,
+    recordLimit: MAX_RAM_RECORDS,
+    frameBuffers: frameBufferCache.size,
+    frameBufferLimit: MAX_FRAME_BUFFERS,
+    frameBuffersMb: Number((frameBytes / (1024 * 1024)).toFixed(2)),
+  };
+}
 
 function trimMap(map, limit) {
   while (map.size > limit) {
