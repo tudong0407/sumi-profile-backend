@@ -69,22 +69,27 @@ function randomInt(min, max, rng = Math.random) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
 
-function pickUniqueClues(bucketName, count, rng = Math.random) {
-  const pool = [...(STONE_CLUES[bucketName] || STONE_CLUES.neutral)];
+function pickUniqueClues(bucketName, count, rng = Math.random, usedSet = null) {
+  const rawPool = STONE_CLUES[bucketName] || STONE_CLUES.neutral;
+  const filtered = usedSet ? rawPool.filter((c) => !usedSet.has(c)) : rawPool;
+  const pool = filtered.length >= count ? [...filtered] : [...rawPool];
   const out = [];
   while (out.length < count && pool.length > 0) {
     const idx = Math.floor(rng() * pool.length);
-    out.push(pool.splice(idx, 1)[0]);
+    const chosen = pool.splice(idx, 1)[0];
+    out.push(chosen);
+    if (usedSet) usedSet.add(chosen);
   }
   return out;
 }
 
 /**
- * Sinh 3 viên đá cá nhân hóa cho 1 phân khúc, kèm manh mối Bán-Chân-Thật (65% thật / 35% bẫy)
+ * Sinh 3 viên đá cá nhân hóa cho 1 phân khúc, kèm manh mối Bán-Chân-Thật (không trùng câu giữa 3 viên cùng sạp)
  */
 export function generateStallStones(tierKey, rng = Math.random) {
   const speciesPool = STONE_SPECIES.filter((s) => s.tier_key === tierKey);
   const shuffled = [...speciesPool].sort(() => rng() - 0.5).slice(0, 3);
+  const usedClues = new Set();
 
   return shuffled.map((sp, idx) => {
     const bandRoll = rng();
@@ -97,7 +102,7 @@ export function generateStallStones(tierKey, rng = Math.random) {
       const alt = ['dim', 'neutral', 'radiant'].filter((b) => b !== hiddenBand);
       clueBucket = alt[Math.floor(rng() * alt.length)];
     }
-    const clues = pickUniqueClues(clueBucket, 2, rng);
+    const clues = pickUniqueClues(clueBucket, 2, rng, usedClues);
 
     return {
       slot: idx + 1,

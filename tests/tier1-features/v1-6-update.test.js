@@ -156,7 +156,8 @@ test('v1.6 Do Thach Catalog: 20 Species, 105 Clues (65/35), 7 Supreme Picks, EV 
   assert.equal(STONE_SPECIES.length, 20);
   assert.equal(new Set(STONE_SPECIES.map((s) => s.stone_id)).size, 20);
   const allClues = Object.values(STONE_CLUES).flat();
-  assert.equal(allClues.length, 105);
+  assert.equal(allClues.length, 210);
+  assert.equal(new Set(allClues).size, 210);
   assert.equal(SUPREME_PICK_CATEGORIES.length, 7);
 
   for (const s of STONE_SPECIES) {
@@ -201,6 +202,9 @@ test('v1.6 Do Thach Stall & Supreme Pick Excludes Unique / Fuyumi', async () => 
   const stall = await getStoneStall(uid, 'mythic');
   assert.equal(stall.success, true);
   assert.equal(stall.stones.length, 3);
+  const allStallClues = stall.stones.flatMap((s) => s.clues || []);
+  assert.equal(allStallClues.length, 6);
+  assert.equal(new Set(allStallClues).size, 6, 'All 6 clues on the same stall must be unique');
 
   const prev = await previewStallStone(uid, 'mythic', 1);
   assert.equal(prev.success, true);
