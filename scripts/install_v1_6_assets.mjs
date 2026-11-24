@@ -25,13 +25,16 @@ async function convertToWebp(srcPath, destPath, width, height, quality) {
   return webpBuf.length;
 }
 
+const stonesFlagIdx = process.argv.indexOf('--stones-dir');
+const CUSTOM_STONES_DIR = stonesFlagIdx >= 0 && process.argv[stonesFlagIdx + 1] ? process.argv[stonesFlagIdx + 1] : '';
+
 async function main() {
   let totalBytes = 0;
   let count = 0;
 
   // 1. 3 Luck Potions -> assets/shop/*.webp (512x512)
   const shopDir = path.join(SRC_ROOT, 'shop');
-  if (fs.existsSync(shopDir)) {
+  if (!CUSTOM_STONES_DIR && fs.existsSync(shopDir)) {
     for (const file of fs.readdirSync(shopDir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
       const outName = file.replace(/\.(png|jpe?g|webp)$/i, '.webp');
       const bytes = await convertToWebp(
@@ -47,7 +50,7 @@ async function main() {
   }
 
   // 2. Rough Stones + Cut-State Stones (loss/mid/win) -> assets/stones/*.webp (512x512)
-  const stonesDir = path.join(SRC_ROOT, 'stones');
+  const stonesDir = CUSTOM_STONES_DIR || path.join(SRC_ROOT, 'stones');
   if (fs.existsSync(stonesDir)) {
     for (const file of fs.readdirSync(stonesDir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
       const outName = file.replace(/\.(png|jpe?g|webp)$/i, '.webp');
@@ -80,7 +83,7 @@ async function main() {
 
   // 3. 6 Fortune Cards (768x1024 WebP) + oracle_shake.webp (800x600) + oracle_shake.gif
   const fqDir = path.join(SRC_ROOT, 'gieoque');
-  if (fs.existsSync(fqDir)) {
+  if (!CUSTOM_STONES_DIR && fs.existsSync(fqDir)) {
     await fs.promises.mkdir(path.join(DEST_ROOT, 'fortune'), { recursive: true });
     for (const file of fs.readdirSync(fqDir)) {
       const src = path.join(fqDir, file);

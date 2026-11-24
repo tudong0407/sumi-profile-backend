@@ -74,6 +74,7 @@ import {
   claimSupremeStonePick,
   mapOutcomeToCutState,
   resolveStoneCutImageUrl,
+  getAvailableStonesForTier,
 } from '../../src/services/stoneCuttingService.js';
 import { BATTLE_COOLDOWN_MS } from '../../src/services/battleEngine/battleService.js';
 import { TOWER_COOLDOWN_MS, challengeTower, getQuestStatus } from '../../src/services/questService.js';
@@ -171,8 +172,12 @@ test('v1.6 Do Thach Catalog: 40 Species, 300 Clues (100/100/100), Cut-State Imag
   assert.equal(mapOutcomeToCutState('high'), 'win');
   assert.equal(mapOutcomeToCutState('epic'), 'win');
   assert.equal(mapOutcomeToCutState('supreme'), 'win');
-  const cutUrl = resolveStoneCutImageUrl('stone_common_1', 'common', 'high');
-  assert.ok(cutUrl.endsWith('/assets/stones/stone_common_1.webp?v=1.6') || cutUrl.includes('_win.webp'));
+  for (const tk of ['common', 'rare', 'epic', 'mythic']) {
+    assert.equal(getAvailableStonesForTier(tk).length, 10, `Expected 10 installed stones for ${tk}`);
+  }
+  assert.ok(resolveStoneCutImageUrl('stone_common_6', 'common', 'empty').endsWith('/assets/stones/stone_common_6_loss.webp?v=1.6'));
+  assert.ok(resolveStoneCutImageUrl('stone_common_6', 'common', 'mid').endsWith('/assets/stones/stone_common_6_mid.webp?v=1.6'));
+  assert.ok(resolveStoneCutImageUrl('stone_mythic_10', 'mythic', 'high').endsWith('/assets/stones/stone_mythic_10_win.webp?v=1.6'));
 
   for (const s of STONE_SPECIES) {
     assert.equal(UNICODE_PICTOGRAPH_RE.test(s.name), false);
