@@ -219,3 +219,150 @@ test('Ver 1.5 HAX: soul_mythic_1 converts resisted Charm into 10% maxHp true bur
   assert.equal(resCharm.attackSelf, true);
   assert.ok(resCharm.events.some((e) => e.action === 'charm'));
 });
+
+test('Ver 1.5 HAX Audit: stunned DoT ticks, team firstStrike, charm attackSelf, doubleTurn & ally start poison', () => {
+  // 1. Stunned actor still takes Poison + Burn DoT while skipping turn
+  const stunnedVictim = {
+    id: 'victim_stun_dot',
+    petType: 'hoa_thach_nham_nham',
+    atk: 1000,
+    def: 1000,
+    spd: 1000,
+    maxHp: 10000,
+    currentHp: 10000,
+    equipment: {},
+    domainLoadout: {},
+    state: {
+      ...createInitialCombatState(),
+      isStunned: true,
+      poisonActive: true,
+      poisonPct: 0.08,
+      burnTurns: 2,
+      burnPct: 0.06,
+    },
+  };
+  const dummyTarget = {
+    id: 'dummy_target',
+    petType: 'hoa_thach_nham_nham',
+    atk: 1000,
+    def: 1000,
+    spd: 1000,
+    maxHp: 10000,
+    currentHp: 10000,
+    equipment: {},
+    domainLoadout: {},
+    state: createInitialCombatState(),
+  };
+  const stunRes = triggerTurnStart(stunnedVictim, dummyTarget, () => 0.99, 4);
+  assert.equal(stunRes.skipTurn, true);
+  assert.equal(stunnedVictim.currentHp, 8600, 'Poison 8% (800) + Burn 6% (600) must tick even when stunned');
+  assert.ok(stunRes.events.some((e) => e.action === 'dot' && e.skill.includes('Trúng Độc')));
+  assert.ok(stunRes.events.some((e) => e.action === 'dot' && e.skill.includes('Thiêu Đốt')));
+  assert.ok(stunRes.events.some((e) => e.action === 'turn_skip'));
+
+  // 2. Team battle: v1.3 firstStrike pet acts before faster Boss + slot #2 ally soul_epic_2 poisons Boss
+  const resTeam = simulateTeamBattle(
+    [
+      {
+        id: 'p1',
+        name: 'SlowFirstStrike',
+        pet: { pet_type: 'cuu_thien_loi_de_ho', pet_name: 'Cửu Thiên Lôi Đế Hồ', element: 'Lôi', level: 3, star: 4 },
+        equipment: {},
+        atk: 2000,
+        def: 1000,
+        spd: 1200,
+        maxHp: 15000,
+      },
+      {
+        id: 'p2',
+        name: 'AllyPoison',
+        pet: { pet_type: 'hoa_thach_nham_nham', pet_name: 'Nham Nham', element: 'Thổ', level: 10, star: 2 },
+        equipment: { soul: { item_id: 'soul_epic_2' } },
+        atk: 1500,
+        def: 1000,
+        spd: 1000,
+        maxHp: 12000,
+      },
+    ],
+    [
+      {
+        id: 'boss1',
+        name: 'FastBoss',
+        isBoss: true,
+        pet: { pet_type: 'vein_mine_d', pet_name: 'Thanh Mộc Cổ Mãng', element: 'Mộc', level: 60, star: 5 },
+        equipment: {},
+        atk: 3000,
+        def: 2000,
+        spd: 1800,
+        maxHp: 65000,
+      },
+    ],
+    { maxTurns: 1, rng: () => 0.99 },
+  );
+  const turn1Attacks = resTeam.turnSnapshots[1]?.events || [];
+  const firstAttackIdx = turn1Attacks.findIndex((e) => e.includes('**SlowFirstStrike** →') || e.includes('**FastBoss** →'));
+  assert.ok(firstAttackIdx >= 0 && turn1Attacks[firstAttackIdx].includes('**SlowFirstStrike** →'), 'firstStrike pet must strike before faster Boss');
+  assert.ok(turn1Attacks.some((e) => e.includes('Trúng Độc (-5.200 HP)')), 'Slot #2 teammate soul_epic_2 must poison Boss');
+
+  // 3a. Team battle: charm attackSelf makes actor hit itself
+  const resCharmTeam = simulateTeamBattle(
+    [
+      {
+        id: 'charmed_a',
+        name: 'CharmedAttacker',
+        pet: { pet_type: 'hoa_thach_nham_nham', pet_name: 'Nham', element: 'Thổ', level: 20, star: 3 },
+        equipment: {},
+        atk: 2500,
+        def: 1000,
+        spd: 3000,
+        maxHp: 20000,
+      },
+    ],
+    [
+      {
+        id: 'charmer_b',
+        name: 'CharmerBoss',
+        pet: { pet_type: 'hoa_thach_nham_nham', pet_name: 'Mị', element: 'Thổ', level: 20, star: 3 },
+        equipment: { soul: { item_id: 'soul_mythic_1' } },
+        atk: 1000,
+        def: 1000,
+        spd: 500,
+        maxHp: 50000,
+      },
+    ],
+    { maxTurns: 1, rng: () => 0.01 },
+  );
+  const charmEvents = resCharmTeam.turnSnapshots[1]?.events || [];
+  assert.ok(charmEvents.some((e) => e.includes('CharmedAttacker') && e.includes('→ **CharmedAttacker**')), 'Charmed unit must hit itself in team battle');
+
+  // 3b. Team battle: soul_mythic_2 doubleTurn strikes twice
+  const resDoubleTeam = simulateTeamBattle(
+    [
+      {
+        id: 'double_a',
+        name: 'DoubleAttacker',
+        pet: { pet_type: 'hoa_thach_nham_nham', pet_name: 'Nham', element: 'Thổ', level: 20, star: 3 },
+        equipment: { soul: { item_id: 'soul_mythic_2' } },
+        atk: 2500,
+        def: 1000,
+        spd: 3000,
+        maxHp: 20000,
+      },
+    ],
+    [
+      {
+        id: 'dummy_b',
+        name: 'DummyBoss',
+        pet: { pet_type: 'hoa_thach_nham_nham', pet_name: 'Mộc', element: 'Thổ', level: 20, star: 3 },
+        equipment: {},
+        atk: 1000,
+        def: 1000,
+        spd: 500,
+        maxHp: 50000,
+      },
+    ],
+    { maxTurns: 1, rng: () => 0.99 },
+  );
+  const doubleEvents = resDoubleTeam.turnSnapshots[1]?.events || [];
+  assert.ok(doubleEvents.some((e) => e.includes('Liên Hoàn Đòn (Thêm Lượt)')), 'soul_mythic_2 must trigger double turn in team battle');
+});

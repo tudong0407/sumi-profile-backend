@@ -18,7 +18,10 @@ import {
   triggerPostDamage,
   triggerLethalInterception,
   applyHeal,
+  hasPet,
+  hasItem,
 } from './haxEngine.js';
+import { V13_PET_HAX, getCombatantV13HaxList } from './v13HaxRegistry.js';
 import { em, uiEm, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import {
   PUBLIC_BASE_URL,
@@ -157,6 +160,10 @@ function pickFrontlineTarget(enemyTeam) {
 }
 
 function hasThunderFirstStrike(unit) {
+  const petType = unit?.pet?.pet_type || unit?.petType || '';
+  if (hasPet(unit, 'loi_dinh_kim_ho') || V13_PET_HAX[petType]?.firstStrike) {
+    return true;
+  }
   const skill = String(unit?.pet?.hax_skill || '').toLowerCase();
   return skill.includes('lôi quang tốc') || skill.includes('loi quang toc');
 }
@@ -270,6 +277,31 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       state: createInitialCombatState(),
     };
     pushStartEvents(triggerBattleStart(unit, dummyEnemy, rng), unit.id);
+    if (dummyEnemy.state.poisonActive) {
+      enemyLeader.state.poisonActive = true;
+      enemyLeader.state.poisonPct = Math.max(enemyLeader.state.poisonPct || 0, dummyEnemy.state.poisonPct || 0);
+      if (dummyEnemy.state.poisonScaling && !enemyLeader.state.poisonScaling) {
+        enemyLeader.state.poisonScaling = dummyEnemy.state.poisonScaling;
+      }
+    }
+    if (dummyEnemy.state.atkDebuffTurns > 0) {
+      enemyLeader.state.atkDebuffPct = Math.max(enemyLeader.state.atkDebuffPct || 0, dummyEnemy.state.atkDebuffPct || 0);
+      enemyLeader.state.atkDebuffTurns = Math.max(enemyLeader.state.atkDebuffTurns || 0, dummyEnemy.state.atkDebuffTurns || 0);
+    }
+    if (dummyEnemy.state.defDebuffTurns > 0) {
+      enemyLeader.state.defDebuffPct = Math.max(enemyLeader.state.defDebuffPct || 0, dummyEnemy.state.defDebuffPct || 0);
+      enemyLeader.state.defDebuffTurns = Math.max(enemyLeader.state.defDebuffTurns || 0, dummyEnemy.state.defDebuffTurns || 0);
+    }
+    if (dummyEnemy.state.spdDebuffTurns > 0) {
+      enemyLeader.state.spdDebuffPct = Math.max(enemyLeader.state.spdDebuffPct || 0, dummyEnemy.state.spdDebuffPct || 0);
+      enemyLeader.state.spdDebuffTurns = Math.max(enemyLeader.state.spdDebuffTurns || 0, dummyEnemy.state.spdDebuffTurns || 0);
+    }
+    if (dummyEnemy.state.haxLockedTurns > 0) {
+      enemyLeader.state.haxLockedTurns = Math.max(enemyLeader.state.haxLockedTurns || 0, dummyEnemy.state.haxLockedTurns || 0);
+    }
+    if (dummyEnemy.state.blindTurns > 0) {
+      enemyLeader.state.blindTurns = Math.max(enemyLeader.state.blindTurns || 0, dummyEnemy.state.blindTurns || 0);
+    }
   }
   if (startHaxLines.length > 0) {
     turnDetailLines.push('• **Khai Trận HAX (Đầu Trận):**');
@@ -392,162 +424,289 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         continue;
       }
 
-      const ownBuffs = actor.domainRuntime?.own?.buffs || {};
-      const actorDebuffs = actor.domainRuntime?.incomingDebuffs || {};
+      const executeTeamStrike = ({
+        striker,
+        defender,
+        forcedDamage = null,
+        forcedDefPiercePct = 0,
+        forcedShieldPiercePct = 0,
+        extraLabel = null,
+        allowAoe = true,
+      }) => {
+        const strikerOwnBuffs = striker.domainRuntime?.own?.buffs || {};
+        const elemAdv = getElementalAdvantage(
+          striker.pet?.element || striker.element || 'Kim',
+          defender.pet?.element || defender.element || 'Kim',
+        );
 
-      // 3b. Sát thương cơ bản & Ngũ Hành
-      const elemAdv = getElementalAdvantage(actor.pet?.element || actor.element || 'Kim', target.pet?.element || target.element || 'Kim');
-      const rawBaseDamage = Math.max(20, Math.round(actor.atk * (1.25 + rng() * 0.25)));
-
-      // 3c. Pha Tấn Công HAX (triggerAttackPhase: Crit, Né, Xuyên Giáp, Kết Liễu, Hút Máu...)
-      const attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, {
-        multiplier: Number(elemAdv.multiplier || 1.0),
-        isTrueDamage: Boolean(elemAdv.isTrueDamage),
-        elementAdvantage: elemAdv.label,
-      });
-
-      if (attackPhase.isMiss) {
-        turnEvents.push({ actor: actor.id, target: target.id, action: 'miss', dmg: 0 });
-        thisTurnLines.push(`  • ${uiEm('ui_wind_spd')} **${actor.name}** tung đòn vào **${target.name}** nhưng bị **${attackPhase.haxTriggered || 'Né Tránh'}** *(0 ST)*`);
-        continue;
-      }
-
-      // 3d. Pha Nhận Sát Thương HAX (triggerDamageReceived: Miễn Thương, Khiên, Phản Sát Thương!)
-      const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng, {
-        ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
-        isTrueDamage: Boolean(attackPhase.isTrueDamage),
-      });
-
-      const notes = [];
-      if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
-      for (const ev of damageRecv.events || []) {
-        if (ev?.skill) notes.push(ev.skill);
-      }
-
-      let dmgToApply = damageRecv.finalDamage;
-      let absorbedByShield = 0;
-
-      if ((target.shield || 0) > 0) {
-        const piercePct = Math.min(1, Math.max(0, Number(attackPhase.shieldPiercePct || ownBuffs.shieldPiercePct || 0)));
-        const shieldMult = Math.max(1.0, Number(attackPhase.shieldDamageMult) || 1.0);
-        const bypassDmg = Math.floor(dmgToApply * piercePct);
-        let shieldableDmg = dmgToApply - bypassDmg;
-
-        const shieldCost = Math.ceil(shieldableDmg * shieldMult);
-        if (target.shield >= shieldCost) {
-          target.shield -= shieldCost;
-          absorbedByShield = shieldableDmg;
-          shieldableDmg = 0;
+        let attackPhase;
+        if (forcedDamage !== null) {
+          const baseDef = elemAdv.isTrueDamage
+            ? 0
+            : Math.max(0, Math.round(defender.def * (1 - Math.min(0.75, defender.state?.defDebuffPct || 0))));
+          const effDef = Math.floor(baseDef * (1 - Math.min(1, Math.max(0, forcedDefPiercePct || 0))));
+          const computedForcedDmg = Math.max(50, Math.floor((forcedDamage - effDef * 0.35) * (elemAdv.multiplier || 1)));
+          attackPhase = {
+            damage: computedForcedDmg,
+            isCrit: false,
+            isMiss: false,
+            shieldPiercePct: forcedShieldPiercePct || 0,
+            shieldDamageMult: 1.0,
+            lifestealPct: 0,
+            ignoreEnemyDmgRedPct: 0,
+            isTrueDamage: Boolean(elemAdv.isTrueDamage),
+            bonusTrueOnShieldBreakPct: 0,
+            haxTriggered: extraLabel || null,
+          };
         } else {
-          absorbedByShield = Math.floor(target.shield / shieldMult);
-          shieldableDmg = Math.max(0, shieldableDmg - absorbedByShield);
-          target.shield = 0;
+          const rawBaseDamage = Math.max(20, Math.round(striker.atk * (1.25 + rng() * 0.25)));
+          attackPhase = triggerAttackPhase(striker, defender, rawBaseDamage, rng, {
+            multiplier: Number(elemAdv.multiplier || 1.0),
+            isTrueDamage: Boolean(elemAdv.isTrueDamage),
+            elementAdvantage: elemAdv.label,
+          });
         }
-        dmgToApply = bypassDmg + shieldableDmg;
 
-        if (target.shield === 0) {
-          if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
-            const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
-            dmgToApply += breakBonus;
-            notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
+        if (attackPhase.isMiss) {
+          turnEvents.push({ actor: striker.id, target: defender.id, action: 'miss', dmg: 0 });
+          thisTurnLines.push(`  • ${uiEm('ui_wind_spd')} **${striker.name}** tung đòn vào **${defender.name}** nhưng bị **${attackPhase.haxTriggered || 'Né Tránh'}** *(0 ST)*`);
+          return { attackPhase, dmgToApply: 0 };
+        }
+
+        const damageRecv = triggerDamageReceived(defender, attackPhase.damage, striker, rng, {
+          ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
+          isTrueDamage: Boolean(attackPhase.isTrueDamage),
+        });
+
+        const notes = [];
+        if (extraLabel && forcedDamage === null) notes.push(extraLabel);
+        if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
+        for (const ev of damageRecv.events || []) {
+          if (ev?.skill) notes.push(ev.skill);
+        }
+
+        let dmgToApply = damageRecv.finalDamage;
+        let absorbedByShield = 0;
+
+        if ((defender.shield || 0) > 0) {
+          const piercePct = Math.min(1, Math.max(0, Number(attackPhase.shieldPiercePct || strikerOwnBuffs.shieldPiercePct || 0)));
+          const shieldMult = Math.max(1.0, Number(attackPhase.shieldDamageMult) || 1.0);
+          const bypassDmg = Math.floor(dmgToApply * piercePct);
+          let shieldableDmg = dmgToApply - bypassDmg;
+
+          const shieldCost = Math.ceil(shieldableDmg * shieldMult);
+          if (defender.shield >= shieldCost) {
+            defender.shield -= shieldCost;
+            absorbedByShield = shieldableDmg;
+            shieldableDmg = 0;
+          } else {
+            absorbedByShield = Math.floor(defender.shield / shieldMult);
+            shieldableDmg = Math.max(0, shieldableDmg - absorbedByShield);
+            defender.shield = 0;
           }
-          if (target.state?.shieldExplodePct > 0) {
-            const pct = target.state.shieldExplodePct;
-            target.state.shieldExplodePct = 0;
-            const explodeDmg = Math.floor(target.maxHp * pct);
-            actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
-            notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST)`);
-            if (actor.currentHp <= 0) {
-              const li = triggerLethalInterception(actor, target, rng);
-              if (li.survived && li.skill) notes.push(li.skill);
+          dmgToApply = bypassDmg + shieldableDmg;
+
+          if (defender.shield === 0) {
+            if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
+              const breakBonus = Math.floor(defender.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
+              dmgToApply += breakBonus;
+              notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
             }
-          }
-        }
-      }
-
-      target.currentHp = Math.max(0, target.currentHp - dmgToApply);
-
-      // 3e. Hút máu (HAX + Linh Vực)
-      let healAmt = 0;
-      const totalLifestealPct = Math.min(0.85, Number(attackPhase.lifestealPct || 0) + Number(ownBuffs.lifestealPct || 0));
-      if (totalLifestealPct > 0 && dmgToApply > 0 && actor.currentHp > 0) {
-        const healPenalty = Math.min(0.85, Number(actorDebuffs.healReductionPct || 0));
-        healAmt = applyHeal(actor, dmgToApply * totalLifestealPct * (1 - healPenalty));
-        if (healAmt > 0) notes.push(`Hút +${healAmt.toLocaleString('vi-VN')} HP`);
-      }
-
-      // 3f. Phản sát thương (Damage Reflection từ Bảo Ngọc / Pet / HAX)
-      if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
-        actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
-        notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST`);
-        if (actor.currentHp <= 0) {
-          const liActor = triggerLethalInterception(actor, target, rng);
-          if (liActor.survived && liActor.skill) notes.push(liActor.skill);
-        }
-      }
-
-      // 3g. Chặn Đòn Chí Tử (Bất Tử / Kim Thân Hộ Mệnh) hoặc Hậu Sát Thương
-      if (target.currentHp > 0) {
-        const postEvents = triggerPostDamage(target, actor) || [];
-        for (const pev of postEvents) {
-          if (pev?.skill) notes.push(pev.skill);
-        }
-      } else {
-        const lethalInterception = triggerLethalInterception(target, actor, rng);
-        if (lethalInterception.survived && lethalInterception.skill) {
-          notes.push(lethalInterception.skill);
-          highlights.push(`**Hiệp ${turn}:** ${target.name} kích hoạt **${lethalInterception.skill}**!`);
-        }
-      }
-
-      turnEvents.push({
-        actor: actor.id,
-        actorName: actor.name,
-        target: target.id,
-        targetName: target.name,
-        action: attackPhase.isCrit ? 'crit' : 'attack',
-        dmg: dmgToApply,
-        ko: target.currentHp === 0,
-      });
-
-      const critTag = attackPhase.isCrit ? `${em('su_crit_boom')} **BẠO KÍCH!** ` : `${em('su_crossed_swords')} `;
-      const elemTag = elemAdv?.label ? ` *(${elemAdv.label})*` : '';
-      const shieldTag = absorbedByShield > 0 ? ` *(khiên chặn ${absorbedByShield.toLocaleString('vi-VN')})*` : '';
-      const haxTag = notes.length > 0 ? ` • *[${notes.join(' | ')}]*` : '';
-      const koTag = target.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ` *(HP còn ${target.currentHp.toLocaleString('vi-VN')}/${target.maxHp.toLocaleString('vi-VN')})*`;
-      thisTurnLines.push(`  • ${critTag}**${actor.name}** → **${target.name}**${elemTag}: **-${dmgToApply.toLocaleString('vi-VN')} ST**${shieldTag}${haxTag}${koTag}`);
-
-      if (target.currentHp === 0) {
-        highlights.push(`**Hiệp ${turn}:** ${actor.name} hạ gục **${target.name}** (${dmgToApply.toLocaleString('vi-VN')} ST)!`);
-      }
-
-      // 3h. Dư Chấn AoE 35% cho Boss Linh Mạch Hạng Cao (A / S / S+)
-      const aoeSplashPct = Number(actor.aoeSplashPct || 0);
-      if (aoeSplashPct > 0 && dmgToApply > 0 && actor.currentHp > 0) {
-        const backline = enemies.filter((m) => m.id !== target.id && m.currentHp > 0);
-        if (backline.length > 0) {
-          const splashParts = [];
-          for (const ally of backline) {
-            const rawSplash = Math.max(1, Math.round(attackPhase.damage * aoeSplashPct));
-            const splashRecv = triggerDamageReceived(ally, rawSplash, actor, rng, { isTrueDamage: false });
-            let splashApply = Math.max(0, Number(splashRecv.finalDamage || 0));
-            if ((ally.shield || 0) > 0 && splashApply > 0) {
-              if (ally.shield >= splashApply) {
-                ally.shield -= splashApply;
-                splashApply = 0;
-              } else {
-                splashApply -= ally.shield;
-                ally.shield = 0;
+            if (defender.state?.shieldExplodePct > 0) {
+              const pct = defender.state.shieldExplodePct;
+              defender.state.shieldExplodePct = 0;
+              const explodeDmg = Math.floor(defender.maxHp * pct);
+              striker.currentHp = Math.max(0, striker.currentHp - explodeDmg);
+              notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST)`);
+              if (striker.currentHp <= 0) {
+                const li = triggerLethalInterception(striker, defender, rng);
+                if (li.survived && li.skill) notes.push(li.skill);
               }
             }
-            ally.currentHp = Math.max(0, ally.currentHp - splashApply);
-            if (ally.currentHp === 0) {
-              triggerLethalInterception(ally, actor, rng);
-            }
-            splashParts.push(`**${ally.name}** -${splashApply.toLocaleString('vi-VN')} *(còn ${ally.currentHp.toLocaleString('vi-VN')})*`);
           }
-          if (splashParts.length > 0) {
-            thisTurnLines.push(`    ${em('su_crit_boom')} **[Dư Chấn AoE ${Math.round(aoeSplashPct * 100)}%]** Quét hậu phương: ${splashParts.join(' • ')}`);
+        }
+
+        defender.currentHp = Math.max(0, defender.currentHp - dmgToApply);
+
+        // Hút máu (HAX + Linh Vực)
+        const strikerDebuffs = striker.domainRuntime?.incomingDebuffs || {};
+        const totalLifestealPct = Math.min(0.85, Number(attackPhase.lifestealPct || 0) + Number(strikerOwnBuffs.lifestealPct || 0));
+        if (totalLifestealPct > 0 && dmgToApply > 0 && striker.currentHp > 0 && striker.id !== defender.id) {
+          const healPenalty = Math.min(0.85, Number(strikerDebuffs.healReductionPct || 0));
+          const healAmt = applyHeal(striker, dmgToApply * totalLifestealPct * (1 - healPenalty));
+          if (healAmt > 0) notes.push(`Hút +${healAmt.toLocaleString('vi-VN')} HP`);
+        }
+
+        // Phản sát thương (Damage Reflection từ Bảo Ngọc / Pet / HAX)
+        if (damageRecv.reflectedDamage > 0 && striker.currentHp > 0 && striker.id !== defender.id) {
+          striker.currentHp = Math.max(0, striker.currentHp - damageRecv.reflectedDamage);
+          notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST`);
+          if (striker.currentHp <= 0) {
+            const liActor = triggerLethalInterception(striker, defender, rng);
+            if (liActor.survived && liActor.skill) notes.push(liActor.skill);
+          }
+        }
+
+        // Chặn Đòn Chí Tử (Bất Tử / Kim Thân Hộ Mệnh) hoặc Hậu Sát Thương
+        if (defender.currentHp > 0) {
+          const postEvents = triggerPostDamage(defender, striker) || [];
+          for (const pev of postEvents) {
+            if (pev?.skill) notes.push(pev.skill);
+          }
+        } else {
+          const lethalInterception = triggerLethalInterception(defender, striker, rng);
+          if (lethalInterception.survived && lethalInterception.skill) {
+            notes.push(lethalInterception.skill);
+            highlights.push(`**Hiệp ${turn}:** ${defender.name} kích hoạt **${lethalInterception.skill}**!`);
+          }
+        }
+
+        turnEvents.push({
+          actor: striker.id,
+          actorName: striker.name,
+          target: defender.id,
+          targetName: defender.name,
+          action: attackPhase.isCrit ? 'crit' : 'attack',
+          dmg: dmgToApply,
+          ko: defender.currentHp === 0,
+        });
+
+        const critTag = attackPhase.isCrit ? `${em('su_crit_boom')} **BẠO KÍCH!** ` : `${em('su_crossed_swords')} `;
+        const elemTag = elemAdv?.label ? ` *(${elemAdv.label})*` : '';
+        const shieldTag = absorbedByShield > 0 ? ` *(khiên chặn ${absorbedByShield.toLocaleString('vi-VN')})*` : '';
+        const haxTag = notes.length > 0 ? ` • *[${notes.join(' | ')}]*` : '';
+        const koTag = defender.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ` *(HP còn ${defender.currentHp.toLocaleString('vi-VN')}/${defender.maxHp.toLocaleString('vi-VN')})*`;
+        thisTurnLines.push(`  • ${critTag}**${striker.name}** → **${defender.name}**${elemTag}: **-${dmgToApply.toLocaleString('vi-VN')} ST**${shieldTag}${haxTag}${koTag}`);
+
+        if (defender.currentHp === 0) {
+          highlights.push(`**Hiệp ${turn}:** ${striker.name} hạ gục **${defender.name}** (${dmgToApply.toLocaleString('vi-VN')} ST)!`);
+        }
+
+        // Dư Chấn AoE 35% cho Boss Linh Mạch Hạng Cao (A / S / S+)
+        const aoeSplashPct = allowAoe ? Number(striker.aoeSplashPct || 0) : 0;
+        if (aoeSplashPct > 0 && dmgToApply > 0 && striker.currentHp > 0) {
+          const defenderEnemies = striker.side === 'A' ? teamB : teamA;
+          const backline = defenderEnemies.filter((m) => m.id !== defender.id && m.currentHp > 0);
+          if (backline.length > 0) {
+            const splashParts = [];
+            for (const ally of backline) {
+              const rawSplash = Math.max(1, Math.round(attackPhase.damage * aoeSplashPct));
+              const splashRecv = triggerDamageReceived(ally, rawSplash, striker, rng, { isTrueDamage: false });
+              let splashApply = Math.max(0, Number(splashRecv.finalDamage || 0));
+              if ((ally.shield || 0) > 0 && splashApply > 0) {
+                if (ally.shield >= splashApply) {
+                  ally.shield -= splashApply;
+                  splashApply = 0;
+                } else {
+                  splashApply -= ally.shield;
+                  ally.shield = 0;
+                }
+              }
+              ally.currentHp = Math.max(0, ally.currentHp - splashApply);
+              if (ally.currentHp === 0) {
+                triggerLethalInterception(ally, striker, rng);
+              }
+              splashParts.push(`**${ally.name}** -${splashApply.toLocaleString('vi-VN')} *(còn ${ally.currentHp.toLocaleString('vi-VN')})*`);
+            }
+            if (splashParts.length > 0) {
+              thisTurnLines.push(`    ${em('su_crit_boom')} **[Dư Chấn AoE ${Math.round(aoeSplashPct * 100)}%]** Quét hậu phương: ${splashParts.join(' • ')}`);
+            }
+          }
+        }
+
+        return { attackPhase, dmgToApply };
+      };
+
+      // Mị Hoặc (attackSelf): ép actor tự đánh chính mình nếu kích hoạt
+      const actualTarget = turnStartRes?.attackSelf ? actor : target;
+      const mainRes = executeTeamStrike({
+        striker: actor,
+        defender: actualTarget,
+        allowAoe: !turnStartRes?.attackSelf,
+      });
+
+      // Phản công khi né đòn thành công (Thái Âm Ngọc Thỏ, Thiên Cơ Ngọc Hồ, Tinh Hồ Hoán Ảnh...)
+      if (mainRes.attackPhase?.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0 && actualTarget.id !== actor.id) {
+        const ratio = mainRes.attackPhase.counterAtkRatio || 0.80;
+        const pierce = mainRes.attackPhase.counterDefPierce || 0;
+        const cLabel = mainRes.attackPhase.counterLabel || 'Nguyệt Hoa Phản Công';
+        executeTeamStrike({
+          striker: actualTarget,
+          defender: actor,
+          forcedDamage: Math.floor(actualTarget.atk * ratio),
+          forcedDefPiercePct: pierce,
+          extraLabel: cLabel,
+          allowAoe: false,
+        });
+      }
+
+      // Liên kích phụ & Tuyệt kỹ chu kỳ 2 hiệp (chỉ kích hoạt khi không bị Mị Hoặc tự đánh mình)
+      if (!turnStartRes?.attackSelf && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        if (hasPet(actor, 'cuu_thien_loi_phuong') && rng() < 0.30) {
+          executeTeamStrike({
+            striker: actor,
+            defender: actualTarget,
+            forcedDamage: Math.floor(actor.atk * 0.60),
+            forcedDefPiercePct: 0.30,
+            extraLabel: 'Lôi Kiếp Liên Hoàn (60% ATK • Xuyên 30% Giáp)',
+            allowAoe: false,
+          });
+        }
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && turn % 2 === 0 && hasItem(actor, 'soul_mythic_4')) {
+          executeTeamStrike({
+            striker: actor,
+            defender: actualTarget,
+            forcedDamage: Math.floor(actor.atk * 0.70),
+            forcedDefPiercePct: 0.50,
+            extraLabel: 'Vạn Kiếm Quy Tông (70% ATK • Xuyên 50% Giáp)',
+            allowAoe: false,
+          });
+        }
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && (actor.state?.haxLockedTurns || 0) === 0) {
+          const actorV13 = getCombatantV13HaxList(actor);
+          const haxBoost = 1 + Number(actor.domainRuntime?.own?.buffs?.haxProcBonusPct || 0);
+          for (const h of actorV13) {
+            if (h.extraStrike && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+              const p = Math.min(0.60, h.extraStrike.chance * haxBoost);
+              if (rng() < p) {
+                executeTeamStrike({
+                  striker: actor,
+                  defender: actualTarget,
+                  forcedDamage: Math.floor(actor.atk * h.extraStrike.atkRatio),
+                  forcedDefPiercePct: h.extraStrike.defPierce || 0,
+                  forcedShieldPiercePct: h.extraStrike.shieldPierce || 0,
+                  extraLabel: h.extraStrike.label,
+                  allowAoe: false,
+                });
+              }
+            }
+            if (h.every2TurnStrike && turn % 2 === 0 && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+              executeTeamStrike({
+                striker: actor,
+                defender: actualTarget,
+                forcedDamage: Math.floor(actor.atk * h.every2TurnStrike.atkRatio),
+                forcedDefPiercePct: h.every2TurnStrike.defPierce || 0,
+                forcedShieldPiercePct: h.every2TurnStrike.shieldPierce || 0,
+                extraLabel: h.every2TurnStrike.label,
+                allowAoe: false,
+              });
+            }
+          }
+        }
+      }
+
+      // Thời Không Đình Chỉ / Nguyệt Thần Bạch Vĩ Hồ: Đánh thêm 1 lượt
+      if (actor.state.isDoubleTurn) {
+        actor.state.isDoubleTurn = false;
+        if (actor.currentHp > 0) {
+          const nextTarget = pickFrontlineTarget(enemies);
+          if (nextTarget) {
+            executeTeamStrike({
+              striker: actor,
+              defender: nextTarget,
+              extraLabel: 'Liên Hoàn Đòn (Thêm Lượt)',
+              allowAoe: true,
+            });
           }
         }
       }

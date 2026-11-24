@@ -451,6 +451,27 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     }
   }
 
+  // Độc & Thiêu Đốt đang dính trên actor vẫn rút máu kể cả khi bị Choáng/Đóng Băng
+  if (actor.state.poisonActive && (actor.state.poisonPct > 0 || actor.state.poisonScaling) && getDotResistance(actor) < 1) {
+    const res = getDotResistance(actor);
+    if (actor.state.poisonScaling) {
+      const sc = actor.state.poisonScaling;
+      actor.state.poisonPct = Math.min(sc.max, sc.base + (turnNumber - 1) * sc.step);
+    }
+    const dmg = Math.floor(actor.maxHp * actor.state.poisonPct * (1 - res));
+    actor.currentHp = Math.max(1, actor.currentHp - dmg);
+    result.events.push({ actor: actor.id, action: 'dot', skill: `Trúng Độc (-${dmg.toLocaleString('vi-VN')} HP)` });
+  }
+  if (actor.state.burnTurns > 0 && actor.state.burnPct > 0) {
+    actor.state.burnTurns -= 1;
+    if (getDotResistance(actor) < 1) {
+      const res = getDotResistance(actor);
+      const dmg = Math.floor(actor.maxHp * actor.state.burnPct * (1 - res));
+      actor.currentHp = Math.max(1, actor.currentHp - dmg);
+      result.events.push({ actor: actor.id, action: 'dot', skill: `Thiêu Đốt (-${dmg.toLocaleString('vi-VN')} HP)` });
+    }
+  }
+
   // Kiểm tra khống chế (Choáng / Đóng Băng / Hóa Đá)
   if (actor.state.isStunned) {
     if (isControlImmune(actor, 'cc')) {
@@ -580,25 +601,6 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     const dmg = Math.floor(target.maxHp * 0.10 * (1 - res));
     target.currentHp = Math.max(1, target.currentHp - dmg);
     result.events.push({ actor: actor.id, action: 'dot', skill: `Chân Hỏa Phần Thiên (-${dmg.toLocaleString('vi-VN')} HP xuyên khiên)` });
-  }
-  if (actor.state.poisonActive && (actor.state.poisonPct > 0 || actor.state.poisonScaling) && getDotResistance(actor) < 1) {
-    const res = getDotResistance(actor);
-    if (actor.state.poisonScaling) {
-      const sc = actor.state.poisonScaling;
-      actor.state.poisonPct = Math.min(sc.max, sc.base + (turnNumber - 1) * sc.step);
-    }
-    const dmg = Math.floor(actor.maxHp * actor.state.poisonPct * (1 - res));
-    actor.currentHp = Math.max(1, actor.currentHp - dmg);
-    result.events.push({ actor: actor.id, action: 'dot', skill: `Trúng Độc (-${dmg.toLocaleString('vi-VN')} HP)` });
-  }
-  if (actor.state.burnTurns > 0 && actor.state.burnPct > 0) {
-    actor.state.burnTurns -= 1;
-    if (getDotResistance(actor) < 1) {
-      const res = getDotResistance(actor);
-      const dmg = Math.floor(actor.maxHp * actor.state.burnPct * (1 - res));
-      actor.currentHp = Math.max(1, actor.currentHp - dmg);
-      result.events.push({ actor: actor.id, action: 'dot', skill: `Thiêu Đốt (-${dmg.toLocaleString('vi-VN')} HP)` });
-    }
   }
 
   // Mị Hoặc / Hỗn Loạn (soul_mythic_1 40%, tinh_khong_da_thao 35% & v1.3 charmPct)
