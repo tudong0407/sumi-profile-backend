@@ -643,6 +643,7 @@ export async function cdpEval(expr, timeoutMs = 25000) {
       finish(rej, new Error(`cdpEval timed out after ${timeoutMs}ms`));
     }, timeoutMs);
     ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({ id: 998, method: 'Emulation.setFocusEmulationEnabled', params: { enabled: true } }));
       ws.send(JSON.stringify({ id: 999, method: 'Page.bringToFront', params: {} }));
       ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression: expr, awaitPromise: true, returnByValue: true } }));
     });
@@ -1099,7 +1100,7 @@ export async function deployViaCDP({ groupId = GA_GROUP_ID, mode, name, elements
   };
 
   const expr = `(${browserFn.toString()})(${JSON.stringify(payloadJson)})`;
-  const raw = await cdpEval(expr, 25000);
+  const raw = await cdpEval(expr, 60000);
   if (raw && raw.ok && raw.compressed_tree) {
     const decompressed = JSON.parse(LZString.decompressFromBase64(raw.compressed_tree));
     raw.savedSummary.decompressedCount = decompressed.length;

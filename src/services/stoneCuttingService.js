@@ -233,7 +233,7 @@ export async function getStoneStall(userId, rawTier = 'common', options = {}) {
         `  *Manh mối 2:* ${st.clues[1]}`,
       ].join('\n')),
       '',
-      `*Bấm **Xem Đá #1/#2/#3** để soi ảnh cận cảnh & cắt Thiết Thạch! (Tách biệt hoàn toàn khỏi Pity /roll)*`,
+      `*Bấm **Soi Đá #1/#2/#3** để soi ảnh cận cảnh & cắt Thiết Thạch, hoặc **Đổi Lô Mới**! (Tách biệt hoàn toàn khỏi Pity /roll)*`,
     ].filter(Boolean);
 
     return {
@@ -281,7 +281,7 @@ export async function previewStallStone(userId, rawTier = 'common', slotIndex = 
       `• ${st.clues[0]}`,
       `• ${st.clues[1]}`,
       '',
-      `*Bấm **Thiết Thạch #${st.slot}** để cắt ngay viên đá này!*`,
+      `*Bấm **Thiết Thạch** bên dưới để cắt ngay viên đá này!*`,
     ];
 
     return {

@@ -25,6 +25,7 @@ import {
   validateRegexSafety,
 } from './ga_builder_lib.mjs';
 import { em, emId } from '../src/config/emojiHelper.js';
+import { JOBS_CATALOG, SHOP_CONSUMABLES } from '../src/data/catalog.js';
 import { LUCK_POTIONS, STONE_TIERS, SUPREME_PICK_CATEGORIES } from '../src/data/v16ExpansionCatalog.js';
 import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
 
@@ -523,13 +524,21 @@ export function buildNhiemvuV16Cmd() {
 }
 
 // ============================================================================
-// 2. PATCH /shop (messageId Lock Fix + 3 Luck Potions + Đổ Thạch Shortcut)
+// 2. PATCH /shop (Edit-in-place toàn bộ + Khóa messageId + 3 Luck Potions rõ ràng)
 // ============================================================================
+function buildShopConsDescriptionV16() {
+  const lt = uidEm('su_linhthach');
+  return SHOP_CONSUMABLES.map((c) => {
+    const icon = c.icon || uidEm('su_sparkle');
+    return `• ${icon} **${c.name}** — **${Number(c.price || 0).toLocaleString('vi-VN')}** ${lt}\n  *${c.description}*`;
+  }).join('\n');
+}
+
 function patchShopV16(origTree) {
-  const els = JSON.parse(JSON.stringify(origTree));
+  let els = JSON.parse(JSON.stringify(origTree));
   const byId = new Map(els.map((e) => [e.id, e]));
 
-  // 1. Lock messageId into shop_prev_api & shop_buy_api (fix 4-preview buy-wrong-item bug)
+  // 1. Lock messageId into shop_prev_api & shop_buy_api
   const prevApi = byId.get('shop_prev_api');
   if (prevApi?.data?.data?.request_options) {
     prevApi.data.data.request_options.rawBody = '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","itemId":"{shop_preview_id}","messageId":"{message_id}"}';
@@ -540,7 +549,20 @@ function patchShopV16(origTree) {
     buyApi.data.data.request_options.rawBody = '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"{sh_prev_res.response.category}","itemId":"{sh_prev_res.response.item_id}","messageId":"{message_id}"}';
   }
 
-  // 2. Add 3 Luck Potions into sel_shop_cons (max 25 options)
+  // 2. Cập nhật dropdown danh mục + Thêm mô tả rõ ràng cho Quầy Tiêu Hao & 3 Lọ Luck Potion
+  const selCat = byId.get('sel_shop_cat');
+  if (selCat?.data?.data?.basic_options) {
+    selCat.data.data.showReplies = 'hide';
+    selCat.data.data.placeholder = 'Chọn Quầy Cửa Hàng Tiên Giới (7 danh mục)...';
+    for (const opt of selCat.data.data.basic_options) {
+      if (opt.value === 'consumables') {
+        opt.label = `Vật Phẩm Tiêu Hao & Luck Potion (${SHOP_CONSUMABLES.length} món)`;
+        opt.description = 'Vé Gacha, 3 Lọ Luck Potion (+20/40/60%), Đá Sao, Đá Khắc Ấn, Đan Dược';
+        opt.emoji_id = uidId('su_sparkle');
+      }
+    }
+  }
+
   const selCons = byId.get('sel_shop_cons');
   if (selCons?.data?.data?.basic_options) {
     for (const p of LUCK_POTIONS) {
@@ -556,21 +578,309 @@ function patchShopV16(origTree) {
     selCons.data.data.placeholder = `Chọn Vật Phẩm Tiêu Hao / Luck Potion (${selCons.data.data.basic_options.length} món)`;
   }
 
-  // 3. Update msg_shop_home description to mention Luck Potions & /dothach
+  // 3. Cập nhật nội dung msg_shop_home & msg_shop_cons (đủ 14 món + Luck Potion)
   const msgHome = byId.get('msg_shop_home');
   if (msgHome?.data?.data?.message?.embeds?.[0]?.description) {
     let d = msgHome.data.data.message.embeds[0].description;
+    d = d.replace(/\*\*Vật Phẩm \(8 món\)\*\*[^\n]*/g,
+      `**Vật Phẩm Tiêu Hao & Luck Potion (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, **3 Lọ Luck Potion (+20%/+40%/+60% Luck)**, Đá Sao, Đá Khắc Ấn, Reset Tháp, Đan Dược.`);
     if (!d.includes('Luck Potion')) {
       d += `\n${uidEm('su_sparkle')} **3 Lọ Luck Potion**: Mở bán ở Quầy Tiêu Hao *(+20%/+40%/+60% Luck theo lượt cho \`/roll\` & \`/dothach\`)*.\n${uidEm('su_realm_star')} **Phường Đổ Thạch**: Dùng \`/dothach\` để mua & cắt 20 Nguyên Thạch!`;
-      msgHome.data.data.message.embeds[0].description = d;
+    }
+    msgHome.data.data.message.embeds[0].description = d;
+  }
+
+  const msgCons = byId.get('msg_shop_cons');
+  if (msgCons?.data?.data?.message?.embeds?.[0]) {
+    msgCons.data.data.message.embeds[0].title = `${uidEm('pet_star_stone')} QUẦY VẬT PHẨM TIÊU HAO & LUCK POTION (${SHOP_CONSUMABLES.length} MÓN)`;
+    msgCons.data.data.message.embeds[0].description = buildShopConsDescriptionV16();
+  }
+
+  // 4. Ép edit-in-place toàn bộ /shop (1 tin nhắn duy nhất qua shop_boot_msg -> editId: shop_main_msg)
+  const gb = new V16GraphBuilder();
+  gb._elements = els;
+
+  // Redirect root -> shop_boot_msg -> sh_root_cat (only if not already patched)
+  if (!byId.has('shop_boot_msg')) {
+    gb.act('shop_boot_msg', 'advanced_message', {
+      messageType: 'basic',
+      useComponentsV2: false,
+      target: { reply: true },
+      editId: 'shop_main_msg',
+      success_handles: false,
+      message: {
+        content: '',
+        embeds: [{
+          title: `${uidEm('su_linhthach')} ĐANG MỞ TIÊN BẢO CÁC...`,
+          description: 'Đang tải danh mục Cửa Hàng & Quầy Tiêu Hao (Luck Potion)...',
+          color: '#ec4899',
+          timestamp: false,
+          author: { name: '', iconURL: '', url: '' },
+          footer: { text: '', iconURL: '' },
+          image: { url: '' },
+          thumbnail: { url: '' },
+          fields: [],
+        }],
+      },
+    }, { x: 0, y: 110 });
+    gb._elements = gb._elements.filter((e) => !(e.source === 'root' && e.target === 'sh_root_cat'));
+    gb.link('root', 'shop_boot_msg');
+    gb.link('shop_boot_msg', 'sh_root_cat');
+  }
+
+  // Gỡ shop_prev_ack & shop_role_ack để KHÔNG spawn tin nhắn trung gian thứ 2
+  const rerouteEdge = (fromSrc, oldTgt, newTgt) => {
+    for (const e of gb._elements) {
+      if (e.source === fromSrc && e.target === oldTgt) {
+        e.target = newTgt;
+        e.id = `reactflow__edge-${fromSrc}-${newTgt}`;
+      }
+    }
+  };
+  for (const s of ['set_sh_ring', 'set_sh_pet', 'set_sh_eq_w', 'set_sh_eq_g', 'set_sh_eq_s', 'set_sh_cons', 'set_sh_bg', 'set_sh_frame']) {
+    rerouteEdge(s, 'shop_prev_ack', 'shop_prev_api');
+  }
+  rerouteEdge('sel_shop_role', 'shop_role_ack', 'shop_role_prev_api');
+  gb._elements = gb._elements.filter((e) =>
+    e.id !== 'shop_prev_ack'
+    && e.id !== 'shop_role_ack'
+    && !(e.source === 'shop_prev_ack' && e.target === 'shop_prev_api')
+    && !(e.source === 'shop_role_ack' && e.target === 'shop_role_prev_api'),
+  );
+
+  // Chuyển toàn bộ messages của /shop sang editId: 'shop_main_msg', showReplies: 'hide'
+  const editIds = [
+    'msg_shop_home', 'msg_shop_rings', 'msg_shop_pets', 'msg_shop_equip',
+    'msg_shop_roles', 'msg_shop_cons', 'msg_shop_bgs', 'msg_shop_frames',
+    'msg_qroll_eq', 'msg_qroll_pet', 'shop_prev_edit', 'shop_buy_msg',
+    'shop_role_prev_edit', 'shop_role_buy_msg', 'shop_daily_msg', 'shop_daily_buy_edit',
+    'qreq_gate_msg', 'qrpet_gate_msg', 'shpr_gate_msg', 'shby_gate_msg',
+    'shrp_gate_msg', 'shrb_gate_msg',
+  ];
+  for (const el of gb._elements) {
+    if (!el.source && editIds.includes(el.id) && el.data?.data) {
+      el.data.data.target = { editId: 'shop_main_msg' };
+      el.data.data.action_id = 'shop_main_msg';
+      delete el.data.data.editId;
+    }
+    if (!el.source && (el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
+      el.data.data.showReplies = 'hide';
     }
   }
 
-  return els;
+  // Nút truy cập nhanh [Tiêu Hao & Luck Potion] ngay tại Row 2 trang chủ /shop
+  if (!gb._elements.some((e) => e.id === 'btn_home_cons')) {
+    gb.advBtn('btn_home_cons', 'msg_shop_home', btnCfg('Tiêu Hao & Luck Potion', 'PRIMARY', 'su_sparkle', '2', '3', 'hide'), { x: 700, y: 1180 });
+    gb.link('btn_home_cons', 'msg_shop_cons');
+  }
+
+  // Layer 2: Nút [Về Danh Mục Shop] ở mọi màn hình + đầy đủ 7 danh mục -> chọn/mua không bao giờ mất menu
+  if (!gb._elements.some((e) => e.id === 'msg_shop_home_2')) {
+    const baseMsgHome = gb._elements.find((e) => e.id === 'msg_shop_home');
+    const homeDesc = baseMsgHome?.data?.data?.message?.embeds?.[0]?.description || '';
+    const homeTitle = baseMsgHome?.data?.data?.message?.embeds?.[0]?.title || `${uidEm('su_linhthach')} TIÊN BẢO CÁC • CỬA HÀNG SUMI FAMILY`;
+
+    embedMsg(gb, 'msg_shop_home_2', {
+      title: homeTitle,
+      description: homeDesc,
+      color: '#ec4899',
+      target: { editId: 'shop_main_msg' },
+      action_id: 'shop_main_msg',
+    }, { x: 2400, y: 800 });
+
+    const backSpecs = [
+      { pid: 'msg_shop_rings', row: '2', w: '1' },
+      { pid: 'msg_shop_pets', row: '2', w: '1' },
+      { pid: 'msg_shop_equip', row: '4', w: '1' },
+      { pid: 'msg_shop_roles', row: '2', w: '1' },
+      { pid: 'msg_shop_cons', row: '2', w: '1' },
+      { pid: 'msg_shop_bgs', row: '2', w: '1' },
+      { pid: 'msg_shop_frames', row: '2', w: '1' },
+      { pid: 'shop_prev_edit', row: '1', w: '2' },
+      { pid: 'shop_buy_msg', row: '1', w: '1' },
+      { pid: 'shop_role_prev_edit', row: '2', w: '1' },
+      { pid: 'shop_role_buy_msg', row: '1', w: '1' },
+      { pid: 'msg_qroll_eq', row: '1', w: '1' },
+      { pid: 'msg_qroll_pet', row: '1', w: '1' },
+      { pid: 'shop_daily_msg', row: '2', w: '1' },
+      { pid: 'shop_daily_buy_edit', row: '1', w: '1' },
+    ];
+    for (const bs of backSpecs) {
+      const bId = `btn_sh_back_${bs.pid}`;
+      gb.advBtn(bId, bs.pid, btnCfg('Về Danh Mục Shop', 'SECONDARY', 'ui_refresh', bs.row, bs.w, 'hide'), { x: 2150, y: 800 });
+      gb.link(bId, 'msg_shop_home_2');
+    }
+
+    const cloneCatOpts = selCat?.data?.data?.basic_options || [];
+    gb.advSelectMenu('sel_shop_cat_2', 'msg_shop_home_2', {
+      placeholder: 'Chọn Quầy Cửa Hàng Tiên Giới (7 danh mục)...',
+      customVariableName: 'shop_pick_cat_2',
+      basic_options: cloneCatOpts,
+      row: '1',
+      weight: '1',
+      showReplies: 'hide',
+    }, { x: 2400, y: 1000 });
+
+    gb.cond('sh_sel_cat_2', 'comparison', { base_value: '{shop_pick_cat_2}', target: { self: true } }, { x: 2400, y: 1180 });
+    gb.link('sel_shop_cat_2', 'sh_sel_cat_2');
+
+    // Clone Layer-2 preview & buy pipeline (shop_prev_2_api -> shop_prev_2_edit -> btn_shop_buy_2 -> shop_buy_2_api -> shop_buy_2_msg)
+    apiAction(gb, 'shop_prev_2_api', 'sh_p2_res', 'POST', `${BACKEND_BASE}/api/shop/preview`,
+      '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","itemId":"{shop_preview_2_id}","messageId":"{message_id}"}', { x: 2400, y: 2050 });
+    embedMsg(gb, 'shop_prev_2_edit', {
+      title: '{sh_p2_res.response.title}',
+      description: '{sh_p2_res.response.description}',
+      color: '#ec4899',
+      imageUrl: '{sh_p2_res.response.image_url}',
+      target: { editId: 'shop_main_msg' },
+      action_id: 'shop_main_msg',
+    }, { x: 2400, y: 2230 });
+    gb.link('shop_prev_2_api', 'shop_prev_2_edit');
+
+    gb.advBtn('btn_shop_buy_2', 'shop_prev_2_edit', btnCfg('Mua Ngay', 'SUCCESS', 'su_linhthach', '1', '1', 'hide'), { x: 2400, y: 2410 });
+    apiAction(gb, 'shop_buy_2_api', 'sh_b2_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
+      '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"{sh_p2_res.response.category}","itemId":"{sh_p2_res.response.item_id}","messageId":"{message_id}"}', { x: 2400, y: 2590 });
+    gb.link('btn_shop_buy_2', 'shop_buy_2_api');
+    embedMsg(gb, 'shop_buy_2_msg', {
+      title: `${uidEm('su_sparkle')} GIAO DỊCH TIÊN BẢO CÁC`,
+      description: '{sh_b2_res.response.message}',
+      color: '#10b981',
+      target: { editId: 'shop_main_msg' },
+      action_id: 'shop_main_msg',
+    }, { x: 2400, y: 2770 });
+    gb.link('shop_buy_2_api', 'shop_buy_2_msg');
+
+    const cloneCatDefs = [
+      { key: 'rings', srcMsg: 'msg_shop_rings', sels: ['sel_shop_ring'], x: 1850 },
+      { key: 'pets', srcMsg: 'msg_shop_pets', sels: ['sel_shop_pet'], x: 2050 },
+      { key: 'equipment', srcMsg: 'msg_shop_equip', sels: ['sel_shop_eq_w', 'sel_shop_eq_g', 'sel_shop_eq_s'], x: 2250 },
+      { key: 'roles', srcMsg: 'msg_shop_roles', sels: ['sel_shop_role'], x: 2450, isRole: true },
+      { key: 'consumables', srcMsg: 'msg_shop_cons', sels: ['sel_shop_cons'], x: 2650 },
+      { key: 'backgrounds', srcMsg: 'msg_shop_bgs', sels: ['sel_shop_bg'], x: 2850 },
+      { key: 'frames', srcMsg: 'msg_shop_frames', sels: ['sel_shop_frame'], x: 3050, isElse: true },
+    ];
+    for (const cd of cloneCatDefs) {
+      const brId = `shs2_${cd.key}`;
+      if (cd.isElse) gb.elseBranch('sh_sel_cat_2', brId, 'comparison', { x: cd.x, y: 1320 });
+      else gb.branch('sh_sel_cat_2', brId, 'comparison', { type: 'equal_to', comparison_value: cd.key, ignoreCase: true, option: '', not: false }, { x: cd.x, y: 1320 });
+
+      const srcNode = gb._elements.find((e) => e.id === cd.srcMsg);
+      const srcEmb = srcNode?.data?.data?.message?.embeds?.[0] || {};
+      const m2Id = `${cd.srcMsg}_2`;
+      embedMsg(gb, m2Id, {
+        title: srcEmb.title || cd.key,
+        description: srcEmb.description || '',
+        color: srcEmb.color || '#ec4899',
+        target: { editId: 'shop_main_msg' },
+        action_id: 'shop_main_msg',
+      }, { x: cd.x, y: 1480 });
+      gb.link(brId, m2Id);
+
+      if (cd.isRole) {
+        const srcSel = gb._elements.find((e) => e.id === 'sel_shop_role');
+        if (srcSel) {
+          gb.advSelectMenu('sel_shop_role_2', m2Id, {
+            placeholder: srcSel.data.data.placeholder,
+            customVariableName: 'picked_shop_role_2',
+            basic_options: srcSel.data.data.basic_options || [],
+            row: '1',
+            weight: '1',
+            showReplies: 'hide',
+          }, { x: cd.x, y: 1660 });
+          apiAction(gb, 'shop_role2_prev_api', 'sh_rp2_res', 'POST', `${BACKEND_BASE}/api/shop/preview`,
+            '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"roles","itemId":"{picked_shop_role_2}","messageId":"{message_id}"}', { x: cd.x, y: 1840 });
+          gb.link('sel_shop_role_2', 'shop_role2_prev_api');
+          embedMsg(gb, 'shop_role2_prev_edit', {
+            title: '{sh_rp2_res.response.title}',
+            description: '{sh_rp2_res.response.description}',
+            color: '#a855f7',
+            target: { editId: 'shop_main_msg' },
+            action_id: 'shop_main_msg',
+          }, { x: cd.x, y: 2020 });
+          gb.link('shop_role2_prev_api', 'shop_role2_prev_edit');
+          const durs = [
+            { id: '7d', label: 'Thuê 7 Ngày', dur: '7d', style: 'PRIMARY', w: '1', dx: -110 },
+            { id: '30d', label: 'Thuê 30 Ngày', dur: '30d', style: 'PRIMARY', w: '2', dx: 0 },
+            { id: 'perm', label: 'Mua Vĩnh Viễn', dur: 'permanent', style: 'SUCCESS', w: '3', dx: 110 },
+          ];
+          apiAction(gb, 'api_role2_buy', 'sh_rb2_res', 'POST', `${BACKEND_BASE}/api/shop/buy`,
+            '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","duration":"{shop_role_dur_2}","messageId":"{message_id}"}', { x: cd.x, y: 2380 });
+          for (const dOpt of durs) {
+            const bR = `btn_role2_${dOpt.id}`;
+            const sR = `set_role2_${dOpt.id}`;
+            gb.advBtn(bR, 'shop_role2_prev_edit', btnCfg(dOpt.label, dOpt.style, 'su_medal_role', '1', dOpt.w, 'hide'), { x: cd.x + dOpt.dx, y: 2180 });
+            gb.act(sR, 'set_unique_variable', { reference: 'shop_role_dur_2', value: dOpt.dur, success_handles: false }, { x: cd.x + dOpt.dx, y: 2280 });
+            gb.link(bR, sR);
+            gb.link(sR, 'api_role2_buy');
+          }
+          embedMsg(gb, 'shop_role2_buy_msg', {
+            title: `${uidEm('su_medal_role')} MUA / THUÊ ROLE QUYỀN NĂNG`,
+            description: '{sh_rb2_res.response.message}',
+            color: '#10b981',
+            target: { editId: 'shop_main_msg' },
+            action_id: 'shop_main_msg',
+          }, { x: cd.x, y: 2540 });
+          gb.link('api_role2_buy', 'shop_role2_buy_msg');
+        }
+        continue;
+      }
+
+      if (cd.key === 'consumables') {
+        gb.advBtn('btn_home_cons_2', 'msg_shop_home_2', btnCfg('Tiêu Hao & Luck Potion', 'PRIMARY', 'su_sparkle', '2', '1', 'hide'), { x: cd.x, y: 1180 });
+        gb.link('btn_home_cons_2', m2Id);
+        gb.advBtn('btn_b2_cons', 'shop_buy_2_msg', btnCfg('Quầy Tiêu Hao & Potion', 'PRIMARY', 'su_sparkle', '1', '1', 'hide'), { x: 2400, y: 2940 });
+        gb.act('shop_cons_reread_api', 'api_action', {
+          name: 'sh_c2_res',
+          ephemeral: false,
+          request_options: {
+            method: 'GET',
+            url: `${BACKEND_BASE}/api/shop/catalog?category=consumables&userId={user_id}`,
+            headers: [],
+            params: [],
+            body: [],
+            rawBody: '',
+            contentType: 'application/json',
+            options: { excludeEmptyFields: true, replaceParams: true, replaceURL: true, replaceHeaders: true, replaceBody: true, failOnError: false },
+          },
+          success_handles: false,
+        }, { x: 2400, y: 3100 });
+        gb.link('btn_b2_cons', 'shop_cons_reread_api');
+        embedMsg(gb, 'shop_cons_leaf_msg', {
+          title: `${uidEm('pet_star_stone')} QUẦY VẬT PHẨM TIÊU HAO & LUCK POTION (${SHOP_CONSUMABLES.length} MÓN)`,
+          description: '{sh_c2_res.response.summary_text}',
+          color: '#ec4899',
+          target: { editId: 'shop_main_msg' },
+          action_id: 'shop_main_msg',
+        }, { x: 2400, y: 3260 });
+        gb.link('shop_cons_reread_api', 'shop_cons_leaf_msg');
+      }
+
+      cd.sels.forEach((sId, idx) => {
+        const srcSel = gb._elements.find((e) => e.id === sId);
+        if (!srcSel) return;
+        const s2Id = `${sId}_2`;
+        const var2 = `${srcSel.data.data.customVariableName}_2`;
+        gb.advSelectMenu(s2Id, m2Id, {
+          placeholder: srcSel.data.data.placeholder,
+          customVariableName: var2,
+          basic_options: srcSel.data.data.basic_options || [],
+          row: srcSel.data.data.row || String(idx + 1),
+          weight: '1',
+          showReplies: 'hide',
+        }, { x: cd.x + idx * 90, y: 1660 });
+        const set2Id = `set_sh2_${sId}`;
+        gb.act(set2Id, 'set_unique_variable', { reference: 'shop_preview_2_id', value: `{${var2}}`, success_handles: false }, { x: cd.x + idx * 90, y: 1840 });
+        gb.link(s2Id, set2Id);
+        gb.link(set2Id, 'shop_prev_2_api');
+      });
+    }
+  }
+
+  return gb._elements;
 }
 
 // ============================================================================
-// 3. CREATE /dothach (20 Nguyên Thạch, Manh Mối Mơ Hồ, Thiết Thạch & 7 Tối Thượng)
+// 3. CREATE /dothach (20 Nguyên Thạch, Edit-in-place toàn bộ, giữ nút mọi bước)
 // ============================================================================
 export function buildDothachV16Cmd() {
   const gb = new V16GraphBuilder();
@@ -617,88 +927,231 @@ export function buildDothachV16Cmd() {
     color: '#a855f7',
     imageUrl: '{dt_res.response.image_url}',
     target: { reply: true },
+    editId: 'dt_stall_msg',
   }, { x: 0, y: 720 });
   gb.link(dtOk, 'dt_stall_msg');
 
-  // Row 1 Buttons: Soi Đá #1 / #2 / #3 + Đổi Lô Mới
-  for (let slot = 1; slot <= 3; slot += 1) {
-    const bx = (slot - 2) * 320;
-    const btnId = `btn_dt_prev_${slot}`;
-    const apiPrevId = `dt_api_prev_${slot}`;
-    const resPrev = `dt_p_res_${slot}`;
-    const msgPrevId = `dt_msg_prev_${slot}`;
-    const btnCutId = `btn_dt_cut_${slot}`;
-    const apiCutId = `dt_api_cut_${slot}`;
-    const resCut = `dt_c_res_${slot}`;
-    const msgCutId = `dt_msg_cut_${slot}`;
+  let seq = 0;
+  const uid = (p) => `${p}_${++seq}`;
 
-    gb.advBtn(btnId, 'dt_stall_msg', btnCfg(`Soi Đá #${slot}`, 'PRIMARY', 'su_realm_star', '1', String(5 - slot), 'show'), { x: bx, y: 920 });
-    apiAction(gb, apiPrevId, resPrev, 'POST', `${BACKEND_BASE}/api/stones/preview`,
-      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1080 });
-    gb.link(btnId, apiPrevId);
+  function attachSupremeSelect(parentMsgId, depth, x, y) {
+    const sId = uid('sel_dt_sup');
+    const apiId = uid('dt_api_sup');
+    const msgId = uid('dt_msg_sup');
+    const resVar = `dt_sres_${seq}`;
+    const pickVar = `picked_dt_sup_${seq}`;
 
-    embedMsg(gb, msgPrevId, {
-      title: `{${resPrev}.response.title}`,
-      description: `{${resPrev}.response.description}`,
-      color: '#ec4899',
-      imageUrl: `{${resPrev}.response.image_url}`,
-    }, { x: bx, y: 1240 });
-    gb.link(apiPrevId, msgPrevId);
+    gb.advSelectMenu(sId, parentMsgId, {
+      placeholder: 'Mở Hộp Tối Thượng Cực Phẩm (Chọn 1 trong 7 nhóm Thần Thoại)...',
+      customVariableName: pickVar,
+      basic_options: SUPREME_PICK_CATEGORIES.map((c) => ({
+        label: c.label,
+        description: c.desc,
+        emoji_id: uidId('dao_ap_crest'),
+        value: c.key,
+      })),
+      row: '2',
+      weight: '1',
+      showReplies: 'hide',
+    }, { x: x + 420, y });
 
-    gb.advBtn(btnCutId, msgPrevId, btnCfg(`Thiết Thạch #${slot}`, 'SUCCESS', 'su_sparkle', '1', '1', 'show'), { x: bx, y: 1400 });
-    apiAction(gb, apiCutId, resCut, 'POST', `${BACKEND_BASE}/api/stones/cut`,
-      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1560 });
-    gb.link(btnCutId, apiCutId);
+    apiAction(gb, apiId, resVar, 'POST', `${BACKEND_BASE}/api/stones/claim-supreme`,
+      `{"userId":"{user_id}","category":"{${pickVar}}","username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: x + 420, y: y + 150 });
+    gb.link(sId, apiId);
 
-    embedMsg(gb, msgCutId, {
-      title: `{${resCut}.response.title}`,
-      description: `{${resCut}.response.description}`,
-      color: '#10b981',
-      imageUrl: `{${resCut}.response.image_url}`,
-    }, { x: bx, y: 1720 });
-    gb.link(apiCutId, msgCutId);
+    embedMsg(gb, msgId, {
+      title: `{${resVar}.response.title}`,
+      description: `{${resVar}.response.description}`,
+      color: '#f59e0b',
+      imageUrl: `{${resVar}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x: x + 420, y: y + 300 });
+    gb.link(apiId, msgId);
+
+    if (depth < 2) {
+      const bBack = uid('btn_dt_sup_back');
+      const aBack = uid('dt_api_sup_bk');
+      const mBack = uid('dt_msg_sup_bk');
+      const rBack = `dt_sbk_${seq}`;
+      gb.advBtn(bBack, msgId, btnCfg('Quay Lại Sạp Đá', 'SECONDARY', 'ui_refresh', '1', '1', 'hide'), { x: x + 420, y: y + 450 });
+      apiAction(gb, aBack, rBack, 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={dt_res.response.tier_key}&username={user_displayName}&avatar={user_icon}`, '', { x: x + 420, y: y + 600 });
+      gb.link(bBack, aBack);
+      embedMsg(gb, mBack, {
+        title: `{${rBack}.response.title}`,
+        description: `{${rBack}.response.description}`,
+        color: '#a855f7',
+        imageUrl: `{${rBack}.response.image_url}`,
+        target: { editId: 'dt_stall_msg' },
+        action_id: 'dt_stall_msg',
+      }, { x: x + 420, y: y + 750 });
+      gb.link(aBack, mBack);
+      attachRerollChain(mBack, 2, x + 420, y + 900);
+    }
   }
 
-  // Đổi Lô Mới button (Row 1, Weight 1, showReplies: 'show' để giữ nguyên các nút trên bảng)
-  gb.advBtn('btn_dt_reroll', 'dt_stall_msg', btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '1', 'show'), { x: 640, y: 920 });
-  apiAction(gb, 'dt_api_reroll', 'dt_rr_res', 'POST', `${BACKEND_BASE}/api/stones/reroll`,
-    '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 640, y: 1080 });
-  gb.link('btn_dt_reroll', 'dt_api_reroll');
-  embedMsg(gb, 'dt_msg_reroll', {
-    title: '{dt_rr_res.response.title}',
-    description: '{dt_rr_res.response.description}',
-    color: '#a855f7',
-    imageUrl: '{dt_rr_res.response.image_url}',
-    target: { reply: true },
-  }, { x: 640, y: 1240 });
-  gb.link('dt_api_reroll', 'dt_msg_reroll');
+  function attachRerollChain(parentMsgId, remRerolls, x, y) {
+    if (remRerolls <= 0) return;
+    const bRr = uid('btn_dt_rr');
+    const aRr = uid('dt_api_rr');
+    const mRr = uid('dt_msg_rr');
+    const rRr = `dt_rr_${seq}`;
+    gb.advBtn(bRr, parentMsgId, btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '4', 'hide'), { x, y });
+    apiAction(gb, aRr, rRr, 'POST', `${BACKEND_BASE}/api/stones/reroll`,
+      '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x, y: y + 140 });
+    gb.link(bRr, aRr);
+    embedMsg(gb, mRr, {
+      title: `{${rRr}.response.title}`,
+      description: `{${rRr}.response.description}`,
+      color: '#a855f7',
+      imageUrl: `{${rRr}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x, y: y + 280 });
+    gb.link(aRr, mRr);
+    attachRerollChain(mRr, remRerolls - 1, x, y + 420);
+  }
 
-  // Row 2 Select Menu: Chọn Quà Tối Thượng (7 nhóm)
-  gb.advSelectMenu('sel_dt_supreme', 'dt_stall_msg', {
-    placeholder: 'Mở Hộp Tối Thượng Cực Phẩm (Chọn 1 trong 7 nhóm Thần Thoại)...',
-    customVariableName: 'picked_dt_supreme',
-    basic_options: SUPREME_PICK_CATEGORIES.map((c) => ({
-      label: c.label,
-      description: c.desc,
-      emoji_id: uidId('dao_ap_crest'),
-      value: c.key,
-    })),
-    row: '2',
-    weight: '1',
-    showReplies: 'show',
-  }, { x: 960, y: 860 });
+  function attachStallLayer(parentMsgId, depth, x, y) {
+    // 3 nút Soi Đá #1/#2/#3 gom chung vào 1 api_action + 1 preview embed bằng set_unique_variable
+    const apiPrevId = uid('dt_api_prev');
+    const resPrevVar = `dt_pr_${seq}`;
+    const slotVar = `dt_slot_${seq}`;
+    const msgPrevId = uid('dt_msg_prev');
 
-  apiAction(gb, 'dt_api_sup', 'dt_sup_res', 'POST', `${BACKEND_BASE}/api/stones/claim-supreme`,
-    '{"userId":"{user_id}","category":"{picked_dt_supreme}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 960, y: 1040 });
-  gb.link('sel_dt_supreme', 'dt_api_sup');
+    for (let slot = 1; slot <= 3; slot += 1) {
+      const bx = x + (slot - 2) * 180;
+      const bId = uid(`btn_dt_prev${slot}`);
+      const setId = uid(`set_dt_sl${slot}`);
+      gb.advBtn(bId, parentMsgId, btnCfg(`Soi Đá #${slot}`, 'PRIMARY', 'su_realm_star', '1', String(slot), 'hide'), { x: bx, y });
+      gb.act(setId, 'set_unique_variable', { reference: slotVar, value: String(slot), success_handles: false }, { x: bx, y: y + 130 });
+      gb.link(bId, setId);
+      gb.link(setId, apiPrevId);
+    }
 
-  embedMsg(gb, 'dt_msg_sup', {
-    title: `{${'dt_sup_res'}.response.title}`,
-    description: `{${'dt_sup_res'}.response.description}`,
-    color: '#f59e0b',
-    imageUrl: `{${'dt_sup_res'}.response.image_url}`,
-  }, { x: 960, y: 1220 });
-  gb.link('dt_api_sup', 'dt_msg_sup');
+    apiAction(gb, apiPrevId, resPrevVar, 'POST', `${BACKEND_BASE}/api/stones/preview`,
+      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":"{${slotVar}}","username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x, y: y + 260 });
+
+    embedMsg(gb, msgPrevId, {
+      title: `{${resPrevVar}.response.title}`,
+      description: `{${resPrevVar}.response.description}`,
+      color: '#ec4899',
+      imageUrl: `{${resPrevVar}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x, y: y + 400 });
+    gb.link(apiPrevId, msgPrevId);
+
+    // Trên màn Soi Đá: [Thiết Thạch] | [Quay Lại Sạp Đá] | [Đổi Lô Mới] (tất cả edit tại chỗ + giữ nút)
+    const bCut = uid('btn_dt_cut');
+    const aCut = uid('dt_api_cut');
+    const mCut = uid('dt_msg_cut');
+    const rCut = `dt_ct_${seq}`;
+    gb.advBtn(bCut, msgPrevId, btnCfg('Thiết Thạch', 'SUCCESS', 'su_sparkle', '1', '1', 'hide'), { x: x - 240, y: y + 540 });
+    apiAction(gb, aCut, rCut, 'POST', `${BACKEND_BASE}/api/stones/cut`,
+      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":"{${resPrevVar}.response.slot}","username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: x - 240, y: y + 680 });
+    gb.link(bCut, aCut);
+    embedMsg(gb, mCut, {
+      title: `{${rCut}.response.title}`,
+      description: `{${rCut}.response.description}`,
+      color: '#10b981',
+      imageUrl: `{${rCut}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x: x - 240, y: y + 820 });
+    gb.link(aCut, mCut);
+
+    const bBack = uid('btn_dt_back');
+    const aBack = uid('dt_api_back');
+    const mBack = uid('dt_msg_back');
+    const rBack = `dt_bk_${seq}`;
+    gb.advBtn(bBack, msgPrevId, btnCfg('Quay Lại Sạp Đá', 'PRIMARY', 'su_realm_star', '1', '2', 'hide'), { x: x - 20, y: y + 540 });
+    apiAction(gb, aBack, rBack, 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={dt_res.response.tier_key}&username={user_displayName}&avatar={user_icon}`, '', { x: x - 20, y: y + 680 });
+    gb.link(bBack, aBack);
+    embedMsg(gb, mBack, {
+      title: `{${rBack}.response.title}`,
+      description: `{${rBack}.response.description}`,
+      color: '#a855f7',
+      imageUrl: `{${rBack}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x: x - 20, y: y + 820 });
+    gb.link(aBack, mBack);
+
+    const bPrevRr = uid('btn_dt_prr');
+    const aPrevRr = uid('dt_api_prr');
+    const mPrevRr = uid('dt_msg_prr');
+    const rPrevRr = `dt_prr_${seq}`;
+    gb.advBtn(bPrevRr, msgPrevId, btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '3', 'hide'), { x: x + 200, y: y + 540 });
+    apiAction(gb, aPrevRr, rPrevRr, 'POST', `${BACKEND_BASE}/api/stones/reroll`,
+      '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: x + 200, y: y + 680 });
+    gb.link(bPrevRr, aPrevRr);
+    embedMsg(gb, mPrevRr, {
+      title: `{${rPrevRr}.response.title}`,
+      description: `{${rPrevRr}.response.description}`,
+      color: '#a855f7',
+      imageUrl: `{${rPrevRr}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x: x + 200, y: y + 820 });
+    gb.link(aPrevRr, mPrevRr);
+
+    attachSupremeSelect(msgPrevId, depth, x + 120, y + 540);
+
+    // Nút [Đổi Lô Mới] chính trên Sạp Đá
+    const bRr = uid('btn_dt_reroll');
+    const aRr = uid('dt_api_reroll');
+    const mRr = uid('dt_msg_reroll');
+    const rRr = `dt_rrs_${seq}`;
+    gb.advBtn(bRr, parentMsgId, btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '4', 'hide'), { x: x + 360, y });
+    apiAction(gb, aRr, rRr, 'POST', `${BACKEND_BASE}/api/stones/reroll`,
+      '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: x + 360, y: y + 140 });
+    gb.link(bRr, aRr);
+    embedMsg(gb, mRr, {
+      title: `{${rRr}.response.title}`,
+      description: `{${rRr}.response.description}`,
+      color: '#a855f7',
+      imageUrl: `{${rRr}.response.image_url}`,
+      target: { editId: 'dt_stall_msg' },
+      action_id: 'dt_stall_msg',
+    }, { x: x + 360, y: y + 280 });
+    gb.link(aRr, mRr);
+
+    attachSupremeSelect(parentMsgId, depth, x, y + 80);
+
+    // Đệ quy giữ nguyên đầy đủ nút cho các bước tiếp theo
+    if (depth < 1) {
+      attachStallLayer(mCut, depth + 1, x - 900, y + 1020);
+      attachStallLayer(mBack, depth + 1, x - 100, y + 1020);
+      attachStallLayer(mPrevRr, depth + 1, x + 700, y + 1020);
+      attachStallLayer(mRr, depth + 1, x + 1500, y + 1020);
+    } else {
+      // Ở lớp ngoài cùng: giữ trọn Soi/Cut/Quay Lại hoặc Đổi Lô thêm 3 lượt liên tiếp
+      attachRerollChain(mRr, 3, x + 360, y + 430);
+      attachRerollChain(mPrevRr, 2, x + 200, y + 980);
+      attachSupremeSelect(mCut, depth + 1, x - 240, y + 980);
+      const bCutBack = uid('btn_dt_cback');
+      const aCutBack = uid('dt_api_cbk');
+      const mCutBack = uid('dt_msg_cbk');
+      const rCutBack = `dt_cbk_${seq}`;
+      gb.advBtn(bCutBack, mCut, btnCfg('Quay Lại Sạp Đá', 'PRIMARY', 'su_realm_star', '1', '1', 'hide'), { x: x - 380, y: y + 980 });
+      apiAction(gb, aCutBack, rCutBack, 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={dt_res.response.tier_key}&username={user_displayName}&avatar={user_icon}`, '', { x: x - 380, y: y + 1120 });
+      gb.link(bCutBack, aCutBack);
+      embedMsg(gb, mCutBack, {
+        title: `{${rCutBack}.response.title}`,
+        description: `{${rCutBack}.response.description}`,
+        color: '#a855f7',
+        imageUrl: `{${rCutBack}.response.image_url}`,
+        target: { editId: 'dt_stall_msg' },
+        action_id: 'dt_stall_msg',
+      }, { x: x - 380, y: y + 1260 });
+      gb.link(aCutBack, mCutBack);
+      attachRerollChain(mCutBack, 2, x - 380, y + 1400);
+      attachRerollChain(mBack, 2, x - 20, y + 980);
+    }
+  }
+
+  attachStallLayer('dt_stall_msg', 0, 0, 920);
 
   return gb.elements();
 }
@@ -779,6 +1232,8 @@ export function buildGieoqueV16Cmd() {
     description: '{gqr_res.response.description}',
     color: '#f43f5e',
     imageUrl: '',
+    target: { editId: 'gq_shake_msg' },
+    action_id: 'gq_shake_msg',
   }, { x: -60, y: 1720 });
   gb.link(cRrHasImg.no, 'gq_msg_reroll_err');
 
@@ -1026,6 +1481,29 @@ async function main() {
     const els = sweepTreeV16(patchShopV16(decomp(cmdMap.get('shop').compressed_tree)));
     validateTreeStrict(els, '/shop');
     toDeploy.push({ name: 'shop', type: 'slash', groupId: cmdMap.get('shop').groupId || PROFILE_GROUP_ID, elements: els });
+  }
+
+  if (want('job') && cmdMap.has('job')) {
+    let els = sweepTreeV16(decomp(cmdMap.get('job').compressed_tree));
+    const jobById = Object.fromEntries(JOBS_CATALOG.map((j) => [j.job_id, j]));
+    for (const el of els) {
+      if (el.id === 'sel_job_pick' && el.data?.data) {
+        el.data.data.showReplies = 'hide';
+        for (const opt of el.data.data.basic_options || []) {
+          const j = jobById[opt.value];
+          if (j) opt.description = `${j.ltMin}–${j.ltMax} LT + ${j.exp} EXP • Cooldown 1 giờ`;
+        }
+      }
+      if (el.id === 'job_stat_ack' && el.data?.data) {
+        el.data.data.editId = 'job_stat_msg';
+      }
+      if ((el.id === 'job_stat_edit' || el.id === 'job_pick_msg') && el.data?.data) {
+        el.data.data.target = { editId: 'job_stat_msg' };
+        el.data.data.action_id = 'job_stat_msg';
+      }
+    }
+    validateTreeStrict(els, '/job');
+    toDeploy.push({ name: 'job', type: 'slash', groupId: cmdMap.get('job').groupId || PROFILE_GROUP_ID, elements: els });
   }
 
   if (want('wiki') && cmdMap.has('wiki')) {

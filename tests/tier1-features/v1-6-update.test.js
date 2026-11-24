@@ -52,6 +52,7 @@ import {
 } from '../../src/data/v16ExpansionCatalog.js';
 import {
   SHOP_CONSUMABLES,
+  JOBS_CATALOG,
   MYTHIC_UNIQUE_ITEM_IDS,
   MYTHIC_UNIQUE_PET_TYPES,
   MYTHIC_UNIQUE_DOMAIN_IDS,
@@ -270,4 +271,18 @@ test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', asyn
   assert.equal(c2.success, false);
   assert.equal(c2.error, 'TOWER_COOLDOWN');
   assert.ok(c2.cooldown_seconds >= 1 && c2.cooldown_seconds <= 6);
+
+  // /job +20% payout verification (silent buff, no changelog update)
+  assert.equal(JOBS_CATALOG.length, 6);
+  assert.deepEqual(
+    JOBS_CATALOG.map((j) => [j.job_id, j.ltMin, j.ltMax, j.exp]),
+    [
+      ['quet_san', 42, 60, 22],
+      ['rua_bat', 46, 62, 24],
+      ['tuoi_cay', 50, 70, 26],
+      ['giao_trasua', 54, 74, 30],
+      ['cau_ca', 58, 82, 34],
+      ['tuan_tra', 66, 90, 38],
+    ],
+  );
 });
