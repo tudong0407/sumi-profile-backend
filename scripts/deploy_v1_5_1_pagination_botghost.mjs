@@ -1,11 +1,12 @@
 /**
  * scripts/deploy_v1_5_1_pagination_botghost.mjs
- * Cập nhật 4 lệnh BotGhost (/roles, /phapbao, /linhvuc, /inv) với phân trang Trang 1/2/3+
- * và menu edit-in-place qua Edge CDP (9222).
+ * Cập nhật 5 lệnh BotGhost (/roles, /phapbao, /linhvuc, /inv, /updates v1.5.1)
+ * dùng chuẩn `advanced_message` & `api_action` (name + request_options.options + SECRET_BACKEND_KEY)
+ * kèm `attachUpdateAckBranch` từ ga_builder_lib.mjs (nút +1.000 LT).
  *
  * Usage:
  *   node scripts/deploy_v1_5_1_pagination_botghost.mjs --dry-run
- *   node scripts/deploy_v1_5_1_pagination_botghost.mjs [--only=roles,phapbao,linhvuc,inv]
+ *   node scripts/deploy_v1_5_1_pagination_botghost.mjs [--only=roles,phapbao,linhvuc,inv,updates]
  */
 
 import WebSocket from 'ws';
@@ -14,6 +15,7 @@ globalThis.WebSocket = WebSocket;
 import fs from 'node:fs';
 import {
   GraphBuilder,
+  attachUpdateAckBranch,
   deployViaCDP,
   validateGraph,
 } from './ga_builder_lib.mjs';
@@ -94,29 +96,32 @@ class PaginatedGraphBuilder extends GraphBuilder {
   }
 }
 
-function apiAction(gb, id, resName, method, url, body = '', pos = { x: 0, y: 0 }) {
-  gb.act(id, 'api_action', {
+function apiAction(gb, id, name, method, url, rawBody = '', pos = { x: 0, y: 0 }) {
+  const isPost = method === 'POST';
+  return gb.act(id, 'api_action', {
+    name,
+    ephemeral: false,
     request_options: {
-      url,
       method,
-      headers: [
-        { key: 'Content-Type', value: 'application/json' },
-        { key: 'x-api-key', value: '{secret_sumi_backend_key}' },
-      ],
-      rawBody: body || '',
+      url,
+      headers: isPost
+        ? [{ key: 'Content-Type', value: 'application/json' }, { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' }]
+        : [],
+      params: [],
       body: [],
+      rawBody,
+      contentType: 'application/json',
+      options: {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        ...(isPost ? { jsonSafeVariables: true, bodyMode: 'raw', contentType: 'application/json' } : {}),
+        failOnError: false,
+      },
     },
-    api_name: resName,
-    custom_response_data: [],
-    output: resName,
-    response_type: 'json',
-    response: 'json',
-    error_handles: false,
     success_handles: false,
-    headers: [{ key: 'Content-Type', value: 'application/json' }],
-    url,
-    method,
-    rawBody: body || '',
   }, pos);
 }
 
@@ -124,65 +129,105 @@ function embedMsg(gb, id, {
   title = '',
   description = '',
   color = '#a855f7',
+  imageUrl = '',
+  fields = undefined,
   footer = '',
   target = { reply: true },
-  editId = null,
-  action_id = null,
+  editId = undefined,
+  action_id = undefined,
 } = {}, pos = { x: 0, y: 0 }) {
-  const data = {
-    type: 'embed',
-    message_type: 'embed',
-    content: '',
-    embed: {
-      title,
-      description,
-      color,
-      footer: { text: footer || '' },
-      timestamp: false,
-    },
-    target,
-    ...(action_id ? { action_id } : {}),
-    ...(editId ? { editId } : {}),
+  const hasFields = Array.isArray(fields) && fields.length > 0;
+  const embedObj = {
+    title,
+    description,
+    color,
+    url: '',
+    thumbnail: { url: '' },
+    image: { url: imageUrl },
+    footer: { text: footer || '', icon_url: '' },
   };
-  gb._addNode({
-    id,
-    type: 'message',
-    draggable: true,
-    position: pos,
-    width: 280,
-    height: 110,
-    data: { node_options: {}, data },
-  });
+  if (hasFields) {
+    embedObj.fields = fields.map((f) => ({
+      name: String(f.name || '').slice(0, 256),
+      value: String(f.value || '').slice(0, 1024),
+      inline: Boolean(f.inline),
+    }));
+  }
+  const data = {
+    messageType: hasFields ? 'advanced' : 'basic',
+    useComponentsV2: false,
+    target,
+    success_handles: false,
+    message: {
+      content: '',
+      embeds: [embedObj],
+    },
+    components: [],
+    componentsV2Data: null,
+    reactions: '',
+  };
+  if (editId) data.editId = editId;
+  if (action_id) data.action_id = action_id;
+  return gb.act(id, 'advanced_message', data, pos);
 }
 
-function attachUpdateAckBranch(gb, prefix, apiId, resName, { editId = null, x = 0, y = 0 } = {}) {
-  const cond = gb.cmp(`${prefix}_upd_cmp`, `{${resName}.response.error}`, 'UPDATE_ACK_REQUIRED', 'equal_to', { ignoreCase: true }, { x, y });
-  gb.link(apiId, cond.condId);
-
-  embedMsg(gb, `${prefix}_upd_msg`, {
-    title: `${uidEm('su_wiki_scroll')} CẬP NHẬT HỆ THỐNG`,
-    description: `{${resName}.response.message}`,
-    color: '#ec4899',
-    ...(editId ? { target: { editId }, action_id: editId } : {}),
-  }, { x: x - 260, y: y + 180 });
-  gb.link(cond.yes, `${prefix}_upd_msg`);
-  return cond.no;
+function patchAckRewardText(elements) {
+  for (const el of elements) {
+    const dt = el?.data?.data;
+    if (!dt) continue;
+    if (el.type === 'advMessageButton' && typeof dt.label === 'string') {
+      dt.label = dt.label.replace(/\+\s*(800|1[.,]500|2[.,]000)\s*LT/gi, '+1.000 LT');
+    }
+    const embeds = dt.message?.embeds;
+    if (Array.isArray(embeds)) {
+      for (const emb of embeds) {
+        if (typeof emb.title === 'string') {
+          emb.title = emb.title.replace(/\+\s*(800|1[.,]500|2[.,]000)\s*LT/gi, '+1.000 LT');
+        }
+      }
+    }
+  }
+  return elements;
 }
 
 function assertCleanAndAcyclic(elements, label) {
   const errs = validateGraph(elements);
   if (errs.length) throw new Error(`Validation failed for ${label}: ${errs.join(', ')}`);
 
+  const seenApiNames = new Map();
   const adj = new Map();
   const nodes = new Set();
+
   for (const el of elements) {
     if (el.source && el.target) {
       if (!adj.has(el.source)) adj.set(el.source, []);
       adj.get(el.source).push(el.target);
     } else if (el.id) {
       nodes.add(el.id);
+      if (el.type === 'message') {
+        throw new Error(`Invalid raw "message" node in ${label} (${el.id}); must use advanced_message action`);
+      }
+      if (el.type === 'action' && el.data?.data?.type === 'api_action') {
+        const d = el.data.data;
+        const name = String(d.name || '').trim();
+        if (!name) throw new Error(`api_action missing data.name in ${label} (${el.id})`);
+        if (seenApiNames.has(name)) {
+          throw new Error(`Duplicate api_action name "${name}" in ${label}: ${seenApiNames.get(name)} & ${el.id}`);
+        }
+        seenApiNames.set(name, el.id);
+        if (!d.request_options?.options?.replaceURL) {
+          throw new Error(`api_action "${el.id}" in ${label} missing request_options.options.replaceURL=true`);
+        }
+      }
+      if (el.type === 'action' && el.data?.data?.type === 'advanced_message') {
+        const embeds = el.data.data.message?.embeds;
+        if (!Array.isArray(embeds) || embeds.length === 0) {
+          throw new Error(`advanced_message "${el.id}" in ${label} missing message.embeds`);
+        }
+      }
     }
   }
+
   const color = new Map();
   const dfs = (u) => {
     color.set(u, 1);
@@ -230,6 +275,7 @@ export function buildRolesPaginatedCmd() {
     title: `${uidEm('su_medal_role')} Đang mở Kho Role Quyền Năng...`,
     description: 'Đang kiểm kê toàn bộ Role Quyền Năng và thời hạn của {user_displayName}...',
     color: '#a855f7',
+    target: { reply: true },
     editId: 'ro_ack',
   }, { x: 0, y: 220 });
   gb.link('root', 'ro_ack');
@@ -251,7 +297,7 @@ export function buildRolesPaginatedCmd() {
     title: `${uidEm('su_medal_role')} KHO ROLE QUYỀN NĂNG CỦA {ro_res.response.user.username}`,
     description: '{ro_res.response.filter_summary}\n\n{ro_res.response.summary}',
     color: '#a855f7',
-    footer: 'SuMi Family • Kho Role Quyền Năng (/equip role • /dismantle role)',
+    footer: '',
     target: { editId: 'ro_ack' },
     action_id: 'ro_ack',
   }, { x: 240, y: 780 });
@@ -303,7 +349,7 @@ export function buildRolesPaginatedCmd() {
       title: `${uidEm('su_medal_role')} KHO ROLE QUYỀN NĂNG CỦA {${resName}.response.user.username}`,
       description: `{${resName}.response.filter_summary}\n\n{${resName}.response.summary}`,
       color: '#a855f7',
-      footer: 'SuMi Family • Kho Role Quyền Năng (/equip role • /dismantle role)',
+      footer: '',
       target: { editId: 'ro_ack' },
       action_id: 'ro_ack',
     }, { x: 240, y: baseY });
@@ -311,7 +357,7 @@ export function buildRolesPaginatedCmd() {
     curMsg = msgId;
   }
 
-  return gb.elements();
+  return patchAckRewardText(gb.elements());
 }
 
 // ============================================================================
@@ -343,6 +389,7 @@ export function buildPhapBaoPaginatedCmd() {
     title: `${uidEm('su_crossed_swords')} Đang mở Kho Pháp Bảo...`,
     description: 'Đang kiểm kê toàn bộ Vũ Khí, Bảo Ngọc và Chiến Hồn của {user_displayName}...',
     color: '#f59e0b',
+    target: { reply: true },
     editId: 'pb_ack',
   }, { x: 0, y: 220 });
   gb.link('root', 'pb_ack');
@@ -364,7 +411,7 @@ export function buildPhapBaoPaginatedCmd() {
     title: `${uidEm('su_crossed_swords')} KHO PHÁP BẢO CỦA {pb_res.response.user.username}`,
     description: '{pb_res.response.filter_summary}\n\n{pb_res.response.summary_equipment}',
     color: '#f59e0b',
-    footer: 'SuMi Family • Kho Pháp Bảo Tu Tiên (/enchant khắc ấn • /dismantle xóa nhanh)',
+    footer: '',
     target: { editId: 'pb_ack' },
     action_id: 'pb_ack',
   }, { x: 240, y: 780 });
@@ -418,7 +465,7 @@ export function buildPhapBaoPaginatedCmd() {
       title: `${uidEm('su_crossed_swords')} KHO PHÁP BẢO CỦA {${resName}.response.user.username}`,
       description: `{${resName}.response.filter_summary}\n\n{${resName}.response.summary_equipment}`,
       color: '#f59e0b',
-      footer: 'SuMi Family • Kho Pháp Bảo Tu Tiên (/enchant khắc ấn • /dismantle xóa nhanh)',
+      footer: '',
       target: { editId: 'pb_ack' },
       action_id: 'pb_ack',
     }, { x: 240, y: baseY });
@@ -426,7 +473,7 @@ export function buildPhapBaoPaginatedCmd() {
     curMsg = msgId;
   }
 
-  return gb.elements();
+  return patchAckRewardText(gb.elements());
 }
 
 // ============================================================================
@@ -471,6 +518,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} Đang khai mở Trận Đồ Linh Vực...`,
     description: 'Đang khắc ấn trang bị `{option_ma_id}`...',
     color: '#a855f7',
+    target: { reply: true },
     editId: 'lv_eq_ack',
   }, { x: -520, y: 580 });
   gb.link(brEq, 'lv_eq_ack');
@@ -482,6 +530,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} TRANG BỊ LINH VỰC • THẦN THỨC • THẦN CẢNH`,
     description: '{lv_eq_res.response.message}',
     color: '#a855f7',
+    footer: '',
     target: { editId: 'lv_eq_ack' },
     action_id: 'lv_eq_ack',
   }, { x: -520, y: 1140 });
@@ -492,6 +541,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} Đang thu hồi Linh Vực...`,
     description: 'Đang thu hồi slot `{option_ma_id}` về kho...',
     color: '#64748b',
+    target: { reply: true },
     editId: 'lv_unq_ack',
   }, { x: -120, y: 580 });
   gb.link(cModeUneq, 'lv_unq_ack');
@@ -503,6 +553,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} THU HỒI LINH VỰC`,
     description: '{lv_unq_res.response.message}',
     color: '#64748b',
+    footer: '',
     target: { editId: 'lv_unq_ack' },
     action_id: 'lv_unq_ack',
   }, { x: -120, y: 1140 });
@@ -513,6 +564,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_linhthach')} Đang luyện hóa phân giải...`,
     description: 'Đang phân giải `{option_ma_id}` thành Linh Thạch...',
     color: '#f59e0b',
+    target: { reply: true },
     editId: 'lv_dism_ack',
   }, { x: 240, y: 580 });
   gb.link(cModeDism, 'lv_dism_ack');
@@ -524,6 +576,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_linhthach')} PHÂN GIẢI LINH VỰC`,
     description: '{lv_dism_res.response.message}',
     color: '#f59e0b',
+    footer: '',
     target: { editId: 'lv_dism_ack' },
     action_id: 'lv_dism_ack',
   }, { x: 240, y: 1140 });
@@ -534,6 +587,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} Đang mở Kho Linh Vực...`,
     description: 'Đang thống kê Linh Vực, Thần Thức & Thần Cảnh của {user_displayName}...',
     color: '#ec4899',
+    target: { reply: true },
     editId: 'lv_v_ack',
   }, { x: 640, y: 580 });
   gb.link(brView, 'lv_v_ack');
@@ -548,7 +602,7 @@ export function buildLinhVucPaginatedCmd() {
     title: '{lv_v_res.response.title}',
     description: '{lv_v_res.response.description}',
     color: '#ec4899',
-    footer: '{lv_v_res.response.footer}',
+    footer: '',
     target: { editId: 'lv_v_ack' },
     action_id: 'lv_v_ack',
   }, { x: 520, y: 1320 });
@@ -557,6 +611,7 @@ export function buildLinhVucPaginatedCmd() {
     title: `${uidEm('su_realm_star')} KHO LINH VỰC TIÊN GIỚI`,
     description: '{lv_v_res.response.message}',
     color: '#f43f5e',
+    footer: '',
     target: { editId: 'lv_v_ack' },
     action_id: 'lv_v_ack',
   }, { x: 860, y: 1320 });
@@ -607,7 +662,7 @@ export function buildLinhVucPaginatedCmd() {
       title: `{${resName}.response.title}`,
       description: `{${resName}.response.description}`,
       color: '#ec4899',
-      footer: `{${resName}.response.footer}`,
+      footer: '',
       target: { editId: 'lv_v_ack' },
       action_id: 'lv_v_ack',
     }, { x: 520, y: baseY });
@@ -615,7 +670,7 @@ export function buildLinhVucPaginatedCmd() {
     curLvMsg = msgId;
   }
 
-  return gb.elements();
+  return patchAckRewardText(gb.elements());
 }
 
 // ============================================================================
@@ -630,6 +685,7 @@ export function buildInvPaginatedCmd() {
     title: `${uidEm('su_wiki_scroll')} Đang mở Túi Đồ Tiên Giới...`,
     description: 'Đang đồng bộ hành trang của {user_displayName}...',
     color: '#38bdf8',
+    target: { reply: true },
     editId: 'inv_ack',
   }, { x: 0, y: 220 });
   gb.link('root', 'inv_ack');
@@ -651,6 +707,7 @@ export function buildInvPaginatedCmd() {
     title: '{inv_res.response.view_title}',
     description: '{inv_res.response.view_description}',
     color: '#a855f7',
+    footer: '',
     target: { editId: 'inv_ack' },
     action_id: 'inv_ack',
   }, { x: 240, y: 780 });
@@ -702,6 +759,7 @@ export function buildInvPaginatedCmd() {
       title: `{${resName}.response.view_title}`,
       description: `{${resName}.response.view_description}`,
       color: '#a855f7',
+      footer: '',
       target: { editId: 'inv_ack' },
       action_id: 'inv_ack',
     }, { x: 240, y: baseY });
@@ -709,7 +767,7 @@ export function buildInvPaginatedCmd() {
     curMsg = msgId;
   }
 
-  return gb.elements();
+  return patchAckRewardText(gb.elements());
 }
 
 // ============================================================================
