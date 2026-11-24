@@ -1225,7 +1225,9 @@ export async function rollGacha(userId, options = {}) {
     const pityLine = PITY_ENABLED_POOLS.includes(pool)
       ? `${em('su_realm_star')} **Pity Thần Thoại (${poolLabel})**: \`${pityCur}/${MYTHIC_PITY_THRESHOLD}\`${anyPityTriggered ? ` — ${em('su_sparkle')} **KÍCH HOẠT BẢO HIỂM THẦN THOẠI 350!**` : ''}`
       : null;
-    const footerNote = `${em('su_gacha_dice')} Hoàn tất triệu hồi **${count} lượt** bể **${poolLabel}**! ${roleIdsList.length > 0 ? `Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord. ` : ''}${bonusStarStones > 0 ? `Nhận thêm **+${bonusStarStones}** ${em('pet_star_stone')} Tinh Thạch Nâng Sao.` : ''}`.trim();
+    const footerNote = roleIdsList.length > 0
+      ? `${em('su_sparkle')} Đã gắn **${roleIdsList.length} Role** vào hồ sơ Discord.`
+      : null;
     const dupHeaderLine = (pool === 'role' || refundLinhThach > 0 || bonusStarStones > 0)
       ? `${em('pet_star_stone')} **Hoàn trả trùng lặp**: \`+${refundLinhThach}\` Linh Thạch • \`+${bonusStarStones}\` Tinh Thạch Sao`
       : null;

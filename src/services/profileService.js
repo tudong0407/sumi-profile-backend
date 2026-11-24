@@ -255,7 +255,7 @@ export function getFuyumiProfileMock() {
           item_type: 'weapon',
           slot: 'weapon',
           rarity: 'Than Thoai',
-          element: 'Kim',
+          element: 'Hỗn Độn',
           enchant_grade: 'S',
           enchant_bonus_pct: 40,
           enchant_applied: true,

@@ -74,7 +74,7 @@ export const MOCK_ITEMS = {
     item_type: 'weapon',
     slot: 'weapon',
     rarity: 'Than Thoai',
-    element: 'Kim',
+    element: 'Hỗn Độn',
     bonus_atk: 720,
     bonus_def: 0,
     bonus_spd: 300,
