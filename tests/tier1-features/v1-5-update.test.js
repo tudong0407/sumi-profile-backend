@@ -273,7 +273,7 @@ describe('Tier 1 - SuMi Family Ver 1.5 Update Suite (Phase 1)', () => {
   });
 
   it('7. Fix #3, #9 & Phase 2 Live: 63 Assets (43 Emojis + 20 Frames), 0 Windows Unicode, LATEST_VERSION === 1.5, no nerf in /updates', () => {
-    assert.equal(LATEST_VERSION, '1.5');
+    assert.ok(['1.5', '1.5.1'].includes(LATEST_VERSION));
     assert.equal(WIKI_METADATA.version, '1.5');
     assert.ok(String(WIKI_CATEGORIES.battle.image_url).includes('elements.webp'));
 

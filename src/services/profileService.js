@@ -157,6 +157,18 @@ export async function computeRoleBuffTotals(userId, userLevel = 1, extraRoleIds 
 }
 
 /**
+ * Làm sạch chuỗi role_perk trước khi ghi vào Supabase (`user_roles.role_perk VARCHAR(100)`):
+ * bỏ thẻ custom emoji `<a?:name:id>`, chuẩn hóa khoảng trắng và cắt <= 100 ký tự.
+ */
+export function sanitizeRolePerkForDb(perk) {
+  return String(perk || '')
+    .replace(/<a?:[a-zA-Z0-9_]+:\d+>/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
+/**
  * Tra cứu đặc quyền của Role
  */
 export function getRolePerkByName(roleName, roleId) {

@@ -48,6 +48,7 @@ import {
   pickCleanDisplayValue,
   ROLE_PERKS_MAP,
   computeRoleBuffTotals,
+  sanitizeRolePerkForDb,
 } from './profileService.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
 import { getGachaDismantleValue } from './inventoryService.js';
@@ -711,6 +712,7 @@ export async function rollGacha(userId, options = {}) {
           }
 
           const perk = ROLE_PERKS_MAP[picked.role_id] || picked.perk || `${em('su_sparkle')} Quyền Năng Tiên Giới`;
+          const dbPerk = sanitizeRolePerkForDb(perk);
           const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
           const usedSlots = new Set((userRoles || [])
             .filter((r) => r.is_equipped && r.equipped_slot && (r.is_permanent || !r.expires_at || new Date(r.expires_at) > nowDate))
@@ -729,23 +731,27 @@ export async function rollGacha(userId, options = {}) {
           }
 
           if (existing) {
-            await supabase
+            const { error: roleWriteErr } = await supabase
               .from('user_roles')
               .update({
                 role_name: picked.name,
-                role_perk: perk,
+                role_perk: dbPerk,
                 is_permanent: isPermanent,
                 expires_at: expiresAt,
                 is_equipped: isEquipped,
                 equipped_slot: equippedSlot,
               })
               .eq('id', existing.id);
+            if (roleWriteErr) {
+              console.error('[Gacha] user_roles update failed:', roleWriteErr);
+              throw new Error(`Lưu Role thất bại: ${roleWriteErr.message}`);
+            }
           } else {
-            await supabase.from('user_roles').insert({
+            const { error: roleWriteErr } = await supabase.from('user_roles').insert({
               user_id: cleanId,
               role_id: picked.role_id,
               role_name: picked.name,
-              role_perk: perk,
+              role_perk: dbPerk,
               is_permanent: isPermanent,
               expires_at: expiresAt,
               is_equipped: isEquipped,
@@ -753,6 +759,10 @@ export async function rollGacha(userId, options = {}) {
               source: 'gacha',
               paid_price: 0,
             });
+            if (roleWriteErr) {
+              console.error('[Gacha] user_roles insert failed:', roleWriteErr);
+              throw new Error(`Lưu Role thất bại: ${roleWriteErr.message}`);
+            }
           }
 
           if (isEquipped) {

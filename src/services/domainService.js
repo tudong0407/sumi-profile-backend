@@ -26,7 +26,7 @@ import {
   realmEmojiById,
 } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
-import { normalizeEmojiAwareQuery } from './inventoryService.js';
+import { normalizeEmojiAwareQuery, paginateFormattedLines } from './inventoryService.js';
 import { trackQuestActivity } from './questService.js';
 
 export const DOMAIN_DISMANTLE_VALUES = {
@@ -150,64 +150,98 @@ export async function getDomainInventory(userId, options = {}) {
   const senses = list.filter((x) => x.entity_kind === 'sense');
   const realms = list.filter((x) => x.entity_kind === 'realm');
 
-  const formatBucket = (arr, kindLabel) => {
-    if (arr.length === 0) return `• *Chưa sở hữu ${kindLabel} nào. Dùng \`/roll loai:domain\` để triệu hồi!*`;
-    const lines = [];
-    for (const item of arr.slice(0, 12)) {
-      const eqTag = item.is_equipped ? ' **[Đang Dùng]**' : '';
-      const qtyTag = toSupCount(item.quantity);
-      const statNote = item.entity_kind === 'domain'
-        ? `${domainElementEmoji(item.element)} ${item.element} • ${item.base_energy >= 999 ? '∞' : item.base_energy} LM`
-        : item.entity_kind === 'sense'
-          ? `+${item.bonus_energy >= 999 ? '∞' : item.bonus_energy} LM`
-          : `+${Math.round((item.debuff_boost_pct || 0) * 100)}% Debuff`;
-      lines.push(`• ${item.icon} **${item.name}**${qtyTag} (\`${item.entity_id}\`) • ${item.tier_icon} ${item.rarity} — *${statNote}*${eqTag}`);
-    }
-    if (arr.length > 12) lines.push(`• *... và ${arr.length - 12} ${kindLabel} khác*`);
-    return lines.join('\n');
+  const formatDomainItemLine = (item) => {
+    const eqTag = item.is_equipped ? ' **[Đang Dùng]**' : '';
+    const qtyTag = toSupCount(item.quantity);
+    const statNote = item.entity_kind === 'domain'
+      ? `${domainElementEmoji(item.element)} ${item.element} • ${item.base_energy >= 999 ? '∞' : item.base_energy} LM`
+      : item.entity_kind === 'sense'
+        ? `+${item.bonus_energy >= 999 ? '∞' : item.bonus_energy} LM`
+        : `+${Math.round((item.debuff_boost_pct || 0) * 100)}% Debuff`;
+    return `• ${item.icon} **${item.name}**${qtyTag} (\`${item.entity_id}\`) • ${item.tier_icon} ${item.rarity} — *${statNote}*${eqTag}`;
   };
 
-  const view = String(options.view || 'overview').toLowerCase();
+  const viewParts = String(options.view || 'overview').toLowerCase().split(':');
+  const viewRaw = viewParts[0] || 'overview';
+  const view = ['overview', 'domain', 'sense', 'realm'].includes(viewRaw) ? viewRaw : 'overview';
+  const requestedPage = options.page !== undefined && options.page !== '' && options.page !== null
+    ? options.page
+    : (viewParts[1] || 1);
+
   const domainCycleDisplay = DOMAIN_ELEMENTS.cycle.map((el) => `${domainElementEmoji(el)} **${el}**`).join(' → ');
+  let paged;
+  const bodySections = [];
+
+  if (view === 'domain' || view === 'sense' || view === 'realm') {
+    const bucket = view === 'domain' ? domains : view === 'sense' ? senses : realms;
+    const kindLabel = view === 'domain' ? 'Linh Vực' : view === 'sense' ? 'Thần Thức' : 'Thần Cảnh';
+    paged = paginateFormattedLines(bucket, formatDomainItemLine, { page: requestedPage, pageSize: 15, maxChars: 3050 });
+    bodySections.push(
+      `**Danh Sách ${kindLabel} (${bucket.length})**`,
+      bucket.length === 0
+        ? `• *Chưa sở hữu ${kindLabel} nào. Dùng \`/roll loai:domain\` để triệu hồi!*`
+        : paged.lines.join('\n'),
+    );
+  } else {
+    const combined = [...domains, ...senses, ...realms];
+    paged = paginateFormattedLines(combined, formatDomainItemLine, { page: requestedPage, pageSize: 15, maxChars: 2950 });
+    if (combined.length === 0) {
+      bodySections.push(
+        `**1. Linh Vực (0)**`,
+        `• *Chưa sở hữu Linh Vực nào. Dùng \`/roll loai:domain\` để triệu hồi!*`,
+        '',
+        `**2. Thần Thức (0)**`,
+        `• *Chưa sở hữu Thần Thức nào. Dùng \`/roll loai:domain\` để triệu hồi!*`,
+        '',
+        `**3. Thần Cảnh (0)**`,
+        `• *Chưa sở hữu Thần Cảnh nào. Dùng \`/roll loai:domain\` để triệu hồi!*`,
+      );
+    } else {
+      const domLines = [];
+      const senseLines = [];
+      const realmLines = [];
+      for (let i = 0; i < paged.pageItems.length; i += 1) {
+        const item = paged.pageItems[i];
+        const line = paged.lines[i];
+        if (item.entity_kind === 'domain') domLines.push(line);
+        else if (item.entity_kind === 'sense') senseLines.push(line);
+        else realmLines.push(line);
+      }
+      if (domLines.length > 0) bodySections.push(`**1. Linh Vực (${domains.length})**`, ...domLines, '');
+      if (senseLines.length > 0) bodySections.push(`**2. Thần Thức (${senses.length})**`, ...senseLines, '');
+      if (realmLines.length > 0) bodySections.push(`**3. Thần Cảnh (${realms.length})**`, ...realmLines, '');
+      if (bodySections[bodySections.length - 1] === '') bodySections.pop();
+    }
+  }
+
   const sections = [
     `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (KÍCH HOẠT TỪ HIỆP 2)**`,
     `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** *(${domainElementEmoji(eqDomain.element)} ${eqDomain.element})*` : '`Trống`'}`,
     `• **Thần Thức:** ${eqSense ? `${eqSense.icon} **${eqSense.name}**` : '`Trống`'}`,
     `• **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}**` : '`Trống`'}`,
-    `• **Tổng Linh Mạch:** \`${totalLinhMach}\` • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
+    `• **Tổng Linh Mạch:** \`${totalLinhMach}\`${paged.totalPages > 1 ? ` • **Trang:** \`${paged.page}/${paged.totalPages}\`` : ''} • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
     '',
+    ...bodySections,
   ];
-
-  if (view === 'domain') {
-    sections.push(`**Danh Sách Linh Vực (${domains.length})**`, formatBucket(domains, 'Linh Vực'));
-  } else if (view === 'sense') {
-    sections.push(`**Danh Sách Thần Thức (${senses.length})**`, formatBucket(senses, 'Thần Thức'));
-  } else if (view === 'realm') {
-    sections.push(`**Danh Sách Thần Cảnh (${realms.length})**`, formatBucket(realms, 'Thần Cảnh'));
-  } else {
-    sections.push(
-      `**1. Linh Vực (${domains.length})**`,
-      formatBucket(domains, 'Linh Vực'),
-      '',
-      `**2. Thần Thức (${senses.length})**`,
-      formatBucket(senses, 'Thần Thức'),
-      '',
-      `**3. Thần Cảnh (${realms.length})**`,
-      formatBucket(realms, 'Thần Cảnh'),
-    );
+  if (paged.totalPages > 1) {
+    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+    sections.push('', `• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/linhvuc tab:${view} trang:${nextPage}\` để xem tiếp!*`);
   }
 
   return {
     success: true,
     user_id: cleanId,
     username: user.username,
+    view,
+    page: paged.page,
+    total_pages: paged.totalPages,
     total_linh_mach: totalLinhMach,
     equipped: { domain: eqDomain, sense: eqSense, realm: eqRealm },
     domains,
     senses,
     realms,
     counts: { domains: domains.length, senses: senses.length, realms: realms.length },
-    title: `${em('su_realm_star')} LINH VỰC TIÊN GIỚI — ${user.username}`,
+    title: `${em('su_realm_star')} LINH VỰC TIÊN GIỚI — ${user.username}${paged.totalPages > 1 ? ` (Trang ${paged.page}/${paged.totalPages})` : ''}`,
     description: sections.join('\n').slice(0, 4000),
     footer: '',
   };

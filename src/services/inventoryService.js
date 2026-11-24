@@ -241,6 +241,66 @@ function formatRoleDurationLabel(r, now) {
   return `${remDays} ngày`;
 }
 
+/**
+ * Chia danh sách item thành từng trang thỏa mãn ĐỒNG THỜI `pageSize` và `maxChars`
+ * để không bao giờ bị cắt mất item nào do giới hạn 4.096 ký tự của Discord Embed.
+ */
+export function paginateFormattedLines(items = [], formatFn, { page = 1, pageSize = 15, maxChars = 3350 } = {}) {
+  const list = Array.isArray(items) ? items : [];
+  if (list.length === 0) {
+    return {
+      page: 1,
+      totalPages: 1,
+      pageItems: [],
+      lines: [],
+      startIndex: 0,
+      endIndex: 0,
+    };
+  }
+  const safeSize = Math.max(1, Number(pageSize) || 15);
+  const safeMaxChars = Math.max(200, Number(maxChars) || 3350);
+  const pages = [];
+  let curItems = [];
+  let curLines = [];
+  let curChars = 0;
+
+  for (let i = 0; i < list.length; i += 1) {
+    const item = list[i];
+    const line = String(formatFn(item, i) || '');
+    const addLen = curLines.length > 0 ? line.length + 1 : line.length;
+    if (curItems.length > 0 && (curItems.length >= safeSize || curChars + addLen > safeMaxChars)) {
+      pages.push({ items: curItems, lines: curLines });
+      curItems = [];
+      curLines = [];
+      curChars = 0;
+    }
+    curItems.push(item);
+    curLines.push(line);
+    curChars += (curLines.length > 1 ? line.length + 1 : line.length);
+  }
+  if (curItems.length > 0) {
+    pages.push({ items: curItems, lines: curLines });
+  }
+
+  const totalPages = Math.max(1, pages.length);
+  const parsedPage = Number.parseInt(String(page || '1'), 10);
+  const safePage = Number.isFinite(parsedPage) ? Math.min(totalPages, Math.max(1, parsedPage)) : 1;
+  const bucket = pages[safePage - 1] || { items: [], lines: [] };
+  let startIndex = 0;
+  for (let p = 0; p < safePage - 1; p += 1) {
+    startIndex += pages[p].items.length;
+  }
+
+  return {
+    page: safePage,
+    totalPages,
+    pageItems: bucket.items,
+    lines: bucket.lines,
+    startIndex,
+    endIndex: startIndex + bucket.items.length,
+  };
+}
+
 function buildRoleListText(roles, now, { maxChars = 3750, maxItems = null, overflowHint = 'gõ `/roles` để xem tất cả' } = {}) {
   if (!roles.length) return '• Chưa có Role Quyền Năng nào.';
   const lines = [];
@@ -283,8 +343,12 @@ export async function getInventory(userId, options = {}) {
   });
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
-  const viewRaw = String(options.view || 'overview').trim().toLowerCase();
+  const viewParts = String(options.view || 'overview').trim().toLowerCase().split(':');
+  const viewRaw = viewParts[0] || 'overview';
   const view = ['overview', 'roles', 'items', 'pets', 'consumables'].includes(viewRaw) ? viewRaw : 'overview';
+  const requestedPage = options.page !== undefined && options.page !== '' && options.page !== null
+    ? options.page
+    : (viewParts[1] || 1);
 
   const [petsRes, itemsRes, rolesRes, invRes] = await Promise.all([
     supabase.from('user_pets').select('*').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
@@ -435,50 +499,62 @@ export async function getInventory(userId, options = {}) {
     1400,
   );
 
+  const formatPetDetailLine = (p) => {
+    const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
+    const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
+    const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
+    const elemIcon = p.element_icon || elementEmoji(elemName);
+    const statusTag = p.status === 'exploring' ? ` *[${uiEm('ui_compass_dir')} Đang Khám Phá]*` : p.status === 'injured' ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*` : '';
+    return `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
+  };
+  const petsPaged = paginateFormattedLines(pets, formatPetDetailLine, { page: view === 'pets' ? requestedPage : 1, pageSize: 15, maxChars: 3350 });
   const summaryPetsDetailed = pets.length
-    ? (() => {
-      const out = [];
-      let totalLen = 0;
-      let omitted = 0;
-      for (const p of pets) {
-        const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
-        const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
-        const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
-        const elemIcon = p.element_icon || elementEmoji(elemName);
-        const statusTag = p.status === 'exploring' ? ` *[${uiEm('ui_compass_dir')} Đang Khám Phá]*` : p.status === 'injured' ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*` : '';
-        const line = `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
-        if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
-        out.push(line);
-        totalLen += line.length + 1;
-      }
-      if (omitted > 0) out.push(`• *... và ${omitted} Linh Thú nữa*`);
-      return out.join('\n');
-    })()
+    ? [
+        ...petsPaged.lines,
+        ...(petsPaged.totalPages > 1 ? [`• *Trang ${petsPaged.page}/${petsPaged.totalPages} — Chọn Trang ở menu bên dưới để xem tiếp!*`] : []),
+      ].join('\n')
     : '• Chưa có Linh Thú nào.';
 
+  const formatItemDetailLine = (it) => {
+    const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
+    return `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity}${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`;
+  };
+  const itemsPaged = paginateFormattedLines(items, formatItemDetailLine, { page: view === 'items' ? requestedPage : 1, pageSize: 20, maxChars: 3350 });
   const summaryItemsDetailed = items.length
-    ? (() => {
-      const out = [];
-      let totalLen = 0;
-      let omitted = 0;
-      for (const it of items) {
-        const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
-        const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity}${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`;
-        if (totalLen + line.length + 1 > 3700) { omitted += 1; continue; }
-        out.push(line);
-        totalLen += line.length + 1;
-      }
-      if (omitted > 0) out.push(`• *... và ${omitted} Pháp Bảo nữa (gõ \`/phapbao\` để lọc)*`);
-      return out.join('\n');
-    })()
+    ? [
+        ...itemsPaged.lines,
+        ...(itemsPaged.totalPages > 1 ? [`• *Trang ${itemsPaged.page}/${itemsPaged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/phapbao trang:${itemsPaged.page < itemsPaged.totalPages ? itemsPaged.page + 1 : 1}\`!*`] : []),
+      ].join('\n')
     : '• Chưa có Pháp Bảo nào.';
 
+  const consPaged = paginateFormattedLines(
+    consumables,
+    (c) => `• ${c.icon} **${c.display_name}** (\`${c.item_id}\`) × **${c.quantity}**`,
+    { page: view === 'consumables' ? requestedPage : 1, pageSize: 25, maxChars: 3350 },
+  );
   const summaryConsumablesDetailed = consumables.length
-    ? consumables.map((c) => `• ${c.icon} **${c.display_name}** (\`${c.item_id}\`) × **${c.quantity}**`).join('\n').slice(0, 3750)
+    ? [
+        ...consPaged.lines,
+        ...(consPaged.totalPages > 1 ? [`• *Trang ${consPaged.page}/${consPaged.totalPages} — Chọn lại tab để xem tiếp!*`] : []),
+      ].join('\n')
     : '• Chưa có vật phẩm mở khóa nào.';
 
+  const rolesPaged = paginateFormattedLines(
+    roles,
+    (r) => {
+      const durTag = formatRoleDurationLabel(r, now);
+      const slotTag = r.is_equipped ? ` **[Slot #${r.equipped_slot}]**` : '';
+      return `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${durTag}${slotTag}`;
+    },
+    { page: view === 'roles' ? requestedPage : 1, pageSize: 15, maxChars: 3350 },
+  );
   const summaryRolesCompact = buildRoleListText(roles, now, { maxChars: 950, maxItems: 10, overflowHint: 'gõ `/roles` để xem đầy đủ' });
-  const summaryRolesFull = buildRoleListText(roles, now, { maxChars: 3750 });
+  const summaryRolesFull = roles.length
+    ? [
+        ...rolesPaged.lines,
+        ...(rolesPaged.totalPages > 1 ? [`• *Trang ${rolesPaged.page}/${rolesPaged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/roles trang:${rolesPaged.page < rolesPaged.totalPages ? rolesPaged.page + 1 : 1}\`!*`] : []),
+      ].join('\n')
+    : '• Chưa có Role Quyền Năng nào.';
 
   const summaryPets = `${petGrid}\n*Ghi chú: Trước dấu **|** là Linh Thú xuất trận • Dùng \`/linhthu\` hoặc \`/info <emoji>\`*`;
   const summaryItems = `${itemGrid}\n*Ghi chú: Trước dấu **|** là Pháp Bảo đang trang bị • Dùng \`/phapbao\` hoặc \`/info <emoji>\`*`;
@@ -512,17 +588,27 @@ export async function getInventory(userId, options = {}) {
 
   let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI`;
   let viewDescription = '';
+  let activePage = 1;
+  let activeTotalPages = 1;
   if (view === 'pets') {
-    viewTitle = `${em('su_pet_paw')} KHO LINH THÚ (${pets.length})`;
+    activePage = petsPaged.page;
+    activeTotalPages = petsPaged.totalPages;
+    viewTitle = `${em('su_pet_paw')} KHO LINH THÚ (${pets.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
     viewDescription = summaryPetsDetailed;
   } else if (view === 'items') {
-    viewTitle = `${em('su_crossed_swords')} KHO PHÁP BẢO (${items.length})`;
+    activePage = itemsPaged.page;
+    activeTotalPages = itemsPaged.totalPages;
+    viewTitle = `${em('su_crossed_swords')} KHO PHÁP BẢO (${items.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
     viewDescription = summaryItemsDetailed;
   } else if (view === 'roles') {
-    viewTitle = `${em('su_medal_role')} KHO ROLE QUYỀN NĂNG (${roles.length})`;
+    activePage = rolesPaged.page;
+    activeTotalPages = rolesPaged.totalPages;
+    viewTitle = `${em('su_medal_role')} KHO ROLE QUYỀN NĂNG (${roles.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
     viewDescription = summaryRolesFull;
   } else if (view === 'consumables') {
-    viewTitle = `${em('enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})`;
+    activePage = consPaged.page;
+    activeTotalPages = consPaged.totalPages;
+    viewTitle = `${em('enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
     viewDescription = summaryConsumablesDetailed;
   } else {
     const sections = [
@@ -549,6 +635,8 @@ export async function getInventory(userId, options = {}) {
   return {
     success: true,
     view,
+    page: activePage,
+    total_pages: activeTotalPages,
     view_title: viewTitle,
     view_description: viewDescription,
     user: {
@@ -661,23 +749,21 @@ export async function getUserEquipment(userId, options = {}) {
     equipped: 'Đang Trang Bị Lên Đầu',
   };
 
-  let summaryLines = [];
-  let charCount = 0;
-  let omitted = 0;
-  for (const it of list) {
-    const slotTag = it.item_type === 'weapon' ? 'Vũ Khí' : it.item_type === 'gem' ? 'Bảo Ngọc' : 'Chiến Hồn';
-    const eqTag = it.is_equipped ? ' **(Đang trang bị)**' : '';
-    const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
-    const line = `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity} *(${slotTag})*${eqTag}`;
-    if (charCount + line.length + 1 > 3750) {
-      omitted += 1;
-    } else {
-      summaryLines.push(line);
-      charCount += line.length + 1;
-    }
-  }
-  if (omitted > 0) {
-    summaryLines.push(`• *... và ${omitted} Pháp Bảo nữa (dùng bộ lọc ở trên để xem chi tiết từng loại)*`);
+  const paged = paginateFormattedLines(
+    list,
+    (it) => {
+      const slotTag = it.item_type === 'weapon' ? 'Vũ Khí' : it.item_type === 'gem' ? 'Bảo Ngọc' : 'Chiến Hồn';
+      const eqTag = it.is_equipped ? ' **(Đang trang bị)**' : '';
+      const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
+      return `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity} *(${slotTag})*${eqTag}`;
+    },
+    { page: options.page || 1, pageSize: 20, maxChars: 3350 },
+  );
+
+  const summaryLines = [...paged.lines];
+  if (paged.totalPages > 1) {
+    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+    summaryLines.push(`• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/phapbao trang:${nextPage}\` để xem tiếp!*`);
   }
   if (summaryLines.length === 0) {
     summaryLines.push('• Chưa có Pháp Bảo nào khớp bộ lọc. Hãy mua ở `/shop` hoặc quay `/roll loai:equipment`!');
@@ -692,10 +778,13 @@ export async function getUserEquipment(userId, options = {}) {
       linh_thach: Number(user.linh_thach || 0),
     },
     total_count: list.length,
+    page: paged.page,
+    total_pages: paged.totalPages,
+    page_size: 20,
     sort: sortMode,
     slot: slotFilter,
     items: list,
-    filter_summary: `Bộ lọc: **${filterLabelMap[slotFilter] || 'Tất Cả'}** • Sắp xếp: **${sortLabelMap[sortMode] || 'Phẩm Cao → Thấp'}** • Tổng: **${list.length} món**`,
+    filter_summary: `Bộ lọc: **${filterLabelMap[slotFilter] || 'Tất Cả'}** • Sắp xếp: **${sortLabelMap[sortMode] || 'Phẩm Cao → Thấp'}** • Tổng: **${list.length} món** • Trang **${paged.page}/${paged.totalPages}**`,
     summary_equipment: summaryLines.join('\n'),
   };
 }
@@ -738,7 +827,7 @@ export async function getUserRoles(userId, options = {}) {
         ...r,
         rarity_key: rarityKey,
         rarity: roleMeta?.rarity || 'Phàm Phẩm',
-        perk: r.role_perk || roleMeta?.perk || '',
+        perk: roleMeta?.perk || r.role_perk || '',
         icon: roleTierEmoji(rarityKey),
         duration_label: formatRoleDurationLabel(r, now),
         remaining_ms: remMs,
@@ -767,20 +856,20 @@ export async function getUserRoles(userId, options = {}) {
 
   const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
   const equippedCount = roles.filter((r) => r.is_equipped).length;
-  const lines = [];
-  let charCount = 0;
-  let omitted = 0;
-  for (const r of roles) {
-    const slotTag = r.is_equipped ? ` • **Slot #${r.equipped_slot}/${maxSlots}**` : '';
-    const line = `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${r.rarity} • ${r.duration_label}${slotTag}${r.perk ? `\n  *${r.perk}*` : ''}`;
-    if (charCount + line.length + 1 > 3750) {
-      omitted += 1;
-    } else {
-      lines.push(line);
-      charCount += line.length + 1;
-    }
+  const paged = paginateFormattedLines(
+    roles,
+    (r) => {
+      const slotTag = r.is_equipped ? ` • **Slot #${r.equipped_slot}/${maxSlots}**` : '';
+      return `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${r.rarity} • ${r.duration_label}${slotTag}${r.perk ? `\n  *${r.perk}*` : ''}`;
+    },
+    { page: options.page || 1, pageSize: 15, maxChars: 3350 },
+  );
+
+  const lines = [...paged.lines];
+  if (paged.totalPages > 1) {
+    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+    lines.push(`• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/roles trang:${nextPage}\` để xem tiếp!*`);
   }
-  if (omitted > 0) lines.push(`• *... và ${omitted} Role khác (dùng bộ lọc ở trên để xem chi tiết)*`);
   if (!lines.length) lines.push('• Chưa có Role Quyền Năng nào khớp bộ lọc. Mua tại `/shop` hoặc quay `/roll loai:role`!');
 
   return {
@@ -793,11 +882,14 @@ export async function getUserRoles(userId, options = {}) {
     },
     filter: filterMode,
     sort: sortMode,
+    page: paged.page,
+    total_pages: paged.totalPages,
+    page_size: 15,
     total_count: roles.length,
     equipped_count: equippedCount,
     max_role_slots: maxSlots,
     roles,
-    filter_summary: `Slot đang đeo: **${equippedCount}/${maxSlots}** • Bộ lọc: **${filterMode}** • Tổng: **${roles.length} Role**`,
+    filter_summary: `Slot đang đeo: **${equippedCount}/${maxSlots}** • Bộ lọc: **${filterMode}** • Tổng: **${roles.length} Role** • Trang **${paged.page}/${paged.totalPages}**`,
     summary: lines.join('\n'),
   };
 }

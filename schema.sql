@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
     user_id VARCHAR(32) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     role_id VARCHAR(32) NOT NULL,
     role_name VARCHAR(100) NOT NULL,
-    role_perk VARCHAR(100) DEFAULT NULL,
+    role_perk TEXT DEFAULT NULL,
     is_permanent BOOLEAN DEFAULT FALSE,
     expires_at TIMESTAMP WITH TIME ZONE NULL,
     is_equipped BOOLEAN DEFAULT FALSE,

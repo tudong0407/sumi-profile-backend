@@ -1208,6 +1208,7 @@ app.get('/api/inv/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getInventory(req.params.userId, {
       view: getCleanParam(req.query.view, 'overview') || 'overview',
+      page: getCleanParam(req.query.page, ''),
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -1267,10 +1268,16 @@ app.post('/api/dismantle', requireBackendApiKey, requireUpdateAck, async (req, r
 
 app.get('/api/equipment/:userId', requireUpdateAck, async (req, res) => {
   try {
-    const filter = getCleanParam(req.query.filter, '');
+    const filter = getCleanParam(req.query.filter, '') || '';
     let sort = getCleanParam(req.query.sort, '') || 'rarity_desc';
     let slot = getCleanParam(req.query.slot, '') || 'all';
-    if (['weapon', 'gem', 'soul', 'equipped', 'all'].includes(filter)) {
+    let page = getCleanParam(req.query.page, '') || '1';
+    const pageMatch = String(filter).match(/^page[:_](\d+)$/i);
+    if (pageMatch) {
+      page = pageMatch[1];
+      slot = 'all';
+      sort = 'rarity_desc';
+    } else if (['weapon', 'gem', 'soul', 'equipped', 'all'].includes(filter)) {
       slot = filter;
     } else if (['rarity_desc', 'rarity_asc', 'power_desc', 'slot', 'equipped'].includes(filter)) {
       sort = filter;
@@ -1278,6 +1285,7 @@ app.get('/api/equipment/:userId', requireUpdateAck, async (req, res) => {
     const result = await getUserEquipment(req.params.userId, {
       sort,
       slot,
+      page,
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -1291,11 +1299,23 @@ app.get('/api/equipment/:userId', requireUpdateAck, async (req, res) => {
 
 app.get('/api/roles/:userId', requireUpdateAck, async (req, res) => {
   try {
-    const filter = getCleanParam(req.query.filter, 'all') || 'all';
-    const sort = getCleanParam(req.query.sort, 'rarity_desc') || 'rarity_desc';
+    const rawFilter = getCleanParam(req.query.filter, 'all') || 'all';
+    let filter = rawFilter;
+    let sort = getCleanParam(req.query.sort, 'equipped_desc') || 'equipped_desc';
+    let page = getCleanParam(req.query.page, '') || '1';
+    const pageMatch = String(rawFilter).match(/^page[:_](\d+)$/i);
+    if (pageMatch) {
+      page = pageMatch[1];
+      filter = 'all';
+      sort = 'equipped_desc';
+    } else if (['equipped_desc', 'rarity_desc', 'expiry_asc'].includes(rawFilter)) {
+      sort = rawFilter;
+      filter = 'all';
+    }
     const result = await getUserRoles(req.params.userId, {
       filter,
       sort,
+      page,
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -1815,6 +1835,7 @@ app.get('/api/domain/inventory/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getDomainInventory(req.params.userId, {
       view: getCleanParam(req.query.view, 'overview') || 'overview',
+      page: getCleanParam(req.query.page, ''),
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),

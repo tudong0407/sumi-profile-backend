@@ -48,6 +48,7 @@ import {
   pickCleanDisplayValue,
   getMaxRoleSlotsByLevel,
   computeRoleBuffTotals,
+  sanitizeRolePerkForDb,
 } from './profileService.js';
 import { trackQuestActivity } from './questService.js';
 
@@ -862,6 +863,7 @@ export async function buyShopItem(userId, payload = {}) {
       }
 
       const perk = ROLE_PERKS_MAP[it.role_id] || it.perk;
+      const dbPerk = sanitizeRolePerkForDb(perk);
       const maxSlots = getMaxRoleSlotsByLevel(user.level || 1);
       const usedSlots = new Set((userRoles || []).filter((r) => r.is_equipped && r.equipped_slot).map((r) => Number(r.equipped_slot)));
 
@@ -882,11 +884,11 @@ export async function buyShopItem(userId, payload = {}) {
         : totalCost;
 
       if (existing) {
-        await supabase
+        const { error: roleWriteErr } = await supabase
           .from('user_roles')
           .update({
             role_name: it.name,
-            role_perk: perk,
+            role_perk: dbPerk,
             is_permanent: isPermanent,
             expires_at: expiresAt,
             is_equipped: isEquipped,
@@ -895,12 +897,16 @@ export async function buyShopItem(userId, payload = {}) {
             paid_price: nextPaidPrice,
           })
           .eq('id', existing.id);
+        if (roleWriteErr) {
+          console.error('[Shop] user_roles update failed:', roleWriteErr);
+          throw new Error(`Lưu Role thất bại: ${roleWriteErr.message}`);
+        }
       } else {
-        await supabase.from('user_roles').insert({
+        const { error: roleWriteErr } = await supabase.from('user_roles').insert({
           user_id: cleanId,
           role_id: it.role_id,
           role_name: it.name,
-          role_perk: perk,
+          role_perk: dbPerk,
           is_permanent: isPermanent,
           expires_at: expiresAt,
           is_equipped: isEquipped,
@@ -908,6 +914,10 @@ export async function buyShopItem(userId, payload = {}) {
           source: 'shop',
           paid_price: totalCost,
         });
+        if (roleWriteErr) {
+          console.error('[Shop] user_roles insert failed:', roleWriteErr);
+          throw new Error(`Lưu Role thất bại: ${roleWriteErr.message}`);
+        }
       }
 
       if (isEquipped) {

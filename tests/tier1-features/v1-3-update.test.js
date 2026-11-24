@@ -419,7 +419,7 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
   });
 
   it('7. Update v1.3.1: zero "Độc quyền Fuyumi", 5 Vực emojis, Canvas Domain UI, KHO LINH THÚ rarity badges & 45% minigame calibration', async () => {
-    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5'].includes(LATEST_VERSION), `Unexpected LATEST_VERSION: ${LATEST_VERSION}`);
+    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5', '1.5.1'].includes(LATEST_VERSION), `Unexpected LATEST_VERSION: ${LATEST_VERSION}`);
 
     // 7A. No "Độc quyền Fuyumi" text in catalog, /info, battle logs, or pet detail card
     const cuuVi = PET_CATALOG.find((p) => p.pet_type === 'cuu_vi_hong_ho');

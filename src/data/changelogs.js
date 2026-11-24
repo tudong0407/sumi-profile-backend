@@ -5,9 +5,39 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.5';
+export const LATEST_VERSION = '1.5.1';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+
+/**
+ * Hotfix v1.5.1 (+1.000 LT đền bù sự cố Role Gacha & phân trang Kho Đồ).
+ * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level & KHÔNG dùng emoji Unicode Windows.
+ */
+export const V151_HOTFIX_CHANGELOG = {
+  version: '1.5.1',
+  title: 'HOTFIX v1.5.1 — SỬA LỖI LƯU ROLE GACHA, PHÂN TRANG KHO ĐỒ & ĐỀN BÙ +1.000 LT',
+  released_at: '2026-11-24',
+  color: '#ec4899',
+  is_big_update: false,
+  ack_reward_lt: 1000,
+  summary: 'Khắc phục triệt để lỗi lưu Role Quyền Năng Linh Phẩm / Tiên Phẩm khi /roll, mở rộng phân trang Trang 1/2/3 cho /roles, /phapbao, /linhvuc, /inv, cập nhật /wiki Roles & Đền bù +1.000 LT toàn server!',
+  sections: [
+    {
+      heading: `${em('su_medal_role')} Sửa Nóng Lỗi Lưu Role Gacha & Bù Role Tiên Phẩm`,
+      bullets: [
+        '**Khắc Phục Lỗi Mất Role Khi `/roll loai:role`:** Sửa lỗi giới hạn độ dài khiến 13 Role **Linh Phẩm & Tiên Phẩm** *(như Bát Hoang Chiến Thần, Lôi Vũ Hộ Pháp, Huyễn Ảnh Linh Tôn...)* bị rớt khi lưu vào túi. Đã cấp bù đầy đủ Role & hoàn Linh Thạch cho các tu sĩ bị ảnh hưởng.',
+        '**Đền Bù Toàn Server `+1.000 LT`:** Xác nhận bản cập nhật Hotfix v1.5.1 nhận ngay **`+1.000 Linh Thạch`**!',
+      ],
+    },
+    {
+      heading: `${em('su_wiki_scroll')} Phân Trang Kho Đồ Trang 1/2/3+ & Cập Nhật /wiki`,
+      bullets: [
+        '**Phân Trang Đầy Đủ (`/roles`, `/phapbao`, `/linhvuc`, `/inv`):** Bổ sung tham số `trang` và menu chuyển **Trang 1 / Trang 2 / Trang 3+** ngay trên bảng để xem trọn vẹn kho đồ dài mà không bị cắt dòng.',
+        '**Minh Bạch `/wiki` & Cơ Chế Bỏ Qua Khiên:** Thêm mục `Roles Quyền Năng & Discord` trong `/wiki` và ghi chú rõ các hiệu ứng **Phản Đòn / Đốt HP / Nổ Khiên (thẳng máu, bỏ qua khiên)**.',
+      ],
+    },
+  ],
+};
 
 /**
  * Bản nháp Chính Thức cho Ver 1.5 Big Update (+2.000 LT quà /updates).
@@ -48,6 +78,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V151_HOTFIX_CHANGELOG,
   V15_DRAFT_CHANGELOG,
   {
     version: '1.4.7',
