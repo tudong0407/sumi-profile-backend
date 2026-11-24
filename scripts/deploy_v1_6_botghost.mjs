@@ -598,42 +598,44 @@ function patchShopV16(origTree) {
 
   // 4. Ép edit-in-place toàn bộ /shop (1 tin nhắn duy nhất qua shop_boot_msg -> editId: shop_main_msg)
   const gb = new V16GraphBuilder();
-  gb._elements = els;
+  for (const el of els) {
+    if (el.source && el.target) {
+      gb.edges.push(el);
+      gb._edgeIds.add(el.id);
+    } else {
+      gb.nodes.push(el);
+      gb._nodeIds.add(el.id);
+    }
+  }
 
   // Redirect root -> shop_boot_msg -> sh_root_cat (only if not already patched)
   if (!byId.has('shop_boot_msg')) {
-    gb.act('shop_boot_msg', 'advanced_message', {
-      messageType: 'basic',
-      useComponentsV2: false,
+    embedMsg(gb, 'shop_boot_msg', {
+      title: `${uidEm('su_linhthach')} ĐANG MỞ TIÊN BẢO CÁC...`,
+      description: 'Đang tải danh mục Cửa Hàng & Quầy Tiêu Hao (Luck Potion)...',
+      color: '#ec4899',
       target: { reply: true },
       editId: 'shop_main_msg',
-      success_handles: false,
-      message: {
-        content: '',
-        embeds: [{
-          title: `${uidEm('su_linhthach')} ĐANG MỞ TIÊN BẢO CÁC...`,
-          description: 'Đang tải danh mục Cửa Hàng & Quầy Tiêu Hao (Luck Potion)...',
-          color: '#ec4899',
-          timestamp: false,
-          author: { name: '', iconURL: '', url: '' },
-          footer: { text: '', iconURL: '' },
-          image: { url: '' },
-          thumbnail: { url: '' },
-          fields: [],
-        }],
-      },
     }, { x: 0, y: 110 });
-    gb._elements = gb._elements.filter((e) => !(e.source === 'root' && e.target === 'sh_root_cat'));
+    gb.edges = gb.edges.filter((e) => {
+      if (e.source === 'root' && e.target === 'sh_root_cat') {
+        gb._edgeIds.delete(e.id);
+        return false;
+      }
+      return true;
+    });
     gb.link('root', 'shop_boot_msg');
     gb.link('shop_boot_msg', 'sh_root_cat');
   }
 
   // Gỡ shop_prev_ack & shop_role_ack để KHÔNG spawn tin nhắn trung gian thứ 2
   const rerouteEdge = (fromSrc, oldTgt, newTgt) => {
-    for (const e of gb._elements) {
+    for (const e of gb.edges) {
       if (e.source === fromSrc && e.target === oldTgt) {
+        gb._edgeIds.delete(e.id);
         e.target = newTgt;
         e.id = `reactflow__edge-${fromSrc}-${newTgt}`;
+        gb._edgeIds.add(e.id);
       }
     }
   };
@@ -641,12 +643,21 @@ function patchShopV16(origTree) {
     rerouteEdge(s, 'shop_prev_ack', 'shop_prev_api');
   }
   rerouteEdge('sel_shop_role', 'shop_role_ack', 'shop_role_prev_api');
-  gb._elements = gb._elements.filter((e) =>
-    e.id !== 'shop_prev_ack'
-    && e.id !== 'shop_role_ack'
-    && !(e.source === 'shop_prev_ack' && e.target === 'shop_prev_api')
-    && !(e.source === 'shop_role_ack' && e.target === 'shop_role_prev_api'),
-  );
+  gb.nodes = gb.nodes.filter((e) => {
+    if (e.id === 'shop_prev_ack' || e.id === 'shop_role_ack') {
+      gb._nodeIds.delete(e.id);
+      return false;
+    }
+    return true;
+  });
+  gb.edges = gb.edges.filter((e) => {
+    if ((e.source === 'shop_prev_ack' && e.target === 'shop_prev_api')
+      || (e.source === 'shop_role_ack' && e.target === 'shop_role_prev_api')) {
+      gb._edgeIds.delete(e.id);
+      return false;
+    }
+    return true;
+  });
 
   // Chuyển toàn bộ messages của /shop sang editId: 'shop_main_msg', showReplies: 'hide'
   const editIds = [
@@ -657,26 +668,26 @@ function patchShopV16(origTree) {
     'qreq_gate_msg', 'qrpet_gate_msg', 'shpr_gate_msg', 'shby_gate_msg',
     'shrp_gate_msg', 'shrb_gate_msg',
   ];
-  for (const el of gb._elements) {
-    if (!el.source && editIds.includes(el.id) && el.data?.data) {
+  for (const el of gb.nodes) {
+    if (editIds.includes(el.id) && el.data?.data) {
       el.data.data.target = { editId: 'shop_main_msg' };
       el.data.data.action_id = 'shop_main_msg';
       delete el.data.data.editId;
     }
-    if (!el.source && (el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
+    if ((el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
       el.data.data.showReplies = 'hide';
     }
   }
 
   // Nút truy cập nhanh [Tiêu Hao & Luck Potion] ngay tại Row 2 trang chủ /shop
-  if (!gb._elements.some((e) => e.id === 'btn_home_cons')) {
+  if (!gb._nodeIds.has('btn_home_cons')) {
     gb.advBtn('btn_home_cons', 'msg_shop_home', btnCfg('Tiêu Hao & Luck Potion', 'PRIMARY', 'su_sparkle', '2', '3', 'hide'), { x: 700, y: 1180 });
     gb.link('btn_home_cons', 'msg_shop_cons');
   }
 
   // Layer 2: Nút [Về Danh Mục Shop] ở mọi màn hình + đầy đủ 7 danh mục -> chọn/mua không bao giờ mất menu
-  if (!gb._elements.some((e) => e.id === 'msg_shop_home_2')) {
-    const baseMsgHome = gb._elements.find((e) => e.id === 'msg_shop_home');
+  if (!gb._nodeIds.has('msg_shop_home_2')) {
+    const baseMsgHome = gb.nodes.find((e) => e.id === 'msg_shop_home');
     const homeDesc = baseMsgHome?.data?.data?.message?.embeds?.[0]?.description || '';
     const homeTitle = baseMsgHome?.data?.data?.message?.embeds?.[0]?.title || `${uidEm('su_linhthach')} TIÊN BẢO CÁC • CỬA HÀNG SUMI FAMILY`;
 
@@ -764,7 +775,7 @@ function patchShopV16(origTree) {
       if (cd.isElse) gb.elseBranch('sh_sel_cat_2', brId, 'comparison', { x: cd.x, y: 1320 });
       else gb.branch('sh_sel_cat_2', brId, 'comparison', { type: 'equal_to', comparison_value: cd.key, ignoreCase: true, option: '', not: false }, { x: cd.x, y: 1320 });
 
-      const srcNode = gb._elements.find((e) => e.id === cd.srcMsg);
+      const srcNode = gb.nodes.find((e) => e.id === cd.srcMsg);
       const srcEmb = srcNode?.data?.data?.message?.embeds?.[0] || {};
       const m2Id = `${cd.srcMsg}_2`;
       embedMsg(gb, m2Id, {
@@ -777,7 +788,7 @@ function patchShopV16(origTree) {
       gb.link(brId, m2Id);
 
       if (cd.isRole) {
-        const srcSel = gb._elements.find((e) => e.id === 'sel_shop_role');
+        const srcSel = gb.nodes.find((e) => e.id === 'sel_shop_role');
         if (srcSel) {
           gb.advSelectMenu('sel_shop_role_2', m2Id, {
             placeholder: srcSel.data.data.placeholder,
@@ -856,7 +867,7 @@ function patchShopV16(origTree) {
       }
 
       cd.sels.forEach((sId, idx) => {
-        const srcSel = gb._elements.find((e) => e.id === sId);
+        const srcSel = gb.nodes.find((e) => e.id === sId);
         if (!srcSel) return;
         const s2Id = `${sId}_2`;
         const var2 = `${srcSel.data.data.customVariableName}_2`;
@@ -876,7 +887,7 @@ function patchShopV16(origTree) {
     }
   }
 
-  return gb._elements;
+  return gb.elements();
 }
 
 // ============================================================================
