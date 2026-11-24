@@ -751,7 +751,8 @@ function sweepTreeV16(tree) {
   const walk = (obj) => {
     if (typeof obj === 'string') {
       let s = replaceUnicodePictographs(obj);
-      s = s.replace(/Xác Nhận Cập Nhật \(\+[\d.,]+ LT\)/g, 'Xác Nhận Cập Nhật (+1.000 LT)');
+      s = s.replace(/(?:Tôi Đã Đọc & )?Xác Nhận Cập Nhật \(\+[\d.,]+ LT\)/g, 'Tôi Đã Đọc & Xác Nhận (+1.000 LT)');
+      s = s.replace(/Tôi Đã Đọc & Xác Nhận \(\+[\d.,]+ LT\)/g, 'Tôi Đã Đọc & Xác Nhận (+1.000 LT)');
       s = s.replace(/Cập nhật (?:SuMi )?v1\.[0-9]+(?:\.[0-9]+)?/g, 'Cập nhật v1.6');
       return s;
     }
@@ -892,11 +893,11 @@ async function main() {
   }
 
   if (want('sweep')) {
-    const skip = new Set(toDeploy.map((d) => d.name));
+    const skip = new Set(['sticky-set', 'sticky-off', ...toDeploy.map((d) => d.name)]);
     for (const c of live.cmds) {
       if (!c.enabled || skip.has(c.name)) continue;
       const before = JSON.stringify(decomp(c.compressed_tree));
-      if (before.includes('Xác Nhận Cập Nhật') && !before.includes('+1.000 LT')) {
+      if ((before.includes('Xác Nhận Cập Nhật') || before.includes('Tôi Đã Đọc & Xác Nhận')) && !before.includes('+1.000 LT')) {
         const swept = sweepTreeV16(decomp(c.compressed_tree));
         validateTreeStrict(swept, `sweep:/${c.name}`);
         toDeploy.push({ name: c.name, type: 'slash', groupId: c.groupId || PROFILE_GROUP_ID, elements: swept });
