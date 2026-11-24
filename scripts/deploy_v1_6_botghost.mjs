@@ -326,8 +326,34 @@ export function buildNhiemvuV16Cmd() {
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -120, y: 460 });
   gb.link('nv_br_tower', 'nv_api_tw');
   const nvTwOk = attachAckBranchV16(gb, 'nvt', 'nv_api_tw', 'nv_t_res', { x: -120, y: 620 });
-  embedMsg(gb, 'nv_msg_tw', { title: `${uidEm('su_arena')} THÁP THÍ LUYỆN 500 TẦNG`, description: '{nv_t_res.response.message}', color: '#3b82f6' }, { x: -120, y: 840 });
-  gb.link(nvTwOk, 'nv_msg_tw');
+  const cTwHasImg = gb.cmp('nv_tw_has_img', '{nv_t_res.response.image_url}', '^https://', 'matches_pattern', { option: '', not: false }, { x: -120, y: 800 });
+  gb.link(nvTwOk, cTwHasImg.condId);
+
+  embedMsg(gb, 'nv_msg_tw', {
+    title: `${uidEm('su_arena')} THÁP THÍ LUYỆN 500 TẦNG`,
+    description: '{nv_t_res.response.message}',
+    imageUrl: '{nv_t_res.response.image_url}',
+    color: '#3b82f6',
+  }, { x: -250, y: 980 });
+  gb.link(cTwHasImg.yes, 'nv_msg_tw');
+  gb.advBtn('btn_nv_tw_weblog', 'nv_msg_tw', {
+    style: 'LINK',
+    label: 'Xem Chi Tiết Trên Web',
+    emoji_id: uidId('su_realm_star'),
+    URL: '{nv_t_res.response.webLogUrl}',
+    orderComponent: true,
+    row: '1',
+    weight: '1',
+    showReplies: 'hide',
+  }, { x: -250, y: 1140 });
+
+  embedMsg(gb, 'nv_msg_tw_noimg', {
+    title: `${uidEm('su_arena')} THÁP THÍ LUYỆN 500 TẦNG`,
+    description: '{nv_t_res.response.message}',
+    imageUrl: '',
+    color: '#3b82f6',
+  }, { x: 20, y: 980 });
+  gb.link(cTwHasImg.no, 'nv_msg_tw_noimg');
 
   apiAction(gb, 'nv_api_rst', 'nv_r_res', 'POST', `${BACKEND_BASE}/api/quest/tower/reset`,
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 180, y: 460 });
