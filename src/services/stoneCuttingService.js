@@ -276,7 +276,7 @@ export async function previewStallStone(userId, rawTier = 'common', slotIndex = 
       `• ${st.clues[0]}`,
       `• ${st.clues[1]}`,
       '',
-      `*Lưu ý: Manh mối phản ánh tương đối (~65% thật / ~35% nhiễu). Bấm **Thiết Thạch #${st.slot}** để cắt ngay!*`,
+      `*Bấm **Thiết Thạch #${st.slot}** để cắt ngay viên đá này!*`,
     ];
 
     return {
