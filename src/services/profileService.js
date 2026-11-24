@@ -212,7 +212,7 @@ export function getRealmByLevel(level) {
 export function getExpForNextLevel(level) {
   const lvl = Number(level) || 1;
   if (lvl >= 100) return 500000;
-  return Math.floor(60 * Math.pow(lvl, 1.45));
+  return Math.floor(78 * Math.pow(lvl, 1.45));
 }
 
 /**

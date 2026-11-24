@@ -43,7 +43,7 @@ export async function renderRankCard(data, options = {}) {
     realm: sanitizeText(data.realm || 'I. Luyện Khí Sơ Kỳ'),
     level: Math.max(1, Number(data.level) || 1),
     exp: Math.max(0, Number(data.exp) || 0),
-    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(60 * Math.pow(data.level || 1, 1.45)))),
+    nextExp: Math.max(1, Number(data.next_level_exp) || (data.level >= 100 ? 500000 : Math.floor(78 * Math.pow(data.level || 1, 1.45)))),
     linhThach: Math.max(0, Number(data.linh_thach) || 0),
     clan: data.clan || null,
     married: data.married || null,

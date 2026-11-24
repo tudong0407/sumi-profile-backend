@@ -5,9 +5,44 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.5.1';
+export const LATEST_VERSION = '1.5.2';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+
+/**
+ * Bản cập nhật v1.5.2 (+500 LT):
+ * - Nâng cấp /farm tách Linh Điền & Linh Các + DM nhắc tưới / sắp héo 1h, 30p, 15p
+ * - Chuẩn hóa 100% thuật ngữ chiến đấu (1 thuật ngữ = 1 hiệu ứng duy nhất)
+ * - Mở rộng /wiki lên 10 chuyên mục (thêm domains 60 món & glossary 4 trang)
+ * - Cân bằng EXP lên cấp +30% (78 * Level^1.45, trần 500.000 EXP)
+ * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level, KHÔNG thông báo buff Viền/Ảnh Nền, và KHÔNG dùng emoji Unicode Windows.
+ */
+export const V152_CHANGELOG = {
+  version: '1.5.2',
+  title: 'CẬP NHẬT v1.5.2 — CHUẨN HÓA THUẬT NGỮ, /WIKI LINH VỰC & TỪ ĐIỂN, /FARM DM & CÂN BẰNG EXP',
+  released_at: '2026-11-24',
+  color: '#ec4899',
+  is_big_update: false,
+  ack_reward_lt: 500,
+  summary: 'Tách riêng Linh Điền & Linh Các kèm DM nhắc tưới/sắp héo; chuẩn hóa đồng bộ toàn bộ thuật ngữ chiến đấu; mở rộng /wiki lên 10 chuyên mục (Linh Vực • Thần Thức • Thần Cảnh & Từ Điển Thuật Ngữ 4 trang); cân bằng +30% EXP lên cấp & tặng +500 LT!',
+  sections: [
+    {
+      heading: `${em('su_wiki_scroll')} Chuẩn Hóa Thuật Ngữ & Mở Rộng /wiki (10 Chuyên Mục)`,
+      bullets: [
+        '**Đồng Bộ 100% Thuật Ngữ (`1 thuật ngữ = 1 hiệu ứng duy nhất`):** Hợp nhất toàn bộ mô tả trong Linh Vực, Thần Thức, Thần Cảnh, Pháp Bảo, Linh Thú và chiến báo (`Cường Hóa Buff Vực`, `Cường Hóa Debuff Vực`, `Kháng Trừ Linh Mạch Khắc Vực`, `Xuyên DEF` vs `Giảm DEF`, `Xuyên Kháng Vực`, `Bào Mòn Khiên`, `Giảm Khiên Tạo Mới`, `Cắt Trần HP`...).',
+        '**`/wiki` Thêm 2 Chuyên Mục Mới (`domains` & `glossary`):** Bổ sung kho tra cứu **Linh Vực • Thần Thức • Thần Cảnh** *(đủ 60 món công khai kèm ảnh & chủ Độc Nhất)* và **Từ Điển Thuật Ngữ Chiến Đấu** *(4 trang giải thích chi tiết từng cơ chế)*.',
+      ],
+    },
+    {
+      heading: `${em('su_farm_seed')} Nâng Cấp /farm (Tách Ô & DM Nhắc Tự Động) + Cân Bằng EXP`,
+      bullets: [
+        '**`/farm` Tách Rành Mạch Linh Điền & Linh Các:** Phân tách 2 khu vực riêng biệt trên giao diện để dễ theo dõi khi mua thêm ô, kèm bot **Nhiễm Nhiễm** tự động **DM nhắc đúng giờ tưới** *(1 lần)* và **cảnh báo sắp héo trước 1 giờ, 30 phút, 15 phút**.',
+        '**Nút Xem Nhật Ký Web Cố Định (`/battle` & `/linhmach`):** Luôn giữ nguyên phần kết quả & gắn nút **Xem Chi Tiết Trên Web** cố định ngay dưới chiến báo để bấm chuyển thẳng lên web dù trận kéo dài.',
+        '**Cân Bằng Tiến Độ Tu Luyện (`+30%` EXP Lên Cấp) & Quà `+500 LT`:** Điều chỉnh công thức EXP lên cấp từ `60 × Level^1.45` sang **`78 × Level^1.45`** *(giữ nguyên trần `500.000 EXP` tại Lv.100)*. Bấm nút xác nhận bên dưới để nhận ngay **`+500 Linh Thạch`**!',
+      ],
+    },
+  ],
+};
 
 /**
  * Hotfix v1.5.1 (+1.000 LT đền bù sự cố Role Gacha & phân trang Kho Đồ).
@@ -78,6 +113,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V152_CHANGELOG,
   V151_HOTFIX_CHANGELOG,
   V15_DRAFT_CHANGELOG,
   {

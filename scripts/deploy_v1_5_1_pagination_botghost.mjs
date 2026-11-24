@@ -775,7 +775,7 @@ export function buildInvPaginatedCmd() {
 // ============================================================================
 export function buildUpdatesV151Cmd() {
   const gb = new PaginatedGraphBuilder();
-  gb.rootSlash('updates', 'Xem bản cập nhật mới nhất (Hotfix v1.5.1) và chuyển xem lịch sử ngay tại chỗ', { ephemeral: false });
+  gb.rootSlash('updates', 'Xem bản cập nhật mới nhất (v1.5.2) và chuyển xem lịch sử ngay tại chỗ', { ephemeral: false });
   gb.errorHandlerWait();
 
   apiAction(gb, 'upds_api', 'upds_res', 'GET', `${BACKEND_BASE}/api/update`, '', { x: 0, y: 220 });
@@ -793,7 +793,13 @@ export function buildUpdatesV151Cmd() {
 
   const verOpts = [
     {
-      label: 'Phiên bản v1.5.1 (Mới nhất • Hotfix +1.000 LT)',
+      label: 'Phiên bản v1.5.2 (Mới nhất • +500 LT)',
+      description: 'Chuẩn hóa thuật ngữ, /wiki Linh Vực & Từ Điển, /farm DM & EXP +30%',
+      emoji_id: uidId('su_wiki_scroll'),
+      value: '1.5.2',
+    },
+    {
+      label: 'Phiên bản v1.5.1 (Hotfix)',
       description: 'Sửa lỗi lưu Role Gacha, Phân trang Trang 1/2/3 & Đền bù +1.000 LT',
       emoji_id: uidId('su_medal_role'),
       value: '1.5.1',
@@ -859,7 +865,7 @@ export function buildUpdatesV151Cmd() {
     const msgId = `upds_msg_${k}`;
 
     gb.advSelectMenu(selId, curMsgId, {
-      placeholder: 'Chọn phiên bản để xem ngay trên bảng này (v1.5.1 -> v1.1)...',
+      placeholder: 'Chọn phiên bản để xem ngay trên bảng này (v1.5.2 -> v1.1)...',
       customVariableName: varName,
       basic_options: verOpts,
       row: '1',

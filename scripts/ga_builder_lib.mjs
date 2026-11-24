@@ -777,7 +777,7 @@ export function attachUpdateAckBranch(gb, prefix, sourceNodeId, resVarName, {
 
   const btnId = `${prefix}_gate_btn`;
   gb.advBtn(btnId, gateMsgId, {
-    label: 'Tôi Đã Đọc & Xác Nhận (+800 LT)',
+    label: 'Tôi Đã Đọc & Xác Nhận (+500 LT)',
     style: 'SUCCESS',
     emoji: { id: '1573411649543737426', name: 'su_sparkle', animated: true },
     emoji_id: '1573411649543737426',

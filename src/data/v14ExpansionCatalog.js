@@ -306,22 +306,22 @@ export const V14_SPIRIT_VEIN_TIERS = [
  * Giá trị mạnh hơn Debuff Cấp 1 của chính Linh Vực đó đúng +20%..+30% (theo scaleFactor 1.22..1.30).
  */
 export const V14_DAO_AP_CONFIG = {
-  domain_mythic_1: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Vạn Kiếm Quy Khư (-40% Giáp, -28% Khiên/hiệp)' },
-  domain_mythic_2: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tru Tiên Kiếm Ý (-38% Giáp, +30% ST Bạo Kích)' },
-  domain_mythic_3: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Mộng Điệp Trụy Tâm (-33% Chính Xác, -25% HAX)' },
-  domain_mythic_4: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Kính Hoa Đoạn Mạch (-27% Chính Xác, -37% Khiên tạo)' },
-  domain_mythic_5: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tinh Đẩu Trấn Phong (-45% Hồi Máu, -28% Giáp)' },
-  domain_mythic_6: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Lưỡng Nghi Bế Linh (-42% Khiên tạo, -22% HAX)' },
-  domain_mythic_7: { durationTurns: 1, scaleFactor: 1.25, label: 'Đạo Áp • Lục Đạo Luân Hồi (12.5% DoT/hiệp, -44% Hồi Máu)' },
-  domain_mythic_8: { durationTurns: 2, scaleFactor: 1.22, label: 'Đạo Áp • Tinh Hải Thực Hồn (-17% Trần HP, 8.5% DoT/hiệp)' },
-  domain_mythic_9: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Đại Nhật Phán Quyết (+35% Bạo Kích nhận, -30% Giáp)' },
-  domain_mythic_10: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Cửu Tiêu Tịnh Diệt (-40% Hồi Máu, -30% Khiên/hiệp)' },
-  domain_unique_1: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hỗn Nguyên Trảm Đạo (-45% Giáp, -32% Khiên/hiệp)' },
-  domain_unique_2: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Bỉ Ngạn Huyễn Thệ (-35% Chính Xác, -28% HAX)' },
-  domain_unique_3: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Tiên Thiên Phong Thần (-49% Hồi Máu, -45% Khiên tạo)' },
-  domain_unique_4: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Vĩnh Dạ Phệ Linh (13.4% DoT/hiệp, -19% Trần HP)' },
-  domain_unique_5: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hồng Mông Thần Phạt (+38% Bạo Kích nhận, -33% Giáp)' },
-  domain_fuyumi_cuu_vi_hong_mong: { durationTurns: 3, scaleFactor: 1.30, label: 'Đạo Áp • Cửu Vĩ Hồng Mông Tuyệt Thế (-65% Giáp, 15.6% DoT, -78% Hồi Máu, -32.5% Trần HP)' },
+  domain_mythic_1: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Vạn Kiếm Quy Khư (-40% DEF, Bào Mòn 28% Khiên/hiệp)' },
+  domain_mythic_2: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tru Tiên Kiếm Ý (-38% DEF, +30% ST Bạo Kích)' },
+  domain_mythic_3: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Mộng Điệp Trụy Tâm (-33% Chính Xác, Giảm 25% Tỉ Lệ HAX)' },
+  domain_mythic_4: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Kính Hoa Đoạn Mạch (-27% Chính Xác, Giảm 37% Khiên Tạo Mới)' },
+  domain_mythic_5: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Tinh Đẩu Trấn Phong (Giảm 45% Hồi Máu, -28% DEF)' },
+  domain_mythic_6: { durationTurns: 2, scaleFactor: 1.24, label: 'Đạo Áp • Lưỡng Nghi Bế Linh (Giảm 42% Khiên Tạo Mới, Giảm 22% Tỉ Lệ HAX)' },
+  domain_mythic_7: { durationTurns: 1, scaleFactor: 1.25, label: 'Đạo Áp • Lục Đạo Luân Hồi (12.5% DoT/hiệp, Giảm 44% Hồi Máu)' },
+  domain_mythic_8: { durationTurns: 2, scaleFactor: 1.22, label: 'Đạo Áp • Tinh Hải Thực Hồn (Cắt 17% Trần HP, 8.5% DoT/hiệp)' },
+  domain_mythic_9: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Đại Nhật Phán Quyết (+35% ST Bạo Kích nhận, -30% DEF)' },
+  domain_mythic_10: { durationTurns: 2, scaleFactor: 1.25, label: 'Đạo Áp • Cửu Tiêu Tịnh Diệt (Giảm 40% Hồi Máu, Bào Mòn 30% Khiên/hiệp)' },
+  domain_unique_1: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hỗn Nguyên Trảm Đạo (-45% DEF, Bào Mòn 32% Khiên/hiệp)' },
+  domain_unique_2: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Bỉ Ngạn Huyễn Thệ (-35% Chính Xác, Giảm 28% Tỉ Lệ HAX)' },
+  domain_unique_3: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Tiên Thiên Phong Thần (Giảm 49% Hồi Máu, Giảm 45% Khiên Tạo Mới)' },
+  domain_unique_4: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Vĩnh Dạ Phệ Linh (13.4% DoT/hiệp, Cắt 19% Trần HP)' },
+  domain_unique_5: { durationTurns: 3, scaleFactor: 1.28, label: 'Đạo Áp • Hồng Mông Thần Phạt (+38% ST Bạo Kích nhận, -33% DEF)' },
+  domain_fuyumi_cuu_vi_hong_mong: { durationTurns: 3, scaleFactor: 1.30, label: 'Đạo Áp • Cửu Vĩ Hồng Mông Tuyệt Thế (-65% DEF, 15.6% DoT, Giảm 78% Hồi Máu, Cắt 32.5% Trần HP)' },
 };
 
 export const V14_ARTIST_PROMPTS = [

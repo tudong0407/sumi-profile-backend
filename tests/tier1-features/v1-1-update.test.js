@@ -275,7 +275,7 @@ describe('Tier 1 - Update v1.1 Comprehensive Suite', () => {
     assert.ok(burnRes.new_level < 3);
 
     // Level back up to Lv.3 -> highest_level_claimed is still 3 -> MUST receive 0 level-up LT!
-    await supabase.from('users').update({ exp: 150, last_chat_exp_at: null }).eq('user_id', USER_V11_B);
+    await supabase.from('users').update({ exp: 200, last_chat_exp_at: null }).eq('user_id', USER_V11_B);
     const reLvl = await grantChatExp({ userId: USER_V11_B, username: 'LevelUpTester' }, { rng: () => 0.5 });
     assert.equal(reLvl.leveled_up, true);
     assert.equal(reLvl.level, 3);

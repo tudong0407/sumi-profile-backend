@@ -78,7 +78,7 @@ import { assertPngValid } from '../helpers/pngValidator.js';
 const ARTIFACT_DIR = 'C:\\Users\\Fuyumi-ASUSF16\\.gemini\\antigravity\\brain\\6c4e030b-fb59-4575-8414-9779337f61d9';
 
 test('v1.4 [1a] Leaderboard hides Fuyumi from all 4 /top tabs & Sunday 19:00 UTC+7 settlement logic', async () => {
-  assert.ok(['1.4.7', '1.5', '1.5.1'].includes(LATEST_VERSION));
+  assert.ok(['1.4.7', '1.5', '1.5.1', '1.5.2'].includes(LATEST_VERSION));
 
   // Window test: Sunday 2026-11-22 19:05 UTC+7 = 2026-11-22T12:05:00Z
   assert.equal(isSundayWeeklySettlementWindow(new Date('2026-11-22T12:05:00Z')), true);
@@ -783,7 +783,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 });
 
 test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog', async () => {
-  assert.ok(['1.4.7', '1.5', '1.5.1'].includes(LATEST_VERSION));
+  assert.ok(['1.4.7', '1.5', '1.5.1', '1.5.2'].includes(LATEST_VERSION));
   const ch145 = getChangelogPayload('1.4.5');
   assert.equal(ch145.success, true);
   assert.equal(ch145.version, '1.4.5');
@@ -859,7 +859,7 @@ test('v1.4.5: /exp boost breakdown, Chat/Voice average math & v1.4.5 changelog',
 
 test('v1.4.7c Silent Hotfix: Web Battle Logs 2-Col + Domain HAX, Daily Shop Tiers, Owner/Invitee Guards & RAM Cache Limits', async () => {
   // 1. Silent hotfix must NOT bump LATEST_VERSION
-  assert.ok(['1.4.7', '1.5', '1.5.1'].includes(LATEST_VERSION));
+  assert.ok(['1.4.7', '1.5', '1.5.1', '1.5.2'].includes(LATEST_VERSION));
 
   // 2. Daily Shop shows tier emoji + rarity label on ALL pet/equipment slots (including rare/common), and zero pet tier orbs on consumables
   const dailyShop = await getDailyShopCatalog(null, { now: new Date('2026-11-23T05:30:00Z') });

@@ -217,6 +217,7 @@ export async function getBattleLogPayload({ battleId, channelId, userId } = {}) 
       success: true,
       found: false,
       battleId: null,
+      webLogUrl: `${PUBLIC_BASE_URL}/api/battle/logs/expired/view`,
       title: `${em('su_wiki_scroll')} NHẬT KÝ TRẬN ĐẤU`,
       description: 'Nhật ký trận đấu này đã quá hạn lưu trữ (tối đa 2 ngày) hoặc không tồn tại. Hãy dùng `/battle` để mở trận đấu mới!',
       footer: '',
@@ -612,7 +613,7 @@ function buildFullBattleLog({
     return d ? `**${name}** — *${d}*` : `**${name}**`;
   };
 
-  const domainLineTxt = (c) => {
+  const domainLineTxt = (c, compact = false) => {
     const dl = c.domainLoadout || {};
     if (!dl.domain) return null;
     const d = DOMAIN_BY_ID[dl.domain.domain_id] || dl.domain;
@@ -620,6 +621,13 @@ function buildFullBattleLog({
     const realm = dl.realm ? (DIVINE_REALM_BY_ID[dl.realm.realm_id] || dl.realm) : null;
     const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (sense?.bonus_energy || 0));
     const domElIcon = domainElementEmoji(d.element, em('su_realm_star'));
+    if (compact) {
+      const compactParts = [
+        sense ? `${senseEmoji(sense.sense_id, em('su_sparkle'))} ${sense.name}` : null,
+        realm ? `${realmEmojiById(realm.realm_id, em('su_arena'))} ${realm.name}` : null,
+      ].filter(Boolean).join(' • ');
+      return `• ${domainEmoji(d.domain_id, em('su_realm_star'))} Linh Vực: **${d.name}** *(${domElIcon} ${d.element} • ${lm} Linh Mạch${compactParts ? ` | ${compactParts}` : ''})*`;
+    }
     const sensePart = sense
       ? `${senseEmoji(sense.sense_id, em('su_sparkle'))} ${sense.name}${sense.desc ? ` (${sense.desc})` : ''}`.trim()
       : null;
@@ -635,13 +643,13 @@ function buildFullBattleLog({
     `**1. Phe Công:** **${attacker.name}** — ${atkIcon} **${attacker.petName}** *(${attacker.petRarity || 'Phàm'} • Hệ ${attacker.element} • Lv.${attacker.level} • ${attacker.star || 1}★)*`,
     `• \`ATK ${attacker.atk.toLocaleString('vi-VN')} | DEF ${attacker.def.toLocaleString('vi-VN')} | SPD ${attacker.spd.toLocaleString('vi-VN')} | HP ${initialHp.attacker.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(attacker)}`,
-    ...(domainLineTxt(attacker) ? [domainLineTxt(attacker)] : []),
+    ...(domainLineTxt(attacker, compact) ? [domainLineTxt(attacker, compact)] : []),
     ...formatEquipDetailedLines(attacker, compact),
     '',
     `**2. Phe Thủ:** **${defender.name}** — ${defIcon} **${defender.petName}** *(${defender.petRarity || 'Phàm'} • Hệ ${defender.element} • Lv.${defender.level} • ${defender.star || 1}★)*`,
     `• \`ATK ${defender.atk.toLocaleString('vi-VN')} | DEF ${defender.def.toLocaleString('vi-VN')} | SPD ${defender.spd.toLocaleString('vi-VN')} | HP ${initialHp.defender.toLocaleString('vi-VN')}\``,
     `• HAX Pet: ${petHaxTxt(defender)}`,
-    ...(domainLineTxt(defender) ? [domainLineTxt(defender)] : []),
+    ...(domainLineTxt(defender, compact) ? [domainLineTxt(defender, compact)] : []),
     ...formatEquipDetailedLines(defender, compact),
     `• Tương khắc: **${elemNote}**`,
   ];
@@ -710,37 +718,45 @@ function buildFullBattleLog({
     ...webFooterLines,
   ];
 
-  const assembleDiscord = (tLines, hLines = headerLines) => [
+  const assembleBody = (tLines, hLines = headerLines) => [
     ...hLines,
     ...startLines,
     '',
     `**Diễn Biến Chi Tiết (${turnNumber} Hiệp):**`,
     ...tLines,
-    ...discordFooterLines,
   ].join('\n');
 
-  let fullText = assembleDiscord(allTurnLines, headerLines);
+  const footerBlock = '\n' + discordFooterLines.join('\n');
+  const assembleDiscord = (tLines, hLines = headerLines) => `${assembleBody(tLines, hLines)}${footerBlock}`;
+
+  let activeHeader = headerLines;
+  let activeTurns = allTurnLines;
+  let fullText = assembleDiscord(activeTurns, activeHeader);
   if (fullText.length > 3880) {
-    fullText = assembleDiscord(allTurnLines, compactHeaderLines);
+    activeHeader = compactHeaderLines;
+    fullText = assembleDiscord(activeTurns, activeHeader);
   }
   if (fullText.length > 3880) {
-    fullText = assembleDiscord(compactTurnLines, compactHeaderLines);
+    activeTurns = compactTurnLines;
+    fullText = assembleDiscord(activeTurns, activeHeader);
   }
 
-  if (fullText.length > 3880 && compactTurnLines.length > 6) {
-    for (let keep = compactTurnLines.length - 1; keep >= 6; keep -= 1) {
+  if (fullText.length > 3880 && compactTurnLines.length > 2) {
+    for (let keep = compactTurnLines.length - 1; keep >= 2; keep -= 1) {
       const headCount = Math.ceil(keep / 2);
       const tailCount = Math.floor(keep / 2);
       const omitted = compactTurnLines.length - headCount - tailCount;
       const omitNote = webLogUrl
         ? `• *... (đã ẩn ${omitted} lượt giữa do giới hạn 4096 ký tự Discord — [Bấm xem Full 100% trên Web](${webLogUrl})) ...*`
         : `• *... (đã rút gọn ${omitted} lượt giữa để vừa giới hạn tin nhắn Discord) ...*`;
-      const candidate = assembleDiscord([
+      const trimmedTurns = [
         ...compactTurnLines.slice(0, headCount),
         omitNote,
         ...compactTurnLines.slice(-tailCount),
-      ], compactHeaderLines);
-      if (candidate.length <= 3880 || keep === 6) {
+      ];
+      const candidate = assembleDiscord(trimmedTurns, activeHeader);
+      if (candidate.length <= 3880 || keep === 2) {
+        activeTurns = trimmedTurns;
         fullText = candidate;
         break;
       }
@@ -748,7 +764,13 @@ function buildFullBattleLog({
   }
 
   if (fullText.length > 3950) {
-    fullText = fullText.slice(0, 3940) + '\n…';
+    const bodyOnly = assembleBody(activeTurns, activeHeader);
+    const maxBodyLen = Math.max(400, 3920 - footerBlock.length - 4);
+    const clippedBody = bodyOnly.length > maxBodyLen ? `${bodyOnly.slice(0, maxBodyLen)}\n…` : bodyOnly;
+    fullText = `${clippedBody}${footerBlock}`;
+    if (fullText.length > 3950) {
+      fullText = fullText.slice(0, 3940) + '\n…';
+    }
   }
   return {
     fullText,

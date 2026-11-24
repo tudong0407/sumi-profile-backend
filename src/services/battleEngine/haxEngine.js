@@ -755,18 +755,18 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
   let defPiercePct = sumV13Prop(actorV13, 'defPiercePct')
     + Number(actorDomOwn.defPiercePct || 0)
     + (Number(actor?.setBonus?.defPiercePct || 0) / 100);
-  if (hasPet(actor, 'thai_duong_kim_o')) { defPiercePct += 0.65; haxNotes.push('Xuyên Giáp 65%'); }
-  else if (hasPet(actor, 'hoa_diem_ho')) { defPiercePct += 0.50; haxNotes.push('Thiêu Hồn Xuyên 50% Giáp'); }
-  else if (hasPet(actor, 'bach_kim_ho_tu')) { defPiercePct += 0.35; haxNotes.push('Phá Giáp Trảm 35%'); }
+  if (hasPet(actor, 'thai_duong_kim_o')) { defPiercePct += 0.65; haxNotes.push('Xuyên 65% DEF'); }
+  else if (hasPet(actor, 'hoa_diem_ho')) { defPiercePct += 0.50; haxNotes.push('Thiêu Hồn Xuyên 50% DEF'); }
+  else if (hasPet(actor, 'bach_kim_ho_tu')) { defPiercePct += 0.35; haxNotes.push('Phá Giáp Trảm Xuyên 35% DEF'); }
 
-  if (hasItem(actor, 'weapon_mythic_4')) { defPiercePct += 0.55; haxNotes.push('Phần Thiên Xuyên 55% Giáp'); }
-  else if (hasItem(actor, 'weapon_epic_4')) { defPiercePct += 0.30; haxNotes.push('Trảm Tiên Xuyên 30% Giáp'); }
-  else if (hasItem(actor, 'weapon_rare_6')) { defPiercePct += 0.18; haxNotes.push('Trảm Mã Xuyên 18% Giáp'); }
+  if (hasItem(actor, 'weapon_mythic_4')) { defPiercePct += 0.55; haxNotes.push('Phần Thiên Xuyên 55% DEF'); }
+  else if (hasItem(actor, 'weapon_epic_4')) { defPiercePct += 0.30; haxNotes.push('Trảm Tiên Xuyên 30% DEF'); }
+  else if (hasItem(actor, 'weapon_rare_6')) { defPiercePct += 0.18; haxNotes.push('Trảm Mã Xuyên 18% DEF'); }
   else if (hasItem(actor, 'weapon_common_4')) { defPiercePct += 0.10; }
 
   if (isCrit && hasPet(actor, 'tu_kim_bach_trach')) {
     defPiercePct += 0.45;
-    haxNotes.push('Thiên Cơ Crit Xuyên 45% Giáp');
+    haxNotes.push('Thiên Cơ Crit Xuyên 45% DEF');
   }
   if (isCrit) {
     defPiercePct += sumV13Prop(actorV13, 'critDefPiercePct');

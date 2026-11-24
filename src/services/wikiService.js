@@ -17,6 +17,11 @@ import {
 } from '../data/catalog.js';
 import { V14_EXPLORER_MAPS } from '../data/v14ExpansionCatalog.js';
 import {
+  V13_DOMAINS,
+  V13_DIVINE_SENSES,
+  V13_DIVINE_REALMS,
+} from '../data/v13ExpansionCatalog.js';
+import {
   em,
   tierEmoji,
   realmEmoji,
@@ -27,17 +32,35 @@ import {
   levelMilestoneEmoji,
 } from '../config/emojiHelper.js';
 
-export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer'];
+export const VALID_CATEGORIES = [
+  'overview',
+  'realms',
+  'battle',
+  'equipment',
+  'pets',
+  'domains',
+  'roles',
+  'economy',
+  'explorer',
+  'glossary',
+];
 
 const CATEGORY_ALIASES = {
   beginner: 'overview',
   tong_quan: 'overview',
   canh_gioi: 'realms',
   dau_truong: 'battle',
-  linh_vuc: 'battle',
-  domain: 'battle',
   trang_bi: 'equipment',
   linh_thu: 'pets',
+  linh_vuc: 'domains',
+  linhvuc: 'domains',
+  domain: 'domains',
+  domains: 'domains',
+  than_thuc: 'domains',
+  thanthuc: 'domains',
+  than_canh: 'domains',
+  thancanh: 'domains',
+  linh_vuc_than_thuc: 'domains',
   role: 'roles',
   quyen_nang: 'roles',
   chuc_nang: 'roles',
@@ -51,12 +74,23 @@ const CATEGORY_ALIASES = {
   ban_do: 'explorer',
   map: 'explorer',
   dai_luc: 'explorer',
+  thuat_ngu: 'glossary',
+  thuatngu: 'glossary',
+  tu_dien: 'glossary',
+  tudien: 'glossary',
+  terms: 'glossary',
+  mechanics: 'glossary',
+  glossary: 'glossary',
+  glossary_1: 'glossary',
+  glossary_2: 'glossary',
+  glossary_3: 'glossary',
+  glossary_4: 'glossary',
 };
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.5 • Tu Tiên • Linh Thú • Pháp Bảo • 40 Role Quyền Năng • Set Buff • Pity 350',
-  version: '1.5',
+  subtitle: 'Cẩm nang v1.5.2 • 10 Chuyên Mục • 165 Pháp Bảo • 90 Linh Thú • 60 Linh Vực • Từ Điển Thuật Ngữ',
+  version: '1.5.2',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -66,7 +100,7 @@ export const WIKI_METADATA = {
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
   updated_at: '2026-11-24T00:00:00.000Z',
-  total_categories: 8,
+  total_categories: 10,
 };
 
 export const WIKI_CATEGORIES = {
@@ -125,7 +159,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nguồn EXP & Mốc Level Role',
-        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 60 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
+        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 78 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
       },
     ],
     fields: [
@@ -136,7 +170,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
-        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `60 × Level^1.45` *(trần `500.000 EXP`)* • **Viền & Ảnh Nền (`/shop`):** `Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10%` EXP & LT mỗi món *(max +20%)* • Tra tổng boost bằng `/exp`.',
+        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `78 × Level^1.45` *(trần `500.000 EXP`)* • **Viền & Ảnh Nền (`/shop`):** `Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10%` EXP & LT mỗi món *(max +20%)* • Tra tổng boost bằng `/exp`.',
         inline: false,
       },
       {
@@ -180,8 +214,8 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (Hiệp 2+)`,
         value: [
           `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
-          `• **Cơ chế:** Khi 2 Vực giằng co, mỗi bên nhận Buff sân nhà (trừ *Xuyên Kháng*); **Thần Thức** tăng Mạch/Buff, **Thần Cảnh** tăng Debuff. ${em('dao_ap_crest')} **Đạo Áp (\`1–3 hiệp\`)** kích hoạt khi Vực Thần Thoại phá Vực địch.`,
-          `• **Buff SET (2 Tầng Không Cộng Dồn):** Full Hệ \`4/4\` (**+8%**) • \`5/5\` (**+12%** toàn chỉ số); Set Thần Thoại cùng hệ \`2/3/4/5\` (**+6/+12/+18/+25%** toàn chỉ số, \`5/5\` thêm **+10% Xuyên Giáp** & **+1 Linh Mạch**).`,
+          `• **Cơ chế:** Khi 2 Vực giằng co, mỗi bên nhận Cường Hóa Buff Vực sân nhà (trừ *Xuyên Kháng Vực*); **Thần Thức** tăng Linh Mạch / Cường Hóa Buff Vực / Kháng Trừ Linh Mạch Khắc Vực, **Thần Cảnh** tăng Cường Hóa Debuff Vực. ${em('dao_ap_crest')} **Đạo Áp (\`1–3 hiệp\`)** kích hoạt khi Vực Thần Thoại phá Vực địch.`,
+          `• **Buff SET (2 Tầng Không Cộng Dồn):** Full Hệ \`4/4\` (**+8%**) • \`5/5\` (**+12%** toàn chỉ số); Set Thần Thoại cùng hệ \`2/3/4/5\` (**+6/+12/+18/+25%** toàn chỉ số, \`5/5\` thêm **+10% Xuyên DEF** & **+1 Linh Mạch**).`,
         ].join('\n'),
         inline: false,
       },
@@ -263,6 +297,44 @@ export const WIKI_CATEGORIES = {
       },
     ],
     content: '90 Linh Thú tiêu chuẩn chia 4 bậc (13 Phàm • 13 Linh • 14 Tiên • 50 Thần Thoại), quản lý qua /linhthu, /pet & /autosell.',
+  },
+
+  domains: {
+    id: 'domains',
+    title: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (60 Món Công Khai)`,
+    icon: em('su_realm_star'),
+    description: '30 Linh Vực • 15 Thần Thức • 15 Thần Cảnh công khai, cơ chế Linh Mạch, Khắc Vực & Gacha /roll loai:domain.',
+    image_url: '',
+    sections: [
+      {
+        heading: '1. Hệ Thống 3 Slot Vực (Hiệp 2+)',
+        content: '• Linh Vực (30 món: 15 Phàm/Linh/Tiên + 10 Thần Thoại Thường + 5 Độc Nhất): cung cấp Linh Mạch (3→7), Buff phe ta, Debuff phe địch, Xuyên Kháng Vực (56%/60%) & Áp Chế Buff Vực Địch (5%).\n• Thần Thức (15 món): cộng +1→+6 Linh Mạch tối đa, +5%→+19% Cường Hóa Buff Vực & 0%→70% Kháng Trừ Linh Mạch Khắc Vực.\n• Thần Cảnh (15 món): tăng +8%→+28% Cường Hóa Debuff Vực (khuếch đại toàn bộ debuff Vực) + kèm Debuff phụ riêng.',
+      },
+      {
+        heading: '2. Ngũ Hành Khắc Vực & Lệnh Quản Lý',
+        content: '• Vòng Khắc Vực 5 hệ: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực (bên khắc chỉ mất 1 Mạch/hiệp, bên bị khắc mất 2 Mạch/hiệp).\n• Sở hữu qua /roll loai:domain (50 LT/lượt, Pity 350 riêng cho Vực), trang bị qua /linhvuc hanh_dong:equip hoặc thu hồi /linhvuc hanh_dong:dismantle.',
+      },
+    ],
+    fields: [
+      {
+        name: `${em('su_realm_star')} 3 Thành Phần Bộ Vực (60 Món Công Khai)`,
+        value: [
+          '• **Linh Vực (30):** `5 Phàm (3 Mạch)` • `5 Linh (4 Mạch)` • `5 Tiên (5 Mạch)` • `10 Thần Thoại (6 Mạch, Xuyên Kháng Vực 56%)` • `5 Độc Nhất (7 Mạch, Xuyên Kháng Vực 60%, Áp Chế 5% Buff Vực Địch)`.',
+          '• **Thần Thức (15):** `3 Phàm (+1)` • `3 Linh (+2)` • `3 Tiên (+3)` • `4 Thần Thoại (+4)` • `2 Độc Nhất (+5/+6 Mạch)` • Cộng **Cường Hóa Buff Vực** (`+5%→+19%`) & **Kháng Trừ Linh Mạch Khắc Vực** (`0%→70%`).',
+          '• **Thần Cảnh (15):** `3 Phàm (+8%)` • `3 Linh (+12%)` • `3 Tiên (+18%)` • `4 Thần Thoại (+25%)` • `2 Độc Nhất (+28%)` **Cường Hóa Debuff Vực** + Debuff phụ.',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('dao_ap_crest')} Khắc Vực, Đạo Áp & Gacha /roll loai:domain`,
+        value: [
+          `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
+          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5%, Pity 350)* • Trang bị & xem kho qua `/linhvuc` • Dùng menu chọn từng món để xem ảnh & chủ sở hữu Độc Nhất.',
+        ].join('\n'),
+        inline: false,
+      },
+    ],
+    content: '60 món công khai (30 Linh Vực, 15 Thần Thức, 15 Thần Cảnh), kích hoạt từ Hiệp 2 trong /battle.',
   },
 
   roles: {
@@ -417,12 +489,126 @@ export const WIKI_CATEGORIES = {
     ],
     content: 'Khám Phá /explorer v1.5 qua 12 địa danh (3.5k → 112k Lực), +5% LT (210–315 LT/h), Thuận Hệ Địa Hình (+6% sống / +10% LT) & nhặt 60% bảo vật rơi.',
   },
+
+  glossary: {
+    id: 'glossary',
+    title: `${em('su_wiki_scroll')} Từ Điển Thuật Ngữ Chiến Đấu (4 Trang)`,
+    icon: em('su_wiki_scroll'),
+    description: 'Chuẩn hóa 1 thuật ngữ = 1 hiệu ứng duy nhất trên toàn bộ Pháp Bảo, Linh Thú, Linh Vực, Thần Thức & Thần Cảnh.',
+    image_url: '',
+    pages: [
+      {
+        page: 1,
+        subtitle: 'Trang 1/4 — Chỉ Số, Giáp, Xuyên DEF & Hồi Phục',
+        fields: [
+          {
+            name: `${em('su_crossed_swords')} Xuyên DEF vs Giảm DEF (Không Trùng Nhau)`,
+            value: [
+              '• **`Xuyên X% DEF`** *(`defPiercePct`, trần `90%`)*: Chỉ số **tự thân của người đánh** khi ra đòn, không gắn debuff lên địch. Tính ở bước kết toán sát thương.',
+              '• **`Giảm X% DEF`** *(`defDebuffPct` / `defReductionPct`, trần `75%`)*: **Debuff gắn trực tiếp lên kẻ địch** từ kỹ năng hoặc Linh Vực/Thần Cảnh.',
+              '• **Công thức tính Giáp thực tế:** `DEF hiệu dụng = DEF × (1 - Giảm DEF) × (1 - Xuyên DEF)` *(nhân `Giảm DEF` trước, rồi mới `Xuyên DEF`)*.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_stats_chart')} Sát Thương Chuẩn, Hút Máu & Giới Hạn HP`,
+            value: [
+              '• **Sát Thương Chuẩn (Bỏ Qua DEF & Khiên):** Các hiệu ứng **Đốt HP / Trúng Độc (DoT)**, **Phản Đòn**, **Nổ Hộ Thuẫn**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** trừ **thẳng vào HP** mà không qua Giáp hay Khiên.',
+              '• **`Giảm X% Hồi Máu`** *(`healReductionPct`, trần `90%`)*: Giảm tương ứng lượng HP hồi từ kỹ năng hồi máu, Hút Máu và tái sinh *(không giảm Khiên)*.',
+              '• **`Cắt X% Trần HP Tối Đa`** *(`maxHpCutPct`, trần `48%`)*: Hạ trực tiếp trần HP tối đa của mục tiêu trong suốt trận *(vào từ Linh Vực / Thần Cảnh / Đạo Áp)*.',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
+      },
+      {
+        page: 2,
+        subtitle: 'Trang 2/4 — Hệ Thống Khiên & 5 Cơ Chế Khắc Chế Khiên',
+        fields: [
+          {
+            name: `${em('su_shield_def')} Tạo Khiên & Tăng Độ Dày Khiên`,
+            value: [
+              '• **Khiên Chắn (Shield):** Thanh giáp ảo hấp thụ sát thương thường/bạo kích trước khi trừ vào HP thật.',
+              '• **`Tăng +X% Độ Dày Khiên`** *(`shieldStrengthBonusPct`, trần `+55%`)*: Khuếch đại mọi lượng Khiên phe ta tạo ra từ Pet, Pháp Bảo hoặc Linh Vực.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_thunder_hax')} 5 Cơ Chế Khắc Chế Khiên Riêng Biệt`,
+            value: [
+              '• **`Xuyên X% Khiên`** *(`shieldPiercePct`)*: Một phần sát thương đánh xuyên thẳng vào HP thật, phần còn lại vẫn đánh vào Khiên.',
+              '• **`Phá Khiên (×2 / ×2.2 ST lên Khiên)`** *(`shieldDamageMult`)*: Gây gấp `2×` *(hoặc `2.2×`)* sát thương trực tiếp lên thanh Khiên địch để đập vỡ cực nhanh.',
+              '• **`Bào Mòn X% Khiên/hiệp`** *(`shieldDecayPct`, trần `58%`)*: Cuối mỗi hiệp tự động gọt bớt `%` Khiên hiện có của địch.',
+              '• **`Giảm X% Khiên Tạo Mới`** *(`enemyShieldCapReductionPct`, trần `62%`)*: Ép mọi Khiên mới địch dựng lên bị cắt giảm theo `%` này.',
+              '• **Cấm / Cướp Khiên:** Chặn hoàn toàn việc tạo Khiên mới hoặc hút trực tiếp Khiên địch chuyển sang cho bản thân.',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
+      },
+      {
+        page: 3,
+        subtitle: 'Trang 3/4 — Linh Vực, Thần Thức, Thần Cảnh & Đạo Áp',
+        fields: [
+          {
+            name: `${em('su_realm_star')} Linh Mạch, Khắc Vực & Kháng Trừ Linh Mạch`,
+            value: [
+              '• **Linh Mạch & Khắc Vực:** Linh Vực vào sân từ Hiệp 2. Nếu 2 bên cùng bật Vực sẽ trừ Linh Mạch mỗi hiệp; bên bị Khắc Vực mất **2 Mạch/hiệp** thay vì **1 Mạch/hiệp**.',
+              '• **`Kháng Trừ Linh Mạch Khắc Vực`** *(`clash_resist_chance`)*: Xác suất **`%` giữ nguyên không bị trừ thêm Linh Mạch** khi bị Vực địch khắc hệ *(không phải kháng sát thương nguyên tố)*.',
+              '• **`Cường Hóa Buff Vực`** *(`buff_boost_pct`)*: Khuếch đại các chỉ số buff cho phe mình từ Linh Vực.',
+              '• **`Cường Hóa Debuff Vực`** *(`debuff_boost_pct`)*: Khuếch đại **toàn bộ Debuff của Linh Vực lẫn Debuff phụ của Thần Cảnh** lên phe địch.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('dao_ap_crest')} Xuyên Kháng Vực, Áp Chế & Đạo Áp`,
+            value: [
+              '• **`Xuyên Kháng Vực`** *(`56% / 60% / 100%`)*: Khi 2 Linh Vực đang giằng co, bình thường Debuff Vực bị chặn; chỉ số này cho phép **ép một phần (`56%/60%`) hoặc toàn bộ (`100%`) Debuff Vực xuyên thẳng vào địch**.',
+              '• **`Áp Chế Buff Vực Địch`** *(`5% / 100%`)*: Trừ trực tiếp hiệu lực Buff Vực phe địch đang nhận.',
+              '• **`Đạo Áp` (`1–3 hiệp`):** Hiệu ứng đặc quyền khi Linh Vực Thần Thoại phá vỡ Vực địch (hoặc địch không có Vực), áp thêm `-DEF`, `Bào Mòn Khiên`, `Giảm Hồi Máu`, `Cắt Trần HP`.',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
+      },
+      {
+        page: 4,
+        subtitle: 'Trang 4/4 — Khống Chế (CC), HAX, Kháng & Buff SET',
+        fields: [
+          {
+            name: `${em('su_sparkle')} Khống Chế (CC), Miễn Nhiễm & Giảm Tỉ Lệ HAX`,
+            value: [
+              '• **`Kháng X% Khống Chế`** *(`ccResistPct`, trần `92%`)*: Xác suất kháng các hiệu ứng mất lượt *(Choáng, Đóng Băng, Ngủ, Mị Hoặc, Tê Liệt)*.',
+              '• **`Miễn Nhiễm 100%`** *(`ccImmuneAll`)*: Miễn nhiễm tuyệt đối mọi trạng thái Khống Chế *(hoặc nhóm cụ thể như Độc/Đốt)*.',
+              '• **`Giảm X% Tỉ Lệ HAX`** *(`haxFailPct`, trần `42%`)*: Làm giảm xác suất kích hoạt nội tại HAX chủ động của đối thủ.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('explorer_world_map_v14')} Buff SET & Thuận Hệ Địa Hình`,
+            value: [
+              '• **Buff SET 2 Tầng (Không Cộng Dồn):** Đếm theo số món cùng Hệ trong đội hình `(1 Pet + 3 Pháp Bảo + 1 Linh Vực)`: Full Hệ Thường `4/4` (**+8%**), `5/5` (**+12%**); Set Thần Thoại `2/3/4/5` (**+6/+12/+18/+25%** toàn chỉ số, mốc `5/5` thêm **+10% Xuyên DEF** & **+1 Linh Mạch**).',
+              '• **Thuận Hệ Địa Hình (`/explorer`):** Pet hoặc Linh Vực khớp Hệ của Map được cộng **`+6%` Tỉ Lệ Sống Sót** & **`+10%` Linh Thạch**.',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
+      },
+    ],
+    sections: [
+      {
+        heading: 'Từ Điển Thuật Ngữ Chiến Đấu SuMi Family (4 Trang)',
+        content: 'Trang 1: Chỉ Số, Xuyên DEF vs Giảm DEF, ST Chuẩn, Giảm Hồi Máu, Cắt Trần HP. Trang 2: Tăng Độ Dày Khiên & 5 cơ chế Khắc Chế Khiên. Trang 3: Linh Mạch, Kháng Trừ Linh Mạch Khắc Vực, Cường Hóa Buff/Debuff Vực, Xuyên Kháng Vực, Áp Chế & Đạo Áp. Trang 4: Kháng Khống Chế, Miễn Nhiễm 100%, Giảm Tỉ Lệ HAX, Buff SET & Thuận Hệ Địa Hình.',
+      },
+    ],
+    content: 'Từ điển chuẩn hóa thuật ngữ chiến đấu SuMi Family (4 trang): 1 thuật ngữ = 1 hiệu ứng duy nhất.',
+  },
 };
 
 /**
- * Tra cứu danh mục Wiki (tất cả 6 chuyên mục hoặc lọc 1 chuyên mục duy nhất)
+ * Tra cứu danh mục Wiki (tất cả 10 chuyên mục hoặc lọc 1 chuyên mục duy nhất, hỗ trợ phân trang)
  */
-export function getWikiData(categoryId = null) {
+export function getWikiData(categoryId = null, page = 1) {
   if (!categoryId || typeof categoryId !== 'string') {
     return {
       success: true,
@@ -460,23 +646,42 @@ export function getWikiData(categoryId = null) {
     battle: '#f43f5e',
     equipment: '#f59e0b',
     pets: '#ec4899',
+    domains: '#a855f7',
     roles: '#a855f7',
     economy: '#10b981',
     explorer: '#10b981',
+    glossary: '#38bdf8',
   };
-  const fieldLines = Array.isArray(catObj.fields) && catObj.fields.length > 0
-    ? catObj.fields.map((f) => `**${f.name}**\n${f.value}`).join('\n\n')
+
+  let requestedPage = Number(page);
+  if ((!Number.isFinite(requestedPage) || requestedPage < 1) && /^glossary_(\d+)$/.test(raw)) {
+    requestedPage = Number(raw.split('_')[1]);
+  }
+  const hasPages = Array.isArray(catObj.pages) && catObj.pages.length > 0;
+  const totalPages = hasPages ? catObj.pages.length : 1;
+  const currentPage = hasPages
+    ? Math.min(Math.max(1, Math.floor(requestedPage || 1)), totalPages)
+    : 1;
+  const activePageObj = hasPages ? catObj.pages[currentPage - 1] : null;
+  const activeFields = activePageObj ? activePageObj.fields : catObj.fields;
+  const activeSubtitle = activePageObj?.subtitle || catObj.description || '';
+
+  const fieldLines = Array.isArray(activeFields) && activeFields.length > 0
+    ? activeFields.map((f) => `**${f.name}**\n${f.value}`).join('\n\n')
     : '';
-  let flatDesc = [catObj.description ? `*${catObj.description}*` : '', fieldLines].filter(Boolean).join('\n\n');
+  let flatDesc = [activeSubtitle ? `*${activeSubtitle}*` : '', fieldLines].filter(Boolean).join('\n\n');
   if (flatDesc.length > 3950) flatDesc = `${flatDesc.slice(0, 3940)}\n…`;
 
   return {
     success: true,
     ...WIKI_METADATA,
     category: resolvedId,
+    page: currentPage,
+    total_pages: totalPages,
+    pages: hasPages ? catObj.pages : undefined,
     data: catObj,
     embed_flat: {
-      title: catObj.title,
+      title: hasPages ? `${catObj.title} — Trang ${currentPage}/${totalPages}` : catObj.title,
       description: flatDesc,
       image_url: catObj.image_url || '',
       color: colorMap[resolvedId] || '#ec4899',
@@ -485,10 +690,13 @@ export function getWikiData(categoryId = null) {
 }
 
 /**
- * Trả về danh mục phân nhóm phục vụ Dropdown Trang Bị (3 nhóm) & Linh Thú (4 phẩm cấp — 90 Linh Thú tiêu chuẩn)
+ * Trả về danh mục phân nhóm phục vụ Dropdown Trang Bị (3 nhóm), Linh Thú (4 phẩm cấp — 90 Linh Thú tiêu chuẩn) & Linh Vực (60 món công khai)
  */
 export function getWikiCatalogSummary() {
   const standardPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+  const publicDomains = V13_DOMAINS.filter((d) => !d.is_exclusive_fuyumi);
+  const publicSenses = V13_DIVINE_SENSES.filter((s) => !s.is_exclusive_fuyumi);
+  const publicRealms = V13_DIVINE_REALMS.filter((r) => !r.is_exclusive_fuyumi);
   return {
     success: true,
     equipment: {
@@ -501,6 +709,11 @@ export function getWikiCatalogSummary() {
       rare: standardPets.filter((p) => p.rarity_key === 'rare'),
       epic: standardPets.filter((p) => p.rarity_key === 'epic'),
       mythic: standardPets.filter((p) => p.rarity_key === 'mythic'),
+    },
+    domains: {
+      domain: publicDomains.map((d) => ({ id: d.domain_id, name: d.name, rarity: d.rarity, rarity_key: d.rarity_key, element: d.element, is_unique: d.is_unique })),
+      sense: publicSenses.map((s) => ({ id: s.sense_id, name: s.name, rarity: s.rarity, rarity_key: s.rarity_key, is_unique: s.is_unique })),
+      realm: publicRealms.map((r) => ({ id: r.realm_id, name: r.name, rarity: r.rarity, rarity_key: r.rarity_key, is_unique: r.is_unique })),
     },
   };
 }
@@ -654,6 +867,137 @@ export async function getWikiPetDetail(petType) {
     embed: {
       title: `${petEmoji(pet.pet_type, pet.icon)} ${pet.pet_name}`.trim(),
       description: descriptionLines.join('\n'),
+      color: tier.color,
+      color_dec: tier.colorDec,
+      image_url: imageUrl,
+      footer: '',
+    },
+  };
+}
+
+/**
+ * Truy vấn chủ sở hữu thực tế từ Supabase cho 9 Linh Vực / Thần Thức / Thần Cảnh Độc Nhất công khai
+ */
+async function resolveMythicDomainOwner(entityKind, entityId) {
+  if (!supabase) return null;
+  try {
+    const { data: ownership } = await supabase
+      .from('user_domains')
+      .select('user_id')
+      .eq('entity_kind', entityKind)
+      .eq('entity_id', entityId)
+      .limit(1)
+      .maybeSingle();
+
+    if (!ownership?.user_id) return null;
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('user_id, username')
+      .eq('user_id', ownership.user_id)
+      .maybeSingle();
+
+    return {
+      user_id: ownership.user_id,
+      username: user?.username || `Tu Sĩ #${String(ownership.user_id).slice(-4)}`,
+    };
+  } catch (err) {
+    console.warn(`[WikiService] Failed to query mythic domain owner for ${entityKind}/${entityId}:`, err.message);
+    return null;
+  }
+}
+
+/**
+ * Tra cứu chi tiết 1 Linh Vực / Thần Thức / Thần Cảnh (ẩn 3 món độc quyền Fuyumi khỏi /wiki)
+ */
+export async function getWikiDomainDetail(entityId) {
+  if (!entityId || typeof entityId !== 'string') {
+    return { success: false, error: 'Domain not found', message: 'Thiếu mã Linh Vực / Thần Thức / Thần Cảnh.' };
+  }
+
+  const cleanId = entityId.trim().toLowerCase().replace(/\.(png|webp)$/i, '');
+  let entityKind = null;
+  let item = V13_DOMAINS.find((d) => d.domain_id === cleanId);
+  if (item) {
+    entityKind = 'domain';
+  } else {
+    item = V13_DIVINE_SENSES.find((s) => s.sense_id === cleanId);
+    if (item) {
+      entityKind = 'sense';
+    } else {
+      item = V13_DIVINE_REALMS.find((r) => r.realm_id === cleanId);
+      if (item) entityKind = 'realm';
+    }
+  }
+
+  if (!item || item.is_exclusive_fuyumi) {
+    return {
+      success: false,
+      error: 'Domain not found',
+      message: `Linh Vực '${entityId}' không tồn tại.`,
+    };
+  }
+
+  const tier = RARITY_TIERS[item.rarity_key] || RARITY_TIERS.common;
+  const currentOwner = item.is_unique ? await resolveMythicDomainOwner(entityKind, cleanId) : null;
+  const ownerLine = item.is_unique
+    ? (currentOwner
+      ? `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)`
+      : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
+    : null;
+
+  const dropRateMap = { common: '60.5%', rare: '25%', epic: '14%', mythic: '0.5%' };
+  const dropRate = dropRateMap[item.rarity_key] || '0.5%';
+  const kindLabel = entityKind === 'domain' ? 'Linh Vực' : entityKind === 'sense' ? 'Thần Thức' : 'Thần Cảnh';
+
+  const lines = [];
+  if (entityKind === 'domain') {
+    const piercePct = Math.round((item.enemy_active_debuff_pierce || 0) * 100);
+    const suppressPct = Math.round((item.enemy_buff_suppression || 0) * 100);
+    lines.push(`${tier.emoji} **${item.rarity}** • ${kindLabel} • ${domainElementEmoji(item.element)} Hệ **${item.element}** • Tỉ lệ rớt **${dropRate}**`);
+    lines.push(`${em('su_realm_star')} **Linh Mạch gốc:** \`${item.base_energy}\`${piercePct ? ` • **Xuyên Kháng Vực:** \`${piercePct}%\`` : ''}${suppressPct ? ` • **Áp Chế Buff Vực Địch:** \`${suppressPct}%\`` : ''}`);
+    lines.push(`${em('su_sparkle')} **Buff Phe Ta:** ${item.buff_desc}`);
+    lines.push(`${em('su_crossed_swords')} **Debuff Phe Địch:** ${item.debuff_desc}`);
+    if (item.dao_ap) {
+      lines.push(`${em('dao_ap_crest')} **Đạo Áp (${item.dao_ap.tier === 'unique' ? 'Cấp 2+' : 'Cấp 2'} — ${item.dao_ap.duration_turns} hiệp):** ${item.dao_ap.summary}`);
+    }
+  } else if (entityKind === 'sense') {
+    const boostPct = Math.round((item.buff_boost_pct || 0) * 100);
+    const resistPct = Math.round((item.clash_resist_chance || 0) * 100);
+    lines.push(`${tier.emoji} **${item.rarity}** • ${kindLabel} • Tỉ lệ rớt **${dropRate}**`);
+    lines.push(`${em('su_realm_star')} **Linh Mạch tối đa:** \`+${item.bonus_energy}\` • **Cường Hóa Buff Vực:** \`+${boostPct}%\` • **Kháng Trừ Linh Mạch Khắc Vực:** \`${resistPct}%\``);
+    lines.push(`${em('su_sparkle')} **Hiệu ứng:** ${item.desc}`);
+  } else {
+    const debuffPct = Math.round((item.debuff_boost_pct || 0) * 100);
+    lines.push(`${tier.emoji} **${item.rarity}** • ${kindLabel} • Tỉ lệ rớt **${dropRate}**`);
+    lines.push(`${em('su_thunder_hax')} **Cường Hóa Debuff Vực:** \`+${debuffPct}%\``);
+    lines.push(`${em('su_crossed_swords')} **Hiệu ứng:** ${item.desc}`);
+  }
+
+  lines.push(`${em('su_gacha_dice')} **Nguồn & Lệnh:** \`/roll loai:domain\` • Trang bị: \`/linhvuc hanh_dong:equip ma_id:${cleanId}\``);
+  if (ownerLine) lines.push(ownerLine);
+
+  const imageUrl = `${PUBLIC_BASE_URL}/assets/domains/${cleanId}.webp?v=1.5`;
+  const titlePrefix = entityKind === 'domain'
+    ? domainElementEmoji(item.element)
+    : entityKind === 'sense'
+      ? em('su_realm_star')
+      : em('dao_ap_crest');
+
+  return {
+    success: true,
+    data: {
+      ...item,
+      entity_kind: entityKind,
+      entity_id: cleanId,
+      kind_label: kindLabel,
+      current_owner: currentOwner,
+      owner_label: item.is_unique ? (currentOwner ? currentOwner.username : 'Chưa có chủ sở hữu') : null,
+      image_url: imageUrl,
+    },
+    embed: {
+      title: `${titlePrefix} ${kindLabel.toUpperCase()}: ${item.name}`.trim(),
+      description: lines.join('\n'),
       color: tier.color,
       color_dec: tier.colorDec,
       image_url: imageUrl,

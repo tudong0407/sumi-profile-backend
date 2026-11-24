@@ -779,14 +779,26 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
     `• ${em('su_wiki_scroll')} **Xem Bản Web Đầy Đủ:** [Mở Chiến Báo Chi Tiết](${webLogUrl})`,
   ];
 
-  let fullBattleLog = '';
-  for (const line of untruncatedLogLines) {
-    if ((fullBattleLog + '\n' + line).length > 3500) {
-      fullBattleLog += `\n• *... (Còn tiếp chi tiết từng hiệp tại [Trang Web Nhật Ký Đầy Đủ](${webLogUrl}))*`;
+  const teamFooterLines = [
+    '',
+    `**3. Kết Quả Trận Đấu (${turnCount} Hiệp)**`,
+    `• **KẾT QUẢ:** ${winnerSide === 'A' ? `${em('su_winner_trophy')} **ĐỘI KHIÊU CHIẾN CHIẾM MỎ THÀNH CÔNG!**` : `${em('su_shield_def')} **PHE PHÒNG THỦ GIỮ VỮNG LINH MẠCH!**`}`,
+    `• **Phe A còn sống:** ${teamA.filter((u) => u.currentHp > 0).length}/${teamA.length} • **Phe B còn sống:** ${teamB.filter((u) => u.currentHp > 0).length}/${teamB.length}`,
+    `• ${em('su_wiki_scroll')} **Xem Bản Web Đầy Đủ:** [Mở Chiến Báo Chi Tiết](${webLogUrl})`,
+  ];
+  const teamBodyLines = untruncatedLogLines.slice(0, untruncatedLogLines.length - teamFooterLines.length);
+  const teamFooterBlock = '\n' + teamFooterLines.join('\n');
+  const maxTeamBodyLen = Math.max(400, 3880 - teamFooterBlock.length);
+
+  let teamBody = '';
+  for (const line of teamBodyLines) {
+    if ((teamBody + '\n' + line).length > maxTeamBodyLen) {
+      teamBody += `\n• *... (Còn tiếp chi tiết từng hiệp tại [Trang Web Nhật Ký Đầy Đủ](${webLogUrl}))*`;
       break;
     }
-    fullBattleLog += (fullBattleLog ? '\n' : '') + line;
+    teamBody += (teamBody ? '\n' : '') + line;
   }
+  const fullBattleLog = `${teamBody}${teamFooterBlock}`;
 
   const nowCreatedMs = Date.now();
   const expiresAtMs = nowCreatedMs + BATTLE_LOG_TTL_MS;
@@ -966,6 +978,7 @@ export async function getTeamBattleLogPayload({ battleId, userId } = {}) {
       success: true,
       found: false,
       battleId: null,
+      webLogUrl: `${PUBLIC_BASE_URL}/api/vein/battle/expired/view`,
       title: `${em('su_wiki_scroll')} NHẬT KÝ CHIẾN BÁO LINH MẠCH`,
       description: 'Nhật ký trận Linh Mạch này đã quá hạn lưu trữ (tối đa 2 ngày) hoặc không tồn tại. Hãy mở trận `/linhmach` mới để xem chi tiết!',
       footer: '',

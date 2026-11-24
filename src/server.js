@@ -11,6 +11,7 @@ import {
   getWikiCatalogSummary,
   getWikiItemDetail,
   getWikiPetDetail,
+  getWikiDomainDetail,
 } from './services/wikiService.js';
 import {
   simulateBattle,
@@ -504,7 +505,8 @@ app.get('/api/info/:query', (req, res) => {
 app.get('/api/wiki', (req, res) => {
   try {
     const rawCategory = req.query.category || req.query.cat || null;
-    const wikiResult = getWikiData(rawCategory);
+    const rawPage = req.query.page || 1;
+    const wikiResult = getWikiData(rawCategory, rawPage);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300');
@@ -529,6 +531,22 @@ app.get('/api/wiki/catalog', (req, res) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=300');
   return res.status(200).json(getWikiCatalogSummary());
+});
+
+app.get('/api/wiki/domain/:entityId', async (req, res) => {
+  try {
+    const rawParam = String(req.params.entityId || '');
+    const result = await getWikiDomainDetail(rawParam);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] Lỗi tra cứu chi tiết Linh Vực:', err);
+    return res.status(500).json({ success: false, error: 'Internal Server Error', message: err.message });
+  }
 });
 
 app.get(['/api/wiki/chart/elements.png', '/api/wiki/chart/elements.webp', '/api/wiki/chart/elements'], async (req, res) => {

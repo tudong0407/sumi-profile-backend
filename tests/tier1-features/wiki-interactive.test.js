@@ -43,15 +43,15 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     assert.ok(!allWikiPets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.is_exclusive_fuyumi), 'Exclusive Fuyumi pet must NOT appear in wiki catalog');
   });
 
-  it('2. Standalone realms & roles categories exist, all 8 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
+  it('2. Standalone realms, domains, roles & glossary categories exist, all 10 wiki categories use concise non-greeting copy, and zero mention of Fuyumi exclusives', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200);
     const json = await res.json();
     const ids = json.categories.map((c) => c.id);
-    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer']);
+    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'domains', 'roles', 'economy', 'explorer', 'glossary']);
 
     const fullWikiText = JSON.stringify(json.categories);
-    assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive pet Cửu Vĩ Hồng Hồ');
+    assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho|domain_fuyumi_|sense_fuyumi_|realm_fuyumi_/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive items');
     assert.ok(!/Dropdown|bên dưới|chọn chuyên mục|chọn trực tiếp/i.test(fullWikiText), 'Wiki categories must NOT contain redundant UI dropdown instructions');
 
     for (const cat of json.categories) {
@@ -63,6 +63,7 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     const realmsJson = await realmsRes.json();
     assert.equal(realmsJson.data.id, 'realms');
     assert.match(realmsJson.data.title, /Cảnh Giới/i);
+    assert.match(realmsJson.embed_flat.description, /78 × Level\^1\.45/);
   });
 
   it('3. GET /api/wiki/chart/elements.png renders Full HD+ 2000x1000 Ngũ Hành chart PNG', async () => {
@@ -223,5 +224,109 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     );
     const allLogs = JSON.stringify(reflectBattle.turnSnapshots || reflectBattle.logs || reflectBattle);
     assert.match(allLogs, /Phản Đòn .*thẳng máu, bỏ qua khiên/);
+  });
+
+  it('9. /api/wiki/catalog exposes 60 public domain entities (30/15/15), /api/wiki/domain/:id works and hides Fuyumi exclusives (404), glossary supports 4 pages & terms are synced', async () => {
+    const catRes = await testServer.fetch('/api/wiki/catalog');
+    assert.equal(catRes.status, 200);
+    const catJson = await catRes.json();
+    assert.equal(catJson.domains.domain.length, 30);
+    assert.equal(catJson.domains.sense.length, 15);
+    assert.equal(catJson.domains.realm.length, 15);
+
+    const domRes = await testServer.fetch('/api/wiki/domain/domain_unique_1');
+    assert.equal(domRes.status, 200);
+    const domJson = await domRes.json();
+    assert.equal(domJson.success, true);
+    assert.match(domJson.embed.image_url, /\/assets\/domains\/domain_unique_1\.webp\?v=1\.5$/);
+    assert.match(domJson.embed.description, /Xuyên Kháng Vực/);
+
+    const realmRes = await testServer.fetch('/api/wiki/domain/realm_mythic_2');
+    assert.equal(realmRes.status, 200);
+    const realmJson = await realmRes.json();
+    assert.match(realmJson.embed.description, /Cường Hóa Debuff Vực/);
+    assert.ok(!/Debuff gốc/i.test(realmJson.embed.description));
+
+    const senseRes = await testServer.fetch('/api/wiki/domain/sense_unique_2');
+    assert.equal(senseRes.status, 200);
+    const senseJson = await senseRes.json();
+    assert.match(senseJson.embed.description, /Kháng Trừ Linh Mạch Khắc Vực/);
+
+    for (const exclId of ['domain_fuyumi_cuu_vi_hong_mong', 'sense_fuyumi_thai_thuong_hong_ho', 'realm_fuyumi_van_co_tuyet_diet']) {
+      const hiddenRes = await testServer.fetch(`/api/wiki/domain/${exclId}`);
+      assert.equal(hiddenRes.status, 404, `Exclusive ${exclId} must return 404 on /wiki`);
+    }
+
+    for (let p = 1; p <= 4; p += 1) {
+      const glRes = await testServer.fetch(`/api/wiki?category=glossary&page=${p}`);
+      assert.equal(glRes.status, 200);
+      const glJson = await glRes.json();
+      assert.equal(glJson.category, 'glossary');
+      assert.equal(glJson.page, p);
+      assert.equal(glJson.total_pages, 4);
+      assert.match(glJson.embed_flat.title, new RegExp(`Trang ${p}/4`));
+    }
+
+    const infoRealm = lookupInfo('realm_epic_3');
+    assert.equal(infoRealm.success, true);
+    assert.match(infoRealm.description || infoRealm.embed_flat?.description || '', /Cường Hóa Debuff Vực/);
+
+    // Long battle log with full Mythic Domain + Sense + Realm must NEVER drop KẾT QUẢ or Web Log URL
+    const longBattle = await simulateBattle(
+      {
+        user_id: 'long_a',
+        username: 'LongAttacker',
+        level: 80,
+        pet: {
+          name: 'Cửu Thiên Lôi Đế Hồ',
+          pet_type: 'cuu_thien_loi_de_ho',
+          element: 'Lôi',
+          atk: 1800,
+          def: 2400,
+          spd: 1700,
+          level: 80,
+          star: 5,
+          equipment: {
+            weapon: { item_id: 'weapon_unique_4', item_name: '« Cửu Kiếp Thần Lôi Đế Cung »', item_type: 'weapon', element: 'Lôi', bonus_atk: 780, bonus_def: 60, bonus_spd: 360, bonus_crit: 20 },
+            gem: { item_id: 'gem_unique_8', item_name: '« Cửu Tiêu Lôi Đình Hộ Tâm Kính »', item_type: 'gem', element: 'Lôi', bonus_atk: 195, bonus_def: 785, bonus_spd: 235, bonus_hp: 5200 },
+            soul: { item_id: 'soul_unique_6', item_name: '« Cửu Thiên Lôi Đế Chiến Hồn »', item_type: 'soul', element: 'Lôi', bonus_atk: 410, bonus_def: 270, bonus_spd: 525 },
+          },
+          domainLoadout: {
+            domain: { domain_id: 'domain_unique_1' },
+            sense: { sense_id: 'sense_unique_2' },
+            realm: { realm_id: 'realm_unique_1' },
+          },
+        },
+      },
+      {
+        user_id: 'long_b',
+        username: 'LongDefender',
+        level: 80,
+        pet: {
+          name: 'Bắc Hải Huyền Vũ Đế',
+          pet_type: 'bac_hai_huyen_vu_de',
+          element: 'Thủy',
+          atk: 1600,
+          def: 2600,
+          spd: 1400,
+          level: 80,
+          star: 5,
+          equipment: {
+            weapon: { item_id: 'weapon_unique_3', item_name: '« Thái Thủy Tuyệt Đống Thần Kích »', item_type: 'weapon', element: 'Thủy', bonus_atk: 770, bonus_def: 180, bonus_spd: 335, bonus_crit: 16 },
+            gem: { item_id: 'gem_unique_3', item_name: '« Vĩnh Hằng Hàn Băng Thần Châu »', item_type: 'gem', element: 'Thủy', bonus_atk: 120, bonus_def: 820, bonus_spd: 195, bonus_hp: 5350 },
+            soul: { item_id: 'soul_unique_5', item_name: '« Huyền Minh Đế Quy Thần Hồn »', item_type: 'soul', element: 'Thủy', bonus_atk: 335, bonus_def: 430, bonus_spd: 460 },
+          },
+          domainLoadout: {
+            domain: { domain_id: 'domain_unique_3' },
+            sense: { sense_id: 'sense_unique_1' },
+            realm: { realm_id: 'realm_unique_2' },
+          },
+        },
+      },
+      { seed: 42, preRender: false },
+    );
+    assert.ok(longBattle.fullBattleLog.length <= 3950, `fullBattleLog too long: ${longBattle.fullBattleLog.length}`);
+    assert.match(longBattle.fullBattleLog, /KẾT QUẢ:/);
+    assert.match(longBattle.fullBattleLog, /Mở Xem Chi Tiết Trên Web/);
   });
 });

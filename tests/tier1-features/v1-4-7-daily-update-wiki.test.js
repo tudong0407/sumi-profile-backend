@@ -68,7 +68,7 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
   it('2. Chat EXP base is +15% (23-35) and acknowledgeUpdate awards active version LT once (safe against double-click)', async () => {
     assert.equal(CHAT_EXP_MIN, 23);
     assert.equal(CHAT_EXP_MAX, 35);
-    assert.ok(['1.5', '1.5.1'].includes(LATEST_VERSION));
+    assert.ok(['1.5', '1.5.1', '1.5.2'].includes(LATEST_VERSION));
     assert.equal(getUpdateAckReward('1.4.7'), 800);
     assert.equal(getUpdateAckReward('1.5'), 2000);
 
@@ -116,7 +116,7 @@ describe('Tier 1 - v1.4.7 Daily Quests (+10% & 10-Pool), Chat EXP (+15%), Update
     assert.match(ch.description, /500/);
     assert.match(ch.description, /800/);
 
-    assert.equal(WIKI_METADATA.version, '1.5');
+    assert.ok(['1.5', '1.5.1', '1.5.2'].includes(WIKI_METADATA.version));
     const ov = getWikiData('overview');
     const ovText = JSON.stringify(ov.data);
     for (const cmd of ['/autosell', '/unequip', '/pet', '/play', '/queue', '/music', '/sound', '/giveaway_create', '/sticky-set', '/sticky-off']) {

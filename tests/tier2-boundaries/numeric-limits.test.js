@@ -20,7 +20,7 @@ describe('Tier 2 - Numeric Limits & Boundary Edge Cases', () => {
     const expLvl1 = getExpForNextLevel(1);
 
     assert.equal(realmLvl1, 'I. Luyện Khí Sơ Kỳ');
-    assert.equal(expLvl1, 60);
+    assert.equal(expLvl1, 78);
 
     const payload = {
       user_id: '100000000000000001',

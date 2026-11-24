@@ -28,6 +28,7 @@ import {
 } from './ga_builder_lib.mjs';
 import { em, emId, tierEmojiKey } from '../src/config/emojiHelper.js';
 import { EQUIPMENT_CATALOG, PET_CATALOG, AVATAR_FRAMES } from '../src/data/catalog.js';
+import { V13_DOMAINS, V13_DIVINE_SENSES, V13_DIVINE_REALMS } from '../src/data/v13ExpansionCatalog.js';
 import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
@@ -266,7 +267,19 @@ function chunkArray(arr, size = 25) {
 function buildUpdateVersionOptions() {
   return [
     {
-      label: 'Phiên bản v1.5 (Mới nhất • Big Update)',
+      label: 'Phiên bản v1.5.2 (Mới nhất • +500 LT)',
+      description: 'Chuẩn hóa thuật ngữ, /wiki Linh Vực & Từ Điển, /farm DM & EXP +30%',
+      emoji_id: uidId('su_wiki_scroll'),
+      value: '1.5.2',
+    },
+    {
+      label: 'Phiên bản v1.5.1 (Hotfix)',
+      description: 'Sửa lỗi lưu Role Gacha, Phân trang Trang 1/2/3 & Đền bù +1.000 LT',
+      emoji_id: uidId('su_medal_role'),
+      value: '1.5.1',
+    },
+    {
+      label: 'Phiên bản v1.5 (Big Update)',
       description: 'Cân bằng PvE, +550% Pet, Khắc Ấn mới, Buff SET, Pity 350 & Quà +2.000 LT',
       emoji_id: uidId('su_sparkle'),
       value: '1.5',
@@ -318,7 +331,7 @@ function buildUpdateVersionOptions() {
 
 export function buildUpdatesV15Cmd() {
   const gb = new V15GraphBuilder();
-  gb.rootSlash('updates', 'Xem bản cập nhật mới nhất (v1.5 Big Update) và chuyển xem lịch sử ngay tại chỗ', { ephemeral: false });
+  gb.rootSlash('updates', 'Xem bản cập nhật mới nhất (v1.5.2) và chuyển xem lịch sử ngay tại chỗ', { ephemeral: false });
   gb.errorHandlerWait();
 
   apiAction(gb, 'upds_api', 'upds_res', 'GET', `${BACKEND_BASE}/api/update`, '', { x: 0, y: 220 });
@@ -348,7 +361,7 @@ export function buildUpdatesV15Cmd() {
     const msgId = `upds_msg_${k}`;
 
     gb.advSelectMenu(selId, curMsgId, {
-      placeholder: 'Chọn phiên bản để xem ngay trên bảng này (v1.5 -> v1.1)...',
+      placeholder: 'Chọn phiên bản để xem ngay trên bảng này (v1.5.2 -> v1.1)...',
       customVariableName: varName,
       basic_options: verOpts,
       row: '1',
@@ -396,30 +409,60 @@ function buildPetDropdownOptions(pets) {
   }));
 }
 
+function buildDomainDropdownOptions(items, kind) {
+  return items.map((it) => {
+    if (kind === 'domain') {
+      return {
+        label: `${it.name} (${it.element})`,
+        description: `${it.rarity} • ${it.base_energy} Mạch${it.is_unique ? ' • Độc Nhất' : ''}`,
+        emoji_id: uidId(it.domain_id, 'su_realm_star'),
+        value: it.domain_id,
+      };
+    }
+    if (kind === 'sense') {
+      return {
+        label: it.name,
+        description: `${it.rarity} • +${it.bonus_energy} Mạch • +${Math.round((it.buff_boost_pct || 0) * 100)}% Buff Vực`,
+        emoji_id: uidId(it.sense_id, 'su_realm_star'),
+        value: it.sense_id,
+      };
+    }
+    return {
+      label: it.name,
+      description: `${it.rarity} • +${Math.round((it.debuff_boost_pct || 0) * 100)}% Debuff Vực`,
+      emoji_id: uidId(it.realm_id, 'dao_ap_crest'),
+      value: it.realm_id,
+    };
+  });
+}
+
 export function buildWikiV15Cmd() {
   const gb = new V15GraphBuilder();
-  gb.rootSlash('wiki', 'Cẩm nang tu tiên SuMi Family v1.5 — edit tại chỗ, ảnh Khắc Hệ, 90 Pet & 165 Pháp Bảo', { ephemeral: false });
+  gb.rootSlash('wiki', 'Cẩm nang tu tiên SuMi Family v1.5.2 — 10 mục, 60 Linh Vực, 90 Pet, 165 Pháp Bảo & Từ Điển', { ephemeral: false });
   gb.errorHandlerWait();
 
   gb.option('chuyen_muc', 'string', 'Chuyên mục cần tra cứu (tùy chọn)', {
     required: false,
-    choices: ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer'],
+    choices: ['overview', 'realms', 'battle', 'equipment', 'pets', 'domains', 'roles', 'economy', 'explorer', 'glossary'],
     x: 420,
     y: 0,
   });
 
   const eqEmb = WIKI_CATEGORIES.equipment;
   const ptEmb = WIKI_CATEGORIES.pets;
+  const domEmb = WIKI_CATEGORIES.domains;
 
   const wikiOptions = [
     { label: 'Tổng Quan & Toàn Bộ Lệnh', description: 'Tất cả lệnh Gameplay, Buff SET, Pity 350 & Tiện Ích', emoji_id: uidId('su_wiki_scroll'), value: 'overview' },
-    { label: 'Cảnh Giới & Thăng Cấp EXP', description: '7 Đại Cảnh Giới, Chat/Voice EXP & /exp Boost', emoji_id: uidId('su_realm_7_hondondao'), value: 'realms' },
+    { label: 'Cảnh Giới & Thăng Cấp EXP', description: '7 Đại Cảnh Giới, Chat/Voice EXP & 78 × Level^1.45', emoji_id: uidId('su_realm_7_hondondao'), value: 'realms' },
     { label: 'Đấu Trường, Buff SET & Khắc Vực', description: '1v1, Buff SET, Sát Thương Bỏ Qua Khiên & Ngũ Vực', emoji_id: uidId('su_arena'), value: 'battle' },
     { label: 'Kho Pháp Bảo Loadout (165 Món)', description: '57 Vũ Khí • 54 Bảo Ngọc • 54 Chiến Hồn + Khắc Ấn D->S', emoji_id: uidId('su_crossed_swords'), value: 'equipment' },
     { label: 'Linh Thú Tiên Giới (90 Chiến Pet)', description: 'Đầy đủ 90 Linh Thú & Nâng Cấp Nhanh /linhthu muc_dich', emoji_id: uidId('su_pet_paw'), value: 'pets' },
+    { label: 'Linh Vực • Thần Thức • Thần Cảnh (60)', description: '30 Linh Vực • 15 Thần Thức • 15 Thần Cảnh & chủ Độc Nhất', emoji_id: uidId('su_realm_star'), value: 'domains' },
     { label: 'Role Quyền Năng & Discord (40 Role)', description: 'Đầy đủ quyền Discord & Buff của 40 Role + 8 Level Roles', emoji_id: uidId('su_medal_role'), value: 'roles' },
-    { label: 'Kinh Tế, Pity 350 & Top Ngày', description: 'Pity 350, /shop Viền Avatar, Tháp 500 & Top Chat/Voice', emoji_id: uidId('su_linhthach'), value: 'economy' },
+    { label: 'Kinh Tế, Pity 350 & /farm DM', description: 'Pity 350, /shop, Tháp 500, /farm tách khu + DM nhắc', emoji_id: uidId('su_linhthach'), value: 'economy' },
     { label: 'Khám Phá Đại Lục & Bản Đồ 4K', description: '12 Địa Danh (3.5k->112k), +5% LT & Thuận Hệ', emoji_id: uidId('explorer_world_map_v14'), value: 'explorer' },
+    { label: 'Từ Điển Thuật Ngữ Chiến Đấu (4 Trang)', description: 'Giải thích chuẩn hóa Xuyên DEF, Khiên, Vực, Đạo Áp, CC', emoji_id: uidId('su_wiki_scroll'), value: 'glossary' },
   ];
 
   // Root router
@@ -433,6 +476,8 @@ export function buildWikiV15Cmd() {
   const brRootExplorer = gb.branch(cRoot, 'wr_explorer', 'comparison', { type: 'equal_to', comparison_value: 'explorer', ignoreCase: true }, { x: 150, y: 340 });
   const brRootEquip = gb.branch(cRoot, 'wr_equip', 'comparison', { type: 'equal_to', comparison_value: 'equipment', ignoreCase: true }, { x: 750, y: 340 });
   const brRootPets = gb.branch(cRoot, 'wr_pets', 'comparison', { type: 'equal_to', comparison_value: 'pets', ignoreCase: true }, { x: 1150, y: 340 });
+  const brRootDomains = gb.branch(cRoot, 'wr_domains', 'comparison', { type: 'equal_to', comparison_value: 'domains', ignoreCase: true }, { x: 2250, y: 340 });
+  const brRootGlossary = gb.branch(cRoot, 'wr_glossary', 'comparison', { type: 'equal_to', comparison_value: 'glossary', ignoreCase: true }, { x: -1150, y: 340 });
   const brRootHome = gb.elseBranch(cRoot, 'wr_home', 'comparison', { x: 450, y: 340 });
 
   // Set initial category variable -> single API call -> single anchor msg_wiki_0
@@ -485,6 +530,71 @@ export function buildWikiV15Cmd() {
   }, { x: 1500, y: 1200 });
   gb.link(brRootPets, 'msg_wiki_pets');
 
+  // Domains Hub (4 dropdowns = 60/60 public domain entities: 30 Domains + 15 Senses + 15 Realms)
+  embedMsg(gb, 'msg_wiki_domains', {
+    title: domEmb.title,
+    description: domEmb.description,
+    color: '#a855f7',
+    fields: domEmb.fields,
+    footer: '',
+    target: { reply: true },
+  }, { x: 2450, y: 1200 });
+  gb.link(brRootDomains, 'msg_wiki_domains');
+
+  // Glossary Hub (4-page interactive combat dictionary, edit-in-place)
+  apiAction(gb, 'gl_init_api', 'gl_init_res', 'GET', `${BACKEND_BASE}/api/wiki?category=glossary&page=1`, '', { x: -1150, y: 680 });
+  gb.link(brRootGlossary, 'gl_init_api');
+
+  embedMsg(gb, 'msg_wiki_glossary', {
+    title: '{gl_init_res.response.embed_flat.title}',
+    description: '{gl_init_res.response.embed_flat.description}',
+    color: '#38bdf8',
+    footer: '',
+    target: { reply: true },
+    editId: 'msg_wiki_glossary',
+  }, { x: -1150, y: 860 });
+  gb.link('gl_init_api', 'msg_wiki_glossary');
+
+  const glossaryPageOpts = [
+    { label: 'Trang 1/4: Chỉ Số, Giáp & Xuyên DEF', description: 'Xuyên DEF vs Giảm DEF, ST Chuẩn, Giảm Hồi Máu & Cắt Trần HP', emoji_id: uidId('su_crossed_swords'), value: '1' },
+    { label: 'Trang 2/4: Hệ Thống Khiên & Khắc Chế', description: 'Độ Dày Khiên & 5 cơ chế Xuyên/Phá/Bào Mòn/Giảm/Cướp Khiên', emoji_id: uidId('su_shield_def'), value: '2' },
+    { label: 'Trang 3/4: Linh Vực, Thần Thức & Đạo Áp', description: 'Kháng Trừ Linh Mạch Khắc Vực, Cường Hóa Buff/Debuff, Xuyên Kháng Vực', emoji_id: uidId('su_realm_star'), value: '3' },
+    { label: 'Trang 4/4: Khống Chế, HAX & Buff SET', description: 'Kháng Khống Chế vs Miễn Nhiễm 100%, Giảm Tỉ Lệ HAX, Buff SET', emoji_id: uidId('su_sparkle'), value: '4' },
+  ];
+  let curGlMsgId = 'msg_wiki_glossary';
+  for (let gk = 1; gk <= 4; gk += 1) {
+    const prevIdx = gk - 1;
+    const baseY = 860 + gk * 500;
+    const gSelId = `sel_gl_page_${prevIdx}`;
+    const gVar = `picked_gl_page_${prevIdx}`;
+    const gApiId = `gl_page_api_${gk}`;
+    const gRes = `gl_page_res_${gk}`;
+    const gMsgId = `msg_wiki_gl_${gk}`;
+
+    gb.advSelectMenu(gSelId, curGlMsgId, {
+      placeholder: 'Chuyển trang Từ Điển Thuật Ngữ (Trang 1 -> 4)...',
+      customVariableName: gVar,
+      basic_options: glossaryPageOpts,
+      row: '1',
+      weight: '1',
+      showReplies: 'hide',
+    }, { x: -1150, y: baseY - 340 });
+
+    apiAction(gb, gApiId, gRes, 'GET', `${BACKEND_BASE}/api/wiki?category=glossary&page={${gVar}}`, '', { x: -1150, y: baseY - 170 });
+    gb.link(gSelId, gApiId);
+
+    embedMsg(gb, gMsgId, {
+      title: `{${gRes}.response.embed_flat.title}`,
+      description: `{${gRes}.response.embed_flat.description}`,
+      color: '#38bdf8',
+      footer: '',
+      target: { editId: 'msg_wiki_glossary' },
+      action_id: 'msg_wiki_glossary',
+    }, { x: -1150, y: baseY });
+    gb.link(gApiId, gMsgId);
+    curGlMsgId = gMsgId;
+  }
+
   // 6 unrolled edit-in-place dropdown switches on msg_wiki_0 (always keeps dropdown!)
   const MAX_WIKI_SWITCHES = 6;
   let curMsgId = 'msg_wiki_0';
@@ -496,13 +606,15 @@ export function buildWikiV15Cmd() {
     const condId = `w_sw_cond_${k}`;
     const brEq = `w_sw_eq_${k}`;
     const brPet = `w_sw_pet_${k}`;
+    const brDom = `w_sw_dom_${k}`;
+    const brGl = `w_sw_gl_${k}`;
     const brFlat = `w_sw_flat_${k}`;
     const apiId = `w_sw_api_${k}`;
     const resName = `w_sw_res_${k}`;
     const editMsgId = `msg_wiki_sw_${k}`;
 
     gb.advSelectMenu(selId, curMsgId, {
-      placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên (8 mục)...',
+      placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên (10 mục)...',
       customVariableName: varName,
       basic_options: wikiOptions,
       row: '1',
@@ -512,12 +624,16 @@ export function buildWikiV15Cmd() {
 
     gb.cond(condId, 'comparison', { base_value: `{${varName}}`, target: { self: true } }, { x: 0, y: baseY - 300 });
     gb.link(selId, condId);
-    gb.branch(condId, brEq, 'comparison', { type: 'equal_to', comparison_value: 'equipment', ignoreCase: true }, { x: 320, y: baseY - 160 });
-    gb.branch(condId, brPet, 'comparison', { type: 'equal_to', comparison_value: 'pets', ignoreCase: true }, { x: 560, y: baseY - 160 });
+    gb.branch(condId, brEq, 'comparison', { type: 'equal_to', comparison_value: 'equipment', ignoreCase: true }, { x: 240, y: baseY - 160 });
+    gb.branch(condId, brPet, 'comparison', { type: 'equal_to', comparison_value: 'pets', ignoreCase: true }, { x: 420, y: baseY - 160 });
+    gb.branch(condId, brDom, 'comparison', { type: 'equal_to', comparison_value: 'domains', ignoreCase: true }, { x: 600, y: baseY - 160 });
+    gb.branch(condId, brGl, 'comparison', { type: 'equal_to', comparison_value: 'glossary', ignoreCase: true }, { x: -260, y: baseY - 160 });
     gb.elseBranch(condId, brFlat, 'comparison', { x: 0, y: baseY - 160 });
 
     gb.link(brEq, 'msg_wiki_equip');
     gb.link(brPet, 'msg_wiki_pets');
+    gb.link(brDom, 'msg_wiki_domains');
+    gb.link(brGl, 'gl_init_api');
 
     apiAction(gb, apiId, resName, 'GET', `${BACKEND_BASE}/api/wiki?category={${varName}}`, '', { x: 0, y: baseY - 20 });
     gb.link(brFlat, apiId);
@@ -666,6 +782,59 @@ export function buildWikiV15Cmd() {
     }, { x: pg.x, y: 1680 });
     gb.link(pg.id, pg.setId);
     gb.link(pg.setId, 'pet_detail_ack');
+  }
+
+  // Domain Detail Viewer + 4 dropdowns = 60/60 public domain entities
+  const pubDomains = V13_DOMAINS.filter((d) => !d.is_exclusive_fuyumi);
+  const pubSenses = V13_DIVINE_SENSES.filter((s) => !s.is_exclusive_fuyumi);
+  const pubRealms = V13_DIVINE_REALMS.filter((r) => !r.is_exclusive_fuyumi);
+  const domainGroups = [
+    { id: 'sel_dom_low', setId: 'set_dom_low', varName: 'picked_dom_low', row: '1', placeholder: 'Linh Vực Phàm / Linh / Tiên (15)', items: pubDomains.slice(0, 15), kind: 'domain', x: 2220 },
+    { id: 'sel_dom_high', setId: 'set_dom_high', varName: 'picked_dom_high', row: '2', placeholder: 'Linh Vực Thần Thoại & Độc Nhất (15)', items: pubDomains.slice(15, 30), kind: 'domain', x: 2380 },
+    { id: 'sel_dom_sense', setId: 'set_dom_sense', varName: 'picked_dom_sense', row: '3', placeholder: 'Thần Thức (15)', items: pubSenses, kind: 'sense', x: 2540 },
+    { id: 'sel_dom_realm', setId: 'set_dom_realm', varName: 'picked_dom_realm', row: '4', placeholder: 'Thần Cảnh (15)', items: pubRealms, kind: 'realm', x: 2700 },
+  ];
+
+  embedMsg(gb, 'dom_detail_ack', {
+    title: `${uidEm('su_realm_star')} Đang tải Thẻ Linh Vực...`,
+    description: 'Đang tra cứu thông số, Linh Mạch, Đạo Áp và chủ sở hữu Độc Nhất...',
+    color: '#a855f7',
+    footer: '',
+    target: { reply: true },
+    editId: 'dom_detail_ack',
+  }, { x: 2450, y: 1920 });
+
+  apiAction(gb, 'dom_detail_api', 'dom_res', 'GET', `${BACKEND_BASE}/api/wiki/domain/{wiki_domain_id}`, '', { x: 2450, y: 2100 });
+  gb.link('dom_detail_ack', 'dom_detail_api');
+
+  embedMsg(gb, 'dom_detail_edit', {
+    title: '{dom_res.response.embed.title}',
+    description: '{dom_res.response.embed.description}',
+    color: '#a855f7',
+    imageUrl: '{dom_res.response.embed.image_url}',
+    footer: '',
+    target: { editId: 'dom_detail_ack' },
+    action_id: 'dom_detail_ack',
+  }, { x: 2450, y: 2280 });
+  gb.link('dom_detail_api', 'dom_detail_edit');
+
+  for (const dg of domainGroups) {
+    gb.advSelectMenu(dg.id, 'msg_wiki_domains', {
+      placeholder: dg.placeholder,
+      customVariableName: dg.varName,
+      basic_options: buildDomainDropdownOptions(dg.items, dg.kind),
+      row: dg.row,
+      weight: '1',
+      showReplies: 'show',
+    }, { x: dg.x, y: 1480 });
+
+    gb.act(dg.setId, 'set_unique_variable', {
+      reference: 'wiki_domain_id',
+      value: `{${dg.varName}}`,
+      success_handles: false,
+    }, { x: dg.x, y: 1680 });
+    gb.link(dg.id, dg.setId);
+    gb.link(dg.setId, 'dom_detail_ack');
   }
 
   return gb.elements();
@@ -909,12 +1078,12 @@ function patchKeepAliveV15(origTree) {
 // ============================================================================
 function buildV15KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
-    'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.5):',
-    '• [CẢNH GIỚI & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút (chấm công nền 12 phút); công thức lên cấp 60*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (chỉ nhận 1 lần/Lv). 8 Level Roles tự cộng dồn Buff EXP/Daily LT/Pet Power; /doiqua đổi 1.000 EXP lấy 10 LT; /exp xem tổng % Boost. /top có đủ 6 bảng (level, power, wealth, marry, chat, voice); Top Chat Ngày & Top Voice Ngày tự động trao 500 / 400 / 300 LT riêng cho Top 1–3 mỗi ngày lúc 00:00 (UTC+7) tại #bot-cmds, và 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
-    '• [LINH THÚ, KHẮC ẤN & BUFF SET] (/linhthu, /pet, /phapbao, /equip, /unequip, /enchant, /dismantle, /linhvuc): Linh Thú tăng trưởng Lv.1→Lv.100 đạt +550% (+5.5556%/cấp) và 1★→10★ đạt +135% (tổng 7.85× chỉ số gốc ở Lv.100 10★). /linhthu hỗ trợ muc_dich nâng thẳng tới cấp/sao chọn sẵn. Khắc Ấn /enchant nâng D (+0%) -> C (+8%) -> B (+18%) -> A (+32%) -> S (+50%) kèm Pity +5%/lần trượt (Thiên Đạo Tuyệt Ấn Thạch 100%). Buff SET 2 tầng không cộng dồn: Full Hệ Thường 4/4 (+8%) hoặc 5/5 (+12% toàn chỉ số); Set Thần Thoại cùng hệ 2/3/4/5 (+6%/+12%/+18%/+25% toàn chỉ số, mốc 5/5 thêm +10% Xuyên Giáp & +1 Linh Mạch đầu trận). /dismantle & /linhvuc hỗ trợ xóa/phân giải nhanh all_dup, all_common, all_rare, all_epic hoặc danh sách ID.',
+    'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.5.2):',
+    '• [CẢNH GIỚI & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút (chấm công nền 12 phút); công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (chỉ nhận 1 lần/Lv). 8 Level Roles tự cộng dồn Buff EXP/Daily LT/Pet Power; /doiqua đổi 1.000 EXP lấy 10 LT; /exp xem tổng % Boost. /top có đủ 6 bảng (level, power, wealth, marry, chat, voice); Top Chat Ngày & Top Voice Ngày tự động trao 500 / 400 / 300 LT riêng cho Top 1–3 mỗi ngày lúc 00:00 (UTC+7) tại #bot-cmds, và 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
+    '• [LINH THÚ, KHẮC ẤN & BUFF SET] (/linhthu, /pet, /phapbao, /equip, /unequip, /enchant, /dismantle, /linhvuc): Linh Thú tăng trưởng Lv.1→Lv.100 đạt +550% (+5.5556%/cấp) và 1★→10★ đạt +135% (tổng 7.85× chỉ số gốc ở Lv.100 10★). /linhthu hỗ trợ muc_dich nâng thẳng tới cấp/sao chọn sẵn. Khắc Ấn /enchant nâng D (+0%) -> C (+8%) -> B (+18%) -> A (+32%) -> S (+50%) kèm Pity +5%/lần trượt (Thiên Đạo Tuyệt Ấn Thạch 100%). Buff SET 2 tầng không cộng dồn: Full Hệ Thường 4/4 (+8%) hoặc 5/5 (+12% toàn chỉ số); Set Thần Thoại cùng hệ 2/3/4/5 (+6%/+12%/+18%/+25% toàn chỉ số, mốc 5/5 thêm +10% Xuyên DEF & +1 Linh Mạch đầu trận). /dismantle & /linhvuc hỗ trợ xóa/phân giải nhanh all_dup, all_common, all_rare, all_epic hoặc danh sách ID.',
     '• [GACHA, PITY 350 & CỬA HÀNG] (/roll, /autosell, /shop, /inv, /info): /roll (50 LT/lượt, 450/10) có 4 bể: equipment (165 món), pet (90 loài), domain (60 LT • 30 Linh Vực / 15 Thần Thức / 15 Thần Cảnh), role (40 Role). Tỉ lệ 60.5% Phàm, 25% Linh, 14% Tiên, 0.5% Thần Thoại; Pity Thần Thoại 350 lượt tách riêng 3 bể pet/equipment/domain (98% Thường / 2% Độc Nhất). /autosell tự bán đồ trùng phẩm chất Phàm/Linh/Tiên cả cho Linh Vực. /shop có 7 quầy + Shop Ngày giảm 15–40%, bán 20 Background & 20 Viền Avatar (300–4.000 LT, hiển thị khít 100% trên /profile, /rank, /battle & /linhmach). Ảnh nền & Viền đã mua ẩn khỏi /inv cho gọn và gắn nhãn [Đã sở hữu]/[Đang trang bị] ngay trong /shop (bấm Mua Ngay trên đồ đã mua sẽ tự động Equip miễn phí 0 LT, hoặc dùng /equip).',
-    '• [ĐẤU TRƯỜNG, LINH MẠCH & THÁP 500 TẦNG] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE tự do 25/ngày +10/-5 LT, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố (Lôi, Ám, Quang, Hỗn Độn), HAX Engine (Khiên, Bất Tử, Phản DMG), Linh Vực từ Hiệp 2 & Đạo Áp Cấp 2; Web Battle Logs lưu 48h. /party & /linhmach mở 6 khung giờ vàng (08/12/18/20/21/22h UTC+7), spawn 3 mỏ F→S+ (8.000→135.000 Lực Chiến, 6–56 LT/phút +15% Kho Gia Tộc, hiện LT tích lũy & dự kiến thời gian thực); Boss Hạng A/S/S+ tung Dư Chấn AoE 35% quét cả đội phía sau (cần lập Tổ Đội 3 người cùng gánh). /nhiemvu gồm 5 Quest Ngày xoay vòng (5/5: +130 LT + quà), 3 Hợp Đồng Tuần và Tháp 500 Tầng (1.000→125.000 Lực Chiến, thưởng LT mỗi tầng & mốc Milestone tăng +15%, reset tối đa 5 thẻ/ngày).',
-    '• [KHÁM PHÁ, NÔNG TRẠI, MINIGAME & CỘNG ĐỒNG] (/explorer, /farm, /exchange, /job, /daily, /marry, /giatoc, /tangqua, /coinflip, /slots, /blackjack, /crash, /wiki, /updates): /explorer mở 12 Địa danh (3.500→112.000 Lực Chiến, mốc 2/3/6/12h), thưởng tăng +5% lên 210–315 LT/giờ × hệ số + 0.5% Đá Tuyệt Ấn Thạch + nhặt 60% đồ rơi; cơ chế Thuận Hệ Địa Hình (+6% Sống Sót & +10% LT khi Pet/Linh Vực khớp Hệ của Map). /farm (4–6 ô trồng 6/12/24h) đổi Linh Quả ở /exchange; /job 6 nghề (8 ca/ngày); /daily (40–60 LT + Streak 7d); Minigame cược 10–10.000 LT; /wiki edit tại chỗ đủ 7 mục; Big Update /updates v1.5 tặng ngay +2.000 LT khi bấm Xác Nhận.',
+    '• [ĐẤU TRƯỜNG, LINH MẠCH, THUẬT NGỮ & THÁP 500 TẦNG] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE tự do 25/ngày +10/-5 LT, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố, HAX Engine, Linh Vực từ Hiệp 2 & Đạo Áp; Web Battle Logs lưu 48h có nút LINK cố định Xem Chi Tiết Trên Web. Thuật ngữ đã chuẩn hóa 1-1: Cường Hóa Buff Vực, Cường Hóa Debuff Vực, Kháng Trừ Linh Mạch Khắc Vực, Xuyên DEF (chỉ số đánh, trần 90%) vs Giảm DEF (debuff địch, trần 75%), Xuyên Kháng Vực, Áp Chế Buff Vực Địch, Bào Mòn Khiên, Giảm Khiên Tạo Mới, Cắt Trần HP, Giảm Hồi Máu, Giảm Tỉ Lệ HAX. /party & /linhmach mở 6 khung giờ vàng (08/12/18/20/21/22h UTC+7), spawn 3 mỏ F→S+ (8.000→135.000 Lực Chiến, 6–56 LT/phút +15% Kho Gia Tộc); Boss A/S/S+ tung Dư Chấn AoE 35%. /nhiemvu gồm 5 Quest Ngày, 3 Hợp Đồng Tuần & Tháp 500 Tầng (1.000→125.000 Lực).',
+    '• [KHÁM PHÁ, NÔNG TRẠI DM, /WIKI 10 MỤC & /UPDATES] (/explorer, /farm, /exchange, /job, /daily, /marry, /giatoc, /tangqua, /coinflip, /slots, /blackjack, /crash, /wiki, /updates): /explorer mở 12 Địa danh (3.500→112.000 Lực Chiến, mốc 2/3/6/12h), thưởng 210–315 LT/giờ × hệ số + 0.5% Đá Tuyệt Ấn Thạch + nhặt 60% đồ rơi; Thuận Hệ Địa Hình (+6% Sống Sót & +10% LT). /farm tách riêng Linh Điền & Linh Các (4–6 ô 6/12/24h) kèm bot tự DM nhắc tới giờ tưới (1 lần) & cảnh báo sắp héo 1h/30p/15p; đổi Linh Quả ở /exchange. /wiki có đủ 10 chuyên mục (gồm Linh Vực 60 món & Từ Điển Thuật Ngữ 4 trang). Cập nhật mới nhất /updates v1.5.2 tặng ngay +500 LT khi bấm Xác Nhận.',
   ];
   if (includeFuyumiSecret) {
     lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
@@ -924,10 +1093,10 @@ function buildV15KnowledgeBlock(includeFuyumiSecret) {
 
 function updateAiPromptTextV15(oldPrompt, includeFuyumiSecret) {
   let text = String(oldPrompt || '');
-  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+(?:\.[0-9]+)? bên dưới/g, 'tài liệu hệ thống v1.5 bên dưới');
-  const startMarker = 'KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM';
+  text = text.replace(/tài liệu(?: hệ thống)? v1\.[0-9]+(?:\.[0-9]+)? bên dưới/g, 'tài liệu hệ thống v1.5.2 bên dưới');
+  const startMatch = text.match(/KIẾN THỨC CHÍNH THỨC (?:TOÀN BỘ )?HỆ THỐNG BOT NHIỄM NHIỄM/);
+  const sIdx = startMatch ? startMatch.index : -1;
   const endMarker = '\n\nBỘ DANH SÁCH EMOTE ĐỘNG DISCORD CHÍNH THỨC:';
-  const sIdx = text.indexOf(startMarker);
   const eIdx = text.indexOf(endMarker);
   if (sIdx === -1 || eIdx === -1 || eIdx <= sIdx) {
     throw new Error(`Could not locate knowledge markers inside AI prompt (s=${sIdx}, e=${eIdx})`);
@@ -1005,12 +1174,12 @@ function walkAndSweepV15(obj, { scrubUnicode = true } = {}) {
     }
   }
 
-  // Sync +2.000 LT Update Ack button label & done embed title
+  // Sync +500 LT Update Ack button label & done embed title
   if (obj.type === 'button' && typeof obj.label === 'string' && /Tôi Đã Đọc & Xác Nhận/i.test(obj.label)) {
-    obj.label = 'Tôi Đã Đọc & Xác Nhận (+2.000 LT)';
+    obj.label = 'Tôi Đã Đọc & Xác Nhận (+500 LT)';
   }
   if (typeof obj.title === 'string' && /ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i.test(obj.title)) {
-    obj.title = obj.title.replace(/ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i, 'ĐÃ XÁC NHẬN CẬP NHẬT (+2.000 LT)');
+    obj.title = obj.title.replace(/ĐÃ XÁC NHẬN CẬP NHẬT(?:\s*\([^)]+\))?/i, 'ĐÃ XÁC NHẬN CẬP NHẬT (+500 LT)');
   }
 }
 
@@ -1084,12 +1253,98 @@ const TARGET_SCRUB_GROUPS = new Set([
   '1788203746228', // Sticky
 ]);
 
+function makeWebLinkBtn(id, parentMsgId, urlTemplate, weight = '2', { x = 0, y = 0 } = {}) {
+  const emoji = emojiRow('su_realm_star') || emojiRow('su_wiki_scroll');
+  return {
+    node: {
+      id,
+      type: 'advMessageButton',
+      draggable: true,
+      position: { x, y },
+      width: 260,
+      height: 80,
+      data: {
+        node_options: {},
+        data: {
+          type: 'button',
+          style: 'LINK',
+          label: 'Xem Chi Tiết Trên Web',
+          emoji: emoji ? { id: emoji.id, name: emoji.name, animated: Boolean(emoji.animated) } : undefined,
+          emoji_id: uidId('su_realm_star'),
+          URL: urlTemplate,
+          orderComponent: true,
+          row: '1',
+          weight: String(weight),
+          showReplies: 'hide',
+          validated: true,
+        },
+      },
+    },
+    edge: {
+      source: parentMsgId,
+      sourceHandle: 'components_source',
+      target: id,
+      type: 'step',
+      animated: false,
+      arrowHeadType: 'arrowclosed',
+      id: `reactflow__edge-${parentMsgId}components_source-${id}`,
+    },
+  };
+}
+
+function patchBattleV152(origTree) {
+  const els = JSON.parse(JSON.stringify(origTree));
+  const byId = new Map(els.map((e) => [e.id, e]));
+  const targets = [
+    { id: 'btn_battle_web_final', parent: 'battle_edit_final', url: '{battle_res.response.webLogUrl}', weight: '2', dx: 280, dy: -160 },
+    { id: 'btn_battle_web_logs', parent: 'msg_battle_logs', url: '{battle_logs_res.response.webLogUrl}', weight: '1', dx: 0, dy: 180 },
+  ];
+  for (const t of targets) {
+    const pNode = byId.get(t.parent);
+    if (!pNode || byId.has(t.id)) continue;
+    const { node, edge } = makeWebLinkBtn(t.id, t.parent, t.url, t.weight, {
+      x: (pNode.position?.x || 0) + t.dx,
+      y: (pNode.position?.y || 0) + t.dy,
+    });
+    els.push(node, edge);
+  }
+  return els;
+}
+
+function patchLinhmachV152(origTree) {
+  const els = JSON.parse(JSON.stringify(origTree));
+  const byId = new Map(els.map((e) => [e.id, e]));
+  for (const pfx of ['lm_s1', 'lm_s2', 'lm_s3']) {
+    const winId = `${pfx}_win`;
+    const logMsgId = `${pfx}_log_msg`;
+    const pWin = byId.get(winId);
+    if (pWin && !byId.has(`${pfx}_web_win_btn`)) {
+      const { node, edge } = makeWebLinkBtn(`${pfx}_web_win_btn`, winId, `{${pfx}_res.response.web_log_url}`, '2', {
+        x: (pWin.position?.x || 0) + 120,
+        y: (pWin.position?.y || 0) + 200,
+      });
+      els.push(node, edge);
+    }
+    const pLog = byId.get(logMsgId);
+    if (pLog && !byId.has(`${pfx}_web_log_btn`)) {
+      const { node, edge } = makeWebLinkBtn(`${pfx}_web_log_btn`, logMsgId, `{${pfx}_log_res.response.webLogUrl}`, '1', {
+        x: (pLog.position?.x || 0),
+        y: (pLog.position?.y || 0) + 180,
+      });
+      els.push(node, edge);
+    }
+  }
+  return els;
+}
+
 const PATCHERS = {
   shop: patchShopV15,
   linhthu: patchLinhthuV15,
   top: patchTopV15,
   dismantle: patchDismantleV15,
   linhvuc: patchLinhvucV15,
+  battle: patchBattleV152,
+  linhmach: patchLinhmachV152,
 };
 
 async function main() {
@@ -1146,7 +1401,7 @@ async function main() {
           if (!ro?.rawBody || !String(ro.url || '').includes('generativelanguage.googleapis.com')) continue;
           const bodyObj = JSON.parse(ro.rawBody);
           const sysText = bodyObj?.systemInstruction?.parts?.[0]?.text || '';
-          if (!sysText.includes('KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM')) continue;
+          if (!/KIẾN THỨC CHÍNH THỨC (?:TOÀN BỘ )?HỆ THỐNG BOT NHIỄM NHIỄM/.test(sysText)) continue;
           const isFuyumi = el.id.toLowerCase().includes('fuyumi') || sysText.includes('TIỂU THƯ FUYUMI SỞ HỮU');
           bodyObj.systemInstruction.parts[0].text = updateAiPromptTextV15(sysText, isFuyumi);
           ro.rawBody = JSON.stringify(bodyObj);
@@ -1216,7 +1471,7 @@ async function main() {
         if (!ro?.rawBody || !String(ro.url || '').includes('generativelanguage.googleapis.com')) continue;
         const bodyObj = JSON.parse(ro.rawBody);
         const sysText = bodyObj?.systemInstruction?.parts?.[0]?.text || '';
-        if (!sysText.includes('KIẾN THỨC CHÍNH THỨC HỆ THỐNG BOT NHIỄM NHIỄM')) continue;
+        if (!/KIẾN THỨC CHÍNH THỨC (?:TOÀN BỘ )?HỆ THỐNG BOT NHIỄM NHIỄM/.test(sysText)) continue;
         const isFuyumi = el.id.toLowerCase().includes('fuyumi') || sysText.includes('TIỂU THƯ FUYUMI SỞ HỮU');
         bodyObj.systemInstruction.parts[0].text = updateAiPromptTextV15(sysText, isFuyumi);
         ro.rawBody = JSON.stringify(bodyObj);

@@ -145,7 +145,7 @@ export function evaluateSetBonus({ pet = null, equipment = {}, domainLoadout = {
   }
 
   const extras = [];
-  if (chosen.defPiercePct > 0) extras.push(`+${chosen.defPiercePct}% Xuyên Giáp`);
+  if (chosen.defPiercePct > 0) extras.push(`+${chosen.defPiercePct}% Xuyên DEF`);
   if (chosen.bonusStartingLinhMach > 0) extras.push(`+${chosen.bonusStartingLinhMach} Linh Mạch`);
   const extraStr = extras.length ? ` • ${extras.join(' • ')}` : '';
 
