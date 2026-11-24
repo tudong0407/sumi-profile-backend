@@ -45,6 +45,7 @@ import {
 } from './profileService.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { trackQuestActivity } from './questService.js';
+import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import { evaluateSetBonus, DOMAIN_TO_PET_ELEMENTS } from './battleEngine/setBonusEngine.js';
 
 export const VALID_EXPLORER_DURATIONS = [2, 3, 6, 12];
@@ -1223,9 +1224,10 @@ export async function claimExpedition(userId, opts = {}) {
       // 2. Tính Linh Thạch (+5% mới: 210-315 LT/giờ) * giờ * hệ số map * (1 + thức ăn B + Thuận Hệ +10% + Buff Viền/Nền)
       const { data: uRow } = await supabase.from('users').select('linh_thach, avatar_frame, background_url').eq('user_id', cleanId).maybeSingle();
       const cosmeticBuffs = computeCosmeticBuffTotals(uRow?.avatar_frame, uRow?.background_url);
+      const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
       const foodYieldBonus = exp.food_item_id ? Number(EXPLORER_FOOD_EFFECTS[exp.food_item_id]?.yieldBonus || 0) : 0;
       const basePerHour = (200 + rng() * 100) * 1.05;
-      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * (1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100));
+      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * Math.max(0.5, 1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100 + Number(fortuneInfo?.fortuneLtPct || 0) / 100));
 
       if (uRow) {
         await supabase

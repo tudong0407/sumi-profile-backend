@@ -67,6 +67,13 @@ const SHOP_EQUIP_BY_ID = Object.fromEntries(SHOP_EQUIPMENT.map((e) => [e.item_id
 
 const shopLocks = new Map();
 const memSelections = new Map();
+const memMessageSelections = new Map();
+
+function sanitizeShopMessageId(rawId) {
+  const s = String(rawId || '').trim();
+  if (!s || /^\{.+\}$/.test(s) || s.length > 64) return '';
+  return s;
+}
 
 async function withShopLock(userId, fn) {
   const prev = shopLocks.get(userId) || Promise.resolve();
@@ -287,9 +294,10 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Linh Thú (${SHOP_PETS.length} loài)**: Mua thẳng Pet Phàm Phẩm & Linh Phẩm.`,
         `• **Pháp Bảo (${SHOP_EQUIPMENT.length} món)**: Vũ Khí, Bảo Ngọc, Chiến Hồn Phàm & Linh Phẩm.`,
         `• **Role Quyền Năng (${SHOP_ROLE_PACKAGES.length} gói)**: Thuê \`7 Ngày\`, \`30 Ngày\` hoặc mua \`Vĩnh Viễn\`.`,
-        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha (Pháp Bảo/Linh Thú/Linh Vực), Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu.`,
+        `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, **3 Lọ Luck Potion**, Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
         `• **Viền Avatar (${paidFrames.length} mẫu)**: Đổi khung viền trên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`.`,
+        `• **Phường Đổ Thạch (20 Nguyên Thạch)**: Mua & cắt Đá Thô săn Linh Thạch / Tối Thượng tại \`/dothach\`.`,
       ].filter((x) => x !== undefined).join('\n')
     : buildCategorySummary(cat, safePage, ownershipCtx);
 
@@ -347,6 +355,23 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level || 1));
     shopDiscountPct = Number(roleBuffs?.shopDiscountPct || 0);
 
+    const cleanMsgId = sanitizeShopMessageId(opts.messageId);
+    if (cleanMsgId) {
+      try {
+        await supabase
+          .from('shop_message_selections')
+          .upsert({
+            user_id: cleanId,
+            message_id: cleanMsgId,
+            category: resolved.category,
+            item_id: resolved.item_id,
+            created_at: new Date().toISOString(),
+          }, { onConflict: 'user_id,message_id' });
+      } catch {
+        memMessageSelections.set(`${cleanId}:${cleanMsgId}`, { category: resolved.category, item_id: resolved.item_id });
+      }
+    }
+
     await supabase
       .from('shop_selections')
       .upsert({
@@ -402,6 +427,10 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
       }
     }
   } else {
+    const cleanMsgId = sanitizeShopMessageId(opts.messageId);
+    if (cleanMsgId) {
+      memMessageSelections.set(`${cleanId}:${cleanMsgId}`, { category: resolved.category, item_id: resolved.item_id });
+    }
     memSelections.set(cleanId, { category: resolved.category, item_id: resolved.item_id });
   }
 
@@ -470,7 +499,9 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
   } else if (resolved.category === 'consumables') {
     price = disc(it.price);
     title = `${it.icon} ${it.name}`;
-    imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`shop/${it.item_id}.png`)}`;
+    imageUrl = it.image_file
+      ? `${PUBLIC_BASE_URL}/assets/${it.image_file}?v=1.6`
+      : `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`shop/${it.item_id}.png`)}`;
     color = '#38bdf8';
     description = [
       `${em('pet_star_stone')} **Vật Phẩm Tu Tiên** ${ownedNote}`.trim(),
@@ -543,6 +574,24 @@ export async function buyShopItem(userId, payload = {}) {
 
     let targetCategory = payload.category || '';
     let targetItemId = payload.itemId || '';
+    const cleanMsgId = sanitizeShopMessageId(payload.messageId);
+
+    if (!targetItemId && cleanMsgId) {
+      const { data: msgSel } = await supabase
+        .from('shop_message_selections')
+        .select('category, item_id')
+        .eq('user_id', cleanId)
+        .eq('message_id', cleanMsgId)
+        .maybeSingle();
+      if (msgSel?.item_id) {
+        targetCategory = msgSel.category;
+        targetItemId = msgSel.item_id;
+      } else if (memMessageSelections.has(`${cleanId}:${cleanMsgId}`)) {
+        const ms = memMessageSelections.get(`${cleanId}:${cleanMsgId}`);
+        targetCategory = ms.category;
+        targetItemId = ms.item_id;
+      }
+    }
 
     if (!targetItemId) {
       const { data: sel } = await supabase

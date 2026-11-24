@@ -28,6 +28,10 @@ import {
   computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import {
+  getEffectiveLuckAndFortune,
+  consumeLuckCharges,
+} from './luckAndFortuneService.js';
+import {
   em,
   uiEm,
   tierEmoji,
@@ -335,7 +339,10 @@ export async function claimDaily(userId, options = {}) {
     const roleDailyLtPct = Number(roleBuffs?.dailyLtBonusPct || 0);
     const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
     const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
-    const reward = Math.round(baseReward * (1 + streakBonusPct + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100));
+    const fortuneInfo = await getEffectiveLuckAndFortune(cleanId, now);
+    const fortuneLtPct = Number(fortuneInfo?.fortuneLtPct || 0);
+    const totalMult = Math.max(0.5, 1 + streakBonusPct + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100 + fortuneLtPct / 100);
+    const reward = Math.round(baseReward * totalMult);
     const newBalance = Number(user.linh_thach || 0) + reward;
 
     const { error } = await supabase
@@ -465,11 +472,15 @@ export async function convertExpToLinhThach(userId, amountExp, options = {}) {
   });
 }
 
-function rollRarityByRate(rng = Math.random) {
+function rollRarityByRate(rng = Math.random, luckMult = 1) {
+  const safeMult = Math.max(0.5, Number(luckMult) || 1);
+  const mythicCut = 0.5 * safeMult;
+  const epicCut = mythicCut + 14.0 * Math.min(1.5, Math.max(0.85, safeMult));
+  const rareCut = epicCut + 25.0;
   const r = rng() * 100;
-  if (r < 0.5) return 'mythic';
-  if (r < 14.5) return 'epic';
-  if (r < 39.5) return 'rare';
+  if (r < mythicCut) return 'mythic';
+  if (r < epicCut) return 'epic';
+  if (r < rareCut) return 'rare';
   return 'common';
 }
 
@@ -652,8 +663,13 @@ export async function rollGacha(userId, options = {}) {
     let autoSellCount = 0;
     let autoSellLinhThach = 0;
 
+    const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
+    const potionConsume = await consumeLuckCharges(cleanId, count);
+
     for (let i = 0; i < count; i += 1) {
-      const naturalRarityKey = rollRarityByRate(rng);
+      const stepLuckPct = (i < Number(potionConsume.chargesUsed || 0) ? Number(potionConsume.luckPctApplied || 0) : 0) + Number(fortuneInfo?.fortuneLuckPct || 0);
+      const stepLuckMult = Math.max(0.5, 1 + stepLuckPct / 100);
+      const naturalRarityKey = rollRarityByRate(rng, stepLuckMult);
       const pityStep = advanceMythicPityStep(pityState, pool, naturalRarityKey, rng);
       pityState = pityStep.nextPity;
       const rarityKey = pityStep.rarityKey;

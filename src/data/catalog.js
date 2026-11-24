@@ -331,6 +331,9 @@ export const SHOP_CONSUMABLES = [
   { item_id: 'food_yield_tea', name: 'Tụ Bảo Tiên Trà', category: 'consumable', price: 220, daily_limit: 10, max_stack: 99, icon: em('food_yield_tea'), description: 'Thức ăn khám phá Loại B (/explorer): Tăng +18% tổng sản lượng Linh Thạch thu hoạch nếu sống sót trở về.' },
   { item_id: 'food_speed_fruit', name: 'Ngự Phong Tốc Quả', category: 'consumable', price: 250, daily_limit: 10, max_stack: 99, icon: em('food_speed_fruit'), description: 'Thức ăn khám phá Loại C (/explorer): Rút gọn 25% thời gian di chuyển của chuyến khám phá.' },
   { item_id: 'explorer_revive_elixir', name: 'Cửu Chuyển Hoàn Hồn Lộ', category: 'consumable', price: 2500, daily_limit: 3, max_stack: 10, icon: em('explorer_revive_elixir'), description: 'Linh dược hồi sinh chuyên dụng: Hồi phục hoàn toàn Linh Thú Độc Nhất bị trọng thương khi khám phá (/explorer).' },
+  { item_id: 'potion_luck_minor', name: 'Tiểu Vận Linh Lộ', category: 'consumable', price: 1200, max_stack: 50, icon: em('su_sparkle'), is_luck_potion: true, luck_bonus_pct: 20, charges: 40, description: 'Tăng +20% Luck cho 40 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.6%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_minor để uống.' },
+  { item_id: 'potion_luck_major', name: 'Thiên Cơ Thụy Lộ', category: 'consumable', price: 3200, max_stack: 50, icon: em('su_realm_star'), is_luck_potion: true, luck_bonus_pct: 40, charges: 60, description: 'Tăng +40% Luck cho 60 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.7%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_major để uống.' },
+  { item_id: 'potion_luck_supreme', name: 'Hồng Mông Khí Vận Dịch', category: 'consumable', price: 6800, max_stack: 50, icon: em('dao_ap_crest'), is_luck_potion: true, luck_bonus_pct: 60, charges: 80, description: 'Tăng +60% Luck cho 80 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.8%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_supreme để uống.' },
 ];
 
 export const SPECIAL_CONSUMABLES = [

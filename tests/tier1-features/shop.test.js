@@ -38,7 +38,7 @@ describe('Tier 1 - Phase 2 Shop (/shop catalog, preview, buy, frame/title equip)
     assert.equal(j.categories.pets.length, 26);
     assert.equal(j.categories.equipment.length, 44);
     assert.equal(j.categories.roles.length, 21);
-    assert.equal(j.categories.consumables.length, 11);
+    assert.equal(j.categories.consumables.length, 14);
     assert.equal(j.categories.backgrounds.length, 20);
     assert.equal(j.categories.frames.length, 20);
     assert.ok(!j.categories.pets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.rarity_key === 'epic' || p.rarity_key === 'mythic'));

@@ -19,6 +19,7 @@ import { em, realmEmoji, uiEm } from '../config/emojiHelper.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { recordClanWarScore } from './clanService.js';
 import { trackQuestActivity } from './questService.js';
+import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import {
   sanitizeUserId,
   getRealmByLevel,
@@ -286,7 +287,11 @@ async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new
   const cosmeticBuffs = computeCosmeticBuffTotals(userRow?.avatar_frame, userRow?.background_url);
   bonus += (cosmeticBuffs.expPct || 0) / 100;
 
-  return Number((1 + bonus).toFixed(2));
+  // Khí Vận /gieoque đầu ngày (-5%..+15%)
+  const fortuneInfo = await getEffectiveLuckAndFortune(userId, now);
+  bonus += Number(fortuneInfo?.fortuneExpPct || 0) / 100;
+
+  return Number(Math.max(0.5, 1 + bonus).toFixed(2));
 }
 
 async function loadOrInitUser(userId, { username, fallbackUsername, avatarUrl }) {
@@ -861,8 +866,15 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
   const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
   const cosmeticExpPct = Number(cosmeticBuffs.expPct || 0);
   const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
+  const fortuneInfo = await getEffectiveLuckAndFortune(cleanId, now);
+  const fortuneExpPct = Number(fortuneInfo?.fortuneExpPct || 0);
+  const fortuneLtPct = Number(fortuneInfo?.fortuneLtPct || 0);
+  const fortuneLuckPct = Number(fortuneInfo?.fortuneLuckPct || 0);
+  const fortuneLabel = fortuneInfo?.fortuneName
+    ? `${fortuneInfo.fortuneName} (${fortuneExpPct >= 0 ? '+' : ''}${fortuneExpPct}% EXP • ${fortuneLtPct >= 0 ? '+' : ''}${fortuneLtPct}% LT • ${fortuneLuckPct >= 0 ? '+' : ''}${fortuneLuckPct}% Luck)`
+    : 'Chưa gieo quẻ hôm nay (dùng `/gieoque`)';
 
-  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct + cosmeticExpPct;
+  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct + cosmeticExpPct + fortuneExpPct;
   const totalVoiceBoostPct = totalChatBoostPct;
   const chatMultiplier = Number((1 + totalChatBoostPct / 100).toFixed(2));
   const voiceMultiplier = Number((1 + totalVoiceBoostPct / 100).toFixed(2));
@@ -902,6 +914,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     `• **Tiên Lữ Song Tu:** **+${marriageExpPct}%** *(${marriageDetail})*`,
     `• **Gia Tộc:** **+${clanExpPct}%** *(${clanDetail})*`,
     `• **Viền & Ảnh Nền:** **+${cosmeticExpPct}% EXP • +${cosmeticLtPct}% LT** *(Viền: ${cosmeticBuffs.frameName} +${cosmeticBuffs.frameExpPct}% • Nền: ${cosmeticBuffs.bgName} +${cosmeticBuffs.bgExpPct}%)*`,
+    `• **Khí Vận (/gieoque):** ${fortuneLabel}`,
     '',
     level >= 100
       ? `${em('su_sparkle')} **Đã đạt Cảnh Giới tối cao Lv.100!**`

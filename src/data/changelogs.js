@@ -5,9 +5,45 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.5.2';
+export const LATEST_VERSION = '1.6';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+
+/**
+ * Bản cập nhật v1.6 (+1.000 LT):
+ * - Cải tiến /nhiemvu giao diện OwO (3 tab Ngày / Tuần / Tháp 500 tầng + Xuất Bản Ảnh WebP)
+ * - 3 Lọ Luck Potion trong /shop (tính theo lượt cho /roll & /dothach)
+ * - Sửa triệt để lỗi mua nhầm Viền & Ảnh Nền khi preview nhiều lần trong /shop
+ * - Ra mắt Phường Đổ Thạch (/dothach) với 20 Nguyên Thạch & 105 manh mối mơ hồ
+ * - Ra mắt Gieo Quẻ Đầu Ngày (/gieoque) 6 bậc Khí Vận + Cầu An Giải Hạn
+ * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level, KHÔNG thông báo buff Viền/Ảnh Nền, và KHÔNG dùng emoji Unicode Windows.
+ */
+export const V16_CHANGELOG = {
+  version: '1.6',
+  title: 'CẬP NHẬT v1.6 — ĐỔ THẠCH, GIEO QUẺ, LUCK POTION & NHIỆM VỤ OWO',
+  released_at: '2026-11-24',
+  color: '#ec4899',
+  is_big_update: false,
+  ack_reward_lt: 1000,
+  summary: 'Ra mắt Phường Đổ Thạch (/dothach, 20 Nguyên Thạch), Gieo Quẻ Đầu Ngày (/gieoque, 6 bậc Khí Vận), 3 Lọ Luck Potion trong /shop, giao diện /nhiemvu kiểu OwO kèm xuất ảnh WebP, sửa lỗi mua nhầm Viền/Nền khi preview nhiều lần & tặng +1.000 LT!',
+  sections: [
+    {
+      heading: `${em('su_sparkle')} Phường Đổ Thạch (/dothach) & 3 Lọ Luck Potion (/shop)`,
+      bullets: [
+        '**Phường Đổ Thạch (`/dothach`):** Tách biệt hoàn toàn với `/roll` *(không Pity 350)*. Chọn sạp **4 phân khúc** *(Phàm / Linh / Tiên / Thần Thoại • 20 loài Nguyên Thạch)* kèm **manh mối mơ hồ** để giám định & cắt đá *(Thiết Thạch)*. Săn **Tối Thượng Cực Phẩm** để chọn **Thần Thoại không Độc Nhất** thuộc `7 nhóm` *(Linh Thú, 3 loại Pháp Bảo, Linh Vực, Thần Thức, Thần Cảnh)*!',
+        '**3 Lọ Luck Potion (`/shop` • Quầy Tiêu Hao):** Mở bán **Tiểu Vận Linh Lộ** (`+20% Luck` • 40 lượt • `1.200 LT`), **Thiên Cơ Thụy Lộ** (`+40% Luck` • 60 lượt • `3.200 LT`) và **Hồng Mông Khí Vận Dịch** (`+60% Luck` • 80 lượt • `6.800 LT`). Dùng `/equip` để uống, áp dụng cho cả `/roll` & `/dothach` *(cộng dồn với `/gieoque`)*!',
+        '**Sửa Triệt Để Lỗi Mua Nhầm Viền & Ảnh Nền `/shop`:** Mỗi tin nhắn xem trước trong `/shop` nay lưu mã riêng theo `message_id` — bấm **Mua Ngay** ở tin nào sẽ mua chính xác món của tin đó!',
+      ],
+    },
+    {
+      heading: `${em('su_quest_scroll')} Gieo Quẻ Đầu Ngày (/gieoque) & Cải Tiến /nhiemvu`,
+      bullets: [
+        '**Gieo Quẻ Ứng Nghiệm (`/gieoque`):** Mỗi ngày `1 lần` *(UTC+7)* lắc ống xăm nhận **6 bậc Khí Vận** *(Đại Hung → Đại Cát)* kèm thẻ thơ riêng, tăng/giảm nhẹ `% EXP`, `% LT` & `% Luck`. Gặp quẻ **Hung / Đại Hung** có thể bấm **Cầu An Giải Hạn (`250 LT`)** để gieo lại!',
+        '**Bảng `/nhiemvu` Mới Kiểu OwO + Bản Ảnh WebP:** Tách gọn **3 tab** *(Hàng Ngày / Hợp Đồng Tuần / Tháp 500 Tầng)*, hiển thị rõ `▸ Thưởng` & `▸ Tiến độ`, kèm nút **Xem Bản Ảnh WebP** & quà xác nhận **`+1.000 Linh Thạch`**!',
+      ],
+    },
+  ],
+};
 
 /**
  * Bản cập nhật v1.5.2 (+500 LT):
@@ -113,6 +149,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V16_CHANGELOG,
   V152_CHANGELOG,
   V151_HOTFIX_CHANGELOG,
   V15_DRAFT_CHANGELOG,

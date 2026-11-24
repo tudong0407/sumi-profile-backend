@@ -968,7 +968,30 @@ export async function equipTarget(userId, payload = {}) {
   const { user } = await ensureUserInitialized(cleanId);
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
+  if (category === 'consumable') {
+    const { LUCK_POTION_BY_ID } = await import('../data/v16ExpansionCatalog.js');
+    const matchedPotion = LUCK_POTION_BY_ID[emojiNormalized]
+      || Object.values(LUCK_POTION_BY_ID).find(
+        (p) => p.item_id.toLowerCase() === normEmoji || normalizeTargetText(p.name) === normEmoji,
+      );
+    if (matchedPotion) {
+      const { activateLuckPotion } = await import('./luckAndFortuneService.js');
+      const potRes = await activateLuckPotion(cleanId, matchedPotion.item_id);
+      return { ...potRes, category: 'consumable' };
+    }
+  }
+
   if (!category) {
+    const { LUCK_POTION_BY_ID } = await import('../data/v16ExpansionCatalog.js');
+    const matchedPotion = LUCK_POTION_BY_ID[emojiNormalized]
+      || Object.values(LUCK_POTION_BY_ID).find(
+        (p) => p.item_id.toLowerCase() === normEmoji || normalizeTargetText(p.name) === normEmoji,
+      );
+    if (matchedPotion) {
+      const { activateLuckPotion } = await import('./luckAndFortuneService.js');
+      const potRes = await activateLuckPotion(cleanId, matchedPotion.item_id);
+      return { ...potRes, category: 'consumable' };
+    }
     const titleMatch = rawTargetId.match(/^title\s*:\s*(.+)$/i);
     if (titleMatch) {
       category = 'title';

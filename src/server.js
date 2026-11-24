@@ -47,6 +47,20 @@ import {
   challengeTower,
   resetTowerAttempts,
 } from './services/questService.js';
+import { renderQuestBoardWebp } from './canvas/questRenderer.js';
+import {
+  getEffectiveLuckAndFortune,
+  activateLuckPotion,
+  drawDailyFortune,
+  rerollDailyFortune,
+} from './services/luckAndFortuneService.js';
+import {
+  getStoneStall,
+  previewStallStone,
+  rerollStoneStall,
+  cutStallStone,
+  claimSupremeStonePick,
+} from './services/stoneCuttingService.js';
 import {
   getInventory,
   getUserEquipment,
@@ -1474,6 +1488,7 @@ app.post('/api/shop/preview', requireUpdateAck, async (req, res) => {
       username: getCleanParam(body.username),
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
+      messageId: getCleanParam(body.messageId),
     });
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
@@ -1486,13 +1501,14 @@ app.post('/api/shop/buy', requireBackendApiKey, requireUpdateAck, async (req, re
   try {
     const body = req.body || {};
     const result = await buyShopItem(body.userId, {
-      category: body.category,
-      itemId: body.itemId,
+      category: getCleanParam(body.category),
+      itemId: getCleanParam(body.itemId),
       duration: body.duration,
       quantity: body.quantity,
       username: getCleanParam(body.username),
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
+      messageId: getCleanParam(body.messageId),
     });
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
@@ -1741,6 +1757,7 @@ app.get('/api/leaderboard', async (req, res) => {
 app.get('/api/quest/status/:userId', requireUpdateAck, async (req, res) => {
   try {
     const result = await getQuestStatus(req.params.userId, {
+      tab: getCleanParam(req.query.tab) || 'daily',
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -1749,6 +1766,28 @@ app.get('/api/quest/status/:userId', requireUpdateAck, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/quest/status error:', err);
     return res.status(500).json({ success: false, error: 'QUEST_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/quest/card/:userId.webp', async (req, res) => {
+  try {
+    const rawTab = getCleanParam(req.query.tab) || 'daily';
+    const result = await getQuestStatus(req.params.userId, {
+      tab: rawTab,
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    if (!result.success) {
+      return res.status(result.status || 400).json(result);
+    }
+    const cardBuffer = await renderQuestBoardWebp(result, result.tab === 'all' ? 'daily' : result.tab);
+    res.set('Content-Type', 'image/webp');
+    res.set('Cache-Control', 'no-store');
+    return res.status(200).send(cardBuffer);
+  } catch (err) {
+    console.error('[Server] /api/quest/card error:', err);
+    return res.status(500).json({ success: false, error: 'QUEST_CARD_FAILED', message: err.message });
   }
 });
 
@@ -2485,6 +2524,137 @@ app.get('/api/explorer/map-board', async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/explorer/map-board error:', err);
     return res.status(500).json({ success: false, error: 'EXPLORER_MAP_BOARD_FAILED', message: err.message });
+  }
+});
+
+// ==========================================
+// VER 1.6 EXPANSION ROUTES (LUCK POTION, /gieoque & /dothach)
+// ==========================================
+
+app.get('/api/luck/status/:userId', async (req, res) => {
+  try {
+    const cleanId = sanitizeUserId(req.params.userId);
+    if (!cleanId) return res.status(400).json({ success: false, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' });
+    const data = await getEffectiveLuckAndFortune(cleanId);
+    return res.status(200).json({ success: true, user_id: cleanId, ...data });
+  } catch (err) {
+    console.error('[Server] /api/luck/status error:', err);
+    return res.status(500).json({ success: false, error: 'LUCK_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/potion/use', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await activateLuckPotion(body.userId, body.potionId);
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/potion/use error:', err);
+    return res.status(500).json({ success: false, error: 'POTION_USE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/fortune/draw', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await drawDailyFortune(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/fortune/draw error:', err);
+    return res.status(500).json({ success: false, error: 'FORTUNE_DRAW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/fortune/reroll', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await rerollDailyFortune(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/fortune/reroll error:', err);
+    return res.status(500).json({ success: false, error: 'FORTUNE_REROLL_FAILED', message: err.message });
+  }
+});
+
+app.get('/api/stones/stall/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getStoneStall(req.params.userId, req.query.tier, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/stones/stall error:', err);
+    return res.status(500).json({ success: false, error: 'STONES_STALL_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/stones/preview', requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await previewStallStone(body.userId, body.tier, body.slotIndex, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/stones/preview error:', err);
+    return res.status(500).json({ success: false, error: 'STONES_PREVIEW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/stones/reroll', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await rerollStoneStall(body.userId, body.tier, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/stones/reroll error:', err);
+    return res.status(500).json({ success: false, error: 'STONES_REROLL_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/stones/cut', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await cutStallStone(body.userId, body.tier, body.slotIndex, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/stones/cut error:', err);
+    return res.status(500).json({ success: false, error: 'STONES_CUT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/stones/claim-supreme', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await claimSupremeStonePick(body.userId, body.category, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/stones/claim-supreme error:', err);
+    return res.status(500).json({ success: false, error: 'STONES_CLAIM_SUPREME_FAILED', message: err.message });
   }
 });
 

@@ -116,8 +116,8 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.5)',
-        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.6)',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
@@ -127,11 +127,11 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.5)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.6)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
           '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
-          '• **Kho & Gacha:** `/roll` • `/autosell` • `/shop` • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
+          '• **Kho & Gacha:** `/roll` • `/dothach` • `/gieoque` • `/autosell` • `/shop` • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
           '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
           '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
         ].join('\n'),
@@ -406,21 +406,21 @@ export const WIKI_CATEGORIES = {
     image_url: '',
     sections: [
       {
-        heading: '1. Kiếm LT, Gacha & Cửa Hàng',
-        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Nền & Viền đã sở hữu tự Equip 0 LT ngay trong /shop (ẩn khỏi /inv), cộng buff +2%/+4%/+7%/+10% EXP & LT mỗi món (cộng dồn tới +20%).',
+        heading: '1. Kiếm LT, Gacha, Đổ Thạch & Cửa Hàng',
+        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /dothach (Phường Đổ Thạch — tách biệt với /roll, không Pity 350): 4 phân khúc sạp đá thô (20 loài Nguyên Thạch) kèm manh mối mơ hồ, cắt đá săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Tối Thượng Cực Phẩm (chọn Thần Thoại không Độc Nhất).\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận (Đại Hung → Đại Cát) cộng/trừ nhẹ % EXP, % LT & % Luck (hỗ trợ Cầu An Giải Hạn 250 LT khi gặp Hung/Đại Hung).\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Mở bán thêm 3 Lọ Luck Potion (+20%/+40%/+60% Luck theo lượt cho cả /roll & /dothach, cộng dồn với /gieoque; uống qua /equip).',
       },
       {
-        heading: '2. Nhiệm Vụ Ngày, Tháp 500 Tầng (+15% LT), Nông Trại & Cộng Đồng',
-        content: '• /nhiemvu: 5 Quest Ngày xoay vòng (mốc 5/5 +130 LT + quà), 3 Hợp Đồng Tuần & Tháp 500 Tầng (1k → 125k Lực, thưởng LT mỗi tầng tăng +15%, NPC mở Linh Vực từ F70).\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
+        heading: '2. Nhiệm Vụ Ngày (3 Tab), Tháp 500 Tầng, Nông Trại & Cộng Đồng',
+        content: '• /nhiemvu: Giao diện mới tinh gọn 3 tab (Hàng Ngày / Hợp Đồng Tuần / Tháp 500 Tầng) kèm nút Xem Bản Ảnh WebP.\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
       },
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha & Cửa Hàng`,
+        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha, Đổ Thạch & Gieo Quẻ`,
         value: [
-          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.5 nhận **+2.000 LT**.',
-          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • `/dismantle` • `/enchant` (`+0/+8/+18/+32/+50%`).',
-          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) • **Nền & Viền** đổi **0 LT** trong `/shop` & cộng **`+2% / +4% / +7% / +10%` EXP & LT** mỗi món *(tối đa +20%)* cho Chat/Voice, `/daily`, `/job`, `/explorer` & Tháp.',
+          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.6 nhận **+1.000 LT**.',
+          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • **`/dothach`** *(20 Nguyên Thạch, không Pity, săn Tối Thượng)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
+          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) & **3 Lọ Luck Potion** *(Tiểu Vận `+20%` • Thiên Cơ `+40%` • Hồng Mông `+60%` cho `/roll` & `/dothach`)*.',
         ].join('\n'),
         inline: false,
       },

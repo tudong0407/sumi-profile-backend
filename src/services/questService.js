@@ -15,12 +15,14 @@ import {
   DIVINE_SENSE_CATALOG,
   DIVINE_REALM_CATALOG,
   WEEKLY_CONTRACTS_CONFIG,
+  PUBLIC_BASE_URL,
   computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
+import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 
 export const DAILY_QUEST_EXP_TARGET = 150;
 export const DAILY_QUEST_WINS_TARGET = 3;
@@ -495,6 +497,26 @@ export async function getQuestStatus(userId, options = {}) {
   const weeklyAllDone = weeklyContracts.every((c) => c.done);
   const weeklyClaimable = weeklyContracts.some((c) => c.done && !c.claimed) || (weeklyAllDone && !state.weekly_bonus_claimed);
 
+  const rawTab = String(options.tab || 'daily').trim().toLowerCase();
+  const normalizedTab = rawTab === 'tower_view' ? 'tower' : rawTab;
+  const activeTab = ['daily', 'weekly', 'tower', 'all'].includes(normalizedTab) ? normalizedTab : 'daily';
+
+  const nowDate = new Date();
+  const vnMs = nowDate.getTime() + 7 * 3600 * 1000;
+  const dailyRemMs = 86400000 - (vnMs % 86400000);
+  const dailyH = Math.floor(dailyRemMs / 3600000);
+  const dailyM = Math.floor((dailyRemMs % 3600000) / 60000);
+  const dailyResetIn = `${dailyH}G ${String(dailyM).padStart(2, '0')}P`;
+
+  const vnDateObj = new Date(vnMs);
+  const utcDay = vnDateObj.getUTCDay();
+  const daysUntilMon = utcDay === 0 ? 1 : (8 - utcDay);
+  const weeklyRemMs = (daysUntilMon - 1) * 86400000 + dailyRemMs;
+  const weekD = Math.floor(weeklyRemMs / 86400000);
+  const weekH = Math.floor((weeklyRemMs % 86400000) / 3600000);
+  const weekM = Math.floor((weeklyRemMs % 3600000) / 60000);
+  const weeklyResetIn = `${weekD}N ${weekH}G ${String(weekM).padStart(2, '0')}P`;
+
   const mark = (done, claimed = false) => (claimed ? `${em('su_medal_role')}` : done ? `${uiEm('ui_check')}` : `[ ]`);
   const nextFloor = Math.min(TOWER_MAX_FLOOR, state.tower_floor + 1);
   const bandStart = Math.floor((nextFloor - 1) / 100) * 100 + 1;
@@ -503,32 +525,65 @@ export async function getQuestStatus(userId, options = {}) {
     ? 'Luyện Tháp Sơ Đỉnh (1–99)'
     : `Thần Cảnh Tầng ${bandStart}–${bandEnd}`;
 
-  const lines = [
-    `**1. Nhiệm Vụ Hàng Ngày (${state.quest_date} • 2 Cố Định + 3 Xoay Vòng)**`,
-    ...quests.map((q) => `${mark(q.done, q.claimed)} **${q.name}** — \`${q.progress}/${q.target}\` *(+${q.reward_lt} LT)*`),
+  const dailyLines = [
+    `**Nhiệm Vụ Hàng Ngày (${state.quest_date} • 2 Cố Định + 3 Xoay Vòng)**`,
+    ...quests.flatMap((q, idx) => [
+      `${idx + 1}. ${mark(q.done, q.claimed)} **${q.name}**`,
+      `  \`▸ Thưởng:\` \`+${q.reward_lt}\` ${em('su_linhthach')}`,
+      `  \`▸ Tiến độ:\` \`[${q.progress}/${q.target}]\`${q.claimed ? ' — *Đã nhận*' : q.done ? ' — *Sẵn sàng nhận!*' : ''}`,
+    ]),
     `• **Thưởng Hoàn Tất 5/5:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('gacha_ticket_equip')} • \`+1\` ${em('pet_star_stone')} • \`+1\` ${em('enchant_stone')}`,
     alreadyClaimed
-      ? `${em('su_sparkle')} **Trạng thái:** Đã nhận trọn bộ thưởng Nhiệm Vụ Ngày hôm nay!`
+      ? `${em('su_sparkle')} **Trạng thái:** Đã nhận trọn bộ thưởng Nhiệm Vụ Ngày hôm nay! • *Làm mới sau:* \`${dailyResetIn}\``
       : canClaimDaily
-        ? `${em('su_sparkle')} **Trạng thái:** Có nhiệm vụ đã hoàn tất! Dùng \`/nhiemvu hanh_dong:claim\` để nhận thưởng ngay.`
-        : `• *Hoàn thành từng nhiệm vụ để nhận thưởng lẻ và mở thưởng 5/5 qua \`/nhiemvu hanh_dong:claim\`.*`,
-    ``,
-    `**2. Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00)**`,
-    ...weeklyContracts.map((c) => `${mark(c.done, c.claimed)} **${c.label}** — \`${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}\` *(+${c.rewardLt} LT + ${c.rewardStones} ${em('enchant_stone')})*`),
-    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt} LT + ${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
-    ``,
-    `**3. Tháp Thí Luyện ${TOWER_MAX_FLOOR} Tầng (${nextTierName})**`,
-    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\` • **Thẻ Reset:** \`${ownedResetCards}/15\` ${em('tower_reset_card')} • **Đá Khắc Ấn:** \`${ownedEnchantStones}\` ${em('enchant_stone')}`,
-    `• Dùng \`/nhiemvu hanh_dong:tower\` khiêu chiến **Tầng ${nextFloor}** *(Win +${TOWER_WIN_BONUS_LT} LT / Lose -${TOWER_LOSS_PENALTY_LT} LT • Linh Vực mở từ F70 • Boss 5 tầng rơi +1 Tinh Thạch & +1 Đá Khắc Ấn)*!`,
+        ? `${em('su_sparkle')} **Trạng thái:** Có nhiệm vụ đã hoàn tất! Bấm **Nhận Thưởng** hoặc \`/nhiemvu hanh_dong:claim\`. • *Làm mới sau:* \`${dailyResetIn}\``
+        : `• *Làm mới sau:* \`${dailyResetIn}\` • *Hoàn thành từng nhiệm vụ để mở thưởng qua \`/nhiemvu hanh_dong:claim\`.*`,
+  ];
+
+  const weeklyLines = [
+    `**Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00)**`,
+    ...weeklyContracts.flatMap((c, idx) => [
+      `${idx + 1}. ${mark(c.done, c.claimed)} **${c.label}**`,
+      `  \`▸ Thưởng:\` \`+${c.rewardLt}\` ${em('su_linhthach')} • \`+${c.rewardStones}\` ${em('enchant_stone')}`,
+      `  \`▸ Tiến độ:\` \`[${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}]\`${c.claimed ? ' — *Đã nhận*' : c.done ? ' — *Sẵn sàng nhận!*' : ''}`,
+    ]),
+    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt}\` ${em('su_linhthach')} • \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
+    `• *Làm mới sau:* \`${weeklyResetIn}\``,
+  ];
+
+  const towerLines = [
+    `**Tháp Thí Luyện ${TOWER_MAX_FLOOR} Tầng (${nextTierName})**`,
+    `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+    `  \`▸ Thưởng tầng ${nextFloor}:\` Win \`+${TOWER_WIN_BONUS_LT} LT\` • Lose \`-${TOWER_LOSS_PENALTY_LT} LT\``,
+    `  \`▸ Tài nguyên:\` \`${ownedResetCards}/15\` ${em('tower_reset_card')} Thẻ Reset • \`${ownedEnchantStones}\` ${em('enchant_stone')} Đá Khắc Ấn`,
+    `• Dùng \`/nhiemvu hanh_dong:tower\` hoặc bấm **Leo Tháp** để khiêu chiến **Tầng ${nextFloor}**!`,
     state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
   ].filter(Boolean);
+
+  const lines = activeTab === 'weekly'
+    ? weeklyLines
+    : activeTab === 'tower'
+      ? towerLines
+      : activeTab === 'all'
+        ? [...dailyLines, '', ...weeklyLines, '', ...towerLines]
+        : dailyLines;
+
+  const embedTitle = activeTab === 'weekly'
+    ? `${em('su_quest_scroll')} HỢP ĐỒNG TUẦN — ${user.username}`
+    : activeTab === 'tower'
+      ? `${em('su_arena')} THÁP THÍ LUYỆN ${TOWER_MAX_FLOOR} TẦNG — ${user.username}`
+      : `${em('su_quest_scroll')} NHIỆM VỤ HÀNG NGÀY — ${user.username}`;
 
   return {
     success: true,
     user_id: cleanId,
     username: user.username,
+    tab: activeTab,
+    embed_title: embedTitle,
     quest_date: state.quest_date,
     week_key: state.weekly_week_key,
+    daily_reset_in: dailyResetIn,
+    weekly_reset_in: weeklyResetIn,
     quests,
     all_completed: allCompleted,
     already_claimed: alreadyClaimed,
@@ -542,6 +597,7 @@ export async function getQuestStatus(userId, options = {}) {
     tower_attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
     tower_reset_cards: ownedResetCards,
     enchant_stones: ownedEnchantStones,
+    quest_card_url: `${PUBLIC_BASE_URL}/api/quest/card/${cleanId}.webp?tab=${activeTab}`,
     message: lines.join('\n'),
     footer: '',
   };
@@ -935,8 +991,9 @@ export async function challengeTower(userId, options = {}) {
 
     if (won) {
       const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
+      const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
       const baseFloorLt = computeTowerFloorRewardLt(targetFloor);
-      rewardLt = Math.round(baseFloorLt * (1 + (cosmeticBuffs.ltPct || 0) / 100));
+      rewardLt = Math.round(baseFloorLt * Math.max(0.5, 1 + (Number(cosmeticBuffs.ltPct || 0) + Number(fortuneInfo?.fortuneLtPct || 0)) / 100));
       if (isBoss) {
         rewardStarStones += 1;
         rewardEnchantStones += 1;

@@ -504,7 +504,7 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
   });
 
   it('7. Update v1.3.1: zero "Độc quyền Fuyumi", 5 Vực emojis, Canvas Domain UI, KHO LINH THÚ rarity badges & 45% minigame calibration', async () => {
-    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5', '1.5.1', '1.5.2'].includes(LATEST_VERSION), `Unexpected LATEST_VERSION: ${LATEST_VERSION}`);
+    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5', '1.5.1', '1.5.2', '1.6'].includes(LATEST_VERSION), `Unexpected LATEST_VERSION: ${LATEST_VERSION}`);
 
     // 7A. No "Độc quyền Fuyumi" text in catalog, /info, battle logs, or pet detail card
     const cuuVi = PET_CATALOG.find((p) => p.pet_type === 'cuu_vi_hong_ho');
@@ -525,7 +525,7 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
 
     // 7B. /wiki battle contains all 5 Vực element emojis & updated v1.3.1 chart
     const wikiBattle = await (await testServer.fetch('/api/wiki?category=battle')).json();
-    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5', '1.5.1', '1.5.2'].includes(wikiBattle.version), `Unexpected wikiBattle.version: ${wikiBattle.version}`);
+    assert.ok(['1.3.1', '1.4', '1.4.5', '1.4.7', '1.5', '1.5.1', '1.5.2', '1.6'].includes(wikiBattle.version), `Unexpected wikiBattle.version: ${wikiBattle.version}`);
     assert.match(wikiBattle.data.image_url, /elements\.webp\?v=1\.3\.1/);
     const domainField = wikiBattle.data.fields.find((f) => /Linh Vực/i.test(f.name));
     assert.ok(domainField, 'Wiki battle should have Linh Vực field');
