@@ -411,7 +411,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại & Cộng Đồng',
-        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 20s/lượt).\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
+        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
       },
     ],
     fields: [

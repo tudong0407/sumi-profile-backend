@@ -249,7 +249,7 @@ test('v1.6 Gieo Que (/gieoque): 6 Tiers (100%), 30 Poems, 1/day Lock & Reroll', 
 
 test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', async () => {
   assert.equal(BATTLE_COOLDOWN_MS, 15000);
-  assert.equal(TOWER_COOLDOWN_MS, 20000);
+  assert.equal(TOWER_COOLDOWN_MS, 6000);
 
   const uid = '999999999999916001';
   const st = await getQuestStatus(uid);
@@ -264,5 +264,5 @@ test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', asyn
   const c2 = await challengeTower(uid, { preRender: false, seed: 7 });
   assert.equal(c2.success, false);
   assert.equal(c2.error, 'TOWER_COOLDOWN');
-  assert.ok(c2.cooldown_seconds >= 1 && c2.cooldown_seconds <= 20);
+  assert.ok(c2.cooldown_seconds >= 1 && c2.cooldown_seconds <= 6);
 });

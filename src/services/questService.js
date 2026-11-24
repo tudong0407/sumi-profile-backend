@@ -84,7 +84,7 @@ export const TOWER_MAX_FLOOR = 500;
 export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
 export const TOWER_WIN_BONUS_LT = 10;
 export const TOWER_LOSS_PENALTY_LT = 5;
-export const TOWER_COOLDOWN_MS = 20000;
+export const TOWER_COOLDOWN_MS = 6000;
 
 const towerCooldowns = new Map();
 
