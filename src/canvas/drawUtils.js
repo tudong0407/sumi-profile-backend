@@ -1081,12 +1081,14 @@ export async function loadBadgeImage(assetRelPath) {
 }
 
 /**
- * Loại bỏ các emoji Unicode Windows ở đầu chuỗi để thay bằng icon PNG sắc nét trên Canvas
+ * Loại bỏ các emoji Unicode Windows và Discord custom emoji tags (<:name:id>, <a:name:id>) để thay bằng icon PNG sắc nét trên Canvas
  */
 export function stripLeadingEmojis(str) {
   if (!str) return '';
   return String(str)
+    .replace(/<a?:[a-zA-Z0-9_]+:[0-9]+>/g, ' ')
     .replace(/^[\s\uFE0F\u200D\u2600-\u27BF\u{1F300}-\u{1FAFF}]+/gu, '')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 }
 

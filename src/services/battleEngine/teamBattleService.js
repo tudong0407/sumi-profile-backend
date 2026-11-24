@@ -517,7 +517,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
               defender.state.shieldExplodePct = 0;
               const explodeDmg = Math.floor(defender.maxHp * pct);
               striker.currentHp = Math.max(0, striker.currentHp - explodeDmg);
-              notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST)`);
+              notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
               if (striker.currentHp <= 0) {
                 const li = triggerLethalInterception(striker, defender, rng);
                 if (li.survived && li.skill) notes.push(li.skill);
@@ -540,7 +540,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         // Phản sát thương (Damage Reflection từ Bảo Ngọc / Pet / HAX)
         if (damageRecv.reflectedDamage > 0 && striker.currentHp > 0 && striker.id !== defender.id) {
           striker.currentHp = Math.max(0, striker.currentHp - damageRecv.reflectedDamage);
-          notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST`);
+          notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST (thẳng máu, bỏ qua khiên)`);
           if (striker.currentHp <= 0) {
             const liActor = triggerLethalInterception(striker, defender, rng);
             if (liActor.survived && liActor.skill) notes.push(liActor.skill);

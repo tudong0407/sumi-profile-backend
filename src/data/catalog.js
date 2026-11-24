@@ -105,7 +105,7 @@ export const EQUIPMENT_CATALOG = [
 
   { item_id: 'weapon_mythic_1', item_name: '« Tru Tiên Diệt Thần Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 720, bonus_def: 0, bonus_spd: 300, bonus_hp: 0, bonus_crit: 18.0, hax_skill: 'Tuyệt Diệt Bất Tử', hax_description: 'Xuyên 100% khiên chắn và vô hiệu hóa cơ chế Bất Tử / Trùng Sinh của đối thủ trong 3 lượt đầu.', drop_rate: 1.0, is_unique: true },
   { item_id: 'weapon_mythic_2', item_name: '« Cửu Thiên Lôi Đình Cổ Thần Thương »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Lôi', bonus_atk: 740, bonus_def: 280, bonus_spd: 320, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Lôi Thần Trấn Áp', hax_description: 'Khai trận cướp 40% SPD của đối thủ chuyển hóa trực tiếp thành ATK suốt trận.', drop_rate: 1.0, is_unique: true },
-  { item_id: 'weapon_mythic_3', item_name: '« Hồng Mông Hỗn Độn Trượng »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 750, bonus_def: 350, bonus_spd: 300, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Hỗn Độn Nghịch Đảo', hax_description: '35% xác suất biến toàn bộ sát thương nhận vào thành máu hồi phục và phản đòn 100%.', drop_rate: 1.0, is_unique: true },
+  { item_id: 'weapon_mythic_3', item_name: '« Hồng Mông Hỗn Độn Trượng »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 750, bonus_def: 350, bonus_spd: 300, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Hỗn Độn Nghịch Đảo', hax_description: '35% xác suất biến toàn bộ sát thương nhận vào thành máu hồi phục và phản đòn 100% (thẳng máu, bỏ qua khiên).', drop_rate: 1.0, is_unique: true },
   { item_id: 'weapon_mythic_4', item_name: '« Thái Cổ Phần Thiên Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỏa', bonus_atk: 740, bonus_def: 0, bonus_spd: 280, bonus_hp: 0, bonus_crit: 16.0, hax_skill: 'Phần Thiên Trảm', hax_description: 'Xuyên 55% DEF & thiêu đốt 8% HP tối đa địch mỗi hiệp.', drop_rate: 1.0, is_unique: false },
   { item_id: 'weapon_mythic_5', item_name: '« U Minh Phệ Hồn Liêm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Ám', bonus_atk: 730, bonus_def: 160, bonus_spd: 310, bonus_hp: 0, bonus_crit: 14.0, hax_skill: 'Đoạt Hồn Tịch Diệt', hax_description: 'Hút 25% sát thương thành HP; địch dưới 20% HP có 40% tỉ lệ kết liễu tức thì.', drop_rate: 1.0, is_unique: false },
 
@@ -123,14 +123,14 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'gem_rare_5', item_name: 'Lôi Linh Tinh Thạch', item_type: 'gem', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Lôi', bonus_atk: 0, bonus_def: 290, bonus_spd: 90, bonus_hp: 1600, bonus_crit: 0.0, hax_skill: null, hax_description: 'Khi bị đánh có 15% phản giật làm chậm địch 15% SPD.', drop_rate: 25.0, is_unique: false },
 
   { item_id: 'gem_epic_1', item_name: 'Cửu Tiêu Bất Diệt Ngọc', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Kim', bonus_atk: 0, bonus_def: 650, bonus_spd: 0, bonus_hp: 4000, bonus_crit: 0.0, hax_skill: null, hax_description: 'Giảm cố định 25% toàn bộ sát thương gánh chịu.', drop_rate: 14.0, is_unique: false },
-  { item_id: 'gem_epic_2', item_name: 'Vạn Niên Hàn Băng Châu', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Thủy', bonus_atk: 0, bonus_def: 620, bonus_spd: 0, bonus_hp: 3800, bonus_crit: 0.0, hax_skill: null, hax_description: 'Phản lại 30% sát thương băng khi bị tấn công.', drop_rate: 14.0, is_unique: false },
+  { item_id: 'gem_epic_2', item_name: 'Vạn Niên Hàn Băng Châu', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Thủy', bonus_atk: 0, bonus_def: 620, bonus_spd: 0, bonus_hp: 3800, bonus_crit: 0.0, hax_skill: null, hax_description: 'Phản lại 30% sát thương băng khi bị tấn công (thẳng máu, bỏ qua khiên).', drop_rate: 14.0, is_unique: false },
   { item_id: 'gem_epic_3', item_name: 'Thái Cực Bát Quái Ngọc Bội', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Quang', bonus_atk: 0, bonus_def: 680, bonus_spd: 0, bonus_hp: 4200, bonus_crit: 0.0, hax_skill: null, hax_description: 'Miễn dịch 50% mọi trạng thái khống chế.', drop_rate: 14.0, is_unique: false },
   { item_id: 'gem_epic_4', item_name: 'Phượng Hoàng Huyết Tinh', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Hỏa', bonus_atk: 0, bonus_def: 600, bonus_spd: 0, bonus_hp: 4500, bonus_crit: 0.0, hax_skill: null, hax_description: 'Máu dưới 30% tự động hồi 35% HP (1 lần/trận).', drop_rate: 14.0, is_unique: false },
   { item_id: 'gem_epic_5', item_name: 'Huyền Mộc Trường Sinh Châu', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Mộc', bonus_atk: 0, bonus_def: 610, bonus_spd: 0, bonus_hp: 4400, bonus_crit: 0.0, hax_skill: null, hax_description: 'Hồi 9% HP tối đa/hiệp & kháng 35% độc/thiêu đốt.', drop_rate: 14.0, is_unique: false },
   { item_id: 'gem_epic_6', item_name: 'U Minh Hắc Diệu Thạch', item_type: 'gem', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Ám', bonus_atk: 150, bonus_def: 630, bonus_spd: 0, bonus_hp: 3900, bonus_crit: 0.0, hax_skill: null, hax_description: 'Khi HP hoặc khiên giảm dưới 50%, tăng +20% ATK hết trận.', drop_rate: 14.0, is_unique: false },
 
   { item_id: 'gem_mythic_1', item_name: '« Bất Hủ Thần Hoàng Ngọc »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thổ', bonus_atk: 200, bonus_def: 720, bonus_spd: 0, bonus_hp: 4800, bonus_crit: 0.0, hax_skill: 'Kim Thân Hộ Mệnh', hax_description: 'Chặn đứng đòn chí tử tại 1 HP và miễn nhiễm 100% sát thương trong 2 lượt kế tiếp.', drop_rate: 1.0, is_unique: true },
-  { item_id: 'gem_mythic_2', item_name: '« Vạn Tượng Quy Nhất Châu »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Quang', bonus_atk: 0, bonus_def: 730, bonus_spd: 250, bonus_hp: 4600, bonus_crit: 0.0, hax_skill: 'Kính Hoa Thủy Nguyệt', hax_description: 'Phản hồi 75% sát thương nhận vào dội ngược lại đối thủ (bỏ qua giáp DEF).', drop_rate: 1.0, is_unique: true },
+  { item_id: 'gem_mythic_2', item_name: '« Vạn Tượng Quy Nhất Châu »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Quang', bonus_atk: 0, bonus_def: 730, bonus_spd: 250, bonus_hp: 4600, bonus_crit: 0.0, hax_skill: 'Kính Hoa Thủy Nguyệt', hax_description: 'Phản hồi 75% sát thương nhận vào dội ngược lại đối thủ (thẳng máu, bỏ qua giáp DEF & khiên).', drop_rate: 1.0, is_unique: true },
   { item_id: 'gem_mythic_3', item_name: '« Thiên Hồ Hóa Thần Ngọc »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 0, bonus_def: 750, bonus_spd: 200, bonus_hp: 5000, bonus_crit: 0.0, hax_skill: 'Thần Hồ Diễm Hộ', hax_description: 'Đầu trận tạo khiên bằng 100% HP tối đa; khi khiên còn tồn tại, giảm 50% sát thương địch.', drop_rate: 1.0, is_unique: true },
   { item_id: 'gem_mythic_4', item_name: '« Thương Hải Băng Tâm Ngọc »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thủy', bonus_atk: 0, bonus_def: 740, bonus_spd: 180, bonus_hp: 4800, bonus_crit: 0.0, hax_skill: 'Hàn Băng Tuyệt Vực', hax_description: 'Giảm 30% sát thương nhận vào & 25% tỉ lệ đóng băng kẻ tấn công.', drop_rate: 1.0, is_unique: false },
   { item_id: 'gem_mythic_5', item_name: '« Hỗn Nguyên Càn Khôn Ấn »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thổ', bonus_atk: 180, bonus_def: 760, bonus_spd: 0, bonus_hp: 5000, bonus_crit: 0.0, hax_skill: 'Càn Khôn Hộ Thể', hax_description: 'Đầu trận nhận khiên 75% HP tối đa & chặn kết liễu tức thì 1 lần/trận.', drop_rate: 1.0, is_unique: false },
@@ -155,7 +155,7 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'soul_epic_5', item_name: 'Kim Sí Thiên Điêu Hồn', item_type: 'soul', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Kim', bonus_atk: 290, bonus_def: 0, bonus_spd: 430, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: '25% né đòn đánh & tăng +15% sát thương đòn kế tiếp sau khi né.', drop_rate: 14.0, is_unique: false },
   { item_id: 'soul_epic_6', item_name: 'Bất Tử Chu Tước Hồn', item_type: 'soul', rarity: 'Tiên Phẩm', rarity_key: 'epic', element: 'Hỏa', bonus_atk: 280, bonus_def: 220, bonus_spd: 370, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Chặn đòn chí tử 1 lần/trận giữ lại 20% HP tối đa.', drop_rate: 14.0, is_unique: false },
 
-  { item_id: 'soul_mythic_1', item_name: '« Cửu Vĩ Thiên Tiên Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 350, bonus_def: 300, bonus_spd: 450, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Mị Hoặc Chúng Sinh', hax_description: '40% xác suất mỗi hiệp Mị Hoặc đối thủ tự đánh mình; nếu địch kháng được sẽ tự chuyển thành đốt 10% HP chuẩn & giảm 20% ATK địch (2 hiệp).', drop_rate: 1.0, is_unique: true },
+  { item_id: 'soul_mythic_1', item_name: '« Cửu Vĩ Thiên Tiên Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỗn Độn', bonus_atk: 350, bonus_def: 300, bonus_spd: 450, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Mị Hoặc Chúng Sinh', hax_description: '40% xác suất mỗi hiệp Mị Hoặc đối thủ tự đánh mình; nếu địch kháng được sẽ tự chuyển thành đốt 10% HP chuẩn (thẳng máu, bỏ qua khiên) & giảm 20% ATK địch (2 hiệp).', drop_rate: 1.0, is_unique: true },
   { item_id: 'soul_mythic_2', item_name: '« Thái Sơ Thời Không Ma Thần Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Không Gian', bonus_atk: 380, bonus_def: 280, bonus_spd: 460, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Thời Không Đình Chỉ', hax_description: 'Ngưng đọng thời gian 1 lần/trận, tung liên hoàn 2 lượt không gián đoạn.', drop_rate: 1.0, is_unique: true },
   { item_id: 'soul_mythic_3', item_name: '« Luân Hồi Bất Diệt Chiến Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Luân Hồi', bonus_atk: 360, bonus_def: 320, bonus_spd: 470, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Sinh Mệnh Nghịch Chuyển', hax_description: 'Khi HP tụt dưới 20% (còn sống), hoán đổi ngay % máu hiện tại với đối thủ (1 lần/trận).', drop_rate: 1.0, is_unique: true },
   { item_id: 'soul_mythic_4', item_name: '« Thái Bạch Kiếm Tiên Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Kim', bonus_atk: 390, bonus_def: 220, bonus_spd: 450, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Vạn Kiếm Quy Tông', hax_description: 'Mỗi 2 hiệp tung thêm kiếm khí 70% ATK xuyên 50% DEF.', drop_rate: 1.0, is_unique: false },
@@ -179,10 +179,10 @@ export const EQUIPMENT_BY_ID = Object.fromEntries(EQUIPMENT_CATALOG.map((item) =
 export const PET_CATALOG = [
   // 10 Phàm Phẩm (5 cũ cân bằng + 5 mới)
   { pet_type: 'hoa_thach_nham_nham', pet_name: 'Hóa Thạch Nham Nham Thú', element: 'Thổ', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 120, base_def: 180, base_spd: 100, hax_skill: 'Hóa Đá', hax_description: '20% tỉ lệ hóa đá kẻ tấn công 1 hiệp khi bị đánh.', image_file: 'pets/hoa_thach_nham_nham.png', is_starter: true, is_exclusive_fuyumi: false },
-  { pet_type: 'thuy_tinh_huyen_ngao', pet_name: 'Thủy Tinh Huyền Ngao', element: 'Thủy', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 150, base_def: 240, base_spd: 140, hax_skill: 'Nghịch Lưu Phản Xạ', hax_description: 'Phản lại 25% sát thương nhận vào.', image_file: 'pets/thuy_tinh_huyen_ngao.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'thuy_tinh_huyen_ngao', pet_name: 'Thủy Tinh Huyền Ngao', element: 'Thủy', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 150, base_def: 240, base_spd: 140, hax_skill: 'Nghịch Lưu Phản Xạ', hax_description: 'Phản lại 25% sát thương nhận vào (thẳng máu, bỏ qua khiên).', image_file: 'pets/thuy_tinh_huyen_ngao.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thao_moc_linh_vien', pet_name: 'Thảo Mộc Linh Viên', element: 'Mộc', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 170, base_def: 220, base_spd: 160, hax_skill: 'Đất Mẹ Che Chở', hax_description: 'Đầu trận tạo khiên chắn bằng 25% HP tối đa.', image_file: 'pets/thao_moc_linh_vien.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thanh_truc_tien_loc', pet_name: 'Thanh Trúc Tiên Lộc', element: 'Mộc', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 180, base_def: 200, base_spd: 190, hax_skill: 'Linh Mộc Hồi Xuân', hax_description: 'Hồi phục 8% HP tối đa mỗi hiệp.', image_file: 'pets/thanh_truc_tien_loc.png', is_starter: false, is_exclusive_fuyumi: false },
-  { pet_type: 'thiet_giap_xich_giac', pet_name: 'Thiết Giáp Xích Giác Thú', element: 'Kim', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 190, base_def: 260, base_spd: 150, hax_skill: 'Phản Chấn Thần Lực', hax_description: 'Phản hồi 30% sát thương nhận vào.', image_file: 'pets/thiet_giap_xich_giac.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'thiet_giap_xich_giac', pet_name: 'Thiết Giáp Xích Giác Thú', element: 'Kim', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 190, base_def: 260, base_spd: 150, hax_skill: 'Phản Chấn Thần Lực', hax_description: 'Phản hồi 30% sát thương nhận vào (thẳng máu, bỏ qua khiên).', image_file: 'pets/thiet_giap_xich_giac.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'kim_giap_tue_lan', pet_name: 'Kim Giáp Tuế Lân', element: 'Kim', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 190, base_def: 230, base_spd: 150, hax_skill: 'Giáp Sắt Kiên Cố', hax_description: 'Giảm 15% sát thương nhận vào trong 2 hiệp đầu.', image_file: 'pets/kim_giap_tue_lan.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'hoa_linh_tieu_ho', pet_name: 'Hỏa Linh Tiểu Hồ', element: 'Hỏa', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 220, base_def: 150, base_spd: 210, hax_skill: 'Đốm Lửa Nhỏ', hax_description: 'Đòn đánh thiêu đốt thêm 4% HP tối đa địch trong 2 hiệp.', image_file: 'pets/hoa_linh_tieu_ho.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'phong_vu_tieu_tuoc', pet_name: 'Phong Vũ Tiểu Tước', element: 'Lôi', rarity: 'Phàm Phẩm', rarity_key: 'common', base_atk: 180, base_def: 140, base_spd: 250, hax_skill: 'Cánh Gió Nhanh Nhẹn', hax_description: 'Tăng 12% tỉ lệ né tránh đòn đánh địch.', image_file: 'pets/phong_vu_tieu_tuoc.png', is_starter: false, is_exclusive_fuyumi: false },
@@ -192,7 +192,7 @@ export const PET_CATALOG = [
   // 10 Linh Phẩm (5 cũ cân bằng + 5 mới)
   { pet_type: 'bang_tuyet_ho', pet_name: 'Băng Tuyết Hồ', element: 'Thủy', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 310, base_def: 330, base_spd: 340, hax_skill: 'Băng Phong', hax_description: '25% tỉ lệ đóng băng đối thủ 1 hiệp.', image_file: 'pets/bang_tuyet_ho.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'viem_nguc_khuyen', pet_name: 'Viêm Ngục Khuyển', element: 'Hỏa', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 340, base_def: 300, base_spd: 320, hax_skill: 'Cuồng Nộ', hax_description: 'HP dưới 35% kích hoạt Cuồng Nộ x1.75 sát thương.', image_file: 'pets/viem_nguc_khuyen.png', is_starter: false, is_exclusive_fuyumi: false },
-  { pet_type: 'xich_xa_hoa_long', pet_name: 'Xích Xà Hỏa Long', element: 'Hỏa', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 350, base_def: 280, base_spd: 330, hax_skill: 'Hỏa Độc Huyết', hax_description: 'Gây độc rút 7% HP tối đa đối thủ mỗi hiệp.', image_file: 'pets/xich_xa_hoa_long.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'xich_xa_hoa_long', pet_name: 'Xích Xà Hỏa Long', element: 'Hỏa', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 350, base_def: 280, base_spd: 330, hax_skill: 'Hỏa Độc Huyết', hax_description: 'Gây độc rút 7% HP tối đa đối thủ mỗi hiệp (bỏ qua khiên).', image_file: 'pets/xich_xa_hoa_long.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'bach_kim_ho_tu', pet_name: 'Bạch Kim Hổ Tử', element: 'Kim', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 370, base_def: 290, base_spd: 330, hax_skill: 'Phá Giáp Trảm', hax_description: 'Đòn đánh xuyên 35% lớp phòng ngự DEF của mục tiêu.', image_file: 'pets/bach_kim_ho_tu.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'hai_duong_tien_ngu', pet_name: 'Hải Dương Tiên Ngư', element: 'Thủy', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 290, base_def: 360, base_spd: 340, hax_skill: 'Thanh Tẩy Linh Triều', hax_description: 'Xóa sạch khiên chắn và 1 buff có lợi của đối thủ ở hiệp 1 và mỗi 3 hiệp.', image_file: 'pets/hai_duong_tien_ngu.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thanh_long_au_xa', pet_name: 'Thanh Long Ấu Xà', element: 'Mộc', rarity: 'Linh Phẩm', rarity_key: 'rare', base_atk: 310, base_def: 320, base_spd: 330, hax_skill: 'Sinh Mệnh Trường Thanh', hax_description: 'Hồi 10% HP tối đa mỗi hiệp & tăng +5% DEF/hiệp (tối đa 4 tầng).', image_file: 'pets/thanh_long_au_xa.png', is_starter: false, is_exclusive_fuyumi: false },
@@ -206,7 +206,7 @@ export const PET_CATALOG = [
   { pet_type: 'hoa_diem_ho', pet_name: 'Hỏa Diễm Hồ', element: 'Hỏa', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 460, base_def: 350, base_spd: 440, hax_skill: 'Thiêu Hồn', hax_description: 'Đòn đánh bỏ qua 50% giáp DEF của đối thủ.', image_file: 'pets/hoa_diem_ho.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'man_da_la_linh_thu', pet_name: 'Mạn Đà La Linh Thú', element: 'Mộc', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 430, base_def: 410, base_spd: 420, hax_skill: 'Ký Sinh Hút Máu', hax_description: 'Gây thêm sát thương bằng 15% HP hiện tại của địch và hút về bản thân.', image_file: 'pets/man_da_la_linh_thu.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'kim_si_dieu_hoang', pet_name: 'Kim Sí Điêu Hoàng', element: 'Kim', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 450, base_def: 380, base_spd: 470, hax_skill: 'Mù Lòa Thái Dương', hax_description: 'Khiến đối thủ đánh trượt 55% trong 2 hiệp đầu.', image_file: 'pets/kim_si_dieu_hoang.png', is_starter: false, is_exclusive_fuyumi: false },
-  { pet_type: 'huyen_vu_linh_quy', pet_name: 'Huyền Vũ Linh Quy', element: 'Thủy', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 360, base_def: 490, base_spd: 370, hax_skill: 'Huyền Vũ Thần Giáp', hax_description: 'Giảm 25% mọi sát thương gánh chịu & phản lại 35% sát thương.', image_file: 'pets/huyen_vu_linh_quy.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'huyen_vu_linh_quy', pet_name: 'Huyền Vũ Linh Quy', element: 'Thủy', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 360, base_def: 490, base_spd: 370, hax_skill: 'Huyền Vũ Thần Giáp', hax_description: 'Giảm 25% mọi sát thương gánh chịu & phản lại 35% sát thương (thẳng máu, bỏ qua khiên).', image_file: 'pets/huyen_vu_linh_quy.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thai_am_ngoc_tho', pet_name: 'Thái Âm Ngọc Thỏ', element: 'Quang', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 410, base_def: 400, base_spd: 460, hax_skill: 'Nguyệt Hoa Huyễn Cảnh', hax_description: '30% né hoàn toàn đòn đánh & phản công ngay 80% ATK.', image_file: 'pets/thai_am_ngoc_tho.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'dia_long_nham_vuong', pet_name: 'Địa Long Nham Vương', element: 'Thổ', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 440, base_def: 450, base_spd: 350, hax_skill: 'Địa Chấn Nghiền Nát', hax_description: 'Đòn đánh phá 50% khiên chắn địch & giảm 20% DEF địch 2 hiệp.', image_file: 'pets/dia_long_nham_vuong.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'cuu_thien_loi_phuong', pet_name: 'Cửu Thiên Lôi Phượng', element: 'Lôi', rarity: 'Tiên Phẩm', rarity_key: 'epic', base_atk: 460, base_def: 350, base_spd: 470, hax_skill: 'Lôi Kiếp Liên Hoàn', hax_description: '30% xác suất tung thêm 1 đòn sét phụ 60% ATK xuyên 30% DEF.', image_file: 'pets/cuu_thien_loi_phuong.png', is_starter: false, is_exclusive_fuyumi: false },
@@ -221,13 +221,13 @@ export const PET_CATALOG = [
   { pet_type: 'tinh_khong_da_thao', pet_name: 'Tinh Không Dạ Thao', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 520, base_def: 480, base_spd: 540, hax_skill: 'Hư Không Hỗn Loạn', hax_description: '35% xác suất khiến đối thủ hỗn loạn tự tấn công bản thân.', image_file: 'pets/tinh_khong_da_thao.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'quang_minh_thanh_thu', pet_name: 'Quang Minh Thánh Thú', element: 'Quang', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 500, base_def: 540, base_spd: 510, hax_skill: 'Thánh Quang Hóa Giải', hax_description: 'Miễn nhiễm 100% Choáng/Mù/Mị Hoặc/Cướp Tốc/Khóa HAX/Độc/Đốt.', image_file: 'pets/quang_minh_thanh_thu.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'thanh_de_moc_long', pet_name: 'Thanh Đế Mộc Long', element: 'Mộc', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 500, base_def: 520, base_spd: 510, hax_skill: 'Thái Cổ Sinh Linh', hax_description: 'Hồi 14% HP/hiệp + tích +8% ATK/hiệp (tối đa 5 tầng); miễn nhiễm độc/đốt.', image_file: 'pets/thanh_de_moc_long.png', is_starter: false, is_exclusive_fuyumi: false },
-  { pet_type: 'hoang_thien_ky_lan', pet_name: 'Hoàng Thiên Kỳ Lân', element: 'Thổ', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 510, base_def: 560, base_spd: 470, hax_skill: 'Bất Động Sơn Hà', hax_description: 'Đầu trận khiên 65% HP; khi khiên vỡ phát nổ gây 20% HP tối đa ST chuẩn.', image_file: 'pets/hoang_thien_ky_lan.png', is_starter: false, is_exclusive_fuyumi: false },
-  { pet_type: 'thai_duong_kim_o', pet_name: 'Thái Dương Kim Ô', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 570, base_def: 430, base_spd: 540, hax_skill: 'Chân Hỏa Phần Thiên', hax_description: 'Xuyên 65% DEF + thiêu đốt 10% HP tối đa địch mỗi hiệp (bỏ qua khiên).', image_file: 'pets/thai_duong_kim_o.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'hoang_thien_ky_lan', pet_name: 'Hoàng Thiên Kỳ Lân', element: 'Thổ', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 510, base_def: 560, base_spd: 470, hax_skill: 'Bất Động Sơn Hà', hax_description: 'Đầu trận khiên 65% HP; khi khiên vỡ phát nổ gây 20% HP tối đa ST chuẩn (thẳng máu, bỏ qua khiên).', image_file: 'pets/hoang_thien_ky_lan.png', is_starter: false, is_exclusive_fuyumi: false },
+  { pet_type: 'thai_duong_kim_o', pet_name: 'Thái Dương Kim Ô', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 570, base_def: 430, base_spd: 540, hax_skill: 'Chân Hỏa Phần Thiên', hax_description: 'Xuyên 65% DEF + thiêu đốt 10% HP tối đa địch mỗi hiệp (thẳng máu, bỏ qua khiên).', image_file: 'pets/thai_duong_kim_o.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'nguyet_than_cuu_vy_bach', pet_name: 'Nguyệt Thần Bạch Vĩ Hồ', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 530, base_def: 470, base_spd: 560, hax_skill: 'Thời Không Hoán Ảnh', hax_description: '1 lần/trận khi HP < 35%, giải hiệu ứng xấu, hồi 30% HP & thêm 1 lượt.', image_file: 'pets/nguyet_than_cuu_vy_bach.png', is_starter: false, is_exclusive_fuyumi: false },
   ...V13_NEW_PETS,
 
   // Bộ Tối Thượng Thần Thoại Độc Nhất
-  { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc.', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
+  { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc (thẳng máu, bỏ qua khiên).', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
   is_unique: Boolean(p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)),
@@ -444,12 +444,74 @@ export const SUPREME_ROLES = [
   { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sakura')} Huy Hiệu Độc Tôn, Buff +80% EXP & +15% Chiến Lực Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
 ];
 
+/**
+ * Quyền Discord thực tế (decoded từ Server SuMi Family) của toàn bộ 40 Role Quyền Năng & 8 Level Roles
+ */
+export const ROLE_DISCORD_PERMS_BY_ID = {
+  // 21 Role Phàm Phẩm
+  '1573186019858317422': 'Ưu Tiên Nói Voice, Dùng Soundboard & Âm Thanh Ngoại Server',
+  '1573186024048173076': 'Di Chuyển Thành Viên Voice (Move)',
+  '1573186028196462613': 'Ưu Tiên Nói Voice (Priority Speaker)',
+  '1573186032289980416': 'Tắt Mic Thành Viên Voice (Mute Members)',
+  '1573186036585201726': 'Tắt Tai Nghe Thành Viên Voice (Deafen Members)',
+  '1573186040716468316': 'Tự Đổi Biệt Danh (Change Nickname)',
+  '1573186045468614687': 'Tự Đổi & Quản Lý Biệt Danh Khác (Manage Nicknames)',
+  '1573186049289756712': 'Miễn Chờ Chat Chậm (Bypass Slowmode)',
+  '1573186053500833802': 'Nhúng Link & Gửi Ảnh/File (Embed Links, Attach Files)',
+  '1573186057778888745': 'Thả Biểu Cảm & Dùng Emoji Ngoại Server',
+  '1573186061860077568': 'Dùng Sticker Ngoại Server',
+  '1573186066134073394': 'Tạo & Nhắn Trong Thread Công Khai',
+  '1573186070206742578': 'Tạo & Nhắn Trong Thread Kín',
+  '1573186074153324608': 'Ghim Tin Nhắn (Pin Messages)',
+  '1573186078402158776': 'Dùng Bảng Âm Thanh (Soundboard)',
+  '1573186082768560198': 'Dùng Soundboard & Âm Thanh Ngoại Server',
+  '1573186087088554085': 'Không cấp quyền Discord (thuần Buff Tu Tiên)',
+  '1573186091094245416': 'Không cấp quyền Discord (thuần Buff Tu Tiên)',
+  '1573186095120908329': 'Phát Trực Tiếp Video HD 1080p (Stream)',
+  '1573186099663343747': 'Gửi Tin Nhắn Giọng Nói TTS (Send TTS)',
+  '1573186103664574524': 'Xem Kênh & Đọc Lịch Sử Kênh Lưu Trữ',
+  // 8 Role Linh Phẩm
+  '1573577773279219763': 'Ghim Tin Nhắn (Pin), Miễn Chờ Chat Chậm (Bypass Slowmode)',
+  '1573577776454434899': 'Tự Đổi Biệt Danh, Dùng Emoji & Sticker Ngoại Server',
+  '1573577779621138542': 'Di Chuyển Thành Viên Voice (Move), Ưu Tiên Nói Voice',
+  '1573577782380728410': 'Stream Video HD, Dùng Soundboard & Âm Thanh Ngoại Server',
+  '1573577786218651688': 'Tạo Thread Công Khai & Kín, Đọc Lịch Sử Kênh Lưu Trữ',
+  '1573577788965781504': 'Thả Biểu Cảm, Dùng Emoji Ngoại Server',
+  '1573577794091225108': 'Nhúng Link, Gửi Ảnh/File, Miễn Chờ Chat Chậm (Bypass Slowmode)',
+  '1573577796742152314': 'Ưu Tiên Nói Voice, Dùng Soundboard & Âm Thanh Ngoại Server',
+  // 6 Role Tiên Phẩm
+  '1573577799539892314': 'Di Chuyển & Tắt Mic Voice (Move/Mute), Miễn Chờ Chat Chậm (Bypass Slowmode)',
+  '1573577805286080523': 'Đổi & Quản Lý Biệt Danh Khác, Ghim Tin Nhắn, Tạo Thread Kín',
+  '1573577808867762186': 'Nhúng Link, Gửi Ảnh/File, Dùng Emoji & Sticker Ngoại Server',
+  '1573577811786993756': 'Stream Video HD, Ghim Tin Nhắn, Miễn Chờ Chat Chậm (Bypass Slowmode)',
+  '1573577814437789797': 'Stream Video HD, Soundboard & Âm Ngoại Server, Emoji & Sticker Ngoại Server',
+  '1573577816690401401': 'Di Chuyển/Tắt Mic/Tắt Tai Nghe Voice (Move/Mute/Deafen), Ghim Tin Nhắn',
+  // 5 Role Thần Thoại
+  '1573185998857183253': 'Full Voice (Move/Mute/Deafen/Ưu tiên/Stream HD/Soundboard & Âm ngoại), Full Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, TTS, Ảnh/Link, Emoji & Sticker ngoại, Đọc lịch sử) + Ưu tiên hộ thể',
+  '1573186003101941830': 'Full Voice (Move/Mute/Deafen/Ưu tiên/Stream HD/Soundboard & Âm ngoại), Full Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, TTS, Ảnh/Link, Emoji & Sticker ngoại, Đọc lịch sử)',
+  '1573186007262695644': 'Voice (Move/Mute/Deafen/Ưu tiên/Stream HD), Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, Ảnh/Link, Emoji & Sticker ngoại)',
+  '1573186011478102096': 'Voice (Move/Ưu tiên/Stream HD), Chat/Thread (Ghim, Miễn Slowmode, Tạo Thread công khai & kín, Quản lý biệt danh, Ảnh/Link, Emoji & Sticker ngoại)',
+  '1573186015785521265': 'Voice (Move/Mute/Stream HD/Soundboard & Âm ngoại), Chat/Thread (Ghim, Miễn Slowmode, Tạo Thread công khai & kín, Đổi biệt danh, Ảnh/Link, Emoji & Sticker ngoại)',
+};
+
+export const LEVEL_ROLE_DISCORD_PERMS = {
+  5: 'Gửi Ảnh/File (Attach Files)',
+  15: 'Dùng Emoji Nitro Ngoại Server',
+  20: 'Nhúng Liên Kết (Embed Links) & Lập Gia Tộc',
+  35: 'Phát Trực Tiếp (Stream)',
+  45: 'Dùng Sticker Ngoại Server',
+  60: 'Gửi Tin Nhắn Thoại (Voice Message)',
+  80: 'Dùng Bảng Âm Thanh (Soundboard)',
+  100: 'Dùng Âm Thanh Ngoại Server (External Sounds)',
+};
+
 export const GACHA_ROLE_CATALOG = [
   ...SHOP_ROLE_PACKAGES,
   ...MULTI_PERK_ROLES,
   ...SUPREME_ROLES,
 ].map((r) => ({
   ...r,
+  discord_perms: ROLE_DISCORD_PERMS_BY_ID[r.role_id] || 'Quyền hạn Role theo cấu hình server',
   tier_icon: roleTierEmoji(r.rarity_key),
   tier_emoji_key: roleTierEmojiKey(r.rarity_key),
 }));
@@ -507,6 +569,20 @@ export const ROLE_BUFF_CONFIG = {
   '1573186011478102096': { dailyLtPct: 150, shopDiscountPct: 15 }, // « Sáng Thế Thần Quân » (x2.5 = +150% Daily LT)
   '1573186015785521265': { expPct: 80, petPowerPct: 15 }, // « Cửu Vĩ Yêu Hậu »
 };
+
+export function formatRoleBuffText(roleId) {
+  const cfg = ROLE_BUFF_CONFIG[String(roleId || '')];
+  if (!cfg) return 'Không có Buff chỉ số (thuần quyền Discord)';
+  const parts = [];
+  if (cfg.expPct) parts.push(`+${cfg.expPct}% EXP`);
+  if (cfg.dailyLtPct) {
+    parts.push(cfg.dailyLtPct >= 100 ? `x${(1 + cfg.dailyLtPct / 100).toFixed(1).replace(/\.0$/, '')} Daily LT (+${cfg.dailyLtPct}%)` : `+${cfg.dailyLtPct}% Daily LT`);
+  }
+  if (cfg.petPowerPct) parts.push(`+${cfg.petPowerPct}% Chiến Lực Pet`);
+  if (cfg.shopDiscountPct) parts.push(`Giảm ${cfg.shopDiscountPct}% Giá Shop`);
+  if (cfg.gachaDiscountPct) parts.push(`Giảm ${cfg.gachaDiscountPct}% Giá Roll`);
+  return parts.length ? parts.join(' • ') : 'Không có Buff chỉ số';
+}
 
 /**
  * Danh mục Background Profile & Namecard (/rank) — 15 Background AI 2:1 + 5 Background Pinterest

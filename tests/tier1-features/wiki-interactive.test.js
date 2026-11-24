@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { createTestServer } from '../helpers/testServer.js';
 import { assertPngValid } from '../helpers/pngValidator.js';
 import { FIXTURE_USERS } from '../helpers/fixtures.js';
+import { stripLeadingEmojis } from '../../src/canvas/drawUtils.js';
+import { lookupInfo } from '../../src/services/infoService.js';
+import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
 
 describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets, Unique Mythic Owners)', () => {
   let testServer;
@@ -40,12 +43,12 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     assert.ok(!allWikiPets.some((p) => p.pet_type === 'cuu_vi_hong_ho' || p.is_exclusive_fuyumi), 'Exclusive Fuyumi pet must NOT appear in wiki catalog');
   });
 
-  it('2. Standalone realms category exists, all 7 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
+  it('2. Standalone realms & roles categories exist, all 8 wiki categories use concise non-greeting copy, and zero mention of Cửu Vĩ Hồng Hồ', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200);
     const json = await res.json();
     const ids = json.categories.map((c) => c.id);
-    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer']);
+    assert.deepEqual(ids, ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer']);
 
     const fullWikiText = JSON.stringify(json.categories);
     assert.ok(!/Cửu Vĩ Hồng Hồ|cuu_vi_hong_ho/i.test(fullWikiText), 'Wiki categories must NOT mention Fuyumi exclusive pet Cửu Vĩ Hồng Hồ');
@@ -152,5 +155,73 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     const fuJson = await fuProf.json();
     assert.equal(fuJson.data.pet?.pet_type, 'cuu_vi_hong_ho');
     assert.equal(fuJson.data.pet?.name, 'Cửu Vĩ Hồng Hồ');
+  });
+
+  it('8. /wiki roles + battle shield-bypass, /info role perms, stripLeadingEmojis & reflect battle log clarity', async () => {
+    const rolesRes = await testServer.fetch('/api/wiki?category=roles');
+    assert.equal(rolesRes.status, 200);
+    const rolesJson = await rolesRes.json();
+    assert.equal(rolesJson.data.id, 'roles');
+    assert.ok(rolesJson.embed_flat.description.length <= 3950);
+    for (const expected of ['Cửu Vĩ Tối Thượng Thần Hồ', 'SuMi Đệ Nhất Khách Tôn', 'Cửu Tiêu Phong Vương', 'Song Tuyệt Kiếm Khách', 'Linh Âm Hồ Ca', '/info']) {
+      assert.ok(rolesJson.embed_flat.description.includes(expected), `Wiki roles must include ${expected}`);
+    }
+
+    const battleRes = await testServer.fetch('/api/wiki?category=battle');
+    assert.equal(battleRes.status, 200);
+    const battleJson = await battleRes.json();
+    assert.match(battleJson.embed_flat.description, /bỏ qua khiên/i);
+
+    assert.equal(
+      stripLeadingEmojis('<:ui_crown_king:1574471981275811850> Quản Trị Voice & Chat Danh Dự'),
+      'Quản Trị Voice & Chat Danh Dự',
+    );
+    assert.equal(stripLeadingEmojis('<a:su_sparkle:123><:ui_crown_king:456> Test'), 'Test');
+
+    const roleInfo = await lookupInfo('1573186003101941830');
+    assert.equal(roleInfo.success, true);
+    assert.match(roleInfo.description, /Quyền Discord:/);
+    assert.match(roleInfo.description, /Buff Tu Tiên:/);
+    assert.match(roleInfo.description, /\+60% EXP/);
+
+    const reflectBattle = await simulateBattle(
+      {
+        user_id: 'reflect_a',
+        username: 'Attacker',
+        level: 30,
+        pet: {
+          name: 'Hỏa Linh Tiểu Hồ',
+          pet_type: 'hoa_linh_tieu_ho',
+          element: 'Hỏa',
+          atk: 500,
+          def: 200,
+          spd: 400,
+          level: 30,
+          star: 1,
+          equipment: {},
+        },
+      },
+      {
+        user_id: 'reflect_b',
+        username: 'Defender',
+        level: 30,
+        pet: {
+          name: 'Thủy Tinh Huyền Ngao',
+          pet_type: 'thuy_tinh_huyen_ngao',
+          element: 'Thủy',
+          atk: 200,
+          def: 300,
+          spd: 150,
+          level: 30,
+          star: 1,
+          equipment: {
+            gem: { item_id: 'gem_mythic_2', item_name: '« Vạn Tượng Quy Nhất Châu »', item_type: 'gem', element: 'Quang', bonus_atk: 0, bonus_def: 730, bonus_spd: 250, bonus_hp: 4600 },
+          },
+        },
+      },
+      { seed: 7 },
+    );
+    const allLogs = JSON.stringify(reflectBattle.turnSnapshots || reflectBattle.logs || reflectBattle);
+    assert.match(allLogs, /Phản Đòn .*thẳng máu, bỏ qua khiên/);
   });
 });

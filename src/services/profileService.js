@@ -9,6 +9,7 @@ import {
   formatRarityLabel,
   LEVEL_ROLE_BUFF_CONFIG,
   ROLE_BUFF_CONFIG,
+  ROLE_BY_ID,
   normalizeEnchantGrade,
   getEnchantMultiplier,
   getEnchantBonusPct,
@@ -24,17 +25,17 @@ import { em, uiEm } from '../config/emojiHelper.js';
 export const ROLE_PERKS_MAP = {
   '1473419957655175169': `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`,
   '100_hon_don_chua_te': `${em('su_crossed_swords')} Trảm Quyết Tối Thượng`,
-  '1573185998857183253': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
-  '1468649836856344689': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
-  'cuu_vi_toi_thuong': `${em('su_shield_def')} Kháng Timeout & Hộ Thể`,
-  '1573186003101941830': `${uiEm('ui_crown_king')} Quản Trị Voice & Chat Danh Dự`,
-  'sumi_de_nhat_khach_ton': `${uiEm('ui_crown_king')} Quản Trị Voice & Chat Danh Dự`,
-  '1573186007262695644': `${em('su_realm_star')} Bá Chủ Voice & Thread`,
-  'van_co_chi_ton': `${em('su_realm_star')} Bá Chủ Voice & Thread`,
-  '1573186011478102096': `${em('su_sparkle')} Sáng Thế & Buff x2.5 Linh Thạch`,
-  'sang_the_than_quan': `${em('su_sparkle')} Sáng Thế & Buff x2.5 Linh Thạch`,
-  '1573186015785521265': `${em('su_sakura')} Huy Hiệu Độc Tôn & Buff +80% EXP`,
-  'cuu_vi_yeu_hau': `${em('su_sakura')} Huy Hiệu Độc Tôn & Buff +80% EXP`,
+  '1573185998857183253': `${em('su_shield_def')} Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet`,
+  '1468649836856344689': `${em('su_shield_def')} Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet`,
+  'cuu_vi_toi_thuong': `${em('su_shield_def')} Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet`,
+  '1573186003101941830': `${uiEm('ui_crown_king')} Quản Trị Voice/Chat, +60% EXP/LT & +20% Pet`,
+  'sumi_de_nhat_khach_ton': `${uiEm('ui_crown_king')} Quản Trị Voice/Chat, +60% EXP/LT & +20% Pet`,
+  '1573186007262695644': `${em('su_realm_star')} Bá Chủ Voice/Thread, +50% EXP/LT & +18% Pet`,
+  'van_co_chi_ton': `${em('su_realm_star')} Bá Chủ Voice/Thread, +50% EXP/LT & +18% Pet`,
+  '1573186011478102096': `${em('su_sparkle')} Full Voice/Thread, x2.5 Daily LT & -15% Shop`,
+  'sang_the_than_quan': `${em('su_sparkle')} Full Voice/Thread, x2.5 Daily LT & -15% Shop`,
+  '1573186015785521265': `${em('su_sakura')} Voice/Chat VIP, +80% EXP & +15% Lực Pet`,
+  'cuu_vi_yeu_hau': `${em('su_sakura')} Voice/Chat VIP, +80% EXP & +15% Lực Pet`,
   '1573186019858317422': `${uiEm('ui_music_note')} Triệu Hồi Hát Live & Tâm Sự`,
   'linh_am_ho_ca': `${uiEm('ui_music_note')} Triệu Hồi Hát Live & Tâm Sự`,
   '1573186024048173076': `${uiEm('ui_voice_mic')} Quyền Di Chuyển Voice`,
@@ -159,6 +160,7 @@ export async function computeRoleBuffTotals(userId, userLevel = 1, extraRoleIds 
  * Tra cứu đặc quyền của Role
  */
 export function getRolePerkByName(roleName, roleId) {
+  if (roleId && ROLE_BY_ID[String(roleId)]?.perk) return ROLE_BY_ID[String(roleId)].perk;
   if (roleId && ROLE_PERKS_MAP[roleId]) return ROLE_PERKS_MAP[roleId];
   if (!roleName) return `${em('su_sparkle')} Đặc Quyền Tu Tiên`;
   const clean = roleName.toLowerCase();
@@ -778,13 +780,16 @@ export async function getProfileData(userId, overrides = {}) {
         // Lọc bỏ role thuê tạm đã hết hạn
         const nowDate = new Date();
         const validRoles = (roles || []).filter((r) => r.is_permanent || !r.expires_at || new Date(r.expires_at) > nowDate);
-        const equippedRoles = validRoles.map(r => ({
-          slot: r.equipped_slot,
-          role_id: r.role_id,
-          name: r.role_name,
-          perk: r.role_perk || getRolePerkByName(r.role_name, r.role_id),
-          rarity: r.is_permanent ? 'mythic' : 'rare',
-        }));
+        const equippedRoles = validRoles.map(r => {
+          const catalogRole = ROLE_BY_ID[String(r.role_id || '')];
+          return {
+            slot: r.equipped_slot,
+            role_id: r.role_id,
+            name: r.role_name,
+            perk: catalogRole?.perk || getRolePerkByName(r.role_name, r.role_id) || r.role_perk,
+            rarity: r.is_permanent ? 'mythic' : 'rare',
+          };
+        });
 
         const userLvlNum = Number(user.level) || 1;
         const roleBuffs = computeRoleBuffTotalsFromList(validRoles.map((r) => r.role_id), userLvlNum);

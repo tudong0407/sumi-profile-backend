@@ -460,7 +460,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     }
     const dmg = Math.floor(actor.maxHp * actor.state.poisonPct * (1 - res));
     actor.currentHp = Math.max(1, actor.currentHp - dmg);
-    result.events.push({ actor: actor.id, action: 'dot', skill: `Trúng Độc (-${dmg.toLocaleString('vi-VN')} HP)` });
+    result.events.push({ actor: actor.id, action: 'dot', skill: `Trúng Độc (-${dmg.toLocaleString('vi-VN')} HP, bỏ qua khiên)` });
   }
   if (actor.state.burnTurns > 0 && actor.state.burnPct > 0) {
     actor.state.burnTurns -= 1;
@@ -468,7 +468,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
       const res = getDotResistance(actor);
       const dmg = Math.floor(actor.maxHp * actor.state.burnPct * (1 - res));
       actor.currentHp = Math.max(1, actor.currentHp - dmg);
-      result.events.push({ actor: actor.id, action: 'dot', skill: `Thiêu Đốt (-${dmg.toLocaleString('vi-VN')} HP)` });
+      result.events.push({ actor: actor.id, action: 'dot', skill: `Thiêu Đốt (-${dmg.toLocaleString('vi-VN')} HP, bỏ qua khiên)` });
     }
   }
 
@@ -531,7 +531,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
         target.state.atkDebuffPct = Math.max(target.state.atkDebuffPct, h.atkDebuffPct);
         target.state.atkDebuffTurns = Math.max(target.state.atkDebuffTurns, h.atkDebuffTurns || 2);
       }
-      result.events.push({ actor: actor.id, action: 'siphon', skill: `${h.label || h.source} (Hút +${healed.toLocaleString('vi-VN')} HP)` });
+      result.events.push({ actor: actor.id, action: 'siphon', skill: `${h.label || h.source} (Hút +${healed.toLocaleString('vi-VN')} HP thẳng máu, bỏ qua khiên)` });
     }
     if (h.stealShieldEvery2TurnsPct && (turnNumber % 2 === 0) && target.shield > 0) {
       const stolen = Math.floor(target.shield * h.stealShieldEvery2TurnsPct);
@@ -594,13 +594,13 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     const res = getDotResistance(target);
     const dmg = Math.floor(target.maxHp * 0.07 * (1 - res));
     target.currentHp = Math.max(1, target.currentHp - dmg);
-    result.events.push({ actor: actor.id, action: 'dot', skill: `Hỏa Độc Huyết (-${dmg.toLocaleString('vi-VN')} HP)` });
+    result.events.push({ actor: actor.id, action: 'dot', skill: `Hỏa Độc Huyết (-${dmg.toLocaleString('vi-VN')} HP, bỏ qua khiên)` });
   }
   if (hasPet(actor, 'thai_duong_kim_o') && getDotResistance(target) < 1) {
     const res = getDotResistance(target);
     const dmg = Math.floor(target.maxHp * 0.10 * (1 - res));
     target.currentHp = Math.max(1, target.currentHp - dmg);
-    result.events.push({ actor: actor.id, action: 'dot', skill: `Chân Hỏa Phần Thiên (-${dmg.toLocaleString('vi-VN')} HP xuyên khiên)` });
+    result.events.push({ actor: actor.id, action: 'dot', skill: `Chân Hỏa Phần Thiên (-${dmg.toLocaleString('vi-VN')} HP, bỏ qua khiên)` });
   }
 
   // Mị Hoặc / Hỗn Loạn (soul_mythic_1 40%, tinh_khong_da_thao 35% & v1.3 charmPct)
@@ -621,7 +621,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
       result.events.push({
         actor: actor.id,
         action: 'charm_backlash',
-        skill: `Mị Hoặc Phản Phệ (Kháng Mị → -${backlashDmg.toLocaleString('vi-VN')} HP chuẩn & -20% ATK 2 hiệp)`,
+        skill: `Mị Hoặc Phản Phệ (Kháng Mị → -${backlashDmg.toLocaleString('vi-VN')} HP thẳng máu, bỏ qua khiên & -20% ATK 2 hiệp)`,
       });
     }
   }

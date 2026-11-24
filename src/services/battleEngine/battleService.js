@@ -1096,7 +1096,7 @@ function executeHit({
           target.state.shieldExplodePct = 0;
           const explodeDmg = Math.floor(target.maxHp * pct);
           actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
-          notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST Chuẩn)`);
+          notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
           if (actor.currentHp <= 0) {
             const li = triggerLethalInterception(actor, target, rng);
             if (li.survived && li.skill) notes.push(li.skill);
@@ -1115,7 +1115,7 @@ function executeHit({
 
     if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
       actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
-      notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')}`);
+      notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST (thẳng máu, bỏ qua khiên)`);
       if (actor.currentHp <= 0) {
         const li = triggerLethalInterception(actor, target, rng);
         if (li.survived && li.skill) notes.push(li.skill);

@@ -14,6 +14,9 @@ import {
   EXCHANGE_ITEMS,
   GACHA_ROLE_CATALOG,
   LEVEL_ROLE_MILESTONES,
+  LEVEL_ROLE_BUFF_CONFIG,
+  LEVEL_ROLE_DISCORD_PERMS,
+  formatRoleBuffText,
   SHOP_CONSUMABLES,
   ALL_CONSUMABLES,
   MARRY_RINGS,
@@ -239,7 +242,9 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const lines = [
       `• **Mã Role ID:** \`${r.role_id}\``,
       `• **Bậc Role:** ${roleTierEmoji(r.rarity_key)} **${r.rarity}**`,
-      `• **Đặc quyền:** ${r.perk}`,
+      `• **Quyền Discord:** ${r.discord_perms || 'Theo cấu hình Role server'}`,
+      `• **Buff Tu Tiên:** ${formatRoleBuffText(r.role_id)}`,
+      `• **Tóm tắt:** ${r.perk}`,
       isShopRole
         ? `• **Nguồn sở hữu:** Mua tại \`/shop\` (**7d:** \`${r.prices['7d']}\` | **30d:** \`${r.prices['30d']}\` | **Vĩnh Viễn:** \`${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}) hoặc quay \`/roll loai:role\` (**60.5%**)`
         : `• **Nguồn sở hữu:** Độc quyền Gacha \`/roll loai:role\` (**${r.rarity === 'Linh Phẩm' ? '25%' : r.rarity === 'Tiên Phẩm' ? '14%' : '0.5%'}**) *(thời hạn 7d/30d/60d/90d/2% Vĩnh Viễn)*`,
@@ -263,6 +268,11 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
   if (matchedLvlRole) {
     const m = matchedLvlRole;
+    const lvlBuff = LEVEL_ROLE_BUFF_CONFIG.find((c) => c.level === m.level);
+    const buffParts = [];
+    if (lvlBuff?.expPct) buffParts.push(`+${lvlBuff.expPct}% EXP`);
+    if (lvlBuff?.dailyLtPct) buffParts.push(`+${lvlBuff.dailyLtPct}% Daily LT`);
+    if (lvlBuff?.petPowerPct) buffParts.push(`+${lvlBuff.petPowerPct}% Chiến Lực Pet`);
     return {
       success: true,
       category: 'level_role',
@@ -272,6 +282,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: [
         `• **Mã Role ID:** \`${m.roleId}\``,
         `• **Yêu cầu mở khóa:** Tự động cấp khi đạt **Cấp ${m.level}** (Chat/Voice EXP).`,
+        `• **Quyền Discord mở khóa:** ${LEVEL_ROLE_DISCORD_PERMS[m.level] || 'Quyền cơ bản'}`,
+        `• **Buff Tu Tiên tự động:** ${buffParts.length ? buffParts.join(' • ') : 'Không có'}`,
         `• **Ghi chú:** Role Cấp Độ không bán ở Shop và không dùng \`/dismantle\` (chỉ tụt cấp qua \`/doiqua\`).`,
       ].join('\n'),
       color: '#fbbf24',

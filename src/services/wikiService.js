@@ -27,7 +27,7 @@ import {
   levelMilestoneEmoji,
 } from '../config/emojiHelper.js';
 
-export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer'];
+export const VALID_CATEGORIES = ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer'];
 
 const CATEGORY_ALIASES = {
   beginner: 'overview',
@@ -38,6 +38,11 @@ const CATEGORY_ALIASES = {
   domain: 'battle',
   trang_bi: 'equipment',
   linh_thu: 'pets',
+  role: 'roles',
+  quyen_nang: 'roles',
+  chuc_nang: 'roles',
+  discord_role: 'roles',
+  quyen: 'roles',
   kinh_te: 'economy',
   nong_trai: 'economy',
   farm: 'economy',
@@ -50,7 +55,7 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.5 • Tu Tiên • Linh Thú • Pháp Bảo • Set Buff • Pity 350 • Top Chat/Voice',
+  subtitle: 'Cẩm nang v1.5 • Tu Tiên • Linh Thú • Pháp Bảo • 40 Role Quyền Năng • Set Buff • Pity 350',
   version: '1.5',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
@@ -61,7 +66,7 @@ export const WIKI_METADATA = {
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
   updated_at: '2026-11-24T00:00:00.000Z',
-  total_categories: 7,
+  total_categories: 8,
 };
 
 export const WIKI_CATEGORIES = {
@@ -162,7 +167,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Đấu Trường 1v1, Web Logs 48h & Linh Vực',
-        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
+        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Sát thương trừ thẳng máu (bỏ qua khiên): Phản Đòn (reflect), Nổ Hộ Thuẫn, Độc/Thiêu Đốt (DoT), Hút Sinh Lực định kỳ và Mị Hoặc Phản Phệ trừ thẳng HP, bỏ qua Khiên. Phản Công khi né đòn vẫn đánh vào Khiên trước.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
       },
     ],
     fields: [
@@ -184,6 +189,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_crossed_swords')} Luật /battle, Web Logs & /linhmach`,
         value: [
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
+          '• **Sát Thương Trừ Thẳng Máu (Bỏ Qua Khiên):** **Phản Đòn** *(reflect)*, **Nổ Hộ Thuẫn** *(vỡ khiên)*, **Độc / Thiêu Đốt (DoT)**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** đều trừ **thẳng HP, bỏ qua Khiên**. Riêng **Phản Công khi né đòn** vẫn đánh vào Khiên trước.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
           `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** (**F→S+: \`8k → 135k\` Lực**, \`6–56 LT/phút\` +15% Kho Clan); Boss Hạng **A / S / S+** tung **Dư Chấn AoE 35%** quét cả hậu phương (nên đi Tổ Đội 3 người); thắng cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`, giảm \`-10%/giờ\`).`,
         ].join('\n'),
@@ -257,6 +263,67 @@ export const WIKI_CATEGORIES = {
       },
     ],
     content: '90 Linh Thú tiêu chuẩn chia 4 bậc (13 Phàm • 13 Linh • 14 Tiên • 50 Thần Thoại), quản lý qua /linhthu, /pet & /autosell.',
+  },
+
+  roles: {
+    id: 'roles',
+    title: `${em('su_medal_role')} Role Quyền Năng & Quyền Discord (40 Role + 8 Mốc Cấp)`,
+    icon: em('su_medal_role'),
+    description: 'Chi tiết quyền Discord & Buff Tu Tiên của 40 Role Quyền Năng (/shop, /roll) và 8 Level Roles. Dùng /info <tên role> để xem đầy đủ.',
+    image_url: '',
+    sections: [
+      {
+        heading: '1. Hệ Thống 40 Role Quyền Năng & 8 Level Roles',
+        content: '• 5 Thần Thoại (0.5%) + 6 Tiên Phẩm (14%) + 8 Linh Phẩm (25%) + 21 Phàm Phẩm (Shop & 60.5%).\n• Mở tối đa 5 Slot Role theo Cảnh Giới (/roles, /equip, /unequip). Tra từng Role bằng /info <tên role>.',
+      },
+    ],
+    fields: [
+      {
+        name: `${tierEmoji('mythic')} 5 Role Thần Thoại (0.5% /roll — Full Quyền + Siêu Buff)`,
+        value: [
+          '• **Cửu Vĩ Tối Thượng Thần Hồ:** Full Voice/Chat/Thread/Nick/TTS/Sound + Ưu tiên hộ thể (`+70% EXP/LT, +25% Pet`)',
+          '• **SuMi Đệ Nhất Khách Tôn:** Full Voice (Move/Mute/Deafen/Ưu tiên/HD/Sound), Full Chat/Thread/Nick/TTS (`+60% EXP/LT, +20% Pet`)',
+          '• **Vạn Cổ Chí Tôn:** Voice (Move/Mute/Deafen/Ưu tiên/HD), Chat/Thread/Nick/Emoji+Sticker ngoại (`+50% EXP/LT, +18% Pet`)',
+          '• **Sáng Thế Thần Quân:** Voice (Move/Ưu tiên/HD), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`x2.5 Daily LT, -15% Shop`)',
+          '• **Cửu Vĩ Yêu Hậu:** Voice (Move/Mute/HD/Sound ngoại), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`+80% EXP, +15% Pet`)',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${tierEmoji('epic')} 6 Role Tiên Phẩm (14% /roll — 3–4 Chức Năng)`,
+        value: [
+          '• **Cửu Tiêu Phong Vương:** Move/Mute Voice, Miễn Slowmode (`+20% EXP`) • **Thái Hư Chân Quân:** Quản lý Nick, Ghim, Thread Kín (`+20% LT`)',
+          '• **Vạn Bảo Tài Thần:** Nhúng Link/Ảnh, Emoji & Sticker Ngoại (`+35% LT, -10% Shop/Roll`) • **Bát Hoang Chiến Thần:** Stream HD, Ghim, Miễn Slowmode (`+20% EXP, +15% Pet`)',
+          '• **Hồng Trần Tiên Lữ:** Stream HD, Sound/Emoji/Sticker Ngoại (`+25% EXP, +10% Pet`) • **Tinh Hà Pháp Vương:** Move/Mute/Deafen Voice, Ghim (`+25% EXP`)',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${tierEmoji('rare')} 8 Role Linh Phẩm (25% /roll — 2–3 Chức Năng)`,
+        value: [
+          '• **Song Tuyệt Kiếm Khách:** Ghim Tin, Miễn Slowmode • **Huyễn Ảnh Linh Tôn:** Đổi Nick, Emoji/Sticker Ngoại (`+10% EXP`)',
+          '• **Lôi Vũ Hộ Pháp:** Move & Ưu Tiên Voice • **Hàn Ngọc Tiên Tử:** Stream HD, Sound/Âm Ngoại (`+10% LT`)',
+          '• **Mật Các Trưởng Lão:** Thread Mở/Kín, Đọc Kênh Ẩn (`+12% EXP`) • **Kim Tiền Đạo Nhân:** Biểu Cảm & Emoji Ngoại (`+25% LT, -5% Shop`)',
+          '• **Chiến Hồn Tiên Phong:** Link/Ảnh, Miễn Slowmode (`+8% Pet`) • **Thiên Âm Nhạc Sư:** Ưu Tiên Voice, Sound/Âm Ngoại (`+12% EXP`)',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${tierEmoji('common')} 21 Role Phàm Phẩm (/shop & 60.5% /roll — Chuyên Biệt)`,
+        value: [
+          '• **Voice (8):** `Linh Âm Hồ Ca` *(Ưu tiên+Âm ngoại)* • `Phong Thanh Hộ Pháp` *(Move)* • `Lôi Âm Tôn Giả` *(Ưu tiên nói)* • `Tịch Tĩnh Tán Nhân` *(Mute)* • `Bế Tức Chân Nhân` *(Deafen)* • `Huyễn Âm Tiên Cô` *(Soundboard)* • `Cửu Châu Diễn Âm` *(Âm ngoại)* • `Tiêu Dao Khách` *(Stream HD)*',
+          '• **Chat/Nick/Thread (11):** `Huyễn Diện` *(Đổi Nick)* • `Định Danh` *(Quản lý Nick)* • `Thần Hành` *(Miễn Slowmode)* • `Họa Đồ` *(Link/Ảnh)* • `Vạn Tượng` *(Emoji ngoại)* • `Thần Phù` *(Sticker ngoại)* • `Khai Sơn` *(Thread mở)* • `Mật Tàng` *(Thread kín)* • `Trấn Thư` *(Ghim)* • `Trảm Phong` *(TTS)* • `Thần Thông` *(Đọc lịch sử)*',
+          '• **Thuần Buff (2):** `Linh Hồn Tu Luyện` (`+15% EXP`) • `Tài Vận Hanh Thông` (`+20% Daily LT`)',
+        ].join('\n'),
+        inline: false,
+      },
+      {
+        name: `${em('su_pin_sigil')} Quy Tắc Slot, Level Roles & Tra Cứu`,
+        value: '• Mở **1→5 Slot** theo Cảnh Giới (`/roles`, `/equip`, `/unequip`). Gacha Role: `40% 7d • 30% 30d • 18% 60d • 10% 90d • 2% Vĩnh Viễn`. Giảm giá cộng dồn tối đa `-25% Shop / -20% Roll`. **8 Level Roles** tự mở theo cấp (xem mục Cảnh Giới) & tra từng Role bằng **`/info <tên role>`**.',
+        inline: false,
+      },
+    ],
+    content: '40 Role Quyền Năng (5 Thần Thoại, 6 Tiên Phẩm, 8 Linh Phẩm, 21 Phàm Phẩm) & 8 Level Roles kèm đầy đủ quyền Discord và Buff Tu Tiên.',
   },
 
   economy: {
@@ -393,6 +460,7 @@ export function getWikiData(categoryId = null) {
     battle: '#f43f5e',
     equipment: '#f59e0b',
     pets: '#ec4899',
+    roles: '#a855f7',
     economy: '#10b981',
     explorer: '#10b981',
   };

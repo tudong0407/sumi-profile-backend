@@ -14,13 +14,13 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     if (testServer) await testServer.close();
   });
 
-  it('1. GET /api/wiki returns HTTP 200 with all 7 independent categories', async () => {
+  it('1. GET /api/wiki returns HTTP 200 with all 8 independent categories', async () => {
     const res = await testServer.fetch('/api/wiki');
     assert.equal(res.status, 200, `Expected 200, received ${res.status}`);
     const json = await res.json();
     assert.equal(json.success, true);
     assert.ok(Array.isArray(json.categories), 'Wiki response must include categories array');
-    assert.equal(json.categories.length, 7);
+    assert.equal(json.categories.length, 8);
   });
 
   it('2. Wiki contract specifies handbook title "Cẩm Nang Tu Tiên SuMi Family"', () => {
@@ -28,9 +28,9 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     assert.match(expectedTitle, /Cẩm Nang Tu Tiên SuMi Family/);
   });
 
-  it('3. Wiki contract includes all 7 essential categories (including standalone realms and explorer)', () => {
-    const categories = ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer'];
-    assert.equal(categories.length, 7);
+  it('3. Wiki contract includes all 8 essential categories (including standalone realms, roles and explorer)', () => {
+    const categories = ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer'];
+    assert.equal(categories.length, 8);
 
     for (const catId of EXPECTED_WIKI_CATEGORIES) {
       assert.ok(categories.includes(catId), `Categories must include ${catId}`);
@@ -85,7 +85,7 @@ describe('Tier 1 - Beginner Wiki API Contract & Categories', () => {
     assert.equal(json.success, false);
     assert.equal(json.error, 'Category not found');
     assert.ok(Array.isArray(json.valid_categories));
-    assert.equal(json.valid_categories.length, 7);
+    assert.equal(json.valid_categories.length, 8);
   });
 
   it('8. GET /api/wiki?category=constructor returns HTTP 404 with success: false (prototype protection)', async () => {

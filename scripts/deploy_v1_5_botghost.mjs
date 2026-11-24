@@ -403,7 +403,7 @@ export function buildWikiV15Cmd() {
 
   gb.option('chuyen_muc', 'string', 'Chuyên mục cần tra cứu (tùy chọn)', {
     required: false,
-    choices: ['overview', 'realms', 'battle', 'equipment', 'pets', 'economy', 'explorer'],
+    choices: ['overview', 'realms', 'battle', 'equipment', 'pets', 'roles', 'economy', 'explorer'],
     x: 420,
     y: 0,
   });
@@ -414,11 +414,12 @@ export function buildWikiV15Cmd() {
   const wikiOptions = [
     { label: 'Tổng Quan & Toàn Bộ Lệnh', description: 'Tất cả lệnh Gameplay, Buff SET, Pity 350 & Tiện Ích', emoji_id: uidId('su_wiki_scroll'), value: 'overview' },
     { label: 'Cảnh Giới & Thăng Cấp EXP', description: '7 Đại Cảnh Giới, Chat/Voice EXP & /exp Boost', emoji_id: uidId('su_realm_7_hondondao'), value: 'realms' },
-    { label: 'Đấu Trường, Buff SET & Khắc Vực', description: '1v1, Buff SET 2 tầng, Web Logs 48h & Sơ Đồ Ngũ Vực', emoji_id: uidId('su_arena'), value: 'battle' },
+    { label: 'Đấu Trường, Buff SET & Khắc Vực', description: '1v1, Buff SET, Sát Thương Bỏ Qua Khiên & Ngũ Vực', emoji_id: uidId('su_arena'), value: 'battle' },
     { label: 'Kho Pháp Bảo Loadout (165 Món)', description: '57 Vũ Khí • 54 Bảo Ngọc • 54 Chiến Hồn + Khắc Ấn D->S', emoji_id: uidId('su_crossed_swords'), value: 'equipment' },
     { label: 'Linh Thú Tiên Giới (90 Chiến Pet)', description: 'Đầy đủ 90 Linh Thú & Nâng Cấp Nhanh /linhthu muc_dich', emoji_id: uidId('su_pet_paw'), value: 'pets' },
+    { label: 'Role Quyền Năng & Discord (40 Role)', description: 'Đầy đủ quyền Discord & Buff của 40 Role + 8 Level Roles', emoji_id: uidId('su_medal_role'), value: 'roles' },
     { label: 'Kinh Tế, Pity 350 & Top Ngày', description: 'Pity 350, /shop Viền Avatar, Tháp 500 & Top Chat/Voice', emoji_id: uidId('su_linhthach'), value: 'economy' },
-    { label: 'Khám Phá Đại Lục & Bản Đồ 4K', description: '12 Địa Danh (10k->1M), đồ rơi 60% & Bản Đồ Đại Lục', emoji_id: uidId('explorer_world_map_v14'), value: 'explorer' },
+    { label: 'Khám Phá Đại Lục & Bản Đồ 4K', description: '12 Địa Danh (3.5k->112k), +5% LT & Thuận Hệ', emoji_id: uidId('explorer_world_map_v14'), value: 'explorer' },
   ];
 
   // Root router
@@ -427,6 +428,7 @@ export function buildWikiV15Cmd() {
 
   const brRootRealms = gb.branch(cRoot, 'wr_realms', 'comparison', { type: 'equal_to', comparison_value: 'realms', ignoreCase: true }, { x: -750, y: 340 });
   const brRootBattle = gb.branch(cRoot, 'wr_battle', 'comparison', { type: 'equal_to', comparison_value: 'battle', ignoreCase: true }, { x: -450, y: 340 });
+  const brRootRoles = gb.branch(cRoot, 'wr_roles', 'comparison', { type: 'equal_to', comparison_value: 'roles', ignoreCase: true }, { x: -300, y: 340 });
   const brRootEcon = gb.branch(cRoot, 'wr_econ', 'comparison', { type: 'equal_to', comparison_value: 'economy', ignoreCase: true }, { x: -150, y: 340 });
   const brRootExplorer = gb.branch(cRoot, 'wr_explorer', 'comparison', { type: 'equal_to', comparison_value: 'explorer', ignoreCase: true }, { x: 150, y: 340 });
   const brRootEquip = gb.branch(cRoot, 'wr_equip', 'comparison', { type: 'equal_to', comparison_value: 'equipment', ignoreCase: true }, { x: 750, y: 340 });
@@ -437,6 +439,7 @@ export function buildWikiV15Cmd() {
   const initSetSpecs = [
     { br: brRootRealms, id: 'set_wi_realms', val: 'realms', x: -750 },
     { br: brRootBattle, id: 'set_wi_battle', val: 'battle', x: -450 },
+    { br: brRootRoles, id: 'set_wi_roles', val: 'roles', x: -300 },
     { br: brRootEcon, id: 'set_wi_econ', val: 'economy', x: -150 },
     { br: brRootExplorer, id: 'set_wi_explorer', val: 'explorer', x: 150 },
     { br: brRootHome, id: 'set_wi_overview', val: 'overview', x: 450 },
@@ -499,7 +502,7 @@ export function buildWikiV15Cmd() {
     const editMsgId = `msg_wiki_sw_${k}`;
 
     gb.advSelectMenu(selId, curMsgId, {
-      placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên (7 mục)...',
+      placeholder: 'Chọn chuyên mục Cẩm Nang Tu Tiên (8 mục)...',
       customVariableName: varName,
       basic_options: wikiOptions,
       row: '1',

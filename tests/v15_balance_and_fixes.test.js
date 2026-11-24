@@ -302,7 +302,7 @@ test('Ver 1.5 HAX Audit: stunned DoT ticks, team firstStrike, charm attackSelf, 
   const turn1Attacks = resTeam.turnSnapshots[1]?.events || [];
   const firstAttackIdx = turn1Attacks.findIndex((e) => e.includes('**SlowFirstStrike** →') || e.includes('**FastBoss** →'));
   assert.ok(firstAttackIdx >= 0 && turn1Attacks[firstAttackIdx].includes('**SlowFirstStrike** →'), 'firstStrike pet must strike before faster Boss');
-  assert.ok(turn1Attacks.some((e) => e.includes('Trúng Độc (-5.200 HP)')), 'Slot #2 teammate soul_epic_2 must poison Boss');
+  assert.ok(turn1Attacks.some((e) => e.includes('Trúng Độc (-5.200 HP, bỏ qua khiên)')), 'Slot #2 teammate soul_epic_2 must poison Boss');
 
   // 3a. Team battle: charm attackSelf makes actor hit itself
   const resCharmTeam = simulateTeamBattle(
