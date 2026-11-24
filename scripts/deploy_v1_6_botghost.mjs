@@ -730,6 +730,10 @@ export function buildGieoqueV16Cmd() {
 
   const gqOk = attachAckBranchV16(gb, 'gq', 'gq_api_draw', 'gq_res', { editId: 'gq_shake_msg', x: 0, y: 660 });
 
+  const cCanReroll = gb.cmp('gq_can_reroll', '{gq_res.response.can_reroll}', 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: 0, y: 860 });
+  gb.link(gqOk, cCanReroll.condId);
+
+  // Nhánh Hung / Đại Hung (chưa giải hạn): Hiện nút [Cầu An Giải Hạn (250 LT)]
   embedMsg(gb, 'gq_draw_msg', {
     title: '{gq_res.response.title}',
     description: '{gq_res.response.description}',
@@ -737,22 +741,46 @@ export function buildGieoqueV16Cmd() {
     imageUrl: '{gq_res.response.image_url}',
     target: { editId: 'gq_shake_msg' },
     action_id: 'gq_shake_msg',
-  }, { x: 0, y: 900 });
-  gb.link(gqOk, 'gq_draw_msg');
+  }, { x: -240, y: 1040 });
+  gb.link(cCanReroll.yes, 'gq_draw_msg');
 
-  // Button Cầu An Giải Hạn (250 LT)
-  gb.advBtn('btn_gq_reroll', 'gq_draw_msg', btnCfg('Cầu An Giải Hạn (250 LT)', 'PRIMARY', 'su_sparkle', '1', '1', 'show'), { x: 0, y: 1080 });
+  // Nhánh Bình An / Tiểu Cát / Trung Cát / Đại Cát / Đã giải hạn: KHÔNG hiện nút Cầu An Giải Hạn
+  embedMsg(gb, 'gq_draw_msg_clean', {
+    title: '{gq_res.response.title}',
+    description: '{gq_res.response.description}',
+    color: '#ec4899',
+    imageUrl: '{gq_res.response.image_url}',
+    target: { editId: 'gq_shake_msg' },
+    action_id: 'gq_shake_msg',
+  }, { x: 260, y: 1040 });
+  gb.link(cCanReroll.no, 'gq_draw_msg_clean');
+
+  // Button Cầu An Giải Hạn (250 LT) — chỉ gắn trên gq_draw_msg
+  gb.advBtn('btn_gq_reroll', 'gq_draw_msg', btnCfg('Cầu An Giải Hạn (250 LT)', 'PRIMARY', 'su_sparkle', '1', '1', 'hide'), { x: -240, y: 1220 });
   apiAction(gb, 'gq_api_reroll', 'gqr_res', 'POST', `${BACKEND_BASE}/api/fortune/reroll`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 0, y: 1240 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -240, y: 1380 });
   gb.link('btn_gq_reroll', 'gq_api_reroll');
+
+  const cRrHasImg = gb.cmp('gq_rr_has_img', '{gqr_res.response.image_url}', '^https://', 'matches_pattern', { option: '', not: false }, { x: -240, y: 1540 });
+  gb.link('gq_api_reroll', cRrHasImg.condId);
 
   embedMsg(gb, 'gq_msg_reroll', {
     title: '{gqr_res.response.title}',
     description: '{gqr_res.response.description}',
     color: '#10b981',
     imageUrl: '{gqr_res.response.image_url}',
-  }, { x: 0, y: 1400 });
-  gb.link('gq_api_reroll', 'gq_msg_reroll');
+    target: { editId: 'gq_shake_msg' },
+    action_id: 'gq_shake_msg',
+  }, { x: -380, y: 1720 });
+  gb.link(cRrHasImg.yes, 'gq_msg_reroll');
+
+  embedMsg(gb, 'gq_msg_reroll_err', {
+    title: '{gqr_res.response.title}',
+    description: '{gqr_res.response.description}',
+    color: '#f43f5e',
+    imageUrl: '',
+  }, { x: -60, y: 1720 });
+  gb.link(cRrHasImg.no, 'gq_msg_reroll_err');
 
   return gb.elements();
 }

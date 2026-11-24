@@ -316,11 +316,15 @@ export async function rerollStoneStall(userId, rawTier = 'common', options = {})
       });
       const bal = Number(user?.linh_thach || 0);
       if (bal < tier.reroll_cost) {
+        const msg = `Cần **${tier.reroll_cost} LT** để đổi lô đá mới (Số dư: **${bal.toLocaleString('vi-VN')} LT**).`;
         return {
           success: false,
-          status: 400,
+          status: 200,
           error: 'INSUFFICIENT_FUNDS',
-          message: `Cần **${tier.reroll_cost} LT** để đổi lô đá mới (Số dư: **${bal.toLocaleString('vi-VN')} LT**).`,
+          title: `${em('su_linhthach')} KHÔNG ĐỦ LINH THẠCH`,
+          description: msg,
+          image_url: '',
+          message: msg,
         };
       }
       await supabase
@@ -382,11 +386,15 @@ export async function cutStallStone(userId, rawTier = 'common', slotIndex = 1, o
       if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
       balance = Number(user.linh_thach || 0);
       if (balance < tier.price) {
+        const msg = `Không đủ Linh Thạch! Cần **${tier.price.toLocaleString('vi-VN')} LT** để cắt **${tier.short_name}** (Số dư: **${balance.toLocaleString('vi-VN')} LT**).`;
         return {
           success: false,
-          status: 400,
+          status: 200,
           error: 'INSUFFICIENT_FUNDS',
-          message: `Không đủ Linh Thạch! Cần **${tier.price.toLocaleString('vi-VN')} LT** để cắt **${tier.short_name}** (Số dư: **${balance.toLocaleString('vi-VN')} LT**).`,
+          title: `${em('su_linhthach')} KHÔNG ĐỦ LINH THẠCH`,
+          description: msg,
+          image_url: '',
+          message: msg,
         };
       }
       await supabase
@@ -533,11 +541,15 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
   return withStoneLock(cleanId, async () => {
     const rw = await getStoneRewardsRow(cleanId);
     if (rw.pending_supreme_picks <= 0) {
+      const msg = 'Bạn chưa có Hộp Chọn Tối Thượng Cực Phẩm nào đang chờ mở! Hãy cắt Nguyên Thạch để săn **Tối Thượng Cực Phẩm** trước.';
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'NO_PENDING_PICK',
-        message: 'Bạn không có Hộp Chọn Tối Thượng Cực Phẩm nào đang chờ mở!',
+        title: `${em('dao_ap_crest')} CHƯA CÓ HỘP TỐI THƯỢNG`,
+        description: msg,
+        image_url: '',
+        message: msg,
       };
     }
 

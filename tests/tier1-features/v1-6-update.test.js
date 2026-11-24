@@ -235,16 +235,21 @@ test('v1.6 Gieo Que (/gieoque): 6 Tiers (100%), 30 Poems, 1/day Lock & Reroll', 
   }
 
   const uid = '999999999999916004';
-  const draw1 = await drawDailyFortune(uid);
+  const draw1 = await drawDailyFortune(uid, { forceTierKey: 'tieu_cat' });
   assert.equal(draw1.success, true);
   assert.equal(draw1.already_drawn, false);
+  assert.equal(draw1.can_reroll, false);
 
   const draw2 = await drawDailyFortune(uid);
   assert.equal(draw2.success, true);
   assert.equal(draw2.already_drawn, true);
 
   const rerollRes = await rerollDailyFortune(uid);
-  assert.equal(typeof rerollRes, 'object');
+  assert.equal(rerollRes.success, false);
+  assert.equal(rerollRes.status, 200);
+  assert.equal(rerollRes.error, 'NOT_ELIGIBLE');
+  assert.ok(typeof rerollRes.title === 'string' && rerollRes.title.length > 0);
+  assert.ok(typeof rerollRes.description === 'string' && rerollRes.description.length > 0);
 });
 
 test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', async () => {

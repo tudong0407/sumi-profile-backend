@@ -403,22 +403,53 @@ export async function rerollDailyFortune(userId, options = {}) {
 
     const existing = await getUserDailyFortune(cleanId, now);
     if (!existing) {
-      return { success: false, status: 400, error: 'NOT_DRAWN_YET', message: 'Hôm nay bạn chưa gieo quẻ! Hãy bấm `/gieoque` trước.' };
+      const msg = 'Hôm nay bạn chưa gieo quẻ! Hãy bấm `/gieoque` trước.';
+      return {
+        success: false,
+        status: 200,
+        error: 'NOT_DRAWN_YET',
+        title: `${em('su_sparkle')} CHƯA GIEO QUẺ HÔM NAY`,
+        description: msg,
+        image_url: '',
+        message: msg,
+      };
     }
     if (!['hung', 'dai_hung'].includes(existing.tier_key)) {
-      return { success: false, status: 400, error: 'NOT_ELIGIBLE', message: 'Chỉ khi dính **Hung** hoặc **Đại Hung** mới cần Cầu An Giải Hạn!' };
+      const msg = 'Chỉ khi dính **Hung** hoặc **Đại Hung** mới cần Cầu An Giải Hạn!';
+      return {
+        success: false,
+        status: 200,
+        error: 'NOT_ELIGIBLE',
+        title: `${em('su_realm_star')} KHÔNG CẦN GIẢI HẠN`,
+        description: msg,
+        image_url: '',
+        message: msg,
+      };
     }
     if (existing.rerolled) {
-      return { success: false, status: 400, error: 'ALREADY_REROLLED', message: 'Hôm nay bạn đã Cầu An Giải Hạn 1 lần rồi!' };
+      const msg = 'Hôm nay bạn đã Cầu An Giải Hạn 1 lần rồi!';
+      return {
+        success: false,
+        status: 200,
+        error: 'ALREADY_REROLLED',
+        title: `${em('su_realm_star')} ĐÃ GIẢI HẠN HÔM NAY`,
+        description: msg,
+        image_url: '',
+        message: msg,
+      };
     }
 
     const bal = Number(user.linh_thach || 0);
     if (bal < FORTUNE_REROLL_COST_LT) {
+      const msg = `Cần **${FORTUNE_REROLL_COST_LT} LT** để Cầu An Giải Hạn (Số dư hiện tại: **${bal.toLocaleString('vi-VN')} LT**).`;
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'INSUFFICIENT_FUNDS',
-        message: `Cần **${FORTUNE_REROLL_COST_LT} LT** để Cầu An Giải Hạn (Số dư hiện tại: **${bal.toLocaleString('vi-VN')} LT**).`,
+        title: `${em('su_linhthach')} KHÔNG ĐỦ LINH THẠCH`,
+        description: msg,
+        image_url: '',
+        message: msg,
       };
     }
 
