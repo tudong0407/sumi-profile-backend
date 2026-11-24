@@ -47,7 +47,6 @@ import {
   challengeTower,
   resetTowerAttempts,
 } from './services/questService.js';
-import { renderQuestBoardWebp } from './canvas/questRenderer.js';
 import {
   getEffectiveLuckAndFortune,
   activateLuckPotion,
@@ -1766,28 +1765,6 @@ app.get('/api/quest/status/:userId', requireUpdateAck, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/quest/status error:', err);
     return res.status(500).json({ success: false, error: 'QUEST_STATUS_FAILED', message: err.message });
-  }
-});
-
-app.get('/api/quest/card/:userId.webp', async (req, res) => {
-  try {
-    const rawTab = getCleanParam(req.query.tab) || 'daily';
-    const result = await getQuestStatus(req.params.userId, {
-      tab: rawTab,
-      username: getCleanParam(req.query.username),
-      fallbackUsername: getCleanParam(req.query.fallback_name),
-      avatarUrl: getCleanParam(req.query.avatar),
-    });
-    if (!result.success) {
-      return res.status(result.status || 400).json(result);
-    }
-    const cardBuffer = await renderQuestBoardWebp(result, result.tab === 'all' ? 'daily' : result.tab);
-    res.set('Content-Type', 'image/webp');
-    res.set('Cache-Control', 'no-store');
-    return res.status(200).send(cardBuffer);
-  } catch (err) {
-    console.error('[Server] /api/quest/card error:', err);
-    return res.status(500).json({ success: false, error: 'QUEST_CARD_FAILED', message: err.message });
   }
 });
 

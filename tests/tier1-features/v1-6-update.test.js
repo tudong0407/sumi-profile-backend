@@ -72,7 +72,6 @@ import {
   cutStallStone,
   claimSupremeStonePick,
 } from '../../src/services/stoneCuttingService.js';
-import { renderQuestBoardWebp } from '../../src/canvas/questRenderer.js';
 import { BATTLE_COOLDOWN_MS } from '../../src/services/battleEngine/battleService.js';
 import { TOWER_COOLDOWN_MS, challengeTower, getQuestStatus } from '../../src/services/questService.js';
 import { LATEST_VERSION, getChangelogPayload } from '../../src/data/changelogs.js';
@@ -248,42 +247,6 @@ test('v1.6 Gieo Que (/gieoque): 6 Tiers (100%), 30 Poems, 1/day Lock & Reroll', 
   assert.equal(typeof rerollRes, 'object');
 });
 
-test('v1.6 Quest Board WebP Renderer (OwO 3 Tabs)', async () => {
-  const sample = {
-    username: 'Tiểu Thư Fuyumi',
-    quest_date: '2026-11-24',
-    week_key: '2026-11-23',
-    daily_reset_in: '02G 40P',
-    weekly_reset_in: '6N 02G 40P',
-    tower_floor: 76,
-    tower_max_floor: 500,
-    tower_attempts_used: 2,
-    tower_attempts_limit: 5,
-    tower_reset_cards: 2,
-    enchant_stones: 10,
-    quests: [
-      { id: 'daily', name: 'Điểm danh /daily hôm nay', progress: 1, target: 1, done: true, claimed: false, reward_lt: 17 },
-      { id: 'exp', name: 'Tích lũy 150 EXP Chat/Voice', progress: 150, target: 150, done: true, claimed: true, reward_lt: 22 },
-      { id: 'enchant', name: 'Thực hiện 1 lần /enchant hoặc /dismantle', progress: 1, target: 1, done: true, claimed: false, reward_lt: 22 },
-      { id: 'farm', name: 'Trồng hoặc chăm sóc /farm 1 lần', progress: 0, target: 1, done: false, claimed: false, reward_lt: 22 },
-      { id: 'shop', name: 'Mua 1 vật phẩm tại /shop', progress: 1, target: 1, done: true, claimed: false, reward_lt: 22 },
-    ],
-    weekly_contracts: [
-      { id: 'jobs', label: 'Hoàn thành 15 ca Làm Việc (/job)', progress: 7, target: 15, done: false, claimed: false, rewardLt: 400, rewardStones: 2 },
-      { id: 'wins', label: 'Thắng 25 trận Battle / Tháp', progress: 25, target: 25, done: true, claimed: true, rewardLt: 500, rewardStones: 3 },
-      { id: 'exp', label: 'Tích lũy 10.000 EXP trong tuần', progress: 7759, target: 10000, done: false, claimed: false, rewardLt: 450, rewardStones: 2 },
-    ],
-  };
-
-  for (const tab of ['daily', 'weekly', 'tower']) {
-    const buf = await renderQuestBoardWebp(sample, tab);
-    assert.ok(Buffer.isBuffer(buf));
-    assert.ok(buf.length > 4096);
-    assert.equal(buf.subarray(0, 4).toString('ascii'), 'RIFF');
-    assert.equal(buf.subarray(8, 12).toString('ascii'), 'WEBP');
-  }
-});
-
 test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', async () => {
   assert.equal(BATTLE_COOLDOWN_MS, 15000);
   assert.equal(TOWER_COOLDOWN_MS, 20000);
@@ -294,6 +257,7 @@ test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', asyn
   assert.ok(st.message.includes('1. Nhiệm Vụ Hàng Ngày'));
   assert.ok(st.message.includes('2. Hợp Đồng Tuần'));
   assert.ok(st.message.includes('────────────────────────'));
+  assert.equal(st.quest_card_url, undefined);
 
   const c1 = await challengeTower(uid, { preRender: false, seed: 7 });
   assert.equal(c1.success, true);

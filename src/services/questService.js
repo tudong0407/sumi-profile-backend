@@ -15,7 +15,6 @@ import {
   DIVINE_SENSE_CATALOG,
   DIVINE_REALM_CATALOG,
   WEEKLY_CONTRACTS_CONFIG,
-  PUBLIC_BASE_URL,
   computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import { em, uiEm } from '../config/emojiHelper.js';
@@ -619,7 +618,6 @@ export async function getQuestStatus(userId, options = {}) {
     tower_attempts_limit: TOWER_DAILY_ATTEMPTS_LIMIT,
     tower_reset_cards: ownedResetCards,
     enchant_stones: ownedEnchantStones,
-    quest_card_url: `${PUBLIC_BASE_URL}/api/quest/card/${cleanId}.webp?tab=${activeTab}`,
     message: lines.join('\n'),
     footer: '',
   };

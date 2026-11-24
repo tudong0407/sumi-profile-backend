@@ -354,55 +354,144 @@ export function buildNhiemvuV16Cmd() {
     color: '#06b6d4',
     footer: '',
     target: { reply: true },
+    editId: 'nv_board_msg',
   }, { x: 880, y: 840 });
   gb.link(nvStatusOk, 'nv_board_msg');
 
-  // Action buttons on nv_board_msg (ALL use showReplies: 'show' so buttons NEVER vanish!)
-  gb.advBtn('btn_nv_claim_d', 'nv_board_msg', btnCfg('Nhận Thưởng Ngày', 'SUCCESS', 'su_linhthach', '1', '1', 'show'), { x: 420, y: 1080 });
-  apiAction(gb, 'nv_btn_api_cd', 'nv_bc_res', 'POST', `${BACKEND_BASE}/api/quest/claim`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 420, y: 1240 });
-  gb.link('btn_nv_claim_d', 'nv_btn_api_cd');
-  embedMsg(gb, 'nv_btn_msg_cd', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG NHIỆM VỤ NGÀY`, description: '{nv_bc_res.response.message}', color: '#10b981' }, { x: 420, y: 1400 });
-  gb.link('nv_btn_api_cd', 'nv_btn_msg_cd');
+  // Helper unroll các nút Edit-in-place (KHÔNG spawn tin mới, KHÔNG có Leo Tháp / WebP, luôn giữ nút!)
+  let uidCounter = 0;
+  const nextTag = (pfx) => `${pfx}_${++uidCounter}`;
 
-  gb.advBtn('btn_nv_claim_w', 'nv_board_msg', btnCfg('Nhận Thưởng Tuần', 'PRIMARY', 'su_wiki_scroll', '1', '2', 'show'), { x: 700, y: 1080 });
-  apiAction(gb, 'nv_btn_api_cw', 'nv_bw_res', 'POST', `${BACKEND_BASE}/api/quest/claim-weekly`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 700, y: 1240 });
-  gb.link('btn_nv_claim_w', 'nv_btn_api_cw');
-  embedMsg(gb, 'nv_btn_msg_cw', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG HỢP ĐỒNG TUẦN`, description: '{nv_bw_res.response.message}', color: '#a855f7' }, { x: 700, y: 1400 });
-  gb.link('nv_btn_api_cw', 'nv_btn_msg_cw');
+  function attachHomeButtons(parentMsgId, depth, { includeClaimDaily = true, includeClaimWeekly = true, x = 880, y = 1040 } = {}) {
+    if (depth > 2) return;
+    let weight = 1;
 
-  gb.advBtn('btn_nv_tab_t', 'nv_board_msg', btnCfg('Tháp 500 Tầng', 'SECONDARY', 'su_arena', '1', '3', 'show'), { x: 980, y: 1080 });
-  apiAction(gb, 'nv_btn_api_t', 'nv_btn_res_t', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: 980, y: 1240 });
-  gb.link('btn_nv_tab_t', 'nv_btn_api_t');
-  embedMsg(gb, 'nv_tower_panel', { title: '{nv_btn_res_t.response.embed_title}', description: '{nv_btn_res_t.response.message}', color: '#f59e0b' }, { x: 980, y: 1400 });
-  gb.link('nv_btn_api_t', 'nv_tower_panel');
+    if (includeClaimDaily) {
+      const t = nextTag('nvcd');
+      const bId = `btn_${t}`;
+      const apiClaim = `api_${t}_c`;
+      const apiStat = `api_${t}_s`;
+      const msgEdit = `msg_${t}`;
+      const bx = x - 340;
 
-  // Nút ngay trên bảng Tháp 500 Tầng khi bấm mở
-  gb.advBtn('btn_nv_tw_climb', 'nv_tower_panel', btnCfg('Leo Tháp', 'PRIMARY', 'su_arena', '1', '1', 'show'), { x: 900, y: 1580 });
-  apiAction(gb, 'nv_btn_api_tw2', 'nv_bt2_res', 'POST', `${BACKEND_BASE}/api/quest/tower`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 900, y: 1740 });
-  gb.link('btn_nv_tw_climb', 'nv_btn_api_tw2');
-  embedMsg(gb, 'nv_btn_msg_tw2', { title: `${uidEm('su_arena')} KHIÊU CHIẾN THÁP 500 TẦNG`, description: '{nv_bt2_res.response.message}', color: '#3b82f6' }, { x: 900, y: 1900 });
-  gb.link('nv_btn_api_tw2', 'nv_btn_msg_tw2');
+      gb.advBtn(bId, parentMsgId, btnCfg('Nhận Thưởng Ngày', 'SUCCESS', 'su_linhthach', '1', String(weight++), 'hide'), { x: bx, y });
+      apiAction(gb, apiClaim, `${t}_cres`, 'POST', `${BACKEND_BASE}/api/quest/claim`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: bx, y: y + 140 });
+      gb.link(bId, apiClaim);
+      apiAction(gb, apiStat, `${t}_sres`, 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=daily&username={user_displayName}&avatar={user_icon}`, '', { x: bx, y: y + 280 });
+      gb.link(apiClaim, apiStat);
+      embedMsg(gb, msgEdit, {
+        title: `{${t}_sres.response.embed_title}`,
+        description: `{${t}_cres.response.message}\n────────────────────────\n{${t}_sres.response.message}`,
+        color: '#10b981',
+        target: { editId: 'nv_board_msg' },
+        action_id: 'nv_board_msg',
+      }, { x: bx, y: y + 420 });
+      gb.link(apiStat, msgEdit);
 
-  gb.advBtn('btn_nv_tw_reset', 'nv_tower_panel', btnCfg('Hồi Lượt Tháp', 'SECONDARY', 'tower_reset_card', '1', '2', 'show'), { x: 1180, y: 1580 });
-  apiAction(gb, 'nv_btn_api_rst2', 'nv_br2_res', 'POST', `${BACKEND_BASE}/api/quest/tower/reset`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 1180, y: 1740 });
-  gb.link('btn_nv_tw_reset', 'nv_btn_api_rst2');
-  embedMsg(gb, 'nv_btn_msg_rst2', { title: `${uidEm('tower_reset_card')} HỒI LƯỢT THÁP`, description: '{nv_br2_res.response.message}', color: '#f59e0b' }, { x: 1180, y: 1900 });
-  gb.link('nv_btn_api_rst2', 'nv_btn_msg_rst2');
+      attachHomeButtons(msgEdit, depth + 1, { includeClaimDaily: false, includeClaimWeekly, x: bx, y: y + 580 });
+    }
 
-  gb.advBtn('btn_nv_tower', 'nv_board_msg', btnCfg('Leo Tháp', 'PRIMARY', 'su_arena', '2', '1', 'show'), { x: 1260, y: 1080 });
-  apiAction(gb, 'nv_btn_api_tw', 'nv_bt_res', 'POST', `${BACKEND_BASE}/api/quest/tower`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 1260, y: 1240 });
-  gb.link('btn_nv_tower', 'nv_btn_api_tw');
-  embedMsg(gb, 'nv_btn_msg_tw', { title: `${uidEm('su_arena')} KHIÊU CHIẾN THÁP 500 TẦNG`, description: '{nv_bt_res.response.message}', color: '#3b82f6' }, { x: 1260, y: 1400 });
-  gb.link('nv_btn_api_tw', 'nv_btn_msg_tw');
+    if (includeClaimWeekly) {
+      const t = nextTag('nvcw');
+      const bId = `btn_${t}`;
+      const apiClaim = `api_${t}_c`;
+      const apiStat = `api_${t}_s`;
+      const msgEdit = `msg_${t}`;
+      const bx = x;
 
-  gb.advBtn('btn_nv_webp', 'nv_board_msg', btnCfg('Xem Bản Ảnh WebP', 'SECONDARY', 'su_stats_chart', '2', '2', 'show'), { x: 1540, y: 1080 });
-  embedMsg(gb, 'nv_btn_msg_webp', {
-    title: `${uidEm('su_stats_chart')} BẢN ẢNH BẢNG NHIỆM VỤ (WEBP)`,
-    description: 'Ảnh tổng hợp tiến độ Nhiệm Vụ Hàng Ngày của bạn:',
-    imageUrl: `${BACKEND_BASE}/api/quest/card/{user_id}.webp?tab=daily&username={user_displayName}`,
-    color: '#06b6d4',
-  }, { x: 1540, y: 1240 });
-  gb.link('btn_nv_webp', 'nv_btn_msg_webp');
+      gb.advBtn(bId, parentMsgId, btnCfg('Nhận Thưởng Tuần', 'PRIMARY', 'su_wiki_scroll', '1', String(weight++), 'hide'), { x: bx, y });
+      apiAction(gb, apiClaim, `${t}_cres`, 'POST', `${BACKEND_BASE}/api/quest/claim-weekly`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: bx, y: y + 140 });
+      gb.link(bId, apiClaim);
+      apiAction(gb, apiStat, `${t}_sres`, 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=daily&username={user_displayName}&avatar={user_icon}`, '', { x: bx, y: y + 280 });
+      gb.link(apiClaim, apiStat);
+      embedMsg(gb, msgEdit, {
+        title: `{${t}_sres.response.embed_title}`,
+        description: `{${t}_cres.response.message}\n────────────────────────\n{${t}_sres.response.message}`,
+        color: '#a855f7',
+        target: { editId: 'nv_board_msg' },
+        action_id: 'nv_board_msg',
+      }, { x: bx, y: y + 420 });
+      gb.link(apiStat, msgEdit);
+
+      attachHomeButtons(msgEdit, depth + 1, { includeClaimDaily, includeClaimWeekly: false, x: bx, y: y + 580 });
+    }
+
+    // Nút xem Tháp 500 Tầng (Edit tại chỗ)
+    {
+      const t = nextTag('nvtw');
+      const bId = `btn_${t}`;
+      const apiStat = `api_${t}_s`;
+      const msgEdit = `msg_${t}`;
+      const bx = x + 340;
+
+      gb.advBtn(bId, parentMsgId, btnCfg('Tháp 500 Tầng', 'SECONDARY', 'su_arena', '1', String(weight++), 'hide'), { x: bx, y });
+      apiAction(gb, apiStat, `${t}_tres`, 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: bx, y: y + 140 });
+      gb.link(bId, apiStat);
+      embedMsg(gb, msgEdit, {
+        title: `{${t}_tres.response.embed_title}`,
+        description: `{${t}_tres.response.message}`,
+        color: '#f59e0b',
+        target: { editId: 'nv_board_msg' },
+        action_id: 'nv_board_msg',
+      }, { x: bx, y: y + 280 });
+      gb.link(apiStat, msgEdit);
+
+      attachTowerButtons(msgEdit, depth + 1, { x: bx, y: y + 440 });
+    }
+  }
+
+  function attachTowerButtons(parentMsgId, depth, { includeReset = true, x = 1220, y = 1480 } = {}) {
+    if (depth > 2) return;
+    let weight = 1;
+
+    // Quay lại Ngày & Hợp Đồng Tuần (Edit tại chỗ)
+    {
+      const t = nextTag('nvbk');
+      const bId = `btn_${t}`;
+      const apiStat = `api_${t}_s`;
+      const msgEdit = `msg_${t}`;
+
+      gb.advBtn(bId, parentMsgId, btnCfg('Ngày & Hợp Đồng Tuần', 'PRIMARY', 'su_quest_scroll', '1', String(weight++), 'hide'), { x: x - 160, y });
+      apiAction(gb, apiStat, `${t}_sres`, 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=daily&username={user_displayName}&avatar={user_icon}`, '', { x: x - 160, y: y + 140 });
+      gb.link(bId, apiStat);
+      embedMsg(gb, msgEdit, {
+        title: `{${t}_sres.response.embed_title}`,
+        description: `{${t}_sres.response.message}`,
+        color: '#06b6d4',
+        target: { editId: 'nv_board_msg' },
+        action_id: 'nv_board_msg',
+      }, { x: x - 160, y: y + 280 });
+      gb.link(apiStat, msgEdit);
+
+      attachHomeButtons(msgEdit, depth + 1, { includeClaimDaily: true, includeClaimWeekly: true, x: x - 160, y: y + 440 });
+    }
+
+    if (includeReset) {
+      const t = nextTag('nvrs');
+      const bId = `btn_${t}`;
+      const apiRst = `api_${t}_r`;
+      const apiStat = `api_${t}_s`;
+      const msgEdit = `msg_${t}`;
+
+      gb.advBtn(bId, parentMsgId, btnCfg('Hồi Lượt Tháp', 'SECONDARY', 'tower_reset_card', '1', String(weight++), 'hide'), { x: x + 160, y });
+      apiAction(gb, apiRst, `${t}_rres`, 'POST', `${BACKEND_BASE}/api/quest/tower/reset`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: x + 160, y: y + 140 });
+      gb.link(bId, apiRst);
+      apiAction(gb, apiStat, `${t}_sres`, 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: x + 160, y: y + 280 });
+      gb.link(apiRst, apiStat);
+      embedMsg(gb, msgEdit, {
+        title: `{${t}_sres.response.embed_title}`,
+        description: `{${t}_rres.response.message}\n────────────────────────\n{${t}_sres.response.message}`,
+        color: '#f59e0b',
+        target: { editId: 'nv_board_msg' },
+        action_id: 'nv_board_msg',
+      }, { x: x + 160, y: y + 420 });
+      gb.link(apiStat, msgEdit);
+
+      attachTowerButtons(msgEdit, depth + 1, { includeReset: false, x: x + 160, y: y + 580 });
+    }
+  }
+
+  attachHomeButtons('nv_board_msg', 0, { includeClaimDaily: true, includeClaimWeekly: true, x: 880, y: 1040 });
 
   return gb.elements();
 }
@@ -727,7 +816,7 @@ function buildV16KnowledgeBlock(includeFuyumiSecret) {
     '• [CẢNH GIỚI & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút (chấm công nền 12 phút); công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (chỉ nhận 1 lần/Lv). 8 Level Roles tự cộng dồn Buff EXP/Daily LT/Pet Power; /doiqua đổi 1.000 EXP lấy 10 LT; /exp xem tổng % Boost. /top có đủ 6 bảng (level, power, wealth, marry, chat, voice); Top Chat Ngày & Top Voice Ngày tự động trao 500 / 400 / 300 LT riêng cho Top 1–3 mỗi ngày lúc 00:00 (UTC+7) tại #bot-cmds, và 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
     '• [LINH THÚ, KHẮC ẤN & BUFF SET] (/linhthu, /pet, /phapbao, /equip, /unequip, /enchant, /dismantle, /linhvuc): Linh Thú tăng trưởng Lv.1→Lv.100 đạt +550% và 1★→10★ đạt +135% (tổng 7.85× chỉ số gốc ở Lv.100 10★). Khắc Ấn /enchant nâng D (+0%) -> C (+8%) -> B (+18%) -> A (+32%) -> S (+50%) kèm Pity +5%/lần trượt (Thiên Đạo Tuyệt Ấn Thạch 100%). Buff SET 2 tầng không cộng dồn: Full Hệ Thường 4/4 (+8%) hoặc 5/5 (+12% toàn chỉ số); Set Thần Thoại cùng hệ 2/3/4/5 (+6%/+12%/+18%/+25% toàn chỉ số, mốc 5/5 thêm +10% Xuyên DEF & +1 Linh Mạch đầu trận).',
     '• [GACHA, LUCK POTION, ĐỔ THẠCH & CỬA HÀNG] (/roll, /dothach, /autosell, /shop, /inv, /info): /roll (50 LT/lượt, 450/10, Pity 350 tách riêng pet/equipment/domain). /shop có 7 quầy + Shop Ngày giảm 15–40%, bán thêm 3 Lọ Luck Potion (Tiểu Vận +20% 40 lượt 1.200 LT, Thiên Cơ +40% 60 lượt 3.200 LT, Hồng Mông +60% 80 lượt 6.800 LT — uống qua /equip, áp dụng cho cả /roll & /dothach, cộng dồn với /gieoque, không stack 2 lọ khác loại). /dothach (Phường Đổ Thạch — tách biệt hoàn toàn với /roll, không Pity 350): 4 phân khúc (Phàm 150 LT / Linh 450 LT / Tiên 1.200 LT / Thần Thoại 3.000 LT • 20 loài Nguyên Thạch) kèm manh mối mơ hồ để soi & cắt đá; trúng Tối Thượng Cực Phẩm mở Hộp Chọn Thần Thoại không Độc Nhất thuộc 7 nhóm.',
-    '• [GIEO QUẺ ĐẦU NGÀY & NHIỆM VỤ] (/gieoque, /nhiemvu, /battle, /party, /linhmach): /gieoque mỗi ngày 1 lần (UTC+7) lắc ống xăm nhận 6 bậc Khí Vận (Đại Hung → Đại Cát, cộng/trừ nhẹ % EXP, % LT & % Luck) kèm thơ ứng nghiệm; gặp Hung/Đại Hung có thể Cầu An Giải Hạn (250 LT, 1/ngày). /nhiemvu giao diện 3 tab gọn nhẹ (Hàng Ngày / Hợp Đồng Tuần / Tháp 500 Tầng) kèm nút Xem Bản Ảnh WebP.',
+    '• [GIEO QUẺ ĐẦU NGÀY & NHIỆM VỤ] (/gieoque, /nhiemvu, /battle, /party, /linhmach): /gieoque mỗi ngày 1 lần (UTC+7) lắc ống xăm nhận 6 bậc Khí Vận (Đại Hung → Đại Cát, cộng/trừ nhẹ % EXP, % LT & % Luck) kèm thơ ứng nghiệm; gặp Hung/Đại Hung có thể Cầu An Giải Hạn (250 LT, 1/ngày). /nhiemvu giao diện gọn nhẹ gộp Nhiệm Vụ Ngày + Hợp Đồng Tuần (cách biệt rõ ràng) kèm Tháp 500 Tầng (cooldown 20s/lượt, /battle cooldown 15s).',
     '• [KHÁM PHÁ, NÔNG TRẠI DM, /WIKI 10 MỤC & /UPDATES] (/explorer, /farm, /exchange, /job, /daily, /marry, /giatoc, /tangqua, /coinflip, /slots, /blackjack, /crash, /wiki, /updates): /explorer 12 Địa danh (210–315 LT/giờ × hệ số + 0.5% Đá Tuyệt Ấn Thạch). /farm tách Linh Điền & Linh Các kèm DM nhắc tưới & sắp héo 1h/30p/15p. /wiki 10 chuyên mục. Bản cập nhật mới nhất /updates v1.6 tặng ngay +1.000 LT khi bấm Xác Nhận.',
   ];
   if (includeFuyumiSecret) {

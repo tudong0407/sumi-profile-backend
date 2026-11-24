@@ -25,7 +25,7 @@ export const V16_CHANGELOG = {
   color: '#ec4899',
   is_big_update: false,
   ack_reward_lt: 1000,
-  summary: 'Ra mắt Phường Đổ Thạch (/dothach, 20 Nguyên Thạch), Gieo Quẻ Đầu Ngày (/gieoque, 6 bậc Khí Vận), 3 Lọ Luck Potion trong /shop, giao diện /nhiemvu kiểu OwO kèm xuất ảnh WebP, sửa lỗi mua nhầm Viền/Nền khi preview nhiều lần & tặng +1.000 LT!',
+  summary: 'Ra mắt Phường Đổ Thạch (/dothach, 20 Nguyên Thạch), Gieo Quẻ Đầu Ngày (/gieoque, 6 bậc Khí Vận), 3 Lọ Luck Potion trong /shop, giao diện /nhiemvu mới tinh gọn (gộp Ngày + Tuần + Tháp 500 tầng), sửa lỗi mua nhầm Viền/Nền khi preview nhiều lần & tặng +1.000 LT!',
   sections: [
     {
       heading: `${em('su_sparkle')} Phường Đổ Thạch (/dothach) & 3 Lọ Luck Potion (/shop)`,
@@ -39,7 +39,7 @@ export const V16_CHANGELOG = {
       heading: `${em('su_quest_scroll')} Gieo Quẻ Đầu Ngày (/gieoque) & Cải Tiến /nhiemvu`,
       bullets: [
         '**Gieo Quẻ Ứng Nghiệm (`/gieoque`):** Mỗi ngày `1 lần` *(UTC+7)* lắc ống xăm nhận **6 bậc Khí Vận** *(Đại Hung → Đại Cát)* kèm thẻ thơ riêng, tăng/giảm nhẹ `% EXP`, `% LT` & `% Luck`. Gặp quẻ **Hung / Đại Hung** có thể bấm **Cầu An Giải Hạn (`250 LT`)** để gieo lại!',
-        '**Bảng `/nhiemvu` Mới Kiểu OwO + Bản Ảnh WebP:** Tách gọn **3 tab** *(Hàng Ngày / Hợp Đồng Tuần / Tháp 500 Tầng)*, hiển thị rõ `▸ Thưởng` & `▸ Tiến độ`, kèm nút **Xem Bản Ảnh WebP** & quà xác nhận **`+1.000 Linh Thạch`**!',
+        '**Bảng `/nhiemvu` Mới Tinh Gọn (Embed Discord):** Gộp gọn **Nhiệm Vụ Hàng Ngày & Hợp Đồng Tuần**, hiển thị rõ `▸ Thưởng` & `▸ Tiến độ` kèm bảng **Tháp 500 Tầng** & quà xác nhận **`+1.000 Linh Thạch`**!',
       ],
     },
   ],
