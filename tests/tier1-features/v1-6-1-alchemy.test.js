@@ -27,6 +27,7 @@ import {
   computeGraceMs,
   checkRecipeUnlock,
   resolveAlchemyImageUrl,
+  resolveExplodedFurnaceImageUrl,
 } from '../../src/data/v161AlchemyCatalog.js';
 import {
   getAlchemyStatus,
@@ -252,7 +253,8 @@ test('5. Changelog v1.6.1 (+1.000 LT, 0 Unicode) & resolveAlchemyImageUrl an to�
   assert.equal(UNICODE_PICTO_RE.test(payload.title), false);
   assert.equal(UNICODE_PICTO_RE.test(payload.description), false);
 
-  // Nếu chưa thả ảnh WebP vào assets/alchemy/ phải trả '' an toàn
-  const img = resolveAlchemyImageUrl('non_existent_furnace.webp');
-  assert.equal(img, '');
+  // Ảnh không tồn tại trả '' an toàn; ảnh đã cài đặt trả URL WebP + fallback exploded
+  assert.equal(resolveAlchemyImageUrl('non_existent_furnace.webp'), '');
+  assert.match(resolveAlchemyImageUrl('furnace_lv1.webp'), /\/assets\/alchemy\/furnace_lv1\.webp\?v=1\.6\.1$/);
+  assert.match(resolveExplodedFurnaceImageUrl(1), /\/assets\/alchemy\/furnace_(?:lv1_)?exploded\.webp\?v=1\.6\.1$/);
 });

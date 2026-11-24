@@ -35,6 +35,7 @@ export const FURNACE_TIERS = [
     superiorPct: 10,
     cloudPct: 3,
     image: 'furnace_lv1.webp',
+    explodedImage: 'furnace_lv1_exploded.webp',
     badgeEm: 'su_sprout',
   },
   {
@@ -48,6 +49,7 @@ export const FURNACE_TIERS = [
     superiorPct: 14,
     cloudPct: 5,
     image: 'furnace_lv2.webp',
+    explodedImage: 'furnace_lv2_exploded.webp',
     badgeEm: 'su_el_moc',
   },
   {
@@ -61,6 +63,7 @@ export const FURNACE_TIERS = [
     superiorPct: 18,
     cloudPct: 7,
     image: 'furnace_lv3.webp',
+    explodedImage: 'furnace_lv3_exploded.webp',
     badgeEm: 'su_el_hoa',
   },
   {
@@ -74,6 +77,7 @@ export const FURNACE_TIERS = [
     superiorPct: 22,
     cloudPct: 10,
     image: 'furnace_lv4.webp',
+    explodedImage: 'furnace_lv4_exploded.webp',
     badgeEm: 'su_el_kim',
   },
   {
@@ -87,6 +91,7 @@ export const FURNACE_TIERS = [
     superiorPct: 28,
     cloudPct: 14,
     image: 'furnace_lv5.webp',
+    explodedImage: 'furnace_lv5_exploded.webp',
     badgeEm: 'su_el_hondon',
   },
 ];
@@ -248,6 +253,15 @@ export function resolveAlchemyImageUrl(filename) {
     return `${PUBLIC_BASE_URL}/assets/alchemy/${clean}?v=1.6.1`;
   }
   return '';
+}
+
+export function resolveExplodedFurnaceImageUrl(furnaceLevel) {
+  const tier = getFurnaceTier(furnaceLevel);
+  if (tier?.explodedImage) {
+    const perLevel = resolveAlchemyImageUrl(tier.explodedImage);
+    if (perLevel) return perLevel;
+  }
+  return resolveAlchemyImageUrl(ALCHEMY_EXPLODED_IMAGE);
 }
 
 export function alchemyIcon(key) {

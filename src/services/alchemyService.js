@@ -37,6 +37,7 @@ import {
   computeGraceMs,
   checkRecipeUnlock,
   resolveAlchemyImageUrl,
+  resolveExplodedFurnaceImageUrl,
   alchemyIcon,
 } from '../data/v161AlchemyCatalog.js';
 
@@ -376,10 +377,16 @@ function buildAlchemyEmbed({
   const fireEm = em('su_el_hoa') || em('su_sparkle');
 
   const hasExplodedSlot = slots.some((s) => s.status === 'exploded');
-  const defaultImgFile = hasExplodedSlot ? ALCHEMY_EXPLODED_IMAGE : tier.image;
-  const imageUrl = overrideImage !== null
-    ? resolveAlchemyImageUrl(overrideImage)
-    : resolveAlchemyImageUrl(defaultImgFile);
+  let imageUrl = '';
+  if (overrideImage === ALCHEMY_EXPLODED_IMAGE) {
+    imageUrl = resolveExplodedFurnaceImageUrl(profile.furnace_level);
+  } else if (overrideImage !== null) {
+    imageUrl = resolveAlchemyImageUrl(overrideImage);
+  } else if (hasExplodedSlot) {
+    imageUrl = resolveExplodedFurnaceImageUrl(profile.furnace_level);
+  } else {
+    imageUrl = resolveAlchemyImageUrl(tier.image);
+  }
 
   const displayName = pickCleanDisplayValue(user.username, `TuSi_${user.user_id}`);
   const userLevel = Number(user.level || 1);
