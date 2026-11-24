@@ -23,6 +23,8 @@ import { simulateTeamBattle } from '../src/services/battleEngine/teamBattleServi
 import { computeTowerFloorRewardLt, TOWER_MILESTONE_BONUSES } from '../src/services/questService.js';
 import { buildTowerGuardian } from '../src/services/questService.js';
 import { preloadAvatarFrameOverlay, drawAntiAliasedAvatarWithBorder } from '../src/canvas/drawUtils.js';
+import { triggerTurnStart } from '../src/services/battleEngine/haxEngine.js';
+import { createInitialCombatState } from '../src/services/battleEngine/statsCompiler.js';
 import { getInventory } from '../src/services/inventoryService.js';
 import { buyShopItem, previewShopItem } from '../src/services/shopService.js';
 import { FUYUMI_USER_ID } from '../src/data/catalog.js';
@@ -164,4 +166,56 @@ test('Ver 1.5 UI: /inv hides backgrounds/frames/frame_unlock_token and /shop 0 L
   assert.equal(equipRes.success, true);
   assert.equal(equipRes.cost, 0);
   assert.equal(equipRes.equipped, true);
+});
+
+test('Ver 1.5 HAX: soul_mythic_1 converts resisted Charm into 10% maxHp true burn + -20% ATK (2 turns)', () => {
+  const baseTarget = {
+    id: 'fuyumi_test',
+    petType: 'cuu_vi_hong_ho',
+    atk: 1000,
+    def: 1000,
+    spd: 1000,
+    maxHp: 50000,
+    currentHp: 50000,
+    equipment: { soul: { item_id: 'soul_mythic_1' } },
+    domainLoadout: {},
+    state: createInitialCombatState(),
+  };
+
+  // Case 1: CC-immune opponent (quang_minh_thanh_thu) resists Charm -> backlash 10% true HP + -20% ATK 2 turns
+  const immuneActor = {
+    id: 'immune_test',
+    petType: 'quang_minh_thanh_thu',
+    atk: 1000,
+    def: 1000,
+    spd: 1000,
+    maxHp: 10000,
+    currentHp: 10000,
+    equipment: {},
+    domainLoadout: {},
+    state: createInitialCombatState(),
+  };
+  const resBacklash = triggerTurnStart(immuneActor, baseTarget, () => 0.01, 1);
+  assert.equal(resBacklash.attackSelf, false);
+  assert.equal(immuneActor.currentHp, 9000);
+  assert.ok(immuneActor.state.atkDebuffPct >= 0.20);
+  assert.ok(immuneActor.state.atkDebuffTurns >= 2);
+  assert.ok(resBacklash.events.some((e) => e.action === 'charm_backlash'));
+
+  // Case 2: Normal opponent (hoa_thach_nham_nham) gets charmed cleanly
+  const normalActor = {
+    id: 'normal_test',
+    petType: 'hoa_thach_nham_nham',
+    atk: 1000,
+    def: 1000,
+    spd: 1000,
+    maxHp: 10000,
+    currentHp: 10000,
+    equipment: {},
+    domainLoadout: {},
+    state: createInitialCombatState(),
+  };
+  const resCharm = triggerTurnStart(normalActor, baseTarget, () => 0.01, 1);
+  assert.equal(resCharm.attackSelf, true);
+  assert.ok(resCharm.events.some((e) => e.action === 'charm'));
 });

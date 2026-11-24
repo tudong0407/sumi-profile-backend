@@ -604,11 +604,23 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
   // Mị Hoặc / Hỗn Loạn (soul_mythic_1 40%, tinh_khong_da_thao 35% & v1.3 charmPct)
   const targetHaxProc = getHaxProcMultiplier(target);
   if (hasItem(target, 'soul_mythic_1')) {
-    const res = rollControlResist(actor, rng, 'charm');
-    if (!res.resisted && rng() < Math.min(0.60, 0.40 * targetHaxProc)) {
-      result.attackSelf = true;
-      result.events.push({ actor: actor.id, action: 'charm', skill: 'Mị Hoặc Chúng Sinh (Tự Đánh Bản Thân)' });
-      return result;
+    const charmChance = Math.min(0.60, 0.40 * targetHaxProc);
+    if (rng() < charmChance) {
+      const res = rollControlResist(actor, rng, 'charm');
+      if (!res.resisted) {
+        result.attackSelf = true;
+        result.events.push({ actor: actor.id, action: 'charm', skill: 'Mị Hoặc Chúng Sinh (Tự Đánh Bản Thân)' });
+        return result;
+      }
+      const backlashDmg = Math.max(1, Math.floor(actor.maxHp * 0.10));
+      actor.currentHp = Math.max(1, actor.currentHp - backlashDmg);
+      actor.state.atkDebuffPct = Math.max(actor.state.atkDebuffPct || 0, 0.20);
+      actor.state.atkDebuffTurns = Math.max(actor.state.atkDebuffTurns || 0, 2);
+      result.events.push({
+        actor: actor.id,
+        action: 'charm_backlash',
+        skill: `Mị Hoặc Phản Phệ (Kháng Mị → -${backlashDmg.toLocaleString('vi-VN')} HP chuẩn & -20% ATK 2 hiệp)`,
+      });
     }
   }
 

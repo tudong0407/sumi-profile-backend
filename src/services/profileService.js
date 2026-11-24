@@ -303,7 +303,7 @@ export function getFuyumiProfileMock() {
           bonus_hp: 0,
           bonus_crit: 0,
           hax_skill: 'Mị Hoặc Chúng Sinh',
-          hax_description: 'Mỗi hiệp đấu có 40% xác suất Mị Hoặc đối thủ, ép nó tự tung đòn đánh mạnh nhất vào chính bản thân nó thay vì đánh Pet!',
+          hax_description: '40% xác suất mỗi hiệp Mị Hoặc đối thủ tự đánh mình; nếu địch kháng được sẽ tự chuyển thành đốt 10% HP chuẩn & giảm 20% ATK địch (2 hiệp).',
           icon: `${em('cuu_vi_hong_ho')}`,
         },
       },
