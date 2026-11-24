@@ -364,7 +364,7 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_sprout')} Nông Trại, Giải Trí, Tiên Lữ & Gia Tộc`,
         value: [
-          '• **`/farm` & `/exchange`:** 4–6 ô (`6/12/24h`), đổi Linh Quả lấy LT, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset.',
+          '• **`/farm` & `/exchange`:** Tách riêng khu **Linh Điền** & **Linh Các** (`6/12/24h`), Bot **tự nhắn DM nhắc tới giờ tưới & cảnh báo sắp héo (1h / 30p / 15p)**; đổi Linh Quả lấy LT, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
           `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP/LT, Clan Wars 24H).`,
         ].join('\n'),

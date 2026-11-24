@@ -67,20 +67,24 @@ export function resolveSeedQuery(raw) {
 }
 
 function computePlotSnapshot(row, now) {
-  const plotLabel = row.plot_type === 'linh_cac' ? 'Linh Các' : 'Linh Điền';
+  const isCac = row.plot_type === 'linh_cac';
+  const plotLabel = isCac ? 'Linh Các' : 'Linh Điền';
   if (!row.seed_id || row.status === 'empty') {
+    const emptyDesc = isCac
+      ? '**Đang Trống** — Sẵn sàng ấp trứng linh thú.'
+      : '**Đang Trống** — Sẵn sàng gieo hạt giống.';
     return {
       ...row,
       plot_label: plotLabel,
       computed_status: 'empty',
       needs_care: false,
-      summary: `Ô #${row.slot_index} (${plotLabel}): **Đang Trống** — Sẵn sàng gieo giống / ấp trứng.`,
+      summary: `Ô #${row.slot_index}: ${emptyDesc}`,
     };
   }
 
   const seed = FARM_SEED_BY_ID[row.seed_id];
   if (!seed) {
-    return { ...row, plot_label: plotLabel, computed_status: 'empty', needs_care: false, summary: `Ô #${row.slot_index} (${plotLabel}): Trống` };
+    return { ...row, plot_label: plotLabel, computed_status: 'empty', needs_care: false, summary: `Ô #${row.slot_index}: Trống` };
   }
 
   if (row.status === 'wilted') {
@@ -90,7 +94,7 @@ function computePlotSnapshot(row, now) {
       plot_label: plotLabel,
       computed_status: 'wilted',
       needs_care: false,
-      summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** — **ĐÃ HÉO / BỎ ĐI** *(Bấm Dọn Ô Héo để dọn)*`,
+      summary: `Ô #${row.slot_index}: ${seed.icon} **${seed.name}** — **ĐÃ HÉO / BỎ ĐI** *(Bấm Dọn Ô Héo để dọn)*`,
     };
   }
 
@@ -108,7 +112,7 @@ function computePlotSnapshot(row, now) {
       plot_label: plotLabel,
       computed_status: 'ready',
       needs_care: false,
-      summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** — **CHÍN MUỒI** *(Thu +${seed.reward_lt} LT & +${seed.reward_essence} ${farmEmoji('farm_essence')})*`,
+      summary: `Ô #${row.slot_index}: ${seed.icon} **${seed.name}** — **CHÍN MUỒI** *(Thu +${seed.reward_lt} LT & +${seed.reward_essence} ${farmEmoji('farm_essence')})*`,
     };
   }
 
@@ -119,14 +123,15 @@ function computePlotSnapshot(row, now) {
       plot_label: plotLabel,
       computed_status: 'wilted',
       needs_care: false,
-      summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** — **ĐÃ HÉO / BỎ ĐI** *(Quá ${seed.wilt_hours}h chưa chăm sóc)*`,
+      summary: `Ô #${row.slot_index}: ${seed.icon} **${seed.name}** — **ĐÃ HÉO / BỎ ĐI** *(Quá ${seed.wilt_hours}h chưa chăm sóc)*`,
     };
   }
 
   const needsCare = nowMs >= careDueMs;
   const remMatureTxt = formatDurationHm(Math.max(60000, matureMs - nowMs));
   const remWiltTxt = formatDurationHm(Math.max(60000, wiltDeadlineMs - nowMs));
-  const remCareTxt = needsCare ? 'ĐẾN GIỜ TƯỚI/CHO ĂN!' : `Chăm sau ${formatDurationHm(careDueMs - nowMs)}`;
+  const careLabel = isCac ? 'ĐẾN GIỜ CHO ĂN!' : 'ĐẾN GIỜ TƯỚI NƯỚC!';
+  const remCareTxt = needsCare ? careLabel : `Chăm sau ${formatDurationHm(careDueMs - nowMs)}`;
 
   return {
     ...row,
@@ -134,7 +139,7 @@ function computePlotSnapshot(row, now) {
     plot_label: plotLabel,
     computed_status: 'growing',
     needs_care: needsCare,
-    summary: `Ô #${row.slot_index} (${plotLabel}): ${seed.icon} **${seed.name}** • Chín sau \`${remMatureTxt}\` • \`${remCareTxt}\` *(Héo sau ${remWiltTxt})*`,
+    summary: `Ô #${row.slot_index}: ${seed.icon} **${seed.name}** • Chín sau \`${remMatureTxt}\` • \`${remCareTxt}\` *(Héo sau ${remWiltTxt})*`,
   };
 }
 
@@ -206,9 +211,24 @@ export async function getFarmStatus(userId, options = {}) {
   const careCount = plots.filter((p) => p.needs_care).length;
   const wiltedCount = plots.filter((p) => p.computed_status === 'wilted').length;
 
-  const seedLines = FARM_SEEDS.map((s) =>
-    `• ${s.icon} **${s.name}** (\`${s.seed_id}\`) — Giá \`${s.cost_lt} LT\` → Thu \`${s.reward_lt} LT + ${s.reward_essence}\` ${essenceIcon} *(${s.care_window})*`,
-  );
+  const linhDienPlots = plots.filter((p) => p.plot_type !== 'linh_cac');
+  const linhCacPlots = plots.filter((p) => p.plot_type === 'linh_cac');
+  const lockEm = uiEm('ui_lock');
+
+  const linhDienLines = linhDienPlots.map((p) => `• ${p.summary}`);
+  if (linhDienPlots.length < 3) {
+    linhDienLines.push(`• ${lockEm} **Ô #5:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+  }
+
+  const linhCacLines = linhCacPlots.map((p) => `• ${p.summary}`);
+  if (linhCacPlots.length < 3) {
+    linhCacLines.push(`• ${lockEm} **Ô #6:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+  }
+
+  const formatSeedLine = (s) =>
+    `• ${s.icon} **${s.name}** (\`${s.seed_id}\`) — Giá \`${s.cost_lt} LT\` → Thu \`${s.reward_lt} LT + ${s.reward_essence}\` ${essenceIcon} *(${s.care_window})*`;
+  const linhDienSeeds = FARM_SEEDS.filter((s) => s.plot_type !== 'linh_cac').map(formatSeedLine);
+  const linhCacSeeds = FARM_SEEDS.filter((s) => s.plot_type === 'linh_cac').map(formatSeedLine);
 
   return {
     success: true,
@@ -218,19 +238,26 @@ export async function getFarmStatus(userId, options = {}) {
     farm_essence: essence,
     slots_unlocked: cap,
     max_slots: MAX_FARM_SLOTS,
+    linh_dien_slots: linhDienPlots.length,
+    linh_cac_slots: linhCacPlots.length,
     ready_count: readyCount,
     care_due_count: careCount,
     wilted_count: wiltedCount,
     plots,
     title: `${essenceIcon} LINH ĐIỀN & LINH THÚ CÁC — ${user.username}`,
     description: [
-      `• **Số Dư:** **${bal.toLocaleString('vi-VN')}** ${ltIcon} • **Linh Quả Tiên Giới:** **${essence.toLocaleString('vi-VN')}** ${essenceIcon} • **Ô Canh Tác:** \`${cap}/${MAX_FARM_SLOTS}\``,
+      `• **Số Dư:** **${bal.toLocaleString('vi-VN')}** ${ltIcon} • **Linh Quả Tiên Giới:** **${essence.toLocaleString('vi-VN')}** ${essenceIcon}`,
+      `• **Linh Điền:** \`${linhDienPlots.length}/3\` • **Linh Các:** \`${linhCacPlots.length}/3\` *(Tổng \`${cap}/${MAX_FARM_SLOTS}\` ô • Tự động DM nhắc tưới & cảnh báo héo 1h/30p/15p)*`,
       '',
-      '**Trạng Thái Các Ô Hiện Tại:**',
-      ...plots.map((p) => `• ${p.summary}`),
-      '',
+      `**${farmEmoji('seed_linh_thao')} KHU LINH ĐIỀN (${linhDienPlots.length}/3 ô):**`,
+      ...linhDienLines,
+      '────────────────────────',
+      `**${farmEmoji('egg_linh_thu')} KHU LINH THÚ CÁC (${linhCacPlots.length}/3 ô):**`,
+      ...linhCacLines,
+      '────────────────────────',
       '**Bảng Giống & Trứng Thời Gian Thực (`/farm gieo <ma_giong>`):**',
-      ...seedLines,
+      ...linhDienSeeds,
+      ...linhCacSeeds,
     ].join('\n'),
     footer: '',
   };
@@ -293,6 +320,8 @@ export async function plantFarmPlot(userId, rawSeedId, options = {}) {
         planted_at: nowIso,
         last_cared_at: nowIso,
         care_count: 0,
+        dm_care_notified: false,
+        dm_wilt_stage: 0,
         updated_at: nowIso,
       }).eq('id', targetPlot.id),
       trackQuestActivity(cleanId, { farmDelta: 1, now }),
@@ -338,6 +367,8 @@ export async function careAllPlots(userId, options = {}) {
         supabase.from('user_farm_plots').update({
           last_cared_at: nowIso,
           care_count: (Number(p.care_count) || 0) + 1,
+          dm_care_notified: false,
+          dm_wilt_stage: 0,
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
@@ -398,6 +429,8 @@ export async function harvestAllPlots(userId, options = {}) {
           planted_at: null,
           last_cared_at: null,
           care_count: 0,
+          dm_care_notified: false,
+          dm_wilt_stage: 0,
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
@@ -439,6 +472,8 @@ export async function clearWiltedPlots(userId, options = {}) {
           planted_at: null,
           last_cared_at: null,
           care_count: 0,
+          dm_care_notified: false,
+          dm_wilt_stage: 0,
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
@@ -611,4 +646,241 @@ function normalizeEssenceItemKey(raw) {
   const clean = lower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const found = EXCHANGE_ITEMS.find((it) => it.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(clean));
   return found ? found.exchange_id : lower;
+}
+
+const WILT_STAGE_META = {
+  1: { type: 'wilt_60', label: 'Còn 1 giờ nữa là héo!' },
+  2: { type: 'wilt_30', label: 'Còn 30 phút nữa là héo!' },
+  3: { type: 'wilt_15', label: 'Còn 15 phút nữa là héo!' },
+};
+
+/**
+ * Đánh giá trạng thái chuyển đổi & cảnh báo DM cho 1 ô Linh Điền / Linh Các đang trồng.
+ */
+export function evaluatePlotReminder(row, now = new Date()) {
+  if (!row || !row.seed_id || row.status !== 'growing') {
+    return { transitionStatus: null, alert: null };
+  }
+
+  const seed = FARM_SEED_BY_ID[row.seed_id];
+  if (!seed) {
+    return { transitionStatus: null, alert: null };
+  }
+
+  const nowMs = now.getTime();
+  const plantedMs = new Date(row.planted_at || now).getTime();
+  const lastCaredMs = new Date(row.last_cared_at || row.planted_at || now).getTime();
+  const matureMs = plantedMs + seed.growth_hours * 3600000;
+  const wiltDeadlineMs = lastCaredMs + seed.wilt_hours * 3600000;
+  const careDueMs = lastCaredMs + seed.care_interval_hours * 3600000;
+
+  if (nowMs >= matureMs && matureMs <= wiltDeadlineMs) {
+    return { transitionStatus: 'ready', alert: null };
+  }
+  if (nowMs >= wiltDeadlineMs) {
+    return { transitionStatus: 'wilted', alert: null };
+  }
+
+  const remWiltMs = wiltDeadlineMs - nowMs;
+  const remMatureMs = matureMs - nowMs;
+  const isCac = row.plot_type === 'linh_cac';
+  const plotLabel = isCac ? 'Linh Các' : 'Linh Điền';
+  const curWiltStage = Number(row.dm_wilt_stage || 0);
+  const careNotified = Boolean(row.dm_care_notified);
+  const canWiltBeforeMature = wiltDeadlineMs < matureMs;
+
+  if (canWiltBeforeMature && nowMs >= careDueMs) {
+    let targetStage = 0;
+    if (remWiltMs <= 15 * 60000) targetStage = 3;
+    else if (remWiltMs <= 30 * 60000) targetStage = 2;
+    else if (remWiltMs <= 60 * 60000) targetStage = 1;
+
+    if (targetStage > curWiltStage) {
+      const meta = WILT_STAGE_META[targetStage];
+      return {
+        transitionStatus: null,
+        alert: {
+          row_id: row.id,
+          user_id: row.user_id,
+          slot_index: row.slot_index,
+          plot_type: row.plot_type,
+          plot_label: plotLabel,
+          type: meta.type,
+          stage: targetStage,
+          urgency_label: meta.label,
+          next_dm_care_notified: true,
+          next_dm_wilt_stage: targetStage,
+          seed,
+          rem_wilt_ms: remWiltMs,
+          rem_mature_ms: remMatureMs,
+        },
+      };
+    }
+  }
+
+  if (!careNotified && nowMs >= careDueMs) {
+    return {
+      transitionStatus: null,
+      alert: {
+        row_id: row.id,
+        user_id: row.user_id,
+        slot_index: row.slot_index,
+        plot_type: row.plot_type,
+        plot_label: plotLabel,
+        type: 'care_due',
+        stage: curWiltStage,
+        urgency_label: isCac ? 'Đã tới giờ cho ăn / tưới chăm!' : 'Đã tới giờ tưới nước!',
+        next_dm_care_notified: true,
+        next_dm_wilt_stage: curWiltStage,
+        seed,
+        rem_wilt_ms: remWiltMs,
+        rem_mature_ms: remMatureMs,
+      },
+    };
+  }
+
+  return { transitionStatus: null, alert: null };
+}
+
+function formatFarmDmPayload(userId, alerts, remainingUsers) {
+  const hasUrgentWilt = alerts.some((a) => a.stage >= 2);
+  const hasAnyWilt = alerts.some((a) => a.stage >= 1);
+  const warnEm = uiEm('ui_warn');
+  const clockEm = uiEm('ui_clock_timer');
+  const sproutEm = farmEmoji('seed_linh_thao');
+
+  const dmTitle = hasAnyWilt
+    ? `${warnEm} CẢNH BÁO LINH ĐIỀN & LINH CÁC SẮP HÉO!`
+    : `${sproutEm} ĐÃ TỚI GIỜ TƯỚI NƯỚC / CHĂM SÓC!`;
+
+  const dmColor = hasUrgentWilt ? '#ef4444' : (hasAnyWilt ? '#f59e0b' : '#10b981');
+
+  const lines = alerts.map((a) => {
+    const remWiltTxt = formatDurationHm(Math.max(60000, a.rem_wilt_ms));
+    const remMatureTxt = formatDurationHm(Math.max(60000, a.rem_mature_ms));
+    const icon = a.seed?.icon || sproutEm;
+    const name = a.seed?.name || a.plot_label;
+    if (a.stage >= 1) {
+      return `• **Ô #${a.slot_index} (${a.plot_label}):** ${icon} **${name}** — **${a.urgency_label}** *(Còn \`${remWiltTxt}\` • Chín sau \`${remMatureTxt}\`)*`;
+    }
+    return `• **Ô #${a.slot_index} (${a.plot_label}):** ${icon} **${name}** — **${a.urgency_label}** *(Héo sau \`${remWiltTxt}\` • Chín sau \`${remMatureTxt}\`)*`;
+  });
+
+  const dmDescription = [
+    ...lines,
+    '',
+    `${clockEm} Dùng lệnh \`/farm\` (bấm nút **Tưới / Cho Ăn**) hoặc \`/farm hanh_dong:care\` trong server để chăm sóc ngay nhé!`,
+  ].join('\n');
+
+  return {
+    success: true,
+    has_notification: true,
+    user_id: userId,
+    dm_title: dmTitle,
+    dm_description: dmDescription,
+    dm_color: dmColor,
+    remaining_users: remainingUsers,
+    alerts: alerts.map((a) => ({
+      slot_index: a.slot_index,
+      plot_type: a.plot_type,
+      plot_label: a.plot_label,
+      type: a.type,
+      stage: a.stage,
+      seed_id: a.seed?.seed_id || null,
+      seed_name: a.seed?.name || null,
+    })),
+  };
+}
+
+let dmClaimQueue = Promise.resolve();
+
+/**
+ * Lấy & đánh dấu lô thông báo DM nông trại kế tiếp (gom theo từng người chơi).
+ */
+export async function claimNextFarmDmNotification(options = {}) {
+  const runTask = async () => {
+    if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', has_notification: false };
+    const now = options.now instanceof Date ? options.now : new Date();
+    const nowIso = now.toISOString();
+
+    const { data: growingRows, error } = await supabase
+      .from('user_farm_plots')
+      .select('*')
+      .eq('status', 'growing')
+      .order('user_id', { ascending: true })
+      .order('slot_index', { ascending: true });
+
+    if (error) {
+      return { success: false, status: 500, error: error.message, has_notification: false };
+    }
+
+    const transitions = [];
+    const candidateUsers = new Set();
+
+    for (const row of growingRows || []) {
+      const ev = evaluatePlotReminder(row, now);
+      if (ev.transitionStatus && row.id) {
+        transitions.push(
+          supabase
+            .from('user_farm_plots')
+            .update({ status: ev.transitionStatus, updated_at: nowIso })
+            .eq('id', row.id),
+        );
+      } else if (ev.alert) {
+        candidateUsers.add(row.user_id);
+      }
+    }
+
+    if (transitions.length > 0) {
+      await Promise.all(transitions);
+    }
+
+    const userIds = Array.from(candidateUsers);
+    for (let idx = 0; idx < userIds.length; idx += 1) {
+      const targetUid = userIds[idx];
+      const claimed = await withFarmLock(targetUid, async () => {
+        const { data: userRows } = await supabase
+          .from('user_farm_plots')
+          .select('*')
+          .eq('user_id', targetUid)
+          .eq('status', 'growing')
+          .order('slot_index', { ascending: true });
+
+        const freshAlerts = [];
+        for (const r of userRows || []) {
+          const ev = evaluatePlotReminder(r, now);
+          if (ev.alert) freshAlerts.push(ev.alert);
+        }
+        if (freshAlerts.length === 0) return null;
+
+        await Promise.all(
+          freshAlerts.map((a) =>
+            supabase
+              .from('user_farm_plots')
+              .update({
+                dm_care_notified: a.next_dm_care_notified,
+                dm_wilt_stage: a.next_dm_wilt_stage,
+                updated_at: nowIso,
+              })
+              .eq('id', a.row_id),
+          ),
+        );
+
+        return formatFarmDmPayload(targetUid, freshAlerts, Math.max(0, userIds.length - idx - 1));
+      });
+
+      if (claimed) return claimed;
+    }
+
+    return {
+      success: true,
+      has_notification: false,
+      synced_transitions: transitions.length,
+      remaining_users: 0,
+    };
+  };
+
+  const nextRun = dmClaimQueue.then(runTask, runTask);
+  dmClaimQueue = nextRun.catch(() => null);
+  return nextRun;
 }

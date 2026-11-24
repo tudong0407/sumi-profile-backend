@@ -42,6 +42,8 @@ import {
   careAllPlots,
   harvestAllPlots,
   clearWiltedPlots,
+  evaluatePlotReminder,
+  claimNextFarmDmNotification,
   getExchangeCatalog,
   buyExchangeItem,
 } from '../../src/services/farmService.js';
@@ -387,6 +389,89 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
     const exSlotJson = await exSlot.json();
     assert.equal(exSlotJson.success, true);
     assert.equal(exSlotJson.slots_unlocked, 5);
+
+    // 5B. Separated Linh Điền (#1, #2, #5) and Linh Các (#3, #4) sections with divider
+    const status5 = await getFarmStatus(USER_V13_B, { now: tHarvest });
+    assert.equal(status5.success, true);
+    assert.equal(status5.linh_dien_slots, 3);
+    assert.equal(status5.linh_cac_slots, 2);
+    const desc = status5.description;
+    assert.match(desc, /KHU LINH ĐIỀN \(3\/3 ô\)/);
+    assert.match(desc, /────────────────────────/);
+    assert.match(desc, /KHU LINH THÚ CÁC \(2\/3 ô\)/);
+    const idxLd5 = desc.indexOf('Ô #5:');
+    const idxSep = desc.indexOf('────────────────────────');
+    const idxLc3 = desc.indexOf('Ô #3:');
+    assert.ok(idxLd5 > 0 && idxSep > idxLd5 && idxLc3 > idxSep, 'Ô #5 (Linh Điền) must appear inside KHU LINH ĐIỀN BEFORE the divider & KHU LINH THÚ CÁC');
+
+    // 5C. Pure evaluatePlotReminder cycle: care_due -> wilt_60 -> wilt_30 -> wilt_15 (each once)
+    const plantedAt = new Date('2026-11-22T00:00:00.000Z');
+    let simRow = {
+      id: 'sim-1',
+      user_id: USER_V13_B,
+      slot_index: 1,
+      plot_type: 'linh_dien',
+      seed_id: 'seed_than_moc', // 24h mature, 6h care, 12h wilt
+      status: 'growing',
+      planted_at: plantedAt.toISOString(),
+      last_cared_at: plantedAt.toISOString(),
+      dm_care_notified: false,
+      dm_wilt_stage: 0,
+    };
+    const rEarly = evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 5 * 3600000));
+    assert.equal(rEarly.alert, null);
+
+    const rCare = evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 6.05 * 3600000));
+    assert.equal(rCare.alert?.type, 'care_due');
+    simRow = { ...simRow, dm_care_notified: rCare.alert.next_dm_care_notified, dm_wilt_stage: rCare.alert.next_dm_wilt_stage };
+    assert.equal(evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 7 * 3600000)).alert, null, 'Care alert must not repeat');
+
+    const r60 = evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 11 * 3600000));
+    assert.equal(r60.alert?.type, 'wilt_60');
+    assert.equal(r60.alert?.stage, 1);
+    simRow = { ...simRow, dm_care_notified: r60.alert.next_dm_care_notified, dm_wilt_stage: r60.alert.next_dm_wilt_stage };
+    assert.equal(evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 11.2 * 3600000)).alert, null);
+
+    const r30 = evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 11.5 * 3600000));
+    assert.equal(r30.alert?.type, 'wilt_30');
+    assert.equal(r30.alert?.stage, 2);
+    simRow = { ...simRow, dm_care_notified: r30.alert.next_dm_care_notified, dm_wilt_stage: r30.alert.next_dm_wilt_stage };
+
+    const r15 = evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 11.75 * 3600000));
+    assert.equal(r15.alert?.type, 'wilt_15');
+    assert.equal(r15.alert?.stage, 3);
+    simRow = { ...simRow, dm_care_notified: r15.alert.next_dm_care_notified, dm_wilt_stage: r15.alert.next_dm_wilt_stage };
+    assert.equal(evaluatePlotReminder(simRow, new Date(plantedAt.getTime() + 11.9 * 3600000)).alert, null);
+
+    // 5D. Live DB claimNextFarmDmNotification + care reset + /api/farm/notifications/next route
+    const dmResBefore = await testServer.fetch('/api/farm/notifications/next', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(dmResBefore.status, 200);
+    const dmJsonBefore = await dmResBefore.json();
+    assert.equal(dmJsonBefore.success, true);
+
+    await supabase.from('user_farm_plots').delete().eq('user_id', USER_V13_B);
+    await plantFarmPlot(USER_V13_B, 'seed_linh_thao', { now: plantedAt, slotIndex: 1 });
+    const claimCare = await claimNextFarmDmNotification({ now: new Date(plantedAt.getTime() + 2.1 * 3600000) });
+    assert.equal(claimCare.success, true);
+    assert.equal(claimCare.has_notification, true);
+    assert.equal(claimCare.user_id, USER_V13_B);
+    assert.match(claimCare.dm_description, /Ô #1 \(Linh Điền\)/);
+    assert.match(claimCare.dm_description, /Đã tới giờ tưới nước/);
+
+    const claimDup = await claimNextFarmDmNotification({ now: new Date(plantedAt.getTime() + 2.2 * 3600000) });
+    assert.notEqual(claimDup.user_id, USER_V13_B, 'Already notified slot must not repeat care DM');
+
+    await careAllPlots(USER_V13_B, { now: new Date(plantedAt.getTime() + 2.3 * 3600000) });
+    const { data: caredRow } = await supabase
+      .from('user_farm_plots')
+      .select('dm_care_notified, dm_wilt_stage, care_count')
+      .eq('user_id', USER_V13_B)
+      .eq('slot_index', 1)
+      .maybeSingle();
+    assert.equal(caredRow?.care_count, 1);
+    assert.equal(caredRow?.dm_care_notified, false);
+    assert.equal(caredRow?.dm_wilt_stage, 0);
+    await supabase.from('user_farm_plots').delete().eq('user_id', USER_V13_B);
   });
 
   it('6. /job supports 8 shifts/day, /wiki synced Voice EXP (85-135) & /info v1.3 lookups', async () => {

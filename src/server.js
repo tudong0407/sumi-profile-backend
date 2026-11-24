@@ -160,6 +160,7 @@ import {
   careAllPlots,
   harvestAllPlots,
   clearWiltedPlots,
+  claimNextFarmDmNotification,
   getExchangeCatalog,
   buyExchangeItem,
 } from './services/farmService.js';
@@ -2013,6 +2014,16 @@ app.post('/api/farm/clear', requireBackendApiKey, requireUpdateAck, async (req, 
   } catch (err) {
     console.error('[Server] /api/farm/clear error:', err);
     return res.status(500).json({ success: false, error: 'FARM_CLEAR_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/notifications/next', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await claimNextFarmDmNotification();
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/notifications/next error:', err);
+    return res.status(500).json({ success: false, has_notification: false, error: 'FARM_DM_POLL_FAILED', message: err.message });
   }
 });
 
