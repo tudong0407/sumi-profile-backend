@@ -300,95 +300,108 @@ export function buildNhiemvuV16Cmd() {
   gb.link('root', 'nv_mode');
 
   // Direct action branches: claim, claim_weekly, tower, reset
-  gb.branch('nv_mode', 'nv_br_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -640, y: 320 });
-  gb.branch('nv_mode', 'nv_br_weekly', 'comparison', { type: 'equal_to', comparison_value: 'claim_weekly', ignoreCase: true, option: '', not: false }, { x: -320, y: 320 });
-  gb.branch('nv_mode', 'nv_br_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: 0, y: 320 });
-  gb.branch('nv_mode', 'nv_br_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 320, y: 320 });
-  gb.elseBranch('nv_mode', 'nv_br_status', 'comparison', { x: 900, y: 320 });
+  gb.branch('nv_mode', 'nv_br_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -720, y: 320 });
+  gb.branch('nv_mode', 'nv_br_weekly', 'comparison', { type: 'equal_to', comparison_value: 'claim_weekly', ignoreCase: true, option: '', not: false }, { x: -420, y: 320 });
+  gb.branch('nv_mode', 'nv_br_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: -120, y: 320 });
+  gb.branch('nv_mode', 'nv_br_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 180, y: 320 });
+  gb.branch('nv_mode', 'nv_br_tw_view', 'comparison', { type: 'equal_to', comparison_value: 'tower_view', ignoreCase: true, option: '', not: false }, { x: 520, y: 320 });
+  gb.elseBranch('nv_mode', 'nv_br_status', 'comparison', { x: 880, y: 320 });
 
   // Direct POST branches
   apiAction(gb, 'nv_api_claim', 'nv_c_res', 'POST', `${BACKEND_BASE}/api/quest/claim`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -640, y: 440 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -720, y: 460 });
   gb.link('nv_br_claim', 'nv_api_claim');
-  const nvClaimOk = attachAckBranchV16(gb, 'nvc', 'nv_api_claim', 'nv_c_res', { x: -640, y: 600 });
-  embedMsg(gb, 'nv_msg_claim', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG NHIỆM VỤ NGÀY`, description: '{nv_c_res.response.message}', color: '#10b981' }, { x: -640, y: 820 });
+  const nvClaimOk = attachAckBranchV16(gb, 'nvc', 'nv_api_claim', 'nv_c_res', { x: -720, y: 620 });
+  embedMsg(gb, 'nv_msg_claim', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG NHIỆM VỤ NGÀY`, description: '{nv_c_res.response.message}', color: '#10b981' }, { x: -720, y: 840 });
   gb.link(nvClaimOk, 'nv_msg_claim');
 
   apiAction(gb, 'nv_api_cwk', 'nv_w_res', 'POST', `${BACKEND_BASE}/api/quest/claim-weekly`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -320, y: 440 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -420, y: 460 });
   gb.link('nv_br_weekly', 'nv_api_cwk');
-  const nvWkOk = attachAckBranchV16(gb, 'nvw', 'nv_api_cwk', 'nv_w_res', { x: -320, y: 600 });
-  embedMsg(gb, 'nv_msg_cwk', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG HỢP ĐỒNG TUẦN`, description: '{nv_w_res.response.message}', color: '#a855f7' }, { x: -320, y: 820 });
+  const nvWkOk = attachAckBranchV16(gb, 'nvw', 'nv_api_cwk', 'nv_w_res', { x: -420, y: 620 });
+  embedMsg(gb, 'nv_msg_cwk', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG HỢP ĐỒNG TUẦN`, description: '{nv_w_res.response.message}', color: '#a855f7' }, { x: -420, y: 840 });
   gb.link(nvWkOk, 'nv_msg_cwk');
 
   apiAction(gb, 'nv_api_tw', 'nv_t_res', 'POST', `${BACKEND_BASE}/api/quest/tower`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 0, y: 440 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: -120, y: 460 });
   gb.link('nv_br_tower', 'nv_api_tw');
-  const nvTwOk = attachAckBranchV16(gb, 'nvt', 'nv_api_tw', 'nv_t_res', { x: 0, y: 600 });
-  embedMsg(gb, 'nv_msg_tw', { title: `${uidEm('su_arena')} THÁP THÍ LUYỆN 500 TẦNG`, description: '{nv_t_res.response.message}', color: '#3b82f6' }, { x: 0, y: 820 });
+  const nvTwOk = attachAckBranchV16(gb, 'nvt', 'nv_api_tw', 'nv_t_res', { x: -120, y: 620 });
+  embedMsg(gb, 'nv_msg_tw', { title: `${uidEm('su_arena')} THÁP THÍ LUYỆN 500 TẦNG`, description: '{nv_t_res.response.message}', color: '#3b82f6' }, { x: -120, y: 840 });
   gb.link(nvTwOk, 'nv_msg_tw');
 
   apiAction(gb, 'nv_api_rst', 'nv_r_res', 'POST', `${BACKEND_BASE}/api/quest/tower/reset`,
-    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 320, y: 440 });
+    '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 180, y: 460 });
   gb.link('nv_br_reset', 'nv_api_rst');
-  const nvRstOk = attachAckBranchV16(gb, 'nvr', 'nv_api_rst', 'nv_r_res', { x: 320, y: 600 });
-  embedMsg(gb, 'nv_msg_rst', { title: `${uidEm('tower_reset_card')} HỒI LƯỢT THÁP THÍ LUYỆN`, description: '{nv_r_res.response.message}', color: '#f59e0b' }, { x: 320, y: 820 });
+  const nvRstOk = attachAckBranchV16(gb, 'nvr', 'nv_api_rst', 'nv_r_res', { x: 180, y: 620 });
+  embedMsg(gb, 'nv_msg_rst', { title: `${uidEm('tower_reset_card')} HỒI LƯỢT THÁP THÍ LUYỆN`, description: '{nv_r_res.response.message}', color: '#f59e0b' }, { x: 180, y: 840 });
   gb.link(nvRstOk, 'nv_msg_rst');
 
-  // Board view (daily default / weekly / tower_view)
-  apiAction(gb, 'nv_api_status', 'nv_res', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab={option_hanh_dong}&username={user_displayName}&avatar={user_icon}`, '', { x: 900, y: 440 });
+  // Tower view branch (/nhiemvu hanh_dong:tower_view) -> hardcoded tab=tower
+  apiAction(gb, 'nv_api_tw_view', 'nv_tv_res', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: 520, y: 460 });
+  gb.link('nv_br_tw_view', 'nv_api_tw_view');
+  const nvTvOk = attachAckBranchV16(gb, 'nvtv', 'nv_api_tw_view', 'nv_tv_res', { x: 520, y: 620 });
+  embedMsg(gb, 'nv_tv_msg', { title: '{nv_tv_res.response.embed_title}', description: '{nv_tv_res.response.message}', color: '#f59e0b', footer: '' }, { x: 520, y: 840 });
+  gb.link(nvTvOk, 'nv_tv_msg');
+
+  // Default combined board view (Ngày + ─── + Hợp Đồng Tuần) -> hardcoded tab=daily
+  apiAction(gb, 'nv_api_status', 'nv_res', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=daily&username={user_displayName}&avatar={user_icon}`, '', { x: 880, y: 460 });
   gb.link('nv_br_status', 'nv_api_status');
 
-  const nvStatusOk = attachAckBranchV16(gb, 'nvs', 'nv_api_status', 'nv_res', { x: 900, y: 600 });
+  const nvStatusOk = attachAckBranchV16(gb, 'nvs', 'nv_api_status', 'nv_res', { x: 880, y: 620 });
   embedMsg(gb, 'nv_board_msg', {
     title: '{nv_res.response.embed_title}',
     description: '{nv_res.response.message}',
     color: '#06b6d4',
     footer: '',
     target: { reply: true },
-    editId: 'nv_board_msg',
-  }, { x: 900, y: 820 });
+  }, { x: 880, y: 840 });
   gb.link(nvStatusOk, 'nv_board_msg');
 
-  // Row 1 Tab Switch Buttons (edit in-place)
-  gb.advBtn('btn_nv_tab_d', 'nv_board_msg', btnCfg('Hàng Ngày', 'PRIMARY', 'su_quest_scroll', '1', '1', 'hide'), { x: 640, y: 1020 });
-  apiAction(gb, 'nv_btn_api_d', 'nv_btn_res_d', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=daily&username={user_displayName}&avatar={user_icon}`, '', { x: 640, y: 1180 });
-  gb.link('btn_nv_tab_d', 'nv_btn_api_d');
-  embedMsg(gb, 'nv_edit_d', { title: '{nv_btn_res_d.response.embed_title}', description: '{nv_btn_res_d.response.message}', color: '#06b6d4', target: { editId: 'nv_board_msg' }, action_id: 'nv_board_msg' }, { x: 640, y: 1340 });
-  gb.link('nv_btn_api_d', 'nv_edit_d');
-
-  gb.advBtn('btn_nv_tab_w', 'nv_board_msg', btnCfg('Hợp Đồng Tuần', 'SECONDARY', 'su_wiki_scroll', '1', '2', 'hide'), { x: 920, y: 1020 });
-  apiAction(gb, 'nv_btn_api_w', 'nv_btn_res_w', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=weekly&username={user_displayName}&avatar={user_icon}`, '', { x: 920, y: 1180 });
-  gb.link('btn_nv_tab_w', 'nv_btn_api_w');
-  embedMsg(gb, 'nv_edit_w', { title: '{nv_btn_res_w.response.embed_title}', description: '{nv_btn_res_w.response.message}', color: '#a855f7', target: { editId: 'nv_board_msg' }, action_id: 'nv_board_msg' }, { x: 920, y: 1340 });
-  gb.link('nv_btn_api_w', 'nv_edit_w');
-
-  gb.advBtn('btn_nv_tab_t', 'nv_board_msg', btnCfg('Tháp 500 Tầng', 'SECONDARY', 'su_arena', '1', '3', 'hide'), { x: 1200, y: 1020 });
-  apiAction(gb, 'nv_btn_api_t', 'nv_btn_res_t', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: 1200, y: 1180 });
-  gb.link('btn_nv_tab_t', 'nv_btn_api_t');
-  embedMsg(gb, 'nv_edit_t', { title: '{nv_btn_res_t.response.embed_title}', description: '{nv_btn_res_t.response.message}', color: '#f59e0b', target: { editId: 'nv_board_msg' }, action_id: 'nv_board_msg' }, { x: 1200, y: 1340 });
-  gb.link('nv_btn_api_t', 'nv_edit_t');
-
-  // Row 2 Action Buttons
-  gb.advBtn('btn_nv_claim_d', 'nv_board_msg', btnCfg('Nhận Thưởng', 'SUCCESS', 'su_linhthach', '2', '1', 'show'), { x: 640, y: 1540 });
-  apiAction(gb, 'nv_btn_api_cd', 'nv_bc_res', 'POST', `${BACKEND_BASE}/api/quest/claim`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 640, y: 1700 });
+  // Action buttons on nv_board_msg (ALL use showReplies: 'show' so buttons NEVER vanish!)
+  gb.advBtn('btn_nv_claim_d', 'nv_board_msg', btnCfg('Nhận Thưởng Ngày', 'SUCCESS', 'su_linhthach', '1', '1', 'show'), { x: 420, y: 1080 });
+  apiAction(gb, 'nv_btn_api_cd', 'nv_bc_res', 'POST', `${BACKEND_BASE}/api/quest/claim`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 420, y: 1240 });
   gb.link('btn_nv_claim_d', 'nv_btn_api_cd');
-  embedMsg(gb, 'nv_btn_msg_cd', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG NHIỆM VỤ`, description: '{nv_bc_res.response.message}', color: '#10b981' }, { x: 640, y: 1860 });
+  embedMsg(gb, 'nv_btn_msg_cd', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG NHIỆM VỤ NGÀY`, description: '{nv_bc_res.response.message}', color: '#10b981' }, { x: 420, y: 1400 });
   gb.link('nv_btn_api_cd', 'nv_btn_msg_cd');
 
-  gb.advBtn('btn_nv_tower', 'nv_board_msg', btnCfg('Leo Tháp', 'PRIMARY', 'su_arena', '2', '2', 'show'), { x: 920, y: 1540 });
-  apiAction(gb, 'nv_btn_api_tw', 'nv_bt_res', 'POST', `${BACKEND_BASE}/api/quest/tower`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 920, y: 1700 });
+  gb.advBtn('btn_nv_claim_w', 'nv_board_msg', btnCfg('Nhận Thưởng Tuần', 'PRIMARY', 'su_wiki_scroll', '1', '2', 'show'), { x: 700, y: 1080 });
+  apiAction(gb, 'nv_btn_api_cw', 'nv_bw_res', 'POST', `${BACKEND_BASE}/api/quest/claim-weekly`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 700, y: 1240 });
+  gb.link('btn_nv_claim_w', 'nv_btn_api_cw');
+  embedMsg(gb, 'nv_btn_msg_cw', { title: `${uidEm('su_quest_scroll')} NHẬN THƯỞNG HỢP ĐỒNG TUẦN`, description: '{nv_bw_res.response.message}', color: '#a855f7' }, { x: 700, y: 1400 });
+  gb.link('nv_btn_api_cw', 'nv_btn_msg_cw');
+
+  gb.advBtn('btn_nv_tab_t', 'nv_board_msg', btnCfg('Tháp 500 Tầng', 'SECONDARY', 'su_arena', '1', '3', 'show'), { x: 980, y: 1080 });
+  apiAction(gb, 'nv_btn_api_t', 'nv_btn_res_t', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab=tower&username={user_displayName}&avatar={user_icon}`, '', { x: 980, y: 1240 });
+  gb.link('btn_nv_tab_t', 'nv_btn_api_t');
+  embedMsg(gb, 'nv_tower_panel', { title: '{nv_btn_res_t.response.embed_title}', description: '{nv_btn_res_t.response.message}', color: '#f59e0b' }, { x: 980, y: 1400 });
+  gb.link('nv_btn_api_t', 'nv_tower_panel');
+
+  // Nút ngay trên bảng Tháp 500 Tầng khi bấm mở
+  gb.advBtn('btn_nv_tw_climb', 'nv_tower_panel', btnCfg('Leo Tháp', 'PRIMARY', 'su_arena', '1', '1', 'show'), { x: 900, y: 1580 });
+  apiAction(gb, 'nv_btn_api_tw2', 'nv_bt2_res', 'POST', `${BACKEND_BASE}/api/quest/tower`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 900, y: 1740 });
+  gb.link('btn_nv_tw_climb', 'nv_btn_api_tw2');
+  embedMsg(gb, 'nv_btn_msg_tw2', { title: `${uidEm('su_arena')} KHIÊU CHIẾN THÁP 500 TẦNG`, description: '{nv_bt2_res.response.message}', color: '#3b82f6' }, { x: 900, y: 1900 });
+  gb.link('nv_btn_api_tw2', 'nv_btn_msg_tw2');
+
+  gb.advBtn('btn_nv_tw_reset', 'nv_tower_panel', btnCfg('Hồi Lượt Tháp', 'SECONDARY', 'tower_reset_card', '1', '2', 'show'), { x: 1180, y: 1580 });
+  apiAction(gb, 'nv_btn_api_rst2', 'nv_br2_res', 'POST', `${BACKEND_BASE}/api/quest/tower/reset`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 1180, y: 1740 });
+  gb.link('btn_nv_tw_reset', 'nv_btn_api_rst2');
+  embedMsg(gb, 'nv_btn_msg_rst2', { title: `${uidEm('tower_reset_card')} HỒI LƯỢT THÁP`, description: '{nv_br2_res.response.message}', color: '#f59e0b' }, { x: 1180, y: 1900 });
+  gb.link('nv_btn_api_rst2', 'nv_btn_msg_rst2');
+
+  gb.advBtn('btn_nv_tower', 'nv_board_msg', btnCfg('Leo Tháp', 'PRIMARY', 'su_arena', '2', '1', 'show'), { x: 1260, y: 1080 });
+  apiAction(gb, 'nv_btn_api_tw', 'nv_bt_res', 'POST', `${BACKEND_BASE}/api/quest/tower`, '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 1260, y: 1240 });
   gb.link('btn_nv_tower', 'nv_btn_api_tw');
-  embedMsg(gb, 'nv_btn_msg_tw', { title: `${uidEm('su_arena')} KHIÊU CHIẾN THÁP 500 TẦNG`, description: '{nv_bt_res.response.message}', color: '#3b82f6' }, { x: 920, y: 1860 });
+  embedMsg(gb, 'nv_btn_msg_tw', { title: `${uidEm('su_arena')} KHIÊU CHIẾN THÁP 500 TẦNG`, description: '{nv_bt_res.response.message}', color: '#3b82f6' }, { x: 1260, y: 1400 });
   gb.link('nv_btn_api_tw', 'nv_btn_msg_tw');
 
-  gb.advBtn('btn_nv_webp', 'nv_board_msg', btnCfg('Xem Bản Ảnh WebP', 'SECONDARY', 'su_stats_chart', '2', '3', 'show'), { x: 1200, y: 1540 });
+  gb.advBtn('btn_nv_webp', 'nv_board_msg', btnCfg('Xem Bản Ảnh WebP', 'SECONDARY', 'su_stats_chart', '2', '2', 'show'), { x: 1540, y: 1080 });
   embedMsg(gb, 'nv_btn_msg_webp', {
     title: `${uidEm('su_stats_chart')} BẢN ẢNH BẢNG NHIỆM VỤ (WEBP)`,
     description: 'Ảnh tổng hợp tiến độ Nhiệm Vụ Hàng Ngày của bạn:',
     imageUrl: `${BACKEND_BASE}/api/quest/card/{user_id}.webp?tab=daily&username={user_displayName}`,
     color: '#06b6d4',
-  }, { x: 1200, y: 1700 });
+  }, { x: 1540, y: 1240 });
   gb.link('btn_nv_webp', 'nv_btn_msg_webp');
 
   return gb.elements();
@@ -456,10 +469,32 @@ export function buildDothachV16Cmd() {
     y: 0,
   });
 
-  apiAction(gb, 'dt_api_stall', 'dt_res', 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={option_phan_khuc}&username={user_displayName}&avatar={user_icon}`, '', { x: 0, y: 260 });
-  gb.link('root', 'dt_api_stall');
+  gb.cond('dt_tier_cond', 'comparison', { base_value: '{option_phan_khuc}', target: { self: true } }, { x: 0, y: 120 });
+  gb.link('root', 'dt_tier_cond');
 
-  const dtOk = attachAckBranchV16(gb, 'dt', 'dt_api_stall', 'dt_res', { x: 0, y: 420 });
+  const dtTierBranches = [
+    { key: 'rare', x: -360 },
+    { key: 'epic', x: -120 },
+    { key: 'mythic', x: 120 },
+  ];
+  for (const tb of dtTierBranches) {
+    const bId = `dt_br_${tb.key}`;
+    const sId = `dt_set_${tb.key}`;
+    gb.branch('dt_tier_cond', bId, 'comparison', { type: 'equal_to', comparison_value: tb.key, ignoreCase: true, option: '', not: false }, { x: tb.x, y: 220 });
+    gb.act(sId, 'set_unique_variable', { reference: 'dt_tier_val', value: tb.key, success_handles: false }, { x: tb.x, y: 310 });
+    gb.link(bId, sId);
+  }
+  gb.elseBranch('dt_tier_cond', 'dt_br_common', 'comparison', { x: 360, y: 220 });
+  gb.act('dt_set_common', 'set_unique_variable', { reference: 'dt_tier_val', value: 'common', success_handles: false }, { x: 360, y: 310 });
+  gb.link('dt_br_common', 'dt_set_common');
+
+  apiAction(gb, 'dt_api_stall', 'dt_res', 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={dt_tier_val}&username={user_displayName}&avatar={user_icon}`, '', { x: 0, y: 410 });
+  gb.link('dt_set_rare', 'dt_api_stall');
+  gb.link('dt_set_epic', 'dt_api_stall');
+  gb.link('dt_set_mythic', 'dt_api_stall');
+  gb.link('dt_set_common', 'dt_api_stall');
+
+  const dtOk = attachAckBranchV16(gb, 'dt', 'dt_api_stall', 'dt_res', { x: 0, y: 540 });
 
   embedMsg(gb, 'dt_stall_msg', {
     title: '{dt_res.response.title}',
@@ -467,8 +502,7 @@ export function buildDothachV16Cmd() {
     color: '#a855f7',
     imageUrl: '{dt_res.response.image_url}',
     target: { reply: true },
-    editId: 'dt_stall_msg',
-  }, { x: 0, y: 660 });
+  }, { x: 0, y: 720 });
   gb.link(dtOk, 'dt_stall_msg');
 
   // Row 1 Buttons: Soi Đá #1 / #2 / #3 + Đổi Lô Mới
@@ -483,9 +517,9 @@ export function buildDothachV16Cmd() {
     const resCut = `dt_c_res_${slot}`;
     const msgCutId = `dt_msg_cut_${slot}`;
 
-    gb.advBtn(btnId, 'dt_stall_msg', btnCfg(`Soi Đá #${slot}`, 'PRIMARY', 'su_realm_star', '1', String(slot), 'show'), { x: bx, y: 860 });
+    gb.advBtn(btnId, 'dt_stall_msg', btnCfg(`Soi Đá #${slot}`, 'PRIMARY', 'su_realm_star', '1', String(5 - slot), 'show'), { x: bx, y: 920 });
     apiAction(gb, apiPrevId, resPrev, 'POST', `${BACKEND_BASE}/api/stones/preview`,
-      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1020 });
+      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1080 });
     gb.link(btnId, apiPrevId);
 
     embedMsg(gb, msgPrevId, {
@@ -493,12 +527,12 @@ export function buildDothachV16Cmd() {
       description: `{${resPrev}.response.description}`,
       color: '#ec4899',
       imageUrl: `{${resPrev}.response.image_url}`,
-    }, { x: bx, y: 1180 });
+    }, { x: bx, y: 1240 });
     gb.link(apiPrevId, msgPrevId);
 
-    gb.advBtn(btnCutId, msgPrevId, btnCfg(`Thiết Thạch #${slot}`, 'SUCCESS', 'su_sparkle', '1', '1', 'show'), { x: bx, y: 1340 });
+    gb.advBtn(btnCutId, msgPrevId, btnCfg(`Thiết Thạch #${slot}`, 'SUCCESS', 'su_sparkle', '1', '1', 'show'), { x: bx, y: 1400 });
     apiAction(gb, apiCutId, resCut, 'POST', `${BACKEND_BASE}/api/stones/cut`,
-      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1500 });
+      `{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","slotIndex":${slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`, { x: bx, y: 1560 });
     gb.link(btnCutId, apiCutId);
 
     embedMsg(gb, msgCutId, {
@@ -506,23 +540,22 @@ export function buildDothachV16Cmd() {
       description: `{${resCut}.response.description}`,
       color: '#10b981',
       imageUrl: `{${resCut}.response.image_url}`,
-    }, { x: bx, y: 1660 });
+    }, { x: bx, y: 1720 });
     gb.link(apiCutId, msgCutId);
   }
 
-  // Đổi Lô Mới button (Row 1, Weight 4)
-  gb.advBtn('btn_dt_reroll', 'dt_stall_msg', btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '4', 'hide'), { x: 640, y: 860 });
+  // Đổi Lô Mới button (Row 1, Weight 1, showReplies: 'show' để giữ nguyên các nút trên bảng)
+  gb.advBtn('btn_dt_reroll', 'dt_stall_msg', btnCfg('Đổi Lô Mới', 'SECONDARY', 'ui_refresh', '1', '1', 'show'), { x: 640, y: 920 });
   apiAction(gb, 'dt_api_reroll', 'dt_rr_res', 'POST', `${BACKEND_BASE}/api/stones/reroll`,
-    '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 640, y: 1020 });
+    '{"userId":"{user_id}","tier":"{dt_res.response.tier_key}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: 640, y: 1080 });
   gb.link('btn_dt_reroll', 'dt_api_reroll');
   embedMsg(gb, 'dt_msg_reroll', {
     title: '{dt_rr_res.response.title}',
     description: '{dt_rr_res.response.description}',
     color: '#a855f7',
     imageUrl: '{dt_rr_res.response.image_url}',
-    target: { editId: 'dt_stall_msg' },
-    action_id: 'dt_stall_msg',
-  }, { x: 640, y: 1180 });
+    target: { reply: true },
+  }, { x: 640, y: 1240 });
   gb.link('dt_api_reroll', 'dt_msg_reroll');
 
   // Row 2 Select Menu: Chọn Quà Tối Thượng (7 nhóm)

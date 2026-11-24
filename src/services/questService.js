@@ -85,6 +85,32 @@ export const TOWER_MAX_FLOOR = 500;
 export const TOWER_DAILY_ATTEMPTS_LIMIT = 5;
 export const TOWER_WIN_BONUS_LT = 10;
 export const TOWER_LOSS_PENALTY_LT = 5;
+export const TOWER_COOLDOWN_MS = 20000;
+
+const towerCooldowns = new Map();
+
+function checkTowerCooldown(userId, nowMs = Date.now()) {
+  const uid = String(userId || '').trim();
+  if (!uid) return { blocked: false, waitSeconds: 0 };
+  const lastAt = towerCooldowns.get(uid) || 0;
+  const elapsed = nowMs - lastAt;
+  if (lastAt > 0 && elapsed < TOWER_COOLDOWN_MS) {
+    return { blocked: true, waitSeconds: Math.max(1, Math.ceil((TOWER_COOLDOWN_MS - elapsed) / 1000)) };
+  }
+  return { blocked: false, waitSeconds: 0 };
+}
+
+function markTowerCooldown(userId, nowMs = Date.now()) {
+  const uid = String(userId || '').trim();
+  if (!uid) return;
+  towerCooldowns.set(uid, nowMs);
+  if (towerCooldowns.size > 500) {
+    const cutoff = nowMs - TOWER_COOLDOWN_MS * 2;
+    for (const [k, ts] of towerCooldowns.entries()) {
+      if (ts < cutoff) towerCooldowns.delete(k);
+    }
+  }
+}
 
 export function computeTowerFloorRewardLt(floor) {
   const f = Math.max(1, Number(floor) || 1);
@@ -526,53 +552,49 @@ export async function getQuestStatus(userId, options = {}) {
     : `Thần Cảnh Tầng ${bandStart}–${bandEnd}`;
 
   const dailyLines = [
-    `**Nhiệm Vụ Hàng Ngày (${state.quest_date} • 2 Cố Định + 3 Xoay Vòng)**`,
-    ...quests.flatMap((q, idx) => [
-      `${idx + 1}. ${mark(q.done, q.claimed)} **${q.name}**`,
-      `  \`▸ Thưởng:\` \`+${q.reward_lt}\` ${em('su_linhthach')}`,
-      `  \`▸ Tiến độ:\` \`[${q.progress}/${q.target}]\`${q.claimed ? ' — *Đã nhận*' : q.done ? ' — *Sẵn sàng nhận!*' : ''}`,
-    ]),
+    `**1. Nhiệm Vụ Hàng Ngày (${state.quest_date} • Làm mới sau \`${dailyResetIn}\`)**`,
+    ...quests.map((q, idx) =>
+      `${idx + 1}. ${mark(q.done, q.claimed)} **${q.name}**\n> \`▸ Thưởng:\` \`+${q.reward_lt}\` ${em('su_linhthach')}  •  \`▸ Tiến độ:\` \`[${q.progress}/${q.target}]\`${q.claimed ? ' — *Đã nhận*' : q.done ? ' — *Sẵn sàng nhận!*' : ''}`,
+    ),
     `• **Thưởng Hoàn Tất 5/5:** \`+${DAILY_QUEST_REWARD_LT}\` ${em('su_linhthach')} • \`+1\` ${em('gacha_ticket_equip')} • \`+1\` ${em('pet_star_stone')} • \`+1\` ${em('enchant_stone')}`,
     alreadyClaimed
-      ? `${em('su_sparkle')} **Trạng thái:** Đã nhận trọn bộ thưởng Nhiệm Vụ Ngày hôm nay! • *Làm mới sau:* \`${dailyResetIn}\``
+      ? `${em('su_sparkle')} **Trạng thái Ngày:** Đã nhận trọn bộ thưởng hôm nay!`
       : canClaimDaily
-        ? `${em('su_sparkle')} **Trạng thái:** Có nhiệm vụ đã hoàn tất! Bấm **Nhận Thưởng** hoặc \`/nhiemvu hanh_dong:claim\`. • *Làm mới sau:* \`${dailyResetIn}\``
-        : `• *Làm mới sau:* \`${dailyResetIn}\` • *Hoàn thành từng nhiệm vụ để mở thưởng qua \`/nhiemvu hanh_dong:claim\`.*`,
-  ];
+        ? `${em('su_sparkle')} **Trạng thái Ngày:** Đã hoàn tất! Bấm **Nhận Thưởng Ngày** ngay.`
+        : '',
+  ].filter(Boolean);
 
   const weeklyLines = [
-    `**Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00)**`,
-    ...weeklyContracts.flatMap((c, idx) => [
-      `${idx + 1}. ${mark(c.done, c.claimed)} **${c.label}**`,
-      `  \`▸ Thưởng:\` \`+${c.rewardLt}\` ${em('su_linhthach')} • \`+${c.rewardStones}\` ${em('enchant_stone')}`,
-      `  \`▸ Tiến độ:\` \`[${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}]\`${c.claimed ? ' — *Đã nhận*' : c.done ? ' — *Sẵn sàng nhận!*' : ''}`,
-    ]),
-    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt}\` ${em('su_linhthach')} • \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Dùng `/nhiemvu hanh_dong:claim_weekly`!' : ''),
-    `• *Làm mới sau:* \`${weeklyResetIn}\``,
+    `**2. Hợp Đồng Tuần (Tuần từ ${state.weekly_week_key} • Reset T2 00:00 • Còn \`${weeklyResetIn}\`)**`,
+    ...weeklyContracts.map((c, idx) =>
+      `${idx + 1}. ${mark(c.done, c.claimed)} **${c.label}**\n> \`▸ Thưởng:\` \`+${c.rewardLt}\` ${em('su_linhthach')} • \`+${c.rewardStones}\` ${em('enchant_stone')}  •  \`▸ Tiến độ:\` \`[${c.progress.toLocaleString('vi-VN')}/${c.target.toLocaleString('vi-VN')}]\`${c.claimed ? ' — *Đã nhận*' : c.done ? ' — *Sẵn sàng nhận!*' : ''}`,
+    ),
+    `${mark(weeklyAllDone, state.weekly_bonus_claimed)} **Thưởng Hoàn Tất 3/3:** \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt}\` ${em('su_linhthach')} • \`+${WEEKLY_CONTRACTS_CONFIG.bonus.rewardStones}\` ${em('enchant_stone')}` + (weeklyClaimable ? ' → Bấm **Nhận Thưởng Tuần**!' : ''),
   ];
 
   const towerLines = [
     `**Tháp Thí Luyện ${TOWER_MAX_FLOOR} Tầng (${nextTierName})**`,
     `${em('su_arena')} **Tầng đã vượt:** \`Tầng ${state.tower_floor}/${TOWER_MAX_FLOOR}\` • **Lượt hôm nay:** \`${state.tower_attempts_today}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
-    `  \`▸ Thưởng tầng ${nextFloor}:\` Win \`+${TOWER_WIN_BONUS_LT} LT\` • Lose \`-${TOWER_LOSS_PENALTY_LT} LT\``,
-    `  \`▸ Tài nguyên:\` \`${ownedResetCards}/15\` ${em('tower_reset_card')} Thẻ Reset • \`${ownedEnchantStones}\` ${em('enchant_stone')} Đá Khắc Ấn`,
+    `> \`▸ Thưởng tầng ${nextFloor}:\` Win \`+${TOWER_WIN_BONUS_LT} LT\` • Lose \`-${TOWER_LOSS_PENALTY_LT} LT\``,
+    `> \`▸ Tài nguyên:\` \`${ownedResetCards}/15\` ${em('tower_reset_card')} Thẻ Reset • \`${ownedEnchantStones}\` ${em('enchant_stone')} Đá Khắc Ấn`,
     `• Dùng \`/nhiemvu hanh_dong:tower\` hoặc bấm **Leo Tháp** để khiêu chiến **Tầng ${nextFloor}**!`,
-    state.tower_attempts_today > 0 ? `• Dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
+    state.tower_attempts_today > 0 ? `• Bấm **Hồi Lượt Tháp** hoặc dùng \`/nhiemvu hanh_dong:reset\` để tiêu **1 Thẻ Reset Tháp** hồi ngay \`5/5\` lượt.` : '',
   ].filter(Boolean);
 
+  const SEP = '────────────────────────';
   const lines = activeTab === 'weekly'
     ? weeklyLines
     : activeTab === 'tower'
       ? towerLines
       : activeTab === 'all'
-        ? [...dailyLines, '', ...weeklyLines, '', ...towerLines]
-        : dailyLines;
+        ? [...dailyLines, SEP, ...weeklyLines, SEP, ...towerLines]
+        : [...dailyLines, SEP, ...weeklyLines];
 
   const embedTitle = activeTab === 'weekly'
     ? `${em('su_quest_scroll')} HỢP ĐỒNG TUẦN — ${user.username}`
     : activeTab === 'tower'
       ? `${em('su_arena')} THÁP THÍ LUYỆN ${TOWER_MAX_FLOOR} TẦNG — ${user.username}`
-      : `${em('su_quest_scroll')} NHIỆM VỤ HÀNG NGÀY — ${user.username}`;
+      : `${em('su_quest_scroll')} BẢNG NHIỆM VỤ & HỢP ĐỒNG — ${user.username}`;
 
   return {
     success: true,
@@ -957,6 +979,20 @@ export async function challengeTower(userId, options = {}) {
       };
     }
 
+    if (options.enforceCooldown !== false) {
+      const cd = checkTowerCooldown(cleanId, now.getTime());
+      if (cd.blocked) {
+        return {
+          success: false,
+          status: 200,
+          error: 'TOWER_COOLDOWN',
+          cooldown_seconds: cd.waitSeconds,
+          message: `${em('su_arena')} Linh Thú vừa giao chiến tại Tháp Thí Luyện! Vui lòng nghỉ **${cd.waitSeconds} giây** rồi hãy khiêu chiến tầng tiếp theo.`,
+        };
+      }
+      markTowerCooldown(cleanId, now.getTime());
+    }
+
     const targetFloor = state.tower_floor + 1;
     const isBoss = targetFloor % 5 === 0;
     const milestone = TOWER_MILESTONE_BONUSES[targetFloor] || null;
@@ -1231,6 +1267,7 @@ export async function resetTowerAttempts(userId, options = {}) {
     }
 
     const nowIso = now.toISOString();
+    towerCooldowns.delete(cleanId);
     const [remainingCards] = await Promise.all([
       addInventoryItem(cleanId, 'tower_reset_card', 'consumable', -1),
       supabase.from('user_quests').upsert(

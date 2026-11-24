@@ -73,6 +73,8 @@ import {
   claimSupremeStonePick,
 } from '../../src/services/stoneCuttingService.js';
 import { renderQuestBoardWebp } from '../../src/canvas/questRenderer.js';
+import { BATTLE_COOLDOWN_MS } from '../../src/services/battleEngine/battleService.js';
+import { TOWER_COOLDOWN_MS, challengeTower, getQuestStatus } from '../../src/services/questService.js';
 import { LATEST_VERSION, getChangelogPayload } from '../../src/data/changelogs.js';
 
 const UNICODE_PICTOGRAPH_RE = /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u;
@@ -276,4 +278,23 @@ test('v1.6 Quest Board WebP Renderer (OwO 3 Tabs)', async () => {
     assert.equal(buf.subarray(0, 4).toString('ascii'), 'RIFF');
     assert.equal(buf.subarray(8, 12).toString('ascii'), 'WEBP');
   }
+});
+
+test('v1.6 Battle & Tower Cooldowns + Combined Daily/Weekly /nhiemvu View', async () => {
+  assert.equal(BATTLE_COOLDOWN_MS, 15000);
+  assert.equal(TOWER_COOLDOWN_MS, 20000);
+
+  const uid = '999999999999916001';
+  const st = await getQuestStatus(uid);
+  assert.equal(st.success, true);
+  assert.ok(st.message.includes('1. Nhiệm Vụ Hàng Ngày'));
+  assert.ok(st.message.includes('2. Hợp Đồng Tuần'));
+  assert.ok(st.message.includes('────────────────────────'));
+
+  const c1 = await challengeTower(uid, { preRender: false, seed: 7 });
+  assert.equal(c1.success, true);
+  const c2 = await challengeTower(uid, { preRender: false, seed: 7 });
+  assert.equal(c2.success, false);
+  assert.equal(c2.error, 'TOWER_COOLDOWN');
+  assert.ok(c2.cooldown_seconds >= 1 && c2.cooldown_seconds <= 20);
 });

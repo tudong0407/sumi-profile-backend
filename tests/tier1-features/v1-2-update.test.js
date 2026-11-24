@@ -106,7 +106,7 @@ describe('Tier 1 - Update v1.2 Comprehensive Suite', () => {
     const jsonCd = await resCd.json();
     assert.equal(jsonCd.success, false);
     assert.equal(jsonCd.error, 'BATTLE_COOLDOWN');
-    assert.ok(jsonCd.cooldown_seconds >= 1 && jsonCd.cooldown_seconds <= 5);
+    assert.ok(jsonCd.cooldown_seconds >= 1 && jsonCd.cooldown_seconds <= 15);
 
     // Mid-turn 720x360 vs final 1250x625 WebP/PNG (v1.4.7 -10% render optimization)
     const midBuf = await (await testServer.fetch(`/api/battle/report/${json1.battleId}/1.webp`)).arrayBuffer();

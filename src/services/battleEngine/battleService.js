@@ -53,7 +53,7 @@ export const PVP_DAILY_LT_LIMIT = 15;
 export const PVE_FREE_DAILY_LT_LIMIT = 25;
 export const BATTLE_WIN_LT = 10;
 export const BATTLE_LOSS_LT = 5;
-export const BATTLE_COOLDOWN_MS = 5000;
+export const BATTLE_COOLDOWN_MS = 15000;
 
 const BATTLE_CACHE_MAX = 30;
 const BATTLE_CACHE_TTL_MS = BATTLE_LOG_TTL_MS;
