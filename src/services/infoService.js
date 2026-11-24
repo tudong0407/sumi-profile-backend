@@ -26,6 +26,7 @@ import {
   SHOP_EQUIPMENT_PRICES,
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
+  getCosmeticBuffByRarity,
 } from '../data/catalog.js';
 import { GACHA_DISMANTLE_VALUES, normalizeEmojiAwareQuery } from './inventoryService.js';
 import { LATEST_VERSION } from '../data/changelogs.js';
@@ -474,6 +475,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
   if (matchedBg) {
     const b = matchedBg;
+    const bgBuff = getCosmeticBuffByRarity(b.rarity_key, b.price > 0);
     return {
       success: true,
       category: 'background',
@@ -482,6 +484,9 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${em('frame_unlock_token')} ẢNH NỀN: ${b.name}`,
       description: [
         `• **Mã UID:** \`${b.bg_id}\` • ${tierEmoji(b.rarity_key)} **${b.rarity}**`,
+        b.price > 0
+          ? `• **Buff khi trang bị:** **+${bgBuff.expPct}% EXP & +${bgBuff.ltPct}% Linh Thạch** *(cộng dồn với Viền Avatar)*`
+          : '• **Buff khi trang bị:** Không có (Mặc định)',
         b.price > 0 ? `• **Giá bán (\`/shop\`):** **${b.price.toLocaleString('vi-VN')}** ${lt}` : '• **Nguồn:** Mở khóa mặc định.',
         `• **Cách dùng:** \`/equip loai:background ma_id:${b.bg_id}\``,
       ].join('\n'),
@@ -493,6 +498,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
   if (matchedFrame) {
     const f = matchedFrame;
+    const frBuff = getCosmeticBuffByRarity(f.rarity_key, f.price > 0);
     return {
       success: true,
       category: 'frame',
@@ -500,13 +506,16 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       name: f.name,
       title: `${em('frame_unlock_token')} KHUNG VIỀN: ${f.name}`,
       description: [
-        `• **Mã UID:** \`${f.frame_id}\``,
-        f.token_required ? `• **Yêu cầu:** Cần **Lệnh Bài Khung Viền Độc Bản** (800 LT tại \`/shop\`).` : '• **Nguồn:** Mở khóa mặc định.',
+        `• **Mã UID:** \`${f.frame_id}\` • ${tierEmoji(f.rarity_key)} **${f.rarity}**`,
+        f.price > 0
+          ? `• **Buff khi trang bị:** **+${frBuff.expPct}% EXP & +${frBuff.ltPct}% Linh Thạch** *(cộng dồn với Ảnh Nền)*`
+          : '• **Buff khi trang bị:** Không có (Mặc định)',
+        f.price > 0 ? `• **Giá bán (\`/shop\`):** **${f.price.toLocaleString('vi-VN')}** ${lt}` : '• **Nguồn:** Mở khóa mặc định.',
         `• **Mô tả:** ${f.description}`,
         `• **Cách dùng:** \`/equip loai:frame ma_id:${f.frame_id}\``,
       ].join('\n'),
       color: '#a855f7',
-      image_url: '',
+      image_url: f.price > 0 ? `${PUBLIC_BASE_URL}/api/shop/frame-preview/${f.frame_id}.png` : '',
       footer: '',
     };
   }

@@ -29,6 +29,7 @@ import {
   getEnchantBonusPct,
   getEnchantMultiplier,
   normalizeEnchantGrade,
+  computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import {
   V14_EXPLORER_MAPS,
@@ -1219,12 +1220,13 @@ export async function claimExpedition(userId, opts = {}) {
       // 1. Trả Pet về trạng thái 'ready'
       await supabase.from('user_pets').update({ status: 'ready' }).eq('pet_id', exp.pet_id);
 
-      // 2. Tính Linh Thạch (+5% mới: 210-315 LT/giờ) * giờ * hệ số map * (1 + thức ăn B + Thuận Hệ +10%)
+      // 2. Tính Linh Thạch (+5% mới: 210-315 LT/giờ) * giờ * hệ số map * (1 + thức ăn B + Thuận Hệ +10% + Buff Viền/Nền)
+      const { data: uRow } = await supabase.from('users').select('linh_thach, avatar_frame, background_url').eq('user_id', cleanId).maybeSingle();
+      const cosmeticBuffs = computeCosmeticBuffTotals(uRow?.avatar_frame, uRow?.background_url);
       const foodYieldBonus = exp.food_item_id ? Number(EXPLORER_FOOD_EFFECTS[exp.food_item_id]?.yieldBonus || 0) : 0;
       const basePerHour = (200 + rng() * 100) * 1.05;
-      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * (1 + foodYieldBonus + terrain.yieldBonus));
+      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * (1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100));
 
-      const { data: uRow } = await supabase.from('users').select('linh_thach').eq('user_id', cleanId).maybeSingle();
       if (uRow) {
         await supabase
           .from('users')

@@ -13,6 +13,7 @@ import {
   ROLE_BY_ID,
   STARTER_PET,
   getClanLevelConfig,
+  computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import { em, realmEmoji, uiEm } from '../config/emojiHelper.js';
 import { computeMarriageBuffs } from './marryService.js';
@@ -280,6 +281,10 @@ async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new
       // ignore clan buff lookup error
     }
   }
+
+  // Buff Viền Avatar & Ảnh Nền đang trang bị (Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% mỗi món)
+  const cosmeticBuffs = computeCosmeticBuffTotals(userRow?.avatar_frame, userRow?.background_url);
+  bonus += (cosmeticBuffs.expPct || 0) / 100;
 
   return Number((1 + bonus).toFixed(2));
 }
@@ -853,7 +858,11 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     clanDetail = `[${clanRow.clan_tag}] ${clanRow.clan_name} *(Lv.${clanRow.clan_level})*`;
   }
 
-  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct;
+  const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
+  const cosmeticExpPct = Number(cosmeticBuffs.expPct || 0);
+  const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
+
+  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct + cosmeticExpPct;
   const totalVoiceBoostPct = totalChatBoostPct;
   const chatMultiplier = Number((1 + totalChatBoostPct / 100).toFixed(2));
   const voiceMultiplier = Number((1 + totalVoiceBoostPct / 100).toFixed(2));
@@ -892,6 +901,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     `• **Role Quyền Năng Đang Đeo:** ${equippedRolesExpPct > 0 ? `**+${equippedRolesExpPct}%** (${rolesText})` : `**+0%** (${rolesText})`}`,
     `• **Tiên Lữ Song Tu:** **+${marriageExpPct}%** *(${marriageDetail})*`,
     `• **Gia Tộc:** **+${clanExpPct}%** *(${clanDetail})*`,
+    `• **Viền & Ảnh Nền:** **+${cosmeticExpPct}% EXP • +${cosmeticLtPct}% LT** *(Viền: ${cosmeticBuffs.frameName} +${cosmeticBuffs.frameExpPct}% • Nền: ${cosmeticBuffs.bgName} +${cosmeticBuffs.bgExpPct}%)*`,
     '',
     level >= 100
       ? `${em('su_sparkle')} **Đã đạt Cảnh Giới tối cao Lv.100!**`
@@ -927,6 +937,10 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
       equipped_exp_roles: equippedRoleItems,
       marriage_exp_pct: marriageExpPct,
       clan_exp_pct: clanExpPct,
+      cosmetic_exp_pct: cosmeticExpPct,
+      cosmetic_lt_pct: cosmeticLtPct,
+      frame_exp_pct: cosmeticBuffs.frameExpPct,
+      bg_exp_pct: cosmeticBuffs.bgExpPct,
     },
     title: `${em('su_level_up')} CHỈ SỐ BOOST EXP — ${displayName.toUpperCase()}`,
     description: desc,

@@ -614,6 +614,88 @@ export const BACKGROUND_CATALOG = [
 export const BACKGROUND_BY_ID = Object.fromEntries(BACKGROUND_CATALOG.map((b) => [b.bg_id, b]));
 
 /**
+ * Bảng Buff EXP & Linh Thạch khi trang bị Viền Avatar (/shop -> frames) hoặc Ảnh Nền (/shop -> backgrounds).
+ * Mỗi món cộng riêng theo phẩm chất (đeo cả Viền + Ảnh Nền Thần Thoại cộng dồn tối đa +20% EXP & +20% LT).
+ * Mặc định (0 LT) không cộng buff.
+ */
+export const COSMETIC_BUFF_BY_RARITY = {
+  common: { expPct: 2, ltPct: 2 },
+  rare: { expPct: 4, ltPct: 4 },
+  epic: { expPct: 7, ltPct: 7 },
+  mythic: { expPct: 10, ltPct: 10 },
+};
+
+export function getCosmeticBuffByRarity(rarityKey, isPaid = true) {
+  if (!isPaid) return { expPct: 0, ltPct: 0 };
+  const rk = String(rarityKey || '').trim().toLowerCase();
+  return COSMETIC_BUFF_BY_RARITY[rk] || { expPct: 0, ltPct: 0 };
+}
+
+export function computeCosmeticBuffTotals(avatarFrame = 'default', backgroundUrl = 'default_background.png') {
+  const fId = String(avatarFrame || 'default').trim();
+  let frameExpPct = 0;
+  let frameLtPct = 0;
+  let frameName = 'Khung Mặc Định';
+  let frameRarity = 'Mặc Định';
+
+  if (fId === 'celestial_fox_gold') {
+    frameExpPct = COSMETIC_BUFF_BY_RARITY.mythic.expPct;
+    frameLtPct = COSMETIC_BUFF_BY_RARITY.mythic.ltPct;
+    frameName = 'Hồ Hoàng Kim';
+    frameRarity = 'Thần Thoại';
+  } else if (fId && fId !== 'default') {
+    const fMeta = AVATAR_FRAME_BY_ID[fId];
+    if (fMeta && Number(fMeta.price || 0) > 0) {
+      const b = getCosmeticBuffByRarity(fMeta.rarity_key, true);
+      frameExpPct = b.expPct;
+      frameLtPct = b.ltPct;
+      frameName = fMeta.name;
+      frameRarity = fMeta.rarity;
+    }
+  }
+
+  const rawBg = String(backgroundUrl || 'default_background.png').trim();
+  let bgExpPct = 0;
+  let bgLtPct = 0;
+  let bgName = 'Đạo Cảnh Mặc Định';
+  let bgRarity = 'Mặc Định';
+
+  if (rawBg.includes('celestial_palace_pink')) {
+    bgExpPct = COSMETIC_BUFF_BY_RARITY.mythic.expPct;
+    bgLtPct = COSMETIC_BUFF_BY_RARITY.mythic.ltPct;
+    bgName = 'Thiên Cung Cửu Vĩ';
+    bgRarity = 'Thần Thoại';
+  } else if (rawBg && rawBg !== 'default_background.png') {
+    const strippedBg = rawBg.replace(/^assets\//i, '').replace(/^backgrounds\//i, '');
+    const bgMeta = BACKGROUND_BY_ID[rawBg]
+      || BACKGROUND_BY_ID[strippedBg]
+      || BACKGROUND_CATALOG.find((b) => b.file === rawBg || `assets/${b.file}` === rawBg);
+    if (bgMeta && Number(bgMeta.price || 0) > 0) {
+      const b = getCosmeticBuffByRarity(bgMeta.rarity_key, true);
+      bgExpPct = b.expPct;
+      bgLtPct = b.ltPct;
+      bgName = bgMeta.name;
+      bgRarity = bgMeta.rarity;
+    }
+  }
+
+  return {
+    frameId: fId || 'default',
+    frameName,
+    frameRarity,
+    frameExpPct,
+    frameLtPct,
+    bgId: rawBg || 'default_background.png',
+    bgName,
+    bgRarity,
+    bgExpPct,
+    bgLtPct,
+    expPct: frameExpPct + bgExpPct,
+    ltPct: frameLtPct + bgLtPct,
+  };
+}
+
+/**
  * Hệ thống Phẩm Chất Khắc Ấn (Enchant D -> C -> B -> A -> S) cho Linh Thú & Pháp Bảo (v1.2)
  * Mặc định lúc quay Gacha/mua Shop chỉ rơi từ D -> A (0% S); hạng S chỉ đạt qua cường hóa (/enchant).
  */

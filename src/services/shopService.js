@@ -23,6 +23,7 @@ import {
   AVATAR_FRAME_BY_ID,
   PUBLIC_BASE_URL,
   rollDefaultEnchantGrade,
+  getCosmeticBuffByRarity,
 } from '../data/catalog.js';
 import {
   em,
@@ -170,13 +171,15 @@ function buildCategorySummary(cat, page = 1, ownershipCtx = {}) {
     const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
     const slice = bgs.slice((safePage - 1) * pageSize, safePage * pageSize);
     return slice.map((b) => {
+      const bBuff = getCosmeticBuffByRarity(b.rarity_key, true);
+      const buffTag = ` (+${bBuff.expPct}% EXP/LT)`;
       const statusTag = b.bg_id === equippedBgId
         ? ' • **[Đang trang bị]**'
         : ownedBgSet.has(b.bg_id)
           ? ' • **[Đã sở hữu]**'
           : ` — **${b.price.toLocaleString('vi-VN')}** ${lt}`;
-      return `• ${tierEmoji(b.rarity_key)} **${b.name}**${statusTag}`;
-    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Chọn bên dưới để xem trước, mua hoặc đổi ngay (0 LT nếu đã sở hữu)*`;
+      return `• ${tierEmoji(b.rarity_key)} **${b.name}**${buffTag}${statusTag}`;
+    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Buff trang bị: Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT (cộng dồn Viền + Nền tới +20%)*`;
   }
   if (cat === 'frames') {
     const frames = AVATAR_FRAMES.filter((f) => f.price > 0);
@@ -185,13 +188,15 @@ function buildCategorySummary(cat, page = 1, ownershipCtx = {}) {
     const safePage = Math.min(Math.max(1, Number(page) || 1), totalPages);
     const slice = frames.slice((safePage - 1) * pageSize, safePage * pageSize);
     return slice.map((f) => {
+      const fBuff = getCosmeticBuffByRarity(f.rarity_key, true);
+      const buffTag = ` (+${fBuff.expPct}% EXP/LT)`;
       const statusTag = f.frame_id === equippedFrameId
         ? ' • **[Đang trang bị]**'
         : ownedFrameSet.has(f.frame_id)
           ? ' • **[Đã sở hữu]**'
           : ` — **${f.price.toLocaleString('vi-VN')}** ${lt}`;
-      return `• ${tierEmoji(f.rarity_key)} **${f.name}**${statusTag}`;
-    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Chọn bên dưới để xem trước, mua hoặc đeo ngay (0 LT nếu đã sở hữu)*`;
+      return `• ${tierEmoji(f.rarity_key)} **${f.name}**${buffTag}${statusTag}`;
+    }).join('\n') + `\n\n• *Trang **${safePage}/${totalPages}** — Buff trang bị: Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT (cộng dồn Viền + Nền tới +20%)*`;
   }
   return '';
 }
@@ -473,24 +478,28 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
       `${em('su_sparkle')} ${it.description}`,
     ].join('\n');
   } else if (resolved.category === 'backgrounds') {
+    const bgBuff = getCosmeticBuffByRarity(it.rarity_key, it.price > 0);
     price = disc(it.price);
     title = `${tierEmoji(it.rarity_key)} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(it.file)}`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} Ảnh Nền \`/profile\` & \`/rank\` ${ownedNote}`.trim(),
+      `${em('su_level_up')} **Buff khi trang bị**: **+${bgBuff.expPct}% EXP & +${bgBuff.ltPct}% Linh Thạch** *(cộng dồn với Viền Avatar)*`,
       alreadyOwned
         ? `${lt} **Trạng thái**: **Đã sở hữu** *(Bấm **Mua Ngay** để đổi sang mẫu này với giá **0 LT**)*`
         : `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,
       `${em('su_wiki_scroll')} Hoặc dùng lệnh: \`/equip ma_id:${it.bg_id}\``,
     ].join('\n');
   } else if (resolved.category === 'frames') {
+    const frBuff = getCosmeticBuffByRarity(it.rarity_key, it.price > 0);
     price = disc(it.price);
     title = `${tierEmoji(it.rarity_key)} ${it.name}`;
     imageUrl = `${PUBLIC_BASE_URL}/api/shop/frame-preview/${it.frame_id}.png`;
     color = it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : '#3b82f6';
     description = [
       `${tierEmoji(it.rarity_key)} Khung Viền Avatar \`/profile\`, \`/rank\`, \`/battle\`, \`/linhmach\` ${ownedNote}`.trim(),
+      `${em('su_level_up')} **Buff khi trang bị**: **+${frBuff.expPct}% EXP & +${frBuff.ltPct}% Linh Thạch** *(cộng dồn với Ảnh Nền)*`,
       alreadyOwned
         ? `${lt} **Trạng thái**: **Đã sở hữu** *(Bấm **Mua Ngay** để đeo viền này với giá **0 LT**)*`
         : `${lt} **Giá bán**: **${price.toLocaleString('vi-VN')} Linh Thạch**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*`,

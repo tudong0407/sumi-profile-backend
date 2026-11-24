@@ -15,6 +15,7 @@ import {
   DIVINE_SENSE_CATALOG,
   DIVINE_REALM_CATALOG,
   WEEKLY_CONTRACTS_CONFIG,
+  computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
@@ -933,7 +934,9 @@ export async function challengeTower(userId, options = {}) {
     let rewardAbsoluteStones = 0;
 
     if (won) {
-      rewardLt = computeTowerFloorRewardLt(targetFloor);
+      const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
+      const baseFloorLt = computeTowerFloorRewardLt(targetFloor);
+      rewardLt = Math.round(baseFloorLt * (1 + (cosmeticBuffs.ltPct || 0) / 100));
       if (isBoss) {
         rewardStarStones += 1;
         rewardEnchantStones += 1;

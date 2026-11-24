@@ -25,6 +25,7 @@ import {
   ROLE_GACHA_DURATION_TIERS,
   getClanLevelConfig,
   rollDefaultEnchantGrade,
+  computeCosmeticBuffTotals,
 } from '../data/catalog.js';
 import {
   em,
@@ -332,7 +333,9 @@ export async function claimDaily(userId, options = {}) {
     }
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level) || 1);
     const roleDailyLtPct = Number(roleBuffs?.dailyLtBonusPct || 0);
-    const reward = Math.round(baseReward * (1 + streakBonusPct + clanBonusPct / 100 + roleDailyLtPct / 100));
+    const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
+    const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
+    const reward = Math.round(baseReward * (1 + streakBonusPct + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100));
     const newBalance = Number(user.linh_thach || 0) + reward;
 
     const { error } = await supabase
@@ -347,7 +350,10 @@ export async function claimDaily(userId, options = {}) {
 
     if (error) throw new Error(`Daily update failed: ${error.message}`);
 
-    const roleNote = roleDailyLtPct > 0 ? ` *(+${roleDailyLtPct}% Buff Role)*` : '';
+    const noteParts = [];
+    if (roleDailyLtPct > 0) noteParts.push(`+${roleDailyLtPct}% Buff Role`);
+    if (cosmeticLtPct > 0) noteParts.push(`+${cosmeticLtPct}% Viền/Nền`);
+    const roleNote = noteParts.length > 0 ? ` *(${noteParts.join(' • ')})*` : '';
     return {
       success: true,
       already_claimed: false,
@@ -355,6 +361,7 @@ export async function claimDaily(userId, options = {}) {
       cycle_day: cycleDay,
       base_reward: baseReward,
       role_bonus_pct: roleDailyLtPct,
+      cosmetic_bonus_pct: cosmeticLtPct,
       reward,
       linh_thach: newBalance,
       message: `${em('su_sparkle')} Điểm danh ngày thứ **${newStreak}** (Chuỗi ${cycleDay}/7) thành công! Nhận **+${reward}** ${em('su_linhthach')} **Linh Thạch**${roleNote} (Số dư: **${newBalance.toLocaleString('vi-VN')}**).`,

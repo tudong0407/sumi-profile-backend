@@ -125,7 +125,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nguồn EXP & Mốc Level Role',
-        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 60 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).',
+        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 60 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
       },
     ],
     fields: [
@@ -136,7 +136,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
-        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `60 × Level^1.45` *(trần `500.000 EXP`)* • Tra tổng boost bằng `/exp`.',
+        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `60 × Level^1.45` *(trần `500.000 EXP`)* • **Viền & Ảnh Nền (`/shop`):** `Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10%` EXP & LT mỗi món *(max +20%)* • Tra tổng boost bằng `/exp`.',
         inline: false,
       },
       {
@@ -335,7 +335,7 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Kiếm LT, Gacha & Cửa Hàng',
-        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Nền & Viền đã sở hữu tự Equip 0 LT ngay trong /shop (ẩn khỏi /inv). Xác nhận /updates v1.5 nhận +2.000 LT!',
+        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Nền & Viền đã sở hữu tự Equip 0 LT ngay trong /shop (ẩn khỏi /inv), cộng buff +2%/+4%/+7%/+10% EXP & LT mỗi món (cộng dồn tới +20%).',
       },
       {
         heading: '2. Nhiệm Vụ Ngày, Tháp 500 Tầng (+15% LT), Nông Trại & Cộng Đồng',
@@ -348,7 +348,7 @@ export const WIKI_CATEGORIES = {
         value: [
           '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.5 nhận **+2.000 LT**.',
           '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • `/dismantle` • `/enchant` (`+0/+8/+18/+32/+50%`).',
-          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) • Nền & Viền đã mua đổi **0 LT** ngay trong `/shop`.',
+          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) • **Nền & Viền** đổi **0 LT** trong `/shop` & cộng **`+2% / +4% / +7% / +10%` EXP & LT** mỗi món *(tối đa +20%)* cho Chat/Voice, `/daily`, `/job`, `/explorer` & Tháp.',
         ].join('\n'),
         inline: false,
       },
