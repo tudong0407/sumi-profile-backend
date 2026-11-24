@@ -199,12 +199,19 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   }
 
   const computedPower = finalAtk * 3 + finalDef * 2 + finalSpd * 2 + level * 50;
-  const powerScore = Math.max(
-    100,
-    (strippedBusyEquip || setBonus.statBonusPct > 0)
-      ? Math.max(computedPower, Math.round((Number(pet.power || pet.power_score || 0) || computedPower) * (1 + (setBonus.statBonusPct || 0) / 100)))
-      : (Number(pet.power || pet.power_score || 0) || computedPower),
+  const rawReportedPower = Number(
+    pet.set_bonus_applied && pet.power_before_set_bonus !== undefined
+      ? pet.power_before_set_bonus
+      : (pet.power || pet.power_score || 0),
   );
+  const effectiveReportedPower = strippedBusyEquip
+    ? computedPower
+    : (pet.set_bonus_applied && Number(pet.power || 0) > 0
+        ? Number(pet.power)
+        : (rawReportedPower > 0
+            ? Math.round(rawReportedPower * (1 + (setBonus.statBonusPct || 0) / 100))
+            : computedPower));
+  const powerScore = Math.max(100, Math.max(computedPower, effectiveReportedPower));
 
   return {
     id,

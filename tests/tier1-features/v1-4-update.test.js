@@ -542,12 +542,13 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 
   // 3. Fuyumi power parity + Real compileCombatant() -> Solo (1vBoss), Duo (2vBoss), Trio (3v3) Linh Mạch renders & Web Logs
   const fuyumiProfile = await getProfileData(FUYUMI_USER_ID);
-  assert.equal(fuyumiProfile.pet.power, 22939719);
+  assert.equal(fuyumiProfile.pet.power_before_set_bonus, 22939719);
+  assert.equal(fuyumiProfile.pet.power, 27068868);
 
   const fuyumiCompiled = applyFatigueToCombatant(await compileCombatant(FUYUMI_USER_ID, 'attacker'), 0);
   assert.equal(fuyumiCompiled.pet.pet_type, 'cuu_vi_hong_ho');
   assert.equal(fuyumiCompiled.pet.pet_name, 'Cửu Vĩ Hồng Hồ');
-  assert.ok(fuyumiCompiled.powerScore >= 22939719, 'Compiled Linh Mạch combatant must preserve real powerScore (+ Set Bonus v1.5)');
+  assert.equal(fuyumiCompiled.powerScore, fuyumiProfile.pet.power, 'Compiled Linh Mạch combatant must match /profile power 1:1 without double-applying Set Bonus');
 
   const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
   const bossSp = [{
@@ -637,8 +638,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
   // 4. Fuyumi Explorer Hub power parity + Live DB test for Default Loadout, Idle Claim Error, Free Food Block, Buy Food, Chat Level-Role Sync
   const fuyumiHub = await getExplorerHub(FUYUMI_USER_ID);
   assert.equal(fuyumiHub.success, true);
-  const expectedHubPower = Math.round(fuyumiProfile.pet.power * (1 + (fuyumiProfile.set_bonus?.statBonusPct || 0) / 100));
-  assert.equal(fuyumiHub.loadout_power, expectedHubPower, 'Fuyumi /explorer hub power must match /profile + Set Bonus!');
+  assert.equal(fuyumiHub.loadout_power, fuyumiProfile.pet.power, 'Fuyumi /explorer hub power must match /profile 1:1!');
 
   const testUid = '999900000000014101';
   const cleanup = async () => {

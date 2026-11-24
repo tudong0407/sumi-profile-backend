@@ -865,6 +865,17 @@ export async function getProfileData(userId, overrides = {}) {
     domainLoadout: baseProfile.domain_loadout || {},
   });
 
+  if (baseProfile.pet) {
+    baseProfile.pet.power_before_set_bonus = Number(baseProfile.pet.power) || 0;
+    baseProfile.pet.set_bonus_pct = Number(baseProfile.set_bonus?.statBonusPct) || 0;
+    baseProfile.pet.set_bonus_applied = true;
+    if (baseProfile.pet.set_bonus_pct > 0) {
+      baseProfile.pet.power = Math.round(
+        baseProfile.pet.power_before_set_bonus * (1 + baseProfile.pet.set_bonus_pct / 100),
+      );
+    }
+  }
+
   if (overrides.username) {
     baseProfile.username = overrides.username;
   } else if (overrides.fallback_name && overrides.is_fallback_user) {
