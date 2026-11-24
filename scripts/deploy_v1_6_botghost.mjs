@@ -246,33 +246,25 @@ function btnCfg(label, style, emojiName, row = '1', weight = '1', showReplies = 
 }
 
 function attachAckBranchV16(gb, prefix, apiNodeId, resVarName, { editId = undefined, x = 0, y = 0 } = {}) {
-  const brAck = `${prefix}_br_ack`;
-  const brNoAck = `${prefix}_br_ok`;
+  const gate = gb.cmp(`${prefix}_gate`, `{${resVarName}.response.needs_update_ack}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x, y });
+  gb.link(apiNodeId, gate.condId);
+
   const msgAck = `${prefix}_msg_ack`;
   const btnAck = `${prefix}_btn_ack`;
   const apiAck = `${prefix}_api_ack`;
   const msgDone = `${prefix}_msg_done`;
 
-  gb.branch(apiNodeId, brAck, 'comparison', {
-    variable: `{${resVarName}.response.error}`,
-    type: 'equal_to',
-    comparison_value: 'UPDATE_ACK_REQUIRED',
-    ignoreCase: true,
-  }, { x: x - 260, y });
-
-  gb.elseBranch(apiNodeId, brNoAck, 'comparison', { x: x + 220, y });
-
   embedMsg(gb, msgAck, {
-    title: `${uidEm('su_sparkle')} BẢN CẬP NHẬT MỚI ĐÃ SẴN SÀNG!`,
-    description: `{${resVarName}.response.message}`,
+    title: `{${resVarName}.response.update_title}`,
+    description: `{${resVarName}.response.update_description}`,
     color: '#ec4899',
     footer: '',
     target: editId ? { editId } : { reply: true },
     action_id: editId || undefined,
   }, { x: x - 260, y: y + 170 });
-  gb.link(brAck, msgAck);
+  gb.link(gate.yes, msgAck);
 
-  gb.advBtn(btnAck, msgAck, btnCfg('Xác Nhận Cập Nhật (+1.000 LT)', 'SUCCESS', 'su_linhthach', '1', '1', 'show'), { x: x - 260, y: y + 340 });
+  gb.advBtn(btnAck, msgAck, btnCfg('Tôi Đã Đọc & Xác Nhận (+1.000 LT)', 'SUCCESS', 'su_linhthach', '1', '1', 'show'), { x: x - 260, y: y + 340 });
 
   apiAction(gb, apiAck, `${prefix}_ack_res`, 'POST', `${BACKEND_BASE}/api/update/ack`,
     '{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}"}', { x: x - 260, y: y + 510 });
@@ -286,7 +278,7 @@ function attachAckBranchV16(gb, prefix, apiNodeId, resVarName, { editId = undefi
   }, { x: x - 260, y: y + 680 });
   gb.link(apiAck, msgDone);
 
-  return brNoAck;
+  return gate.no;
 }
 
 // ============================================================================
@@ -304,12 +296,15 @@ export function buildNhiemvuV16Cmd() {
     y: 0,
   });
 
+  gb.cond('nv_mode', 'comparison', { base_value: '{option_hanh_dong}', target: { self: true } }, { x: 0, y: 180 });
+  gb.link('root', 'nv_mode');
+
   // Direct action branches: claim, claim_weekly, tower, reset
-  gb.branch('root', 'nv_br_claim', 'comparison', { variable: '{opt_hanh_dong}', type: 'equal_to', comparison_value: 'claim', ignoreCase: true }, { x: -640, y: 260 });
-  gb.branch('root', 'nv_br_weekly', 'comparison', { variable: '{opt_hanh_dong}', type: 'equal_to', comparison_value: 'claim_weekly', ignoreCase: true }, { x: -320, y: 260 });
-  gb.branch('root', 'nv_br_tower', 'comparison', { variable: '{opt_hanh_dong}', type: 'equal_to', comparison_value: 'tower', ignoreCase: true }, { x: 0, y: 260 });
-  gb.branch('root', 'nv_br_reset', 'comparison', { variable: '{opt_hanh_dong}', type: 'equal_to', comparison_value: 'reset', ignoreCase: true }, { x: 320, y: 260 });
-  gb.elseBranch('root', 'nv_br_status', 'comparison', { x: 900, y: 260 });
+  gb.branch('nv_mode', 'nv_br_claim', 'comparison', { type: 'equal_to', comparison_value: 'claim', ignoreCase: true, option: '', not: false }, { x: -640, y: 320 });
+  gb.branch('nv_mode', 'nv_br_weekly', 'comparison', { type: 'equal_to', comparison_value: 'claim_weekly', ignoreCase: true, option: '', not: false }, { x: -320, y: 320 });
+  gb.branch('nv_mode', 'nv_br_tower', 'comparison', { type: 'equal_to', comparison_value: 'tower', ignoreCase: true, option: '', not: false }, { x: 0, y: 320 });
+  gb.branch('nv_mode', 'nv_br_reset', 'comparison', { type: 'equal_to', comparison_value: 'reset', ignoreCase: true, option: '', not: false }, { x: 320, y: 320 });
+  gb.elseBranch('nv_mode', 'nv_br_status', 'comparison', { x: 900, y: 320 });
 
   // Direct POST branches
   apiAction(gb, 'nv_api_claim', 'nv_c_res', 'POST', `${BACKEND_BASE}/api/quest/claim`,
@@ -341,7 +336,7 @@ export function buildNhiemvuV16Cmd() {
   gb.link(nvRstOk, 'nv_msg_rst');
 
   // Board view (daily default / weekly / tower_view)
-  apiAction(gb, 'nv_api_status', 'nv_res', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab={opt_hanh_dong}&username={user_displayName}&avatar={user_icon}`, '', { x: 900, y: 440 });
+  apiAction(gb, 'nv_api_status', 'nv_res', 'GET', `${BACKEND_BASE}/api/quest/status/{user_id}?tab={option_hanh_dong}&username={user_displayName}&avatar={user_icon}`, '', { x: 900, y: 440 });
   gb.link('nv_br_status', 'nv_api_status');
 
   const nvStatusOk = attachAckBranchV16(gb, 'nvs', 'nv_api_status', 'nv_res', { x: 900, y: 600 });
@@ -461,7 +456,7 @@ export function buildDothachV16Cmd() {
     y: 0,
   });
 
-  apiAction(gb, 'dt_api_stall', 'dt_res', 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={opt_phan_khuc}&username={user_displayName}&avatar={user_icon}`, '', { x: 0, y: 260 });
+  apiAction(gb, 'dt_api_stall', 'dt_res', 'GET', `${BACKEND_BASE}/api/stones/stall/{user_id}?tier={option_phan_khuc}&username={user_displayName}&avatar={user_icon}`, '', { x: 0, y: 260 });
   gb.link('root', 'dt_api_stall');
 
   const dtOk = attachAckBranchV16(gb, 'dt', 'dt_api_stall', 'dt_res', { x: 0, y: 420 });
