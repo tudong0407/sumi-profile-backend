@@ -72,6 +72,8 @@ import {
   previewStallStone,
   cutStallStone,
   claimSupremeStonePick,
+  mapOutcomeToCutState,
+  resolveStoneCutImageUrl,
 } from '../../src/services/stoneCuttingService.js';
 import { BATTLE_COOLDOWN_MS } from '../../src/services/battleEngine/battleService.js';
 import { TOWER_COOLDOWN_MS, challengeTower, getQuestStatus } from '../../src/services/questService.js';
@@ -151,14 +153,26 @@ test('v1.6 Luck Potions Catalog & Non-Stacking / Charge Rules', async () => {
   assert.equal(eff.potionCharges, 70);
 });
 
-test('v1.6 Do Thach Catalog: 20 Species, 105 Clues (65/35), 7 Supreme Picks, EV Sanity', () => {
+test('v1.6 Do Thach Catalog: 40 Species, 300 Clues (100/100/100), Cut-State Image Mapping, 7 Supreme Picks, EV Sanity', () => {
   assert.equal(STONE_TIERS.length, 4);
-  assert.equal(STONE_SPECIES.length, 20);
-  assert.equal(new Set(STONE_SPECIES.map((s) => s.stone_id)).size, 20);
+  assert.equal(STONE_SPECIES.length, 40);
+  assert.equal(new Set(STONE_SPECIES.map((s) => s.stone_id)).size, 40);
+  assert.equal(STONE_CLUES.dim.length, 100);
+  assert.equal(STONE_CLUES.neutral.length, 100);
+  assert.equal(STONE_CLUES.radiant.length, 100);
   const allClues = Object.values(STONE_CLUES).flat();
-  assert.equal(allClues.length, 210);
-  assert.equal(new Set(allClues).size, 210);
+  assert.equal(allClues.length, 300);
+  assert.equal(new Set(allClues).size, 300);
   assert.equal(SUPREME_PICK_CATEGORIES.length, 7);
+
+  assert.equal(mapOutcomeToCutState('empty'), 'loss');
+  assert.equal(mapOutcomeToCutState('low'), 'loss');
+  assert.equal(mapOutcomeToCutState('mid'), 'mid');
+  assert.equal(mapOutcomeToCutState('high'), 'win');
+  assert.equal(mapOutcomeToCutState('epic'), 'win');
+  assert.equal(mapOutcomeToCutState('supreme'), 'win');
+  const cutUrl = resolveStoneCutImageUrl('stone_common_1', 'common', 'high');
+  assert.ok(cutUrl.endsWith('/assets/stones/stone_common_1.webp?v=1.6') || cutUrl.includes('_win.webp'));
 
   for (const s of STONE_SPECIES) {
     assert.equal(UNICODE_PICTOGRAPH_RE.test(s.name), false);

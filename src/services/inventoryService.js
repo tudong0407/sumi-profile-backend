@@ -33,6 +33,7 @@ import {
 } from '../data/catalog.js';
 import { em, itemEmoji, petEmoji, tierEmoji, roleTierEmoji, elementEmoji, gradeEmoji, ringEmoji, domainEmoji, senseEmoji, realmEmojiById, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
+import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
 import { dismantleDomainEntity } from './domainService.js';
 import { trackQuestActivity } from './questService.js';
@@ -350,12 +351,16 @@ export async function getInventory(userId, options = {}) {
     ? options.page
     : (viewParts[1] || 1);
 
-  const [petsRes, itemsRes, rolesRes, invRes] = await Promise.all([
+  const [petsRes, itemsRes, rolesRes, invRes, luckInfo] = await Promise.all([
     supabase.from('user_pets').select('*').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
     supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
     supabase.from('user_roles').select('*').eq('user_id', cleanId).order('is_equipped', { ascending: false }),
     supabase.from('user_inventory').select('*').eq('user_id', cleanId).gt('quantity', 0),
+    getEffectiveLuckAndFortune(cleanId).catch(() => null),
   ]);
+  const activePotionLine = luckInfo?.potionCharges > 0
+    ? `${em(luckInfo.potionId || 'potion_luck_minor')} **Linh Lộ đang hiệu lực:** **${luckInfo.potionName}** (\`+${luckInfo.potionLuckPct}% Luck\` • còn **${luckInfo.potionCharges}** lượt)`
+    : '';
 
   let equippedDomainsRaw = [];
   try {
@@ -609,7 +614,7 @@ export async function getInventory(userId, options = {}) {
     activePage = consPaged.page;
     activeTotalPages = consPaged.totalPages;
     viewTitle = `${em('enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
-    viewDescription = summaryConsumablesDetailed;
+    viewDescription = [activePotionLine, summaryConsumablesDetailed].filter(Boolean).join('\n\n');
   } else {
     const sections = [
       headerLine,
@@ -622,6 +627,7 @@ export async function getInventory(userId, options = {}) {
       itemGrid,
       '',
       `**${em('enchant_stone')} Vật Phẩm Tiêu Hao & Mở Khóa (${consumables.length})**`,
+      ...(activePotionLine ? [activePotionLine] : []),
       consumableGrid,
       '',
       `**${em('su_medal_role')} Role Quyền Năng (${roles.length})**`,

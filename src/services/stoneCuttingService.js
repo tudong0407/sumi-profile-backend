@@ -8,6 +8,9 @@
  *   lưu Hộp Chọn DB-persisted và cho chọn 1 trong 7 nhóm Thần Thoại không độc nhất.
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { supabase } from '../config/supabase.js';
 import {
   PET_CATALOG,
@@ -46,9 +49,50 @@ import {
 } from './luckAndFortuneService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const STONES_ASSET_DIR = path.resolve(__dirname, '../../assets/stones');
+
 const stoneLocks = new Map();
 const memStalls = new Map();
 const memRewards = new Map();
+
+/**
+ * Quy đổi kết quả cắt đá sang 3 trạng thái ảnh sau cắt:
+ * - 'loss' (LỖ VỐN): empty (Đá Rỗng) hoặc low (Hạ Phẩm hoàn dưới vốn)
+ * - 'mid' (TRUNG BÌNH): mid (Trung Phẩm Linh Ngọc)
+ * - 'win' (ĐẠI LÃI): high (Cực Hưng Thủy Ngọc), epic (Cực/Thần Phẩm), supreme (Tối Thượng Cực Phẩm)
+ */
+export function mapOutcomeToCutState(outcome) {
+  const k = String(outcome || '').trim().toLowerCase();
+  if (k === 'high' || k === 'epic' || k === 'supreme') return 'win';
+  if (k === 'mid') return 'mid';
+  return 'loss';
+}
+
+/**
+ * Chọn URL ảnh kết quả sau khi cắt theo trạng thái LỖ VỐN / TRUNG BÌNH / ĐẠI LÃI.
+ */
+export function resolveStoneCutImageUrl(stoneId, tierKey, outcome) {
+  const cutState = mapOutcomeToCutState(outcome);
+  const candidates = [
+    { rel: `${stoneId}_${cutState}.webp`, file: path.join(STONES_ASSET_DIR, `${stoneId}_${cutState}.webp`) },
+    { rel: `cut/${stoneId}_${cutState}.webp`, file: path.join(STONES_ASSET_DIR, 'cut', `${stoneId}_${cutState}.webp`) },
+    { rel: `${tierKey}_${cutState}.webp`, file: path.join(STONES_ASSET_DIR, `${tierKey}_${cutState}.webp`) },
+    { rel: `cut/${tierKey}_${cutState}.webp`, file: path.join(STONES_ASSET_DIR, 'cut', `${tierKey}_${cutState}.webp`) },
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c.file)) {
+      return `${PUBLIC_BASE_URL}/assets/stones/${c.rel}?v=1.6`;
+    }
+  }
+  return `${PUBLIC_BASE_URL}/assets/stones/${stoneId}.webp?v=1.6`;
+}
+
+export function getAvailableStonesForTier(tierKey) {
+  const allForTier = STONE_SPECIES.filter((s) => s.tier_key === tierKey);
+  const withAssets = allForTier.filter((s) => fs.existsSync(path.join(STONES_ASSET_DIR, `${s.stone_id}.webp`)));
+  return withAssets.length >= 3 ? withAssets : allForTier;
+}
 
 async function withStoneLock(userId, fn) {
   const prev = stoneLocks.get(userId) || Promise.resolve();
@@ -87,7 +131,7 @@ function pickUniqueClues(bucketName, count, rng = Math.random, usedSet = null) {
  * Sinh 3 viên đá cá nhân hóa cho 1 phân khúc, kèm manh mối Bán-Chân-Thật (không trùng câu giữa 3 viên cùng sạp)
  */
 export function generateStallStones(tierKey, rng = Math.random) {
-  const speciesPool = STONE_SPECIES.filter((s) => s.tier_key === tierKey);
+  const speciesPool = getAvailableStonesForTier(tierKey);
   const shuffled = [...speciesPool].sort(() => rng() - 0.5).slice(0, 3);
   const usedClues = new Set();
 
@@ -499,9 +543,13 @@ export async function cutStallStone(userId, rawTier = 'common', slotIndex = 1, o
         ? `\n• ${em('su_sparkle')} Quẻ **${luckInfo.fortuneName}** (*${luckInfo.fortuneLuckPct >= 0 ? '+' : ''}${luckInfo.fortuneLuckPct}% Luck*)`
         : '';
 
+    const cutState = mapOutcomeToCutState(outcome);
+    const cutImageUrl = resolveStoneCutImageUrl(pickedStone.stone_id, tierKey, outcome);
+
     return {
       success: true,
       outcome,
+      cut_state: cutState,
       triggered_supreme: triggeredSupreme,
       pending_supreme_picks: updatedRw.pending_supreme_picks,
       tier_key: tierKey,
@@ -519,7 +567,7 @@ export async function cutStallStone(userId, rawTier = 'common', slotIndex = 1, o
         luckNote,
       ].filter(Boolean).join('\n'),
       color,
-      image_url: `${PUBLIC_BASE_URL}/assets/stones/${pickedStone.stone_id}.webp?v=1.6`,
+      image_url: cutImageUrl,
       footer: '',
     };
   });

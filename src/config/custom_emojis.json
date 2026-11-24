@@ -132,10 +132,9 @@
     "tag": "<:card_bust:1574149024033022082>"
   },
   "card_deal": {
-    "id": "1574149182992687246",
+    "id": "1574832994093629491",
     "name": "card_deal",
-    "animated": true,
-    "tag": "<a:card_deal:1574149182992687246>"
+    "animated": true
   },
   "card_win": {
     "id": "1574149205260501033",
@@ -156,10 +155,9 @@
     "tag": "<:coin_heads:1574149223169921047>"
   },
   "coin_spin": {
-    "id": "1574149245760438282",
+    "id": "1574832943262728192",
     "name": "coin_spin",
-    "animated": true,
-    "tag": "<a:coin_spin:1574149245760438282>"
+    "animated": true
   },
   "coin_tails": {
     "id": "1574149266023129138",
@@ -168,10 +166,9 @@
     "tag": "<:coin_tails:1574149266023129138>"
   },
   "crash_boom": {
-    "id": "1574149283689529547",
+    "id": "1574833022673354923",
     "name": "crash_boom",
-    "animated": true,
-    "tag": "<a:crash_boom:1574149283689529547>"
+    "animated": true
   },
   "crash_cashout": {
     "id": "1574149306989019520",
@@ -2454,10 +2451,9 @@
     "tag": "<:slot_scroll:1574152761849806929>"
   },
   "slot_spin": {
-    "id": "1574152779709161622",
+    "id": "1574832969896558682",
     "name": "slot_spin",
-    "animated": true,
-    "tag": "<a:slot_spin:1574152779709161622>"
+    "animated": true
   },
   "slot_sword": {
     "id": "1574152803671089242",
@@ -4126,5 +4122,20 @@
     "name": "ui_suit_club",
     "animated": false,
     "tag": "<:ui_suit_club:1574472433279172799>"
+  },
+  "potion_luck_minor": {
+    "id": "1574833033792725153",
+    "name": "potion_luck_minor",
+    "animated": false
+  },
+  "potion_luck_major": {
+    "id": "1574833046899920897",
+    "name": "potion_luck_major",
+    "animated": false
+  },
+  "potion_luck_supreme": {
+    "id": "1574833059419656302",
+    "name": "potion_luck_supreme",
+    "animated": false
   }
 }

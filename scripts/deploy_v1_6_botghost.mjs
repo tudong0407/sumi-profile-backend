@@ -566,11 +566,14 @@ function patchShopV16(origTree) {
   const selCons = byId.get('sel_shop_cons');
   if (selCons?.data?.data?.basic_options) {
     for (const p of LUCK_POTIONS) {
-      if (!selCons.data.data.basic_options.some((o) => o.value === p.item_id) && selCons.data.data.basic_options.length < 25) {
+      const existing = selCons.data.data.basic_options.find((o) => o.value === p.item_id);
+      if (existing) {
+        existing.emoji_id = uidId(p.item_id, 'su_sparkle');
+      } else if (selCons.data.data.basic_options.length < 25) {
         selCons.data.data.basic_options.push({
           label: `${p.name} (+${p.luck_bonus_pct}% Luck • ${p.charges} lượt)`,
           description: `${p.price.toLocaleString('vi-VN')} LT • Dùng /equip để uống`,
-          emoji_id: uidId('su_sparkle'),
+          emoji_id: uidId(p.item_id, 'su_sparkle'),
           value: p.item_id,
         });
       }

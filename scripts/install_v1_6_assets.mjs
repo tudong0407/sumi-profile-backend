@@ -31,54 +31,75 @@ async function main() {
 
   // 1. 3 Luck Potions -> assets/shop/*.webp (512x512)
   const shopDir = path.join(SRC_ROOT, 'shop');
-  for (const file of fs.readdirSync(shopDir).filter((f) => f.endsWith('.png'))) {
-    const outName = file.replace(/\.png$/i, '.webp');
-    const bytes = await convertToWebp(
-      path.join(shopDir, file),
-      path.join(DEST_ROOT, 'shop', outName),
-      512,
-      512,
-      86,
-    );
-    totalBytes += bytes;
-    count += 1;
+  if (fs.existsSync(shopDir)) {
+    for (const file of fs.readdirSync(shopDir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
+      const outName = file.replace(/\.(png|jpe?g|webp)$/i, '.webp');
+      const bytes = await convertToWebp(
+        path.join(shopDir, file),
+        path.join(DEST_ROOT, 'shop', outName),
+        512,
+        512,
+        86,
+      );
+      totalBytes += bytes;
+      count += 1;
+    }
   }
 
-  // 2. 20 Rough Stones -> assets/stones/*.webp (512x512)
+  // 2. Rough Stones + Cut-State Stones (loss/mid/win) -> assets/stones/*.webp (512x512)
   const stonesDir = path.join(SRC_ROOT, 'stones');
-  for (const file of fs.readdirSync(stonesDir).filter((f) => f.endsWith('.png'))) {
-    const outName = file.replace(/\.png$/i, '.webp');
-    const bytes = await convertToWebp(
-      path.join(stonesDir, file),
-      path.join(DEST_ROOT, 'stones', outName),
-      512,
-      512,
-      84,
-    );
-    totalBytes += bytes;
-    count += 1;
+  if (fs.existsSync(stonesDir)) {
+    for (const file of fs.readdirSync(stonesDir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
+      const outName = file.replace(/\.(png|jpe?g|webp)$/i, '.webp');
+      const bytes = await convertToWebp(
+        path.join(stonesDir, file),
+        path.join(DEST_ROOT, 'stones', outName),
+        512,
+        512,
+        84,
+      );
+      totalBytes += bytes;
+      count += 1;
+    }
+    const cutDir = path.join(stonesDir, 'cut');
+    if (fs.existsSync(cutDir)) {
+      for (const file of fs.readdirSync(cutDir).filter((f) => /\.(png|jpe?g|webp)$/i.test(f))) {
+        const outName = file.replace(/\.(png|jpe?g|webp)$/i, '.webp');
+        const bytes = await convertToWebp(
+          path.join(cutDir, file),
+          path.join(DEST_ROOT, 'stones', outName),
+          512,
+          512,
+          84,
+        );
+        totalBytes += bytes;
+        count += 1;
+      }
+    }
   }
 
   // 3. 6 Fortune Cards (768x1024 WebP) + oracle_shake.webp (800x600) + oracle_shake.gif
   const fqDir = path.join(SRC_ROOT, 'gieoque');
-  await fs.promises.mkdir(path.join(DEST_ROOT, 'fortune'), { recursive: true });
-  for (const file of fs.readdirSync(fqDir)) {
-    const src = path.join(fqDir, file);
-    if (file === 'oracle_shake.gif') {
-      const dest = path.join(DEST_ROOT, 'fortune', 'oracle_shake.gif');
-      await fs.promises.copyFile(src, dest);
-      const st = await fs.promises.stat(dest);
-      totalBytes += st.size;
-      count += 1;
-    } else if (file === 'oracle_shake.png') {
-      const bytes = await convertToWebp(src, path.join(DEST_ROOT, 'fortune', 'oracle_shake.webp'), 800, 600, 84);
-      totalBytes += bytes;
-      count += 1;
-    } else if (file.endsWith('.png')) {
-      const outName = file.replace(/\.png$/i, '.webp');
-      const bytes = await convertToWebp(src, path.join(DEST_ROOT, 'fortune', outName), 768, 1024, 86);
-      totalBytes += bytes;
-      count += 1;
+  if (fs.existsSync(fqDir)) {
+    await fs.promises.mkdir(path.join(DEST_ROOT, 'fortune'), { recursive: true });
+    for (const file of fs.readdirSync(fqDir)) {
+      const src = path.join(fqDir, file);
+      if (file === 'oracle_shake.gif') {
+        const dest = path.join(DEST_ROOT, 'fortune', 'oracle_shake.gif');
+        await fs.promises.copyFile(src, dest);
+        const st = await fs.promises.stat(dest);
+        totalBytes += st.size;
+        count += 1;
+      } else if (file === 'oracle_shake.png') {
+        const bytes = await convertToWebp(src, path.join(DEST_ROOT, 'fortune', 'oracle_shake.webp'), 800, 600, 84);
+        totalBytes += bytes;
+        count += 1;
+      } else if (file.endsWith('.png')) {
+        const outName = file.replace(/\.png$/i, '.webp');
+        const bytes = await convertToWebp(src, path.join(DEST_ROOT, 'fortune', outName), 768, 1024, 86);
+        totalBytes += bytes;
+        count += 1;
+      }
     }
   }
 
