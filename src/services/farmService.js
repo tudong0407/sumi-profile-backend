@@ -13,6 +13,7 @@ import {
 import { em, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
+import { claimNextAlchemyDmNotification } from './alchemyService.js';
 
 const MAX_FARM_SLOTS = 6;
 const DEFAULT_FARM_SLOTS = 4;
@@ -870,6 +871,14 @@ export async function claimNextFarmDmNotification(options = {}) {
       });
 
       if (claimed) return claimed;
+    }
+
+    const alchemyDm = await claimNextAlchemyDmNotification({ now }).catch(() => null);
+    if (alchemyDm?.has_notification) {
+      return {
+        ...alchemyDm,
+        synced_transitions: transitions.length,
+      };
     }
 
     return {

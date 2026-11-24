@@ -89,8 +89,8 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.5.2 • 10 Chuyên Mục • 165 Pháp Bảo • 90 Linh Thú • 60 Linh Vực • Từ Điển Thuật Ngữ',
-  version: '1.5.2',
+  subtitle: 'Cẩm nang v1.6.1 • 10 Chuyên Mục • 165 Pháp Bảo • 90 Linh Thú • 60 Linh Vực • Từ Điển Thuật Ngữ',
+  version: '1.6.1',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -117,7 +117,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.6)',
-        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
@@ -132,7 +132,7 @@ export const WIKI_CATEGORIES = {
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
           '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
           '• **Kho & Gacha:** `/roll` • `/dothach` • `/gieoque` • `/autosell` • `/shop` • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
-          '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
+          '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/luyendan` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
           '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
         ].join('\n'),
         inline: false,
@@ -410,8 +410,8 @@ export const WIKI_CATEGORIES = {
         content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /dothach (Phường Đổ Thạch — tách biệt với /roll, không Pity 350): 4 phân khúc sạp đá thô (20 loài Nguyên Thạch) kèm manh mối mơ hồ, cắt đá săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Tối Thượng Cực Phẩm (chọn Thần Thoại không Độc Nhất).\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận (Đại Hung → Đại Cát) cộng/trừ nhẹ % EXP, % LT & % Luck (hỗ trợ Cầu An Giải Hạn 250 LT khi gặp Hung/Đại Hung).\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Mở bán thêm 3 Lọ Luck Potion (+20%/+40%/+60% Luck theo lượt cho cả /roll & /dothach, cộng dồn với /gieoque; uống qua /equip).',
       },
       {
-        heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại & Cộng Đồng',
-        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
+        heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại, Lò Luyện Đan & Cộng Đồng',
+        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /luyendan (Lò Luyện Đan): Tối đa 5 mẻ/ngày trên tối đa 2 Lò song song (Lò #2 tự mở ở Lv.45 hoặc 2.500 LT), nâng cấp Lò Lv.1–5 (+LT%, giảm giờ, ân hạn 20–60p, tăng tỉ lệ Thượng Phẩm ×1.25 / Đan Vân ×1.50). Hỗ trợ công thức Tinh Hoa dùng 20–40 Linh Quả từ /farm. Quá ân hạn bị cháy (30 LT) + nổ khóa lò 4h (Sửa nhanh 300 LT) & bot tự DM nhắc chín + trước nổ 10p.\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
       },
     ],
     fields: [
@@ -437,6 +437,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_sprout')} Nông Trại, Giải Trí, Tiên Lữ & Gia Tộc`,
         value: [
           '• **`/farm` & `/exchange`:** Tách riêng khu **Linh Điền** & **Linh Các** (`6/12/24h`), Bot **tự nhắn DM nhắc tới giờ tưới & cảnh báo sắp héo (1h / 30p / 15p)**; đổi Linh Quả lấy LT, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset.',
+          '• **`/luyendan` (Lò Luyện Đan):** Tối đa `5 mẻ/ngày` trên `2 Lò` song song *(Lò #2 mở tại Lv.45 hoặc 2.500 LT)*, nâng Lò `Lv.1–5` & kết hợp `20–40 Linh Quả` săn `Thượng Phẩm (×1.25)` / `Đan Vân (×1.50)` kèm DM nhắc chín & trước nổ 10p.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
           `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP/LT, Clan Wars 24H).`,
         ].join('\n'),

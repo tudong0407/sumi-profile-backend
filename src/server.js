@@ -61,6 +61,15 @@ import {
   claimSupremeStonePick,
 } from './services/stoneCuttingService.js';
 import {
+  getAlchemyStatus,
+  startBrew,
+  harvestBatch,
+  upgradeFurnace,
+  unlockSecondFurnace,
+  repairFurnace,
+  claimNextAlchemyDmNotification,
+} from './services/alchemyService.js';
+import {
   getInventory,
   getUserEquipment,
   getUserRoles,
@@ -2632,6 +2641,109 @@ app.post('/api/stones/claim-supreme', requireBackendApiKey, requireUpdateAck, as
   } catch (err) {
     console.error('[Server] /api/stones/claim-supreme error:', err);
     return res.status(500).json({ success: false, error: 'STONES_CLAIM_SUPREME_FAILED', message: err.message });
+  }
+});
+
+// ==========================================
+// VER 1.6.1 ALCHEMY ROUTES (LÒ LUYỆN ĐAN /luyendan)
+// ==========================================
+
+app.get('/api/alchemy/status/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getAlchemyStatus(req.params.userId, {
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/status error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/brew', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await startBrew(body.userId, body.recipeId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/brew error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_BREW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/harvest', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await harvestBatch(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/harvest error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_HARVEST_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/upgrade', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await upgradeFurnace(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/upgrade error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_UPGRADE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/unlock-slot2', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await unlockSecondFurnace(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/unlock-slot2 error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_UNLOCK_SLOT2_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/repair', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await repairFurnace(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/repair error:', err);
+    return res.status(500).json({ success: false, error: 'ALCHEMY_REPAIR_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/alchemy/notifications/next', requireBackendApiKey, async (req, res) => {
+  try {
+    const result = await claimNextAlchemyDmNotification();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/alchemy/notifications/next error:', err);
+    return res.status(500).json({ success: false, has_notification: false, error: err.message });
   }
 });
 

@@ -83,7 +83,7 @@ import { LATEST_VERSION, getChangelogPayload } from '../../src/data/changelogs.j
 const UNICODE_PICTOGRAPH_RE = /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u;
 
 test('v1.6 Changelog & Version Lock', () => {
-  assert.equal(LATEST_VERSION, '1.6');
+  assert.ok(['1.6', '1.6.1'].includes(LATEST_VERSION));
   const payload = getChangelogPayload('1.6');
   assert.equal(payload.success, true);
   assert.equal(payload.ack_reward_lt, 1000);

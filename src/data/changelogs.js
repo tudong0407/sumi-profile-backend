@@ -5,9 +5,43 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.6';
+export const LATEST_VERSION = '1.6.1';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+
+/**
+ * Bản cập nhật v1.6.1 (+1.000 LT):
+ * - Ra mắt Lò Luyện Đan (/luyendan): tối đa 5 mẻ/ngày trên 2 Lò song song (Lò #2 mở tại Lv.45 hoặc 2.500 LT)
+ * - Nâng cấp Lò Lv.1 -> Lv.5 (+% LT, giảm thời gian, tăng ân hạn 20p->60p, tăng tỉ lệ Thượng Phẩm/Đan Vân)
+ * - 6 công thức gồm 4 bậc thường + 2 công thức Tinh Hoa dùng 20–40 Linh Quả từ /farm
+ * - Quá ân hạn cháy đan thu 30 LT + nổ khóa lò 4h (Sửa nhanh 300 LT), DM nhắc khi chín & trước nổ 10p
+ * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level, KHÔNG thông báo buff Viền/Ảnh Nền, và KHÔNG dùng emoji Unicode Windows.
+ */
+export const V161_CHANGELOG = {
+  version: '1.6.1',
+  title: 'CẬP NHẬT v1.6.1 — LÒ LUYỆN ĐAN (/LUYENDAN) & LIÊN KẾT NÔNG TRẠI',
+  released_at: '2026-11-25',
+  color: '#ec4899',
+  is_big_update: false,
+  ack_reward_lt: 1000,
+  summary: 'Ra mắt Lò Luyện Đan (/luyendan) 2 Lò song song, nâng cấp Lò Lv.1–5, 6 công thức (kết hợp Linh Quả /farm), Thượng Phẩm ×1.25 / Đan Vân ×1.50, DM nhắc chín & trước nổ 10p, cùng quà xác nhận +1.000 LT!',
+  sections: [
+    {
+      heading: `${em('su_el_hoa')} Hệ Thống Lò Luyện Đan (/luyendan — Tối Đa 5 Mẻ/Ngày)`,
+      bullets: [
+        '**2 Lò Song Song & 5 Cấp Lò (`Lv.1 → Lv.5`):** **Lò #1** mở sẵn; **Lò #2** tự mở miễn phí tại **`Lv.45`** *(hoặc mở sớm `2.500 LT`)*. Nâng cấp Lò giúp **`+6%..+25% LT`**, **giảm `5%..20%` thời gian nấu**, mở rộng **ân hạn `20p → 60p`** và tăng tỉ lệ **Thượng Phẩm (`×1.25`) / Đan Vân (`×1.50`)**!',
+        '**6 Công Thức (Bậc 1–4 + 2 Công Thức Tinh Hoa `/farm`):** Vốn nhỏ `10–60 LT` nấu trong `48–120 phút` thu về `160–625 LT/mẻ` *(hoặc tới `675–750+ LT/mẻ` khi kết hợp `20–40 Linh Quả` từ `/farm`)* kèm EXP tu luyện!',
+      ],
+    },
+    {
+      heading: `${em('su_sparkle')} Cháy Đan, Nổ Lò & DM Nhắc Tự Động + Quà +1.000 LT`,
+      bullets: [
+        '**Cháy Đan & Nổ Lò (`4 giờ`):** Quá ân hạn chưa thu sẽ cháy thành phế đan chỉ còn **`30 LT`** và **nổ khóa riêng lò đó `4 giờ`** *(có nút **Sửa Lò Nhanh `300 LT`**)*. Bot **Nhiễm Nhiễm** tự **DM nhắc khi đan chín** và **cảnh báo khẩn trước 10 phút**!',
+        '**Quà Xác Nhận `+1.000 LT`:** Đọc & bấm xác nhận bản cập nhật **`v1.6.1`** để nhận ngay **`+1.000 Linh Thạch`**!',
+      ],
+    },
+  ],
+};
 
 /**
  * Bản cập nhật v1.6 (+1.000 LT):
@@ -149,6 +183,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V161_CHANGELOG,
   V16_CHANGELOG,
   V152_CHANGELOG,
   V151_HOTFIX_CHANGELOG,
