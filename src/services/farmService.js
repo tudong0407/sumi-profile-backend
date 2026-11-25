@@ -263,7 +263,7 @@ export async function getFarmStatus(userId, options = {}) {
       `**${farmEmoji('egg_linh_thu')} KHU LINH THÚ CÁC (${linhCacPlots.length}/4 ô):**`,
       ...linhCacLines,
       '────────────────────────',
-      '**Bảng Giống & Trứng Thời Gian Thực (`/farm gieo <ma_giong>`):**',
+      '**Bảng Giống & Trứng Thời Gian Thực (Chọn menu bên dưới hoặc \`/farm hanh_dong:plant\` — tự chọn ô trống):**',
       ...linhDienSeeds,
       ...linhCacSeeds,
     ].join('\n'),

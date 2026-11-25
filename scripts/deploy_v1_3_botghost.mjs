@@ -657,7 +657,7 @@ export function buildCrashCmd() {
   return gb.elements();
 }
 
-// 6. /farm [hanh_dong] [hat_giong] [o_so]
+// 6. /farm [hanh_dong] [hat_giong]
 export function buildFarmCmd() {
   const gb = new V13GraphBuilder();
   gb.rootSlash('farm', 'Linh Điền & Linh Thú Các — Trồng cây / ấp trứng thời gian thực nhận Linh Thạch & Linh Quả', { ephemeral: false });
@@ -668,16 +668,10 @@ export function buildFarmCmd() {
     x: 420,
     y: 0,
   });
-  gb.option('hat_giong', 'string', 'Chọn hạt giống / trứng khi trồng (plant)', {
+  gb.option('hat_giong', 'string', 'Chọn hạt giống / trứng khi trồng (plant • tự chọn ô trống)', {
     required: false,
     choices: FARM_SEEDS.map((s) => s.seed_id),
     x: 700,
-    y: 0,
-  });
-  gb.option('o_so', 'string', 'Số ô canh tác cụ thể (1–6 • bỏ trống để chọn ô trống đầu tiên)', {
-    required: false,
-    choices: ['1', '2', '3', '4', '5', '6'],
-    x: 980,
     y: 0,
   });
 
@@ -692,13 +686,13 @@ export function buildFarmCmd() {
   // Plant branch
   embedMsg(gb, 'fm_p_ack', {
     title: `${uidEm('seed_linh_thao')} Đang gieo trồng Linh Điền...`,
-    description: 'Đang kiểm tra ô đất và đặt `{option_hat_giong}`...',
+    description: 'Đang tự chọn ô trống phù hợp và đặt `{option_hat_giong}`...',
     color: '#10b981',
     editId: 'fm_p_ack',
   }, { x: -580, y: 580 });
   gb.link(brPlant, 'fm_p_ack');
   apiAction(gb, 'fm_p_api', 'fm_p_res', 'POST', `${BACKEND_BASE}/api/farm/plant`,
-    '{"userId":"{user_id}","seedId":"{option_hat_giong}","slotIndex":"{option_o_so}","username":"{user_displayName}"}', { x: -580, y: 760 });
+    '{"userId":"{user_id}","seedId":"{option_hat_giong}","username":"{user_displayName}"}', { x: -580, y: 760 });
   gb.link('fm_p_ack', 'fm_p_api');
   const fmPNoAck = attachUpdateAckBranch(gb, 'fmp', 'fm_p_api', 'fm_p_res', { editId: 'fm_p_ack', x: -580, y: 940 });
   embedMsg(gb, 'fm_p_edit', {
