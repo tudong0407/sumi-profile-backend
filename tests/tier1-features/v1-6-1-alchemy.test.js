@@ -205,7 +205,7 @@ test('4. Cháy đan (30 LT) + Nổ lò khóa 4h + Sửa Lò Nhanh (300 LT) & DM 
 
   // Mốc 1 DM: chín (sau 60 phút, còn 20p ân hạn)
   const tReady = new Date(t0.getTime() + 60 * 60000 + 1000);
-  const dm1 = await claimNextAlchemyDmNotification({ now: tReady });
+  const dm1 = await claimNextAlchemyDmNotification({ now: tReady, userIds: TEST_IDS });
   assert.equal(dm1.has_notification, true);
   assert.equal(dm1.user_id, uid);
   assert.equal(dm1.alerts[0].type, 'ready');
@@ -213,12 +213,12 @@ test('4. Cháy đan (30 LT) + Nổ lò khóa 4h + Sửa Lò Nhanh (300 LT) & DM 
   assert.equal(UNICODE_PICTO_RE.test(dm1.dm_description), false);
 
   // Gọi lại lần 2 ngay lúc đó -> không gửi trùng
-  const dmDup = await claimNextAlchemyDmNotification({ now: tReady });
+  const dmDup = await claimNextAlchemyDmNotification({ now: tReady, userIds: TEST_IDS });
   assert.equal(dmDup.has_notification, false);
 
   // Mốc 2 DM: cảnh báo khẩn <=10 phút trước nổ (phút 72) + test fallback qua claimNextFarmDmNotification
   const tWarn10 = new Date(t0.getTime() + 72 * 60000);
-  const dm2 = await claimNextFarmDmNotification({ now: tWarn10 });
+  const dm2 = await claimNextFarmDmNotification({ now: tWarn10, userIds: TEST_IDS });
   assert.equal(dm2.has_notification, true);
   assert.equal(dm2.source, 'alchemy');
   assert.equal(dm2.alerts[0].type, 'warn10');

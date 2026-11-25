@@ -803,13 +803,25 @@ export async function claimNextFarmDmNotification(options = {}) {
     if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', has_notification: false };
     const now = options.now instanceof Date ? options.now : new Date();
     const nowIso = now.toISOString();
+    const scopedUserIds = Array.isArray(options.userIds)
+      ? options.userIds.map((id) => String(id || '').trim()).filter((id) => /^\d{17,20}$/.test(id))
+      : null;
 
-    const { data: growingRows, error } = await supabase
+    if (now.getTime() - Date.now() > 5 * 60000 && (!scopedUserIds || scopedUserIds.length === 0)) {
+      throw new Error('REFUSED_FUTURE_CLOCK_WITHOUT_USER_SCOPE');
+    }
+
+    let query = supabase
       .from('user_farm_plots')
       .select('*')
       .eq('status', 'growing')
       .order('user_id', { ascending: true })
       .order('slot_index', { ascending: true });
+    if (scopedUserIds && scopedUserIds.length > 0) {
+      query = query.in('user_id', scopedUserIds);
+    }
+
+    const { data: growingRows, error } = await query;
 
     if (error) {
       return { success: false, status: 500, error: error.message, has_notification: false };
@@ -873,7 +885,10 @@ export async function claimNextFarmDmNotification(options = {}) {
       if (claimed) return claimed;
     }
 
-    const alchemyDm = await claimNextAlchemyDmNotification({ now }).catch(() => null);
+    const alchemyDm = await claimNextAlchemyDmNotification({
+      now,
+      ...(scopedUserIds && scopedUserIds.length > 0 ? { userIds: scopedUserIds } : {}),
+    }).catch(() => null);
     if (alchemyDm?.has_notification) {
       return {
         ...alchemyDm,

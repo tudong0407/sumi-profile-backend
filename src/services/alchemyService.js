@@ -985,22 +985,36 @@ export async function claimNextAlchemyDmNotification(options = {}) {
   const runTask = async () => {
     const now = options.now instanceof Date ? options.now : new Date();
     const nowIso = now.toISOString();
+    const scopedUserIds = Array.isArray(options.userIds)
+      ? options.userIds.map((id) => sanitizeUserId(id)).filter(Boolean)
+      : null;
+    const scopedSet = scopedUserIds && scopedUserIds.length > 0 ? new Set(scopedUserIds) : null;
+
+    if (supabase && now.getTime() - Date.now() > 5 * 60000 && !scopedSet) {
+      throw new Error('REFUSED_FUTURE_CLOCK_WITHOUT_USER_SCOPE');
+    }
 
     let rows = [];
     if (!supabase) {
       for (const list of memFurnaces.values()) {
         for (const s of list) {
-          if (s.status === 'brewing') rows.push(s);
+          if (s.status === 'brewing' && (!scopedSet || scopedSet.has(String(s.user_id)))) {
+            rows.push(s);
+          }
         }
       }
       rows.sort((a, b) => String(a.user_id).localeCompare(String(b.user_id)) || a.slot_index - b.slot_index);
     } else {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_alchemy_furnaces')
         .select('*')
         .eq('status', 'brewing')
         .order('user_id', { ascending: true })
         .order('slot_index', { ascending: true });
+      if (scopedUserIds && scopedUserIds.length > 0) {
+        query = query.in('user_id', scopedUserIds);
+      }
+      const { data, error } = await query;
       if (error) return { success: false, has_notification: false, error: error.message };
       rows = data || [];
     }
