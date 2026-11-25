@@ -177,6 +177,11 @@ function sortPetList(pets, sort = 'power_desc') {
     if (s === 'star_desc') {
       return ((Number(b.star) || 1) - (Number(a.star) || 1)) || ((Number(b.power_score) || 0) - (Number(a.power_score) || 0));
     }
+    if (s === 'element_asc') {
+      return (String(a.element || 'Thổ').localeCompare(String(b.element || 'Thổ'), 'vi'))
+        || (rVal(b) - rVal(a))
+        || ((Number(b.power_score) || 0) - (Number(a.power_score) || 0));
+    }
     return ((b.is_active ? 1 : 0) - (a.is_active ? 1 : 0)) || ((Number(b.power_score) || 0) - (Number(a.power_score) || 0));
   });
   return arr;
@@ -697,6 +702,103 @@ export async function getUserEquipment(userId, options = {}) {
     items: list,
     filter_summary: `Bộ lọc: **${filterLabelMap[slotFilter] || 'Tất Cả'}** • Sắp xếp: **${sortLabelMap[sortMode] || 'Phẩm Cao → Thấp'}** • Tổng: **${list.length} món** • Trang **${paged.page}/${paged.totalPages}**`,
     summary_equipment: summaryLines.join('\n'),
+  };
+}
+
+/**
+ * Kho Linh Thú chuyên biệt (/linhthu hanh_dong:list & /api/pet/:userId).
+ * Giữ nguyên định dạng chi tiết từng Linh Thú, hỗ trợ sắp xếp & phân trang độc lập khỏi /inv 2x3.
+ */
+export async function getUserPets(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
+
+  const { user } = await ensureUserInitialized(cleanId, {
+    username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+    avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+  });
+  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
+  const { data: petRows, error } = await supabase
+    .from('user_pets')
+    .select('pet_id, pet_type, pet_name, pet_rarity, element, level, star, power_score, enchant_grade, is_active, status, quantity')
+    .eq('user_id', cleanId)
+    .order('is_active', { ascending: false })
+    .order('power_score', { ascending: false });
+  if (error) throw new Error(`Failed loading user pets: ${error.message}`);
+
+  const sortMode = String(options.sort || 'power_desc').trim().toLowerCase() || 'power_desc';
+  const mappedPets = sortPetList((petRows || []).map((p) => {
+    const petMeta = PET_BY_TYPE[p.pet_type] || {};
+    const grade = normalizeEnchantGrade(p.enchant_grade || 'D');
+    const elemName = p.element || petMeta.element || 'Thổ';
+    const rarityLabel = formatRarityLabel(p.pet_rarity || petMeta.rarity || 'Phàm Phẩm');
+    return {
+      ...p,
+      pet_name: p.pet_name || petMeta.name || p.pet_type,
+      element: elemName,
+      element_icon: elementEmoji(elemName),
+      rarity_label: rarityLabel,
+      enchant_grade: grade,
+      grade_icon: gradeEmoji(grade),
+      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
+      tier_icon: tierEmoji(petMeta.rarity_key || 'common'),
+    };
+  }), sortMode);
+
+  const formatPetDetailLine = (p) => {
+    const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
+    const statusTag = p.status === 'exploring'
+      ? ` *[${uiEm('ui_compass_dir')} Đang Khám Phá]*`
+      : p.status === 'injured'
+        ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*`
+        : '';
+    return `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${p.rarity_label} • ${p.element_icon} ${p.element} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
+  };
+
+  const petsPaged = paginateFormattedLines(mappedPets, formatPetDetailLine, {
+    page: options.page || 1,
+    pageSize: 15,
+    maxChars: 3350,
+  });
+  const prevPage = petsPaged.page > 1 ? petsPaged.page - 1 : petsPaged.totalPages;
+  const nextPage = petsPaged.page < petsPaged.totalPages ? petsPaged.page + 1 : 1;
+
+  const summaryPetsDetailed = mappedPets.length > 0
+    ? [
+        ...petsPaged.lines,
+        ...(petsPaged.totalPages > 1 ? [`• *Trang ${petsPaged.page}/${petsPaged.totalPages} — Đổi bộ lọc sắp xếp bên dưới để xem thêm!*`] : []),
+      ].join('\n')
+    : '• Chưa có Linh Thú nào.';
+
+  const summaryPetsCompact = mappedPets.length > 0
+    ? `${chunkEmojiGrid(mappedPets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`), 5, '• Trống', 900, ' ')}`
+    : '• Chưa có Linh Thú nào.';
+
+  const displayName = pickCleanDisplayValue(options.username, options.fallbackUsername, user.username, `TuSi_${cleanId.slice(-4)}`);
+  const bal = Number(user.linh_thach || 0);
+
+  return {
+    success: true,
+    sort: sortMode,
+    page: petsPaged.page,
+    total_pages: petsPaged.totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
+    total_count: mappedPets.length,
+    user: {
+      user_id: cleanId,
+      username: displayName,
+      level: user.level,
+      linh_thach: bal,
+      linh_thach_fmt: bal.toLocaleString('vi-VN'),
+      farm_essence: Math.max(0, Number(user.farm_essence || 0)),
+    },
+    pets: mappedPets,
+    summary_pets: summaryPetsDetailed,
+    summary_pets_detailed: summaryPetsDetailed,
+    summary_pets_compact: summaryPetsCompact,
   };
 }
 

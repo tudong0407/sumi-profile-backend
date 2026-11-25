@@ -34,7 +34,7 @@ import {
 } from '../../src/data/changelogs.js';
 import { renderWikiItemCard } from '../../src/canvas/wikiRenderer.js';
 import { getStaticNonUniqueItemCardBuffer } from '../../src/services/staticAssetCacheService.js';
-import { paginateFormattedLines } from '../../src/services/inventoryService.js';
+import { paginateFormattedLines, getUserPets } from '../../src/services/inventoryService.js';
 
 test('1. /farm mở rộng 8 ô & tăng +10% giá hạt giống / trứng', () => {
   assert.equal(FARM_SEEDS.length, 6);
@@ -144,4 +144,13 @@ test('4. v1.6.1 giữ LATEST_VERSION = 1.6.1 & nâng ack_reward_lt = 1500', () =
   const paged = paginateFormattedLines(Array.from({ length: 35 }, (_, i) => i + 1), (n) => `• Mục ${n}`, { page: 2, pageSize: 15 });
   assert.equal(paged.page, 2);
   assert.equal(paged.totalPages, 3);
+});
+
+test('5. getUserPets (/api/pet/:userId) trả về summary_pets & danh sách Linh Thú đầy đủ', async () => {
+  if (!supabase) return;
+  const res = await getUserPets('757091869183311872', { sort: 'element_asc', page: 1 });
+  assert.equal(res.success, true);
+  assert.ok(Array.isArray(res.pets) && res.pets.length > 0);
+  assert.ok(typeof res.summary_pets === 'string' && res.summary_pets.length > 10);
+  assert.ok(res.summary_pets.includes('• '));
 });

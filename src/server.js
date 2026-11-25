@@ -71,6 +71,7 @@ import {
 } from './services/alchemyService.js';
 import {
   getInventory,
+  getUserPets,
   getUserEquipment,
   getUserRoles,
   equipTarget,
@@ -1397,16 +1398,15 @@ app.get('/api/roles/:userId', requireUpdateAck, async (req, res) => {
 app.get('/api/pet/:userId', requireUpdateAck, async (req, res) => {
   try {
     const sort = getCleanParam(req.query.sort, 'power_desc') || 'power_desc';
-    const inv = await getInventory(req.params.userId, { petSort: sort });
-    if (!inv.success) return res.status(inv.status || 400).json(inv);
-    return res.json({
-      success: true,
+    const page = getCleanParam(req.query.page, '1') || '1';
+    const result = await getUserPets(req.params.userId, {
       sort,
-      user: inv.user,
-      pets: inv.pets,
-      summary_pets: inv.summary_pets_detailed || inv.summary_pets,
-      summary_pets_compact: inv.summary_pets,
+      page,
+      username: getCleanParam(req.query.username),
+      fallbackUsername: getCleanParam(req.query.fallback_name),
+      avatarUrl: getCleanParam(req.query.avatar),
     });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
     console.error('[Server] /api/pet error:', err);
     return res.status(500).json({ success: false, error: 'PET_LIST_FAILED', message: err.message });
