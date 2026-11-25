@@ -392,12 +392,24 @@ export function buildUpdatesV15Cmd() {
 // 2. REBUILD /wiki — Edit tại chỗ giữ Dropdown 7 mục + Ảnh Khắc Hệ + 165 Pháp Bảo & 90 Linh Thú
 // ============================================================================
 function buildEquipmentDropdownOptions(items) {
-  return items.map((item) => ({
-    label: `${item.name} (${item.element})`,
-    description: `${item.rarity} • ATK+${item.atk_bonus} DEF+${item.def_bonus} SPD+${item.spd_bonus}`,
-    emoji_id: uidId(item.item_id, 'su_crossed_swords'),
-    value: item.item_id,
-  }));
+  return items.map((item) => {
+    const atk = Number(item.bonus_atk ?? item.atk_bonus ?? 0);
+    const def = Number(item.bonus_def ?? item.def_bonus ?? 0);
+    const spd = Number(item.bonus_spd ?? item.spd_bonus ?? 0);
+    const hp = Number(item.bonus_hp ?? 0);
+    const parts = [];
+    if (atk) parts.push(`ATK+${atk}`);
+    if (def) parts.push(`DEF+${def}`);
+    if (spd) parts.push(`SPD+${spd}`);
+    if (hp) parts.push(`HP+${hp}`);
+    const statText = parts.length > 0 ? parts.join(' ') : `ATK+${atk} DEF+${def} SPD+${spd}`;
+    return {
+      label: `${item.item_name || item.name} (${item.element})`,
+      description: `${item.rarity} • ${statText}`.slice(0, 95),
+      emoji_id: uidId(item.item_id, 'su_crossed_swords'),
+      value: item.item_id,
+    };
+  });
 }
 
 function buildPetDropdownOptions(pets) {
