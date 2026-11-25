@@ -190,6 +190,37 @@ import {
 
 const SUPERSCRIPT_DIGITS = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
 
+const INVENTORY_RAM_TTL_MS = 15000;
+const INVENTORY_RAM_MAX = 500;
+const inventoryRamCache = new Map();
+
+export function invalidateInventoryCache(userId) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return;
+  inventoryRamCache.delete(cleanId);
+}
+
+function getCachedInventory(userId) {
+  const entry = inventoryRamCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    inventoryRamCache.delete(userId);
+    return null;
+  }
+  return entry.payload;
+}
+
+function setCachedInventory(userId, payload) {
+  if (!userId || !payload) return;
+  if (inventoryRamCache.has(userId)) inventoryRamCache.delete(userId);
+  inventoryRamCache.set(userId, { payload, expiresAt: Date.now() + INVENTORY_RAM_TTL_MS });
+  while (inventoryRamCache.size > INVENTORY_RAM_MAX) {
+    const oldest = inventoryRamCache.keys().next().value;
+    if (!oldest) break;
+    inventoryRamCache.delete(oldest);
+  }
+}
+
 export function toSuperscriptCount(n, minDigits = 3) {
   const val = Math.max(1, Math.floor(Number(n) || 1));
   const str = String(val).padStart(minDigits, '0');
@@ -338,103 +369,65 @@ export async function getInventory(userId, options = {}) {
     return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
   }
 
-  const { user } = await ensureUserInitialized(cleanId, {
-    username: pickCleanDisplayValue(options.username, options.fallbackUsername),
-    avatarUrl: pickCleanDisplayValue(options.avatarUrl),
-  });
-  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+  const includeRaw = Boolean(options.includeRaw);
+  const bannerText = String(options.bannerText || '').trim();
+  if (!includeRaw && !bannerText) {
+    const cached = getCachedInventory(cleanId);
+    if (cached) return cached;
+  }
 
-  const viewParts = String(options.view || 'overview').trim().toLowerCase().split(':');
-  const viewRaw = viewParts[0] || 'overview';
-  const view = ['overview', 'roles', 'items', 'pets', 'consumables'].includes(viewRaw) ? viewRaw : 'overview';
-  const requestedPage = options.page !== undefined && options.page !== '' && options.page !== null
-    ? options.page
-    : (viewParts[1] || 1);
-
-  const [petsRes, itemsRes, rolesRes, invRes, luckInfo] = await Promise.all([
-    supabase.from('user_pets').select('*').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
-    supabase.from('v_user_equipped_items').select('*').eq('user_id', cleanId),
-    supabase.from('user_roles').select('*').eq('user_id', cleanId).order('is_equipped', { ascending: false }),
-    supabase.from('user_inventory').select('*').eq('user_id', cleanId).gt('quantity', 0),
+  const [userRes, petsRes, itemsRes, invRes, domainsRes, luckInfo] = await Promise.all([
+    supabase.from('users').select('user_id, username, level, linh_thach, farm_essence, active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
+    supabase.from('user_pets').select('pet_id, pet_type, pet_name, pet_rarity, element, level, star, power_score, enchant_grade, is_active, status, quantity').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
+    supabase.from('v_user_equipped_items').select('item_id, item_type, enchant_grade, equipped_to_pet, slot, quantity').eq('user_id', cleanId),
+    supabase.from('user_inventory').select('item_id, item_category, quantity').eq('user_id', cleanId).gt('quantity', 0),
+    supabase.from('user_domains').select('entity_kind, entity_id, is_equipped').eq('user_id', cleanId).eq('is_equipped', true),
     getEffectiveLuckAndFortune(cleanId).catch(() => null),
   ]);
+
+  let user = userRes?.data || null;
+  if (!user) {
+    const initRes = await ensureUserInitialized(cleanId, {
+      username: pickCleanDisplayValue(options.username, options.fallbackUsername),
+      avatarUrl: pickCleanDisplayValue(options.avatarUrl),
+    });
+    user = initRes?.user || null;
+  }
+  if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
+
   const activePotionLine = luckInfo?.potionCharges > 0
     ? `${em(luckInfo.potionId || 'potion_luck_minor')} **Linh Lộ đang hiệu lực:** **${luckInfo.potionName}** (\`+${luckInfo.potionLuckPct}% Luck\` • còn **${luckInfo.potionCharges}** lượt)`
     : '';
 
-  let equippedDomainsRaw = [];
-  try {
-    const domQuery = supabase.from('user_domains')?.select?.('*')?.eq?.('user_id', cleanId);
-    if (domQuery) {
-      const domRes = typeof domQuery.eq === 'function' ? await domQuery.eq('is_equipped', true) : await domQuery;
-      equippedDomainsRaw = (domRes?.data || []).filter((d) => d && d.is_equipped !== false);
-    }
-  } catch {
-    equippedDomainsRaw = [];
-  }
-
+  const equippedDomainsRaw = (domainsRes?.data || []).filter((d) => d && d.is_equipped !== false);
   const SHOP_CONS_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
 
-  const pets = sortPetList((petsRes.data || []).map((p) => {
+  const pets = sortPetList((petsRes?.data || []).map((p) => {
     const petMeta = PET_BY_TYPE[p.pet_type] || {};
     const grade = normalizeEnchantGrade(p.enchant_grade || 'D');
-    const elemName = p.element || petMeta.element || 'Thổ';
-    const rarityLabel = formatRarityLabel(p.pet_rarity || petMeta.rarity || 'Phàm Phẩm');
     return {
       ...p,
-      element: elemName,
-      rarity_label: rarityLabel,
       enchant_grade: grade,
-      enchant_bonus_pct: getEnchantBonusPct(grade),
       grade_icon: gradeEmoji(grade),
       icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
       tier_icon: tierEmoji(petMeta.rarity_key || 'common'),
-      element_icon: elementEmoji(elemName),
     };
   }), options.petSort || 'power_desc');
 
-  const items = (itemsRes.data || []).map((row) => {
+  const items = (itemsRes?.data || []).map((row) => {
     const catMeta = EQUIPMENT_BY_ID[row.item_id] || {};
     const grade = normalizeEnchantGrade(row.enchant_grade || 'D');
     return {
       ...row,
       ...catMeta,
       enchant_grade: grade,
-      enchant_bonus_pct: getEnchantBonusPct(grade),
       grade_icon: gradeEmoji(grade),
       icon: itemEmoji(row.item_id, em('su_crossed_swords')),
       tier_icon: tierEmoji(catMeta.rarity_key || 'common'),
     };
   });
 
-  const now = new Date();
-  const rawRoles = rolesRes.data || [];
-  const expiredEquippedIds = rawRoles
-    .filter((r) => !r.is_permanent && r.expires_at && new Date(r.expires_at) <= now && r.is_equipped)
-    .map((r) => r.id);
-
-  if (expiredEquippedIds.length > 0) {
-    await supabase
-      .from('user_roles')
-      .update({ is_equipped: false, equipped_slot: null })
-      .in('id', expiredEquippedIds);
-  }
-
-  const activeRoles = rawRoles.filter((r) => r.is_permanent || !r.expires_at || new Date(r.expires_at) > now);
-
-  const roles = activeRoles.map((r) => {
-    const roleMeta = ROLE_BY_ID[r.role_id];
-    const rarityKey = roleMeta?.rarity_key || 'common';
-    return {
-      ...r,
-      rarity_key: rarityKey,
-      rarity: roleMeta?.rarity || 'Phàm Phẩm',
-      icon: roleTierEmoji(rarityKey),
-      duration_label: formatRoleDurationLabel(r, now),
-    };
-  });
-
-  const consumables = (invRes.data || [])
+  const consumables = (invRes?.data || [])
     .filter((inv) => {
       const id = String(inv.item_id || '').trim();
       const cat = String(inv.item_category || '').trim().toLowerCase();
@@ -456,24 +449,11 @@ export async function getInventory(userId, options = {}) {
           : senseMeta ? senseEmoji(inv.item_id, em('su_sparkle'))
           : realmMeta ? realmEmojiById(inv.item_id, em('su_arena'))
           : em('su_pin_sigil'));
-      const displayName = cMeta?.name
-        || domainMeta?.name
-        || senseMeta?.name
-        || realmMeta?.name
-        || (inv.item_id === 'farm_essence' ? 'Linh Quả Tiên Giới' : inv.item_id);
       return {
         ...inv,
         icon,
-        display_name: displayName,
       };
     });
-
-  const bgRaw = user.background_url || 'default_background.png';
-  const bgObj = BACKGROUND_BY_ID[bgRaw] || BACKGROUND_CATALOG.find((b) => b.file === bgRaw || `assets/${b.file}` === bgRaw);
-  const bgName = bgObj?.name || (bgRaw.includes('celestial_palace_pink') ? 'Thiên Cung Cửu Vĩ' : 'Đạo Cảnh Mặc Định');
-  const frameRaw = String(user.avatar_frame || 'default').trim();
-  const frameObj = AVATAR_FRAME_BY_ID[frameRaw] || null;
-  const frameName = frameObj?.name || 'Mặc Định';
 
   const activePets = pets.filter((p) => p.is_active);
   const storagePets = pets.filter((p) => !p.is_active);
@@ -488,192 +468,105 @@ export async function getInventory(userId, options = {}) {
     storagePets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`),
     5,
     '• Chưa có Linh Thú nào.',
-    1400,
+    900,
   );
   const itemGrid = buildDividerEmojiGrid(
     equippedItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
     storageItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
     5,
     '• Chưa có Pháp Bảo nào.',
-    1400,
+    900,
   );
   const consumableGrid = chunkEmojiGrid(
     consumables.map((c) => `${c.icon}${toSuperscriptCount(c.quantity || 1)}`),
     5,
     '• Chưa có vật phẩm tiêu hao nào.',
-    1400,
+    900,
   );
 
-  const formatPetDetailLine = (p) => {
-    const qtyTag = (Number(p.quantity) || 1) > 1 ? ` ×**${p.quantity}**` : '';
-    const rarityStr = p.rarity_label || formatRarityLabel(p.pet_rarity || PET_BY_TYPE[p.pet_type]?.rarity || 'Phàm Phẩm');
-    const elemName = p.element || PET_BY_TYPE[p.pet_type]?.element || 'Thổ';
-    const elemIcon = p.element_icon || elementEmoji(elemName);
-    const statusTag = p.status === 'exploring' ? ` *[${uiEm('ui_compass_dir')} Đang Khám Phá]*` : p.status === 'injured' ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*` : '';
-    return `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${rarityStr} • ${elemIcon} ${elemName} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
-  };
-  const petsPaged = paginateFormattedLines(pets, formatPetDetailLine, { page: view === 'pets' ? requestedPage : 1, pageSize: 15, maxChars: 3350 });
-  const summaryPetsDetailed = pets.length
-    ? [
-        ...petsPaged.lines,
-        ...(petsPaged.totalPages > 1 ? [`• *Trang ${petsPaged.page}/${petsPaged.totalPages} — Chọn Trang ở menu bên dưới để xem tiếp!*`] : []),
-      ].join('\n')
-    : '• Chưa có Linh Thú nào.';
-
-  const formatItemDetailLine = (it) => {
-    const qtyTag = (Number(it.quantity) || 1) > 1 ? ` ×**${it.quantity}**` : '';
-    return `• ${it.icon} ${it.grade_icon} **${it.item_name}**${qtyTag} (\`${it.item_id}\`) • ${it.tier_icon} ${it.rarity}${it.equipped_to_pet ? ' *(Đang trang bị)*' : ''}`;
-  };
-  const itemsPaged = paginateFormattedLines(items, formatItemDetailLine, { page: view === 'items' ? requestedPage : 1, pageSize: 20, maxChars: 3350 });
-  const summaryItemsDetailed = items.length
-    ? [
-        ...itemsPaged.lines,
-        ...(itemsPaged.totalPages > 1 ? [`• *Trang ${itemsPaged.page}/${itemsPaged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/phapbao trang:${itemsPaged.page < itemsPaged.totalPages ? itemsPaged.page + 1 : 1}\`!*`] : []),
-      ].join('\n')
-    : '• Chưa có Pháp Bảo nào.';
-
-  const consPaged = paginateFormattedLines(
-    consumables,
-    (c) => `• ${c.icon} **${c.display_name}** (\`${c.item_id}\`) × **${c.quantity}**`,
-    { page: view === 'consumables' ? requestedPage : 1, pageSize: 25, maxChars: 3350 },
-  );
-  const summaryConsumablesDetailed = consumables.length
-    ? [
-        ...consPaged.lines,
-        ...(consPaged.totalPages > 1 ? [`• *Trang ${consPaged.page}/${consPaged.totalPages} — Chọn lại tab để xem tiếp!*`] : []),
-      ].join('\n')
-    : '• Chưa có vật phẩm mở khóa nào.';
-
-  const rolesPaged = paginateFormattedLines(
-    roles,
-    (r) => {
-      const durTag = formatRoleDurationLabel(r, now);
-      const slotTag = r.is_equipped ? ` **[Slot #${r.equipped_slot}]**` : '';
-      return `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${durTag}${slotTag}`;
-    },
-    { page: view === 'roles' ? requestedPage : 1, pageSize: 15, maxChars: 3350 },
-  );
-  const summaryRolesCompact = buildRoleListText(roles, now, { maxChars: 950, maxItems: 10, overflowHint: 'gõ `/roles` để xem đầy đủ' });
-  const summaryRolesFull = roles.length
-    ? [
-        ...rolesPaged.lines,
-        ...(rolesPaged.totalPages > 1 ? [`• *Trang ${rolesPaged.page}/${rolesPaged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/roles trang:${rolesPaged.page < rolesPaged.totalPages ? rolesPaged.page + 1 : 1}\`!*`] : []),
-      ].join('\n')
-    : '• Chưa có Role Quyền Năng nào.';
-
-  const summaryPets = `${petGrid}\n*Ghi chú: Trước dấu **|** là Linh Thú xuất trận • Dùng \`/linhthu\` hoặc \`/info <emoji>\`*`;
-  const summaryItems = `${itemGrid}\n*Ghi chú: Trước dấu **|** là Pháp Bảo đang trang bị • Dùng \`/phapbao\` hoặc \`/info <emoji>\`*`;
-  const summaryConsumables = consumableGrid;
-  const summaryRoles = summaryRolesCompact;
-
+  const activeSlot = [1, 2, 3].includes(Number(user.active_loadout_slot)) ? Number(user.active_loadout_slot) : 1;
   const farmEssence = Math.max(0, Number(user.farm_essence || 0));
+  const mainPet = activePets[0] || null;
+
   const equippedDomain = equippedDomainsRaw.find((d) => d.entity_kind === 'domain');
   const equippedSense = equippedDomainsRaw.find((d) => d.entity_kind === 'sense');
   const equippedRealm = equippedDomainsRaw.find((d) => d.entity_kind === 'realm');
-  const domainMeta = equippedDomain ? DOMAIN_BY_ID[equippedDomain.entity_id] : null;
-  const senseMeta = equippedSense ? DIVINE_SENSE_BY_ID[equippedSense.entity_id] : null;
-  const realmMeta = equippedRealm ? DIVINE_REALM_BY_ID[equippedRealm.entity_id] : null;
+  const domIcon = equippedDomain ? domainEmoji(equippedDomain.entity_id, em('su_arena')) : '*Trống*';
+  const senseIcon = equippedSense ? senseEmoji(equippedSense.entity_id, em('su_sparkle')) : '*Trống*';
+  const realmIcon = equippedRealm ? realmEmojiById(equippedRealm.entity_id, em('su_arena')) : '*Trống*';
 
-  const domainParts = [];
-  if (domainMeta) {
-    domainParts.push(`${domainEmoji(domainMeta.domain_id, em('su_arena'))} **${domainMeta.name}**`);
-  }
-  if (senseMeta) {
-    domainParts.push(`${senseEmoji(senseMeta.sense_id, em('su_sparkle'))} ${senseMeta.name}`);
-  }
-  if (realmMeta) {
-    domainParts.push(`${realmEmojiById(realmMeta.realm_id, em('su_arena'))} ${realmMeta.name}`);
-  }
-  const domainHeaderLine = domainParts.length > 0 ? `• **Linh Vực Xuất Trận:** ${domainParts.join(' • ')}` : '';
-  const essencePart = farmEssence > 0
-    ? ` • ${farmEmoji('farm_essence')} **Linh Quả:** \`${farmEssence.toLocaleString('vi-VN')}\``
-    : '';
+  const f1Name = `${em('su_pet_paw')} Linh Thú (Bộ ${activeSlot})`;
+  const f1Value = mainPet
+    ? `${mainPet.icon} ${mainPet.grade_icon} Lv.${mainPet.level} • **${mainPet.star}★**\nLực: \`${(Number(mainPet.power_score) || 0).toLocaleString('vi-VN')}\``
+    : '*Chưa xuất trận*';
 
-  const headerLine = `${em('su_linhthach')} **Linh Thạch:** \`${Number(user.linh_thach || 0).toLocaleString('vi-VN')}\`${essencePart} • ${em('frame_unlock_token')} **Ảnh Nền:** ${bgName} • **Viền:** ${frameName} • **Slot Role:** \`${getMaxRoleSlotsByLevel(user.level || 1)}\``;
+  const f2Name = `${em('su_crossed_swords')} Pháp Bảo (Bộ ${activeSlot})`;
+  const f2Value = equippedItems.length > 0
+    ? equippedItems.map((it) => `${it.icon}${it.grade_icon}`).join(' ')
+    : '*Chưa trang bị*';
 
-  let viewTitle = `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI`;
-  let viewDescription = '';
-  let activePage = 1;
-  let activeTotalPages = 1;
-  if (view === 'pets') {
-    activePage = petsPaged.page;
-    activeTotalPages = petsPaged.totalPages;
-    viewTitle = `${em('su_pet_paw')} KHO LINH THÚ (${pets.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
-    viewDescription = summaryPetsDetailed;
-  } else if (view === 'items') {
-    activePage = itemsPaged.page;
-    activeTotalPages = itemsPaged.totalPages;
-    viewTitle = `${em('su_crossed_swords')} KHO PHÁP BẢO (${items.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
-    viewDescription = summaryItemsDetailed;
-  } else if (view === 'roles') {
-    activePage = rolesPaged.page;
-    activeTotalPages = rolesPaged.totalPages;
-    viewTitle = `${em('su_medal_role')} KHO ROLE QUYỀN NĂNG (${roles.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
-    viewDescription = summaryRolesFull;
-  } else if (view === 'consumables') {
-    activePage = consPaged.page;
-    activeTotalPages = consPaged.totalPages;
-    viewTitle = `${em('enchant_stone')} VẬT PHẨM TIÊU HAO & MỞ KHÓA (${consumables.length})${activeTotalPages > 1 ? ` — Trang ${activePage}/${activeTotalPages}` : ''}`;
-    viewDescription = [activePotionLine, summaryConsumablesDetailed].filter(Boolean).join('\n\n');
-  } else {
-    const sections = [
-      headerLine,
-      ...(domainHeaderLine ? [domainHeaderLine] : []),
-      '',
-      `**${em('su_pet_paw')} Linh Thú (${pets.length})**`,
-      petGrid,
-      '',
-      `**${em('su_crossed_swords')} Pháp Bảo (${items.length})**`,
-      itemGrid,
-      '',
-      `**${em('enchant_stone')} Vật Phẩm Tiêu Hao & Mở Khóa (${consumables.length})**`,
-      ...(activePotionLine ? [activePotionLine] : []),
-      consumableGrid,
-      '',
-      `**${em('su_medal_role')} Role Quyền Năng (${roles.length})**`,
-      summaryRolesCompact,
-      '',
-      `*Mẹo: Chọn Menu trên để chuyển tab chi tiết, dùng \`/linhvuc\` quản lý Linh Vực, hoặc copy thẳng emoji vào \`/info\`, \`/equip\`, \`/enchant\`, \`/dismantle\`!*`,
-    ];
-    viewDescription = sections.join('\n').slice(0, 3950);
-  }
+  const f3Name = `${em('su_realm_star')} Lãnh Địa (Bộ ${activeSlot})`;
+  const f3Value = [
+    `**Linh Vực:** ${domIcon}`,
+    `\u00A0\u00A0↳ **Thần Thức:** ${senseIcon}`,
+    `\u00A0\u00A0↳ **Thần Cảnh:** ${realmIcon}`,
+  ].join('\n');
 
-  return {
+  const f4Name = `${em('su_pet_paw')} Kho Linh Thú (${pets.length})`;
+  const f4Value = petGrid.slice(0, 1020) || '• Trống';
+
+  const f5Name = `${em('su_crossed_swords')} Kho Pháp Bảo (${items.length})`;
+  const f5Value = itemGrid.slice(0, 1020) || '• Trống';
+
+  const f6Name = `${em('enchant_stone')} Tiêu Hao (${consumables.length})`;
+  const f6Value = consumableGrid.slice(0, 1020) || '• Trống';
+
+  const displayName = pickCleanDisplayValue(options.username, options.fallbackUsername, user.username, `TuSi_${cleanId.slice(-4)}`);
+  const balFmt = Number(user.linh_thach || 0).toLocaleString('vi-VN');
+  const descLines = [
+    ...(bannerText ? [`${em('su_sparkle')} ${bannerText}`, ''] : []),
+    `${em('su_linhthach')} \`${balFmt} LT\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')} Linh Quả\` • *Đang dùng **Bộ ${activeSlot}** — Mọi \`/equip\`, \`/pet\`, \`/linhvuc\` tự lưu vào bộ này*`,
+    ...(activePotionLine ? [activePotionLine] : []),
+  ];
+
+  const payload = {
     success: true,
-    view,
-    page: activePage,
-    total_pages: activeTotalPages,
-    view_title: viewTitle,
-    view_description: viewDescription,
+    active_loadout_slot: activeSlot,
+    view_title: `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI — ${displayName} [Bộ ${activeSlot}]`,
+    view_description: descLines.join('\n').slice(0, 3950),
+    color: '#a855f7',
+    footer: 'Dùng nút Bộ 1 / Bộ 2 / Bộ 3 để chuyển nhanh Loadout • /linhthu, /phapbao, /linhvuc, /roles để xem chi tiết',
+    f1_name: f1Name,
+    f1_value: f1Value.slice(0, 1024),
+    f2_name: f2Name,
+    f2_value: f2Value.slice(0, 1024),
+    f3_name: f3Name,
+    f3_value: f3Value.slice(0, 1024),
+    f4_name: f4Name,
+    f4_value: f4Value.slice(0, 1024),
+    f5_name: f5Name,
+    f5_value: f5Value.slice(0, 1024),
+    f6_name: f6Name,
+    f6_value: f6Value.slice(0, 1024),
     user: {
       user_id: cleanId,
-      username: user.username,
+      username: displayName,
       level: user.level,
       linh_thach: Number(user.linh_thach || 0),
-      linh_thach_fmt: Number(user.linh_thach || 0).toLocaleString('vi-VN'),
+      linh_thach_fmt: balFmt,
       farm_essence: farmEssence,
-      max_role_slots: getMaxRoleSlotsByLevel(user.level || 1),
-      background_url: bgRaw,
-      background_name: bgName,
-      marry_ring_id: user.marry_ring_id || null,
     },
-    domain_loadout: {
-      domain: domainMeta ? { domain_id: domainMeta.domain_id, name: domainMeta.name, icon: domainEmoji(domainMeta.domain_id) } : null,
-      sense: senseMeta ? { sense_id: senseMeta.sense_id, name: senseMeta.name, icon: senseEmoji(senseMeta.sense_id) } : null,
-      realm: realmMeta ? { realm_id: realmMeta.realm_id, name: realmMeta.name, icon: realmEmojiById(realmMeta.realm_id) } : null,
-    },
-    pets,
-    equipment_items: items,
-    roles,
-    consumables_and_unlocks: consumables,
-    summary_pets: summaryPets,
-    summary_items: summaryItems,
-    summary_roles: summaryRoles,
-    summary_consumables: summaryConsumables,
-    summary_pets_detailed: summaryPetsDetailed,
-    summary_items_detailed: summaryItemsDetailed,
-    summary_roles_full: summaryRolesFull,
   };
+
+  if (includeRaw) {
+    payload.pets = pets;
+    payload.equipment_items = items;
+    payload.consumables_and_unlocks = consumables;
+  } else if (!bannerText) {
+    setCachedInventory(cleanId, payload);
+  }
+
+  return payload;
 }
 
 /**
@@ -766,10 +659,12 @@ export async function getUserEquipment(userId, options = {}) {
     { page: options.page || 1, pageSize: 20, maxChars: 3350 },
   );
 
+  const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
+  const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+
   const summaryLines = [...paged.lines];
   if (paged.totalPages > 1) {
-    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
-    summaryLines.push(`• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/phapbao trang:${nextPage}\` để xem tiếp!*`);
+    summaryLines.push(`• *Trang ${paged.page}/${paged.totalPages} — Bấm nút **Trang Trước / Trang Sau** bên dưới hoặc gõ \`/phapbao trang:${nextPage}\` để xem tiếp!*`);
   }
   if (summaryLines.length === 0) {
     summaryLines.push('• Chưa có Pháp Bảo nào khớp bộ lọc. Hãy mua ở `/shop` hoặc quay `/roll loai:equipment`!');
@@ -786,6 +681,8 @@ export async function getUserEquipment(userId, options = {}) {
     total_count: list.length,
     page: paged.page,
     total_pages: paged.totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
     page_size: 20,
     sort: sortMode,
     slot: slotFilter,
@@ -871,10 +768,12 @@ export async function getUserRoles(userId, options = {}) {
     { page: options.page || 1, pageSize: 15, maxChars: 3350 },
   );
 
+  const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
+  const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+
   const lines = [...paged.lines];
   if (paged.totalPages > 1) {
-    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
-    lines.push(`• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/roles trang:${nextPage}\` để xem tiếp!*`);
+    lines.push(`• *Trang ${paged.page}/${paged.totalPages} — Bấm nút **Trang Trước / Trang Sau** bên dưới hoặc gõ \`/roles trang:${nextPage}\` để xem tiếp!*`);
   }
   if (!lines.length) lines.push('• Chưa có Role Quyền Năng nào khớp bộ lọc. Mua tại `/shop` hoặc quay `/roll loai:role`!');
 
@@ -890,6 +789,8 @@ export async function getUserRoles(userId, options = {}) {
     sort: sortMode,
     page: paged.page,
     total_pages: paged.totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
     page_size: 15,
     total_count: roles.length,
     equipped_count: equippedCount,
@@ -1132,6 +1033,10 @@ export async function equipTarget(userId, payload = {}) {
       .update({ equipped_to_pet: targetPetType, slot: itemMeta.item_type })
       .eq('id', own.id);
 
+    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
+
     return {
       success: true,
       category: 'item',
@@ -1366,6 +1271,10 @@ export async function unequipTarget(userId, payload = {}) {
     } else {
       await query.eq('item_id', itemMatchId);
     }
+
+    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
 
     return {
       success: true,
@@ -2173,6 +2082,10 @@ export async function setActivePet(userId, petIdentifier) {
 
   await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
   await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', target.pet_id);
+
+  const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+  await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+  invalidateInventoryCache(cleanId);
 
   const grade = normalizeEnchantGrade(target.enchant_grade || 'D');
   return {

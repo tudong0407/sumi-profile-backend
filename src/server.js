@@ -80,6 +80,7 @@ import {
   upgradePet,
   enchantTarget,
 } from './services/inventoryService.js';
+import { switchLoadout } from './services/loadoutService.js';
 import { getJobStatus, doJob } from './services/jobService.js';
 import { checkUpdateGate, acknowledgeUpdate } from './services/updateGateService.js';
 import { lookupInfo } from './services/infoService.js';
@@ -504,7 +505,7 @@ app.get('/api/info/pet/:petType', async (req, res) => {
     const imgBuffer = await getStaticPetCardBuffer(pet, fmt);
     res.setHeader('Content-Type', fmt === 'png' ? 'image/png' : 'image/webp');
     res.setHeader('Content-Length', imgBuffer.length);
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
     return res.end(imgBuffer);
   } catch (err) {
     console.error('[Server] Lỗi tra cứu /api/info/pet:', err);
@@ -604,7 +605,7 @@ app.get('/api/wiki/item/:itemId', async (req, res) => {
         : await getStaticNonUniqueItemCardBuffer(detail.data, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
-      res.setHeader('Cache-Control', detail.data?.is_unique ? 'public, max-age=30' : 'public, max-age=3600');
+      res.setHeader('Cache-Control', detail.data?.is_unique ? 'public, max-age=30' : 'public, max-age=604800, immutable');
       return res.end(imgBuffer);
     }
 
@@ -634,7 +635,7 @@ app.get('/api/wiki/pet/:petType', async (req, res) => {
       const imgBuffer = await getStaticPetCardBuffer(detail.data, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
       return res.end(imgBuffer);
     }
 
@@ -1250,6 +1251,7 @@ app.get('/api/inv/:userId', requireUpdateAck, async (req, res) => {
     const result = await getInventory(req.params.userId, {
       view: getCleanParam(req.query.view, 'overview') || 'overview',
       page: getCleanParam(req.query.page, ''),
+      includeRaw: req.query.include_raw === '1',
       username: getCleanParam(req.query.username),
       fallbackUsername: getCleanParam(req.query.fallback_name),
       avatarUrl: getCleanParam(req.query.avatar),
@@ -1258,6 +1260,21 @@ app.get('/api/inv/:userId', requireUpdateAck, async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/inv error:', err);
     return res.status(500).json({ success: false, error: 'INV_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/inv/loadout/switch', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await switchLoadout(body.userId, body.slot, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/inv/loadout/switch error:', err);
+    return res.status(500).json({ success: false, error: 'LOADOUT_SWITCH_FAILED', message: err.message });
   }
 });
 
@@ -2666,6 +2683,7 @@ app.post('/api/alchemy/brew', requireBackendApiKey, requireUpdateAck, async (req
   try {
     const body = req.body || {};
     const result = await startBrew(body.userId, body.recipeId, {
+      slotIndex: body.slotIndex ? Number(body.slotIndex) : undefined,
       username: getCleanParam(body.username),
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),

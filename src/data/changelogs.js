@@ -19,25 +19,25 @@ export const BIG_UPDATE_ACK_REWARD_LT = 2000;
  */
 export const V161_CHANGELOG = {
   version: '1.6.1',
-  title: 'CẬP NHẬT v1.6.1 — LÒ LUYỆN ĐAN (/LUYENDAN) & LIÊN KẾT NÔNG TRẠI',
+  title: 'CẬP NHẬT v1.6.1 — LÒ LUYỆN ĐAN (/LUYENDAN), FARM 8 Ô & LOADOUT /INV',
   released_at: '2026-11-25',
   color: '#ec4899',
   is_big_update: false,
-  ack_reward_lt: 1000,
-  summary: 'Ra mắt Lò Luyện Đan (/luyendan) 2 Lò song song, nâng cấp Lò Lv.1–5, 6 công thức (kết hợp Linh Quả /farm), Thượng Phẩm ×1.25 / Đan Vân ×1.50, DM nhắc chín & trước nổ 10p, cùng quà xác nhận +1.000 LT!',
+  ack_reward_lt: 1500,
+  summary: 'Ra mắt Lò Luyện Đan (/luyendan) UI ngang 2 Lò song song (6 mẻ/ngày), mở rộng /farm lên 8 ô (+1 Linh Điền, +1 Linh Các), giao diện /inv ngang 2×3 + 3 Loadout tự động lưu (Bộ 1/2/3), phân trang bằng nút bấm & quà xác nhận +1.500 LT!',
   sections: [
     {
-      heading: `${em('su_el_hoa')} Hệ Thống Lò Luyện Đan (/luyendan — Tối Đa 5 Mẻ/Ngày)`,
+      heading: `${em('su_el_hoa')} Hệ Thống Lò Luyện Đan (/luyendan — Tối Đa 6 Mẻ/Ngày)`,
       bullets: [
-        '**2 Lò Song Song & 5 Cấp Lò (`Lv.1 → Lv.5`):** **Lò #1** mở sẵn; **Lò #2** tự mở miễn phí tại **`Lv.45`** *(hoặc mở sớm `2.500 LT`)*. Nâng cấp Lò giúp **`+6%..+25% LT`**, **giảm `5%..20%` thời gian nấu**, mở rộng **ân hạn `20p → 60p`** và tăng tỉ lệ **Thượng Phẩm (`×1.25`) / Đan Vân (`×1.50`)**!',
-        '**6 Công Thức (Bậc 1–4 + 2 Công Thức Tinh Hoa `/farm`):** Vốn nhỏ `10–60 LT` nấu trong `48–120 phút` thu về `160–625 LT/mẻ` *(hoặc tới `675–750+ LT/mẻ` khi kết hợp `20–40 Linh Quả` từ `/farm`)* kèm EXP tu luyện!',
+        '**2 Lò Song Song Ngang & 5 Cấp Lò (`Lv.1 → Lv.5`):** **Lò #1** mở sẵn; **Lò #2** tự mở miễn phí tại **`Lv.45`** *(hoặc mở sớm `2.500 LT`)*. Mỗi Lò có Dropdown chọn đan riêng; nâng cấp Lò giúp **`+6%..+25% LT`**, **giảm `5%..20%` thời gian nấu**, mở rộng **ân hạn `20p → 60p`** và tăng tỉ lệ **Thượng Phẩm (`×1.25`) / Đan Vân (`×1.50`)**!',
+        '**6 Công Thức (Bậc 1–4 + 2 Công Thức Tinh Hoa `/farm`):** Vốn `14–84 LT` *(+40%)* nấu trong `48–120 phút` thu về `160–625 LT/mẻ` *(hoặc tới `675–750+ LT/mẻ` khi kết hợp `28–56 Linh Quả` từ `/farm`)* kèm EXP tu luyện; quá ân hạn cháy còn `30 LT` + nổ khóa `4 giờ` *(Sửa nhanh `300 LT`, DM nhắc chín & trước nổ 10p)*!',
       ],
     },
     {
-      heading: `${em('su_sparkle')} Cháy Đan, Nổ Lò & DM Nhắc Tự Động + Quà +1.000 LT`,
+      heading: `${em('su_sparkle')} /farm 8 Ô, /inv Ngang 3 Loadout & Quà +1.500 LT`,
       bullets: [
-        '**Cháy Đan & Nổ Lò (`4 giờ`):** Quá ân hạn chưa thu sẽ cháy thành phế đan chỉ còn **`30 LT`** và **nổ khóa riêng lò đó `4 giờ`** *(có nút **Sửa Lò Nhanh `300 LT`**)*. Bot **Nhiễm Nhiễm** tự **DM nhắc khi đan chín** và **cảnh báo khẩn trước 10 phút**!',
-        '**Quà Xác Nhận `+1.000 LT`:** Đọc & bấm xác nhận bản cập nhật **`v1.6.1`** để nhận ngay **`+1.000 Linh Thạch`**!',
+        '**Mở Rộng `/farm` Lên 8 Ô (`4 Linh Điền + 4 Linh Các`):** Thêm 1 ô Linh Điền & 1 ô Linh Các mới mở khóa tại `/exchange` (`300 Linh Quả/ô`) để tăng nguồn Linh Quả; giá hạt giống & trứng tăng nhẹ `+10%` (`88–825 LT`).',
+        '**`/inv` Ngang 2×3 + 3 Loadout Tự Lưu (`Bộ 1 / 2 / 3`) & Quà `+1.500 LT`:** Bấm nút **`Bộ 1 / Bộ 2 / Bộ 3`** để chuyển nhanh cả **Linh Thú + 3 Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh** *(mọi `/equip`, `/pet`, `/linhvuc` tự động lưu)*. Phân trang `/linhvuc`, `/phapbao`, `/roles` bằng nút **Trang Trước / Trang Sau** & tặng ngay **`+1.500 Linh Thạch`** khi xác nhận!',
       ],
     },
   ],

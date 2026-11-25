@@ -19,6 +19,7 @@ import {
 } from './profileService.js';
 import { getVnDateKey, getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import { trackQuestActivity } from './questService.js';
+import { invalidateInventoryCache } from './inventoryService.js';
 import {
   ALCHEMY_DAILY_LIMIT,
   ALCHEMY_SLOT2_FREE_LEVEL,
@@ -322,25 +323,33 @@ async function saveFurnaceSlot(userId, slotIndex, patch) {
   return data;
 }
 
-function describeSlotLine(slot, slot2Unlocked, now) {
+function buildFurnaceField(slot, tier, slot2Unlocked, now) {
   const nowMs = now.getTime();
   const idx = Number(slot.slot_index);
-  const fireEm = em('su_el_hoa') || em('su_sparkle');
-  const warnEm = uiEm('ui_warn') || em('su_sparkle');
-  const clockEm = uiEm('ui_clock_timer') || em('su_sparkle');
-  const checkEm = em('su_level_up') || em('su_sparkle');
+  const isExploded = slot.status === 'exploded';
+  const slotIcon = isExploded
+    ? alchemyIcon(tier.explodedEmojiKey || tier.badgeEm)
+    : alchemyIcon(tier.emojiKey || tier.badgeEm);
+  const name = `${slotIcon} Lò #${idx}`.trim().slice(0, 250) || `Lò #${idx}`;
 
   if (idx === 2 && !slot2Unlocked) {
-    return `• **Lò #2:** *Đã khóa* *(Tự mở miễn phí tại **Lv.${ALCHEMY_SLOT2_FREE_LEVEL}** hoặc bấm **Mở Lò #2** với **${ALCHEMY_SLOT2_UNLOCK_COST.toLocaleString('vi-VN')} LT**)*`;
+    return {
+      name,
+      value: `**Đã khóa**\n*Tự mở ở Lv.${ALCHEMY_SLOT2_FREE_LEVEL} hoặc bấm Mở Lò #2 (${ALCHEMY_SLOT2_UNLOCK_COST.toLocaleString('vi-VN')} LT)*`,
+    };
   }
 
-  if (slot.status === 'exploded') {
+  if (isExploded) {
     const repairSec = Math.floor(new Date(slot.repair_until).getTime() / 1000);
-    return `• **Lò #${idx}:** ${warnEm} **ĐÃ NỔ LÒ** — Mở lại <t:${repairSec}:R> *(Bấm **Sửa Lò Nhanh ${ALCHEMY_INSTANT_REPAIR_COST} LT**)*`;
+    return {
+      name,
+      value: `**ĐÃ NỔ LÒ**\nMở lại <t:${repairSec}:R>\n*Bấm Sửa Lò (${ALCHEMY_INSTANT_REPAIR_COST} LT)*`,
+    };
   }
 
   if (slot.status === 'brewing' && slot.recipe_id) {
     const recipe = ALCHEMY_RECIPE_BY_ID[slot.recipe_id];
+    const pillIcon = alchemyIcon(recipe?.iconKey || 'su_el_hoa');
     const rName = recipe ? recipe.name : slot.recipe_id;
     const readyMs = new Date(slot.ready_at).getTime();
     const burnMs = new Date(slot.burn_at).getTime();
@@ -348,15 +357,27 @@ function describeSlotLine(slot, slot2Unlocked, now) {
     const burnSec = Math.floor(burnMs / 1000);
 
     if (nowMs >= burnMs) {
-      return `• **Lò #${idx}:** ${warnEm} **${rName}** — **ĐÃ CHÁY THÀNH PHẾ ĐAN!** *(Bấm **Thu Đan / Dọn Lò** để thu ${ALCHEMY_BURN_PAYOUT_LT} LT & kiểm tra lò)*`;
+      return {
+        name,
+        value: `${pillIcon} **${rName}**\n**ĐÃ CHÁY PHẾ ĐAN**\n*Bấm Thu Đan / Dọn Lò (${ALCHEMY_BURN_PAYOUT_LT} LT)*`,
+      };
     }
     if (nowMs >= readyMs) {
-      return `• **Lò #${idx}:** ${checkEm} **${rName}** — **ĐÃ CHÍN!** *(Thu ngay, cháy sau <t:${burnSec}:R>)*`;
+      return {
+        name,
+        value: `${pillIcon} **${rName}**\n**ĐÃ CHÍN!** • Cháy <t:${burnSec}:R>\n*Bấm Thu Đan ngay*`,
+      };
     }
-    return `• **Lò #${idx}:** ${fireEm} Đang luyện **${rName}** — Chín <t:${readySec}:R> *(Cháy <t:${burnSec}:R>)*`;
+    return {
+      name,
+      value: `${pillIcon} **${rName}**\nChín <t:${readySec}:R> • Cháy <t:${burnSec}:R>`,
+    };
   }
 
-  return `• **Lò #${idx}:** ${clockEm} **Đang trống** *(Chọn công thức ở khung bên dưới để nấu)*`;
+  return {
+    name,
+    value: '**Đang trống**\n*Chọn công thức ở khung bên dưới*',
+  };
 }
 
 function buildAlchemyEmbed({
@@ -365,50 +386,36 @@ function buildAlchemyEmbed({
   slots,
   now = new Date(),
   bannerText = '',
-  overrideImage = null,
   overrideColor = null,
   success = true,
+  harvestPayload = null,
 }) {
   const tier = getFurnaceTier(profile.furnace_level);
   const nextTier = getFurnaceTier(profile.furnace_level + 1);
   const hasNextTier = profile.furnace_level < 5;
   const ltEm = em('su_linhthach') || '';
   const essEm = farmEmoji('farm_essence') || em('su_sprout');
-  const fireEm = em('su_el_hoa') || em('su_sparkle');
+  const furnaceIcon = alchemyIcon(tier.emojiKey || tier.badgeEm || 'su_el_hoa');
 
+  const slot2Unlocked = Boolean(profile.slot2_unlocked);
   const hasExplodedSlot = slots.some((s) => s.status === 'exploded');
-  let imageUrl = '';
-  if (overrideImage === ALCHEMY_EXPLODED_IMAGE) {
-    imageUrl = resolveExplodedFurnaceImageUrl(profile.furnace_level);
-  } else if (overrideImage !== null) {
-    imageUrl = resolveAlchemyImageUrl(overrideImage);
-  } else if (hasExplodedSlot) {
-    imageUrl = resolveExplodedFurnaceImageUrl(profile.furnace_level);
-  } else {
-    imageUrl = resolveAlchemyImageUrl(tier.image);
-  }
+  const uiVariant = slot2Unlocked
+    ? (hasExplodedSlot ? 's2_broken' : 's2_ok')
+    : (hasExplodedSlot ? 's1_broken' : 's1_ok');
 
   const displayName = pickCleanDisplayValue(user.username, `TuSi_${user.user_id}`);
   const userLevel = Number(user.level || 1);
   const coins = Number(user.linh_thach ?? user.coins ?? 0);
   const essence = Number(user.farm_essence || 0);
 
-  const slotLines = slots.map((s) => describeSlotLine(s, profile.slot2_unlocked, now));
-  const upgradeLine = hasNextTier
-    ? `${em('su_level_up')} **Nâng Lò Lv.${nextTier.level} (${nextTier.name}):** Cần \`${nextTier.upgradeCostLt.toLocaleString('vi-VN')} LT\` & \`${profile.total_batches_completed}/${nextTier.minBatches} mẻ\``
-    : `${em('su_level_up')} **Cấp Lò:** Đã đạt tối đa **Lv.5 (${tier.name})**`;
+  const slot1 = slots.find((s) => Number(s.slot_index) === 1) || { slot_index: 1, status: 'idle' };
+  const slot2 = slots.find((s) => Number(s.slot_index) === 2) || { slot_index: 2, status: 'idle' };
+  const f1 = buildFurnaceField(slot1, tier, slot2Unlocked, now);
+  const f2 = buildFurnaceField(slot2, tier, slot2Unlocked, now);
 
-  const recipeSummaryLines = ALCHEMY_RECIPES.map((r) => {
-    const u = checkRecipeUnlock(r, userLevel, profile.furnace_level);
-    const lockTag = u.unlocked ? '' : ` *(Khóa: ${u.requirementText})*`;
-    const costParts = [`${r.costLt} LT`];
-    if (r.costEssence > 0) costParts.push(`${r.costEssence} Linh Quả`);
-    const durMin = Math.round(computeBrewDurationMs(r, profile.furnace_level) / 60000);
-    const mult = 1 + tier.ltBonusPct / 100;
-    const minOut = Math.round(r.minLt * mult);
-    const maxOut = Math.round(r.maxLt * mult);
-    return `• **${r.tierLabel} — ${r.name}:** Vốn \`${costParts.join(' + ')}\` | \`${durMin}p\` | Thu \`${minOut}–${maxOut} LT\`${lockTag}`;
-  });
+  const upgradeLine = hasNextTier
+    ? `${em('su_level_up')} **Nâng Lò Lv.${nextTier.level} (${nextTier.name}):** \`${nextTier.upgradeCostLt.toLocaleString('vi-VN')} LT\` & \`${profile.total_batches_completed}/${nextTier.minBatches} mẻ thành công\``
+    : `${em('su_level_up')} **Cấp Lò:** Đã đạt tối đa **Lv.5 (${tier.name})** *(Tổng: \`${profile.total_batches_completed} mẻ thành công\`)*`;
 
   const descParts = [];
   if (bannerText) {
@@ -416,28 +423,33 @@ function buildAlchemyEmbed({
   }
   descParts.push(
     `**Tu Sĩ:** **${displayName}** *(Lv.${userLevel})* | ${ltEm} **\`${coins.toLocaleString('vi-VN')}\` LT** | ${essEm} **\`${essence.toLocaleString('vi-VN')}\` Linh Quả**`,
-    `**Lò Hiện Tại:** **Lv.${tier.level} — ${tier.name}** | **Hôm nay:** \`${profile.batches_today}/${ALCHEMY_DAILY_LIMIT} mẻ\` *(Reset sau ${getMidnightResetCountdown(now)})*`,
-    `**Chỉ Số Lò:** \`+${tier.ltBonusPct}% LT\` | \`-${tier.timeReducePct}% Thời Gian\` | \`Ân hạn ${tier.graceMin}p\` | \`Thượng Phẩm ${tier.superiorPct}%\` | \`Đan Vân ${tier.cloudPct}%\``,
+    `**Lượt hôm nay:** \`${profile.batches_today}/${ALCHEMY_DAILY_LIMIT} mẻ\` *(Reset sau ${getMidnightResetCountdown(now)})*`,
+    `**Chỉ Số Lò:** \`+${tier.ltBonusPct}% LT\` | \`-${tier.timeReducePct}% Giờ\` | \`Ân hạn ${tier.graceMin}p\` | \`TP ${tier.superiorPct}% / ĐV ${tier.cloudPct}%\``,
     upgradeLine,
-    '',
-    '**TRẠNG THÁI LÒ LUYỆN:**',
-    ...slotLines,
-    '',
-    '**CÔNG THỨC ĐAN DƯỢC:**',
-    ...recipeSummaryLines,
   );
 
   return {
     success,
-    title: `${fireEm} ĐAN PHÒNG LUYỆN ĐAN — ${tier.name.toUpperCase()}`,
+    title: `${furnaceIcon} ĐAN PHÒNG LUYỆN ĐAN — ${tier.name.toUpperCase()} (Lv.${tier.level})`,
     description: descParts.join('\n'),
     color: overrideColor || (hasExplodedSlot ? '#ef4444' : '#ec4899'),
-    image_url: imageUrl,
-    footer: `Tổng mẻ thành công: ${profile.total_batches_completed} • DM nhắc tự động khi chín & trước nổ 10p`,
+    image_url: '',
+    footer: `Tổng mẻ thành công: ${profile.total_batches_completed} • DM nhắc khi chín & trước nổ 10p`,
+    f1_name: f1.name,
+    f1_value: f1.value.slice(0, 1024),
+    f2_name: f2.name,
+    f2_value: f2.value.slice(0, 1024),
+    slot2_unlocked: slot2Unlocked ? 'true' : 'false',
+    show_repair_btn: hasExplodedSlot ? 'true' : 'false',
+    ui_variant: uiVariant,
+    has_harvest_msg: harvestPayload ? 'true' : 'false',
+    harvest_title: harvestPayload?.title || '',
+    harvest_description: harvestPayload?.description || '',
+    harvest_color: harvestPayload?.color || '#10b981',
     state: {
       user_id: user.user_id,
       furnace_level: profile.furnace_level,
-      slot2_unlocked: Boolean(profile.slot2_unlocked),
+      slot2_unlocked: slot2Unlocked,
       total_batches_completed: Number(profile.total_batches_completed || 0),
       batches_today: Number(profile.batches_today || 0),
       daily_limit: ALCHEMY_DAILY_LIMIT,
@@ -513,10 +525,31 @@ export async function startBrew(userId, recipeId, opts = {}) {
       );
     }
 
-    const availableSlot = slots.find((s) => {
-      if (Number(s.slot_index) === 2 && !profile.slot2_unlocked) return false;
-      return s.status === 'idle';
-    });
+    const reqSlot = Number(opts.slotIndex || 0);
+    let availableSlot = null;
+    if (reqSlot === 1 || reqSlot === 2) {
+      if (reqSlot === 2 && !profile.slot2_unlocked) {
+        return buildFriendlyRejection(
+          `**Lò #2** chưa mở khóa! Đạt **Lv.${ALCHEMY_SLOT2_FREE_LEVEL}** hoặc bấm **Mở Lò #2 (${ALCHEMY_SLOT2_UNLOCK_COST.toLocaleString('vi-VN')} LT)**.`,
+          { user, profile, slots },
+          now,
+        );
+      }
+      const exact = slots.find((s) => Number(s.slot_index) === reqSlot);
+      if (!exact || exact.status !== 'idle') {
+        return buildFriendlyRejection(
+          `**Lò #${reqSlot}** hiện không trống! Hãy chọn lò khác hoặc bấm **Thu Đan / Dọn Lò** trước.`,
+          { user, profile, slots },
+          now,
+        );
+      }
+      availableSlot = exact;
+    } else {
+      availableSlot = slots.find((s) => {
+        if (Number(s.slot_index) === 2 && !profile.slot2_unlocked) return false;
+        return s.status === 'idle';
+      });
+    }
     if (!availableSlot) {
       return buildFriendlyRejection(
         'Hiện không có lò trống nào! Hãy chờ đan chín, bấm **Thu Đan / Dọn Lò** hoặc **Mở Lò #2 / Sửa Lò Nhanh**.',
@@ -547,15 +580,7 @@ export async function startBrew(userId, recipeId, opts = {}) {
     const startedMs = now.getTime();
     const readyMs = startedMs + durationMs;
     const burnMs = readyMs + graceMs;
-
-    const nextUser = await updateUserRow(cleanId, {
-      linh_thach: coins - recipe.costLt,
-      farm_essence: essence - recipe.costEssence,
-    });
-    const nextProfile = await saveProfile(cleanId, {
-      batches_today: Number(profile.batches_today || 0) + 1,
-    });
-    const updatedSlot = await saveFurnaceSlot(cleanId, availableSlot.slot_index, {
+    const slotPatch = {
       status: 'brewing',
       recipe_id: recipe.id,
       started_at: new Date(startedMs).toISOString(),
@@ -564,18 +589,66 @@ export async function startBrew(userId, recipeId, opts = {}) {
       repair_until: null,
       dm_ready_sent: false,
       dm_warn10_sent: false,
-    });
+    };
 
+    // Khóa atomic ô lò trước để tránh trừ lượt ảo hoặc double-click
+    let updatedSlot;
+    if (supabase) {
+      const { data: lockedRows, error: lockErr } = await supabase
+        .from('user_alchemy_furnaces')
+        .update({ ...slotPatch, updated_at: now.toISOString() })
+        .eq('user_id', cleanId)
+        .eq('slot_index', availableSlot.slot_index)
+        .eq('status', 'idle')
+        .select('*');
+      if (lockErr) throw new Error(lockErr.message);
+      if (!lockedRows || lockedRows.length === 0) {
+        return buildFriendlyRejection(
+          `**Lò #${availableSlot.slot_index}** vừa được thao tác trước đó. Vui lòng thử lại!`,
+          { user, profile, slots },
+          now,
+        );
+      }
+      updatedSlot = lockedRows[0];
+    } else {
+      updatedSlot = await saveFurnaceSlot(cleanId, availableSlot.slot_index, slotPatch);
+    }
+
+    let nextUser;
+    let nextProfile;
+    try {
+      nextUser = await updateUserRow(cleanId, {
+        linh_thach: coins - recipe.costLt,
+        farm_essence: essence - recipe.costEssence,
+      });
+      nextProfile = await saveProfile(cleanId, {
+        batches_today: Number(profile.batches_today || 0) + 1,
+      });
+    } catch (err) {
+      await saveFurnaceSlot(cleanId, availableSlot.slot_index, {
+        status: 'idle',
+        recipe_id: null,
+        started_at: null,
+        ready_at: null,
+        burn_at: null,
+        repair_until: null,
+        dm_ready_sent: false,
+        dm_warn10_sent: false,
+      }).catch(() => {});
+      throw err;
+    }
+
+    invalidateInventoryCache(cleanId);
     const nextSlots = slots.map((s) => (Number(s.slot_index) === Number(availableSlot.slot_index) ? updatedSlot : s));
     const readySec = Math.floor(readyMs / 1000);
-    const fireEm = em('su_el_hoa') || em('su_sparkle');
+    const pillIcon = alchemyIcon(recipe.iconKey || 'su_el_hoa');
 
     return buildAlchemyEmbed({
       user: nextUser,
       profile: nextProfile,
       slots: nextSlots,
       now,
-      bannerText: `${fireEm} **Đã nhóm lửa Lò #${availableSlot.slot_index}!** Đang luyện **${recipe.name}** — Chín <t:${readySec}:R> *(đã trừ ${recipe.costLt} LT${recipe.costEssence > 0 ? ` + ${recipe.costEssence} Linh Quả` : ''})*.`,
+      bannerText: `${pillIcon} **Đã nhóm lửa Lò #${availableSlot.slot_index}!** Đang luyện **${recipe.name}** — Chín <t:${readySec}:R> *(đã trừ ${recipe.costLt} LT${recipe.costEssence > 0 ? ` + ${recipe.costEssence} Linh Quả` : ''})*.`,
       overrideColor: '#f59e0b',
     });
   });
@@ -697,7 +770,7 @@ export async function harvestBatch(userId, opts = {}) {
         const pos = nextSlots.findIndex((s) => Number(s.slot_index) === idx);
         if (pos >= 0) nextSlots[pos] = patched;
 
-        resultLines.push(`${em('su_level_up') || ''} **Lò #${idx} — ${recipe.name} [${quality.label} ×${quality.multiplier}]:** Thu **+${ltEarned.toLocaleString('vi-VN')} LT** & **+${expEarned} EXP**!`);
+        resultLines.push(`${alchemyIcon(recipe.iconKey || 'su_level_up')} **Lò #${idx} — ${recipe.name} [${quality.label} ×${quality.multiplier}]:** Thu **+${ltEarned.toLocaleString('vi-VN')} LT** & **+${expEarned} EXP**!`);
       }
     }
 
@@ -712,11 +785,19 @@ export async function harvestBatch(userId, opts = {}) {
     if (supabase && completedCount > 0) {
       await trackQuestActivity(cleanId, { craft: completedCount }).catch(() => null);
     }
+    invalidateInventoryCache(cleanId);
 
-    const overrideImage = anyExplodedNow
-      ? ALCHEMY_EXPLODED_IMAGE
-      : (lastPillImage || (burnedCount > 0 ? ALCHEMY_EXPLODED_IMAGE : null));
-    const overrideColor = anyExplodedNow ? '#ef4444' : '#10b981';
+    const displayName = pickCleanDisplayValue(nextUser.username, `TuSi_${cleanId}`);
+    const newCoins = Number(nextUser.linh_thach ?? nextUser.coins ?? 0);
+    const harvestColor = anyExplodedNow ? '#ef4444' : '#10b981';
+    const harvestTitle = anyExplodedNow
+      ? `${uiEm('ui_warn') || em('su_sparkle')} THU ĐAN & DỌN LÒ — ${displayName}`
+      : `${em('su_level_up') || em('su_sparkle')} THU ĐAN HOÀN TẤT — ${displayName}`;
+    const harvestDescription = [
+      ...resultLines,
+      '',
+      `• **Tổng Thu:** **+${totalGainLt.toLocaleString('vi-VN')} LT** & **+${totalGainExp} EXP** *(Số dư mới: \`${newCoins.toLocaleString('vi-VN')} LT\`)*`,
+    ].join('\n');
 
     return {
       ...buildAlchemyEmbed({
@@ -724,9 +805,13 @@ export async function harvestBatch(userId, opts = {}) {
         profile: nextProfile,
         slots: nextSlots,
         now,
-        bannerText: resultLines.join('\n'),
-        overrideImage,
-        overrideColor,
+        bannerText: '',
+        overrideColor: anyExplodedNow ? '#ef4444' : '#ec4899',
+        harvestPayload: {
+          title: harvestTitle,
+          description: harvestDescription,
+          color: harvestColor,
+        },
       }),
       harvest_summary: {
         completed_count: completedCount,
@@ -782,6 +867,7 @@ export async function upgradeFurnace(userId, opts = {}) {
     const nextProfile = await saveProfile(cleanId, {
       furnace_level: nextTier.level,
     });
+    invalidateInventoryCache(cleanId);
 
     return buildAlchemyEmbed({
       user: nextUser,
@@ -824,6 +910,7 @@ export async function unlockSecondFurnace(userId, opts = {}) {
 
     const nextUser = cost > 0 ? await updateUserRow(cleanId, { linh_thach: coins - cost }) : user;
     const nextProfile = await saveProfile(cleanId, { slot2_unlocked: true });
+    invalidateInventoryCache(cleanId);
 
     return buildAlchemyEmbed({
       user: nextUser,
@@ -890,6 +977,7 @@ export async function repairFurnace(userId, opts = {}) {
     const nextUser = await updateUserRow(cleanId, {
       linh_thach: coins + ashGainLt - repairCostLt,
     });
+    invalidateInventoryCache(cleanId);
     const tier = getFurnaceTier(profile.furnace_level);
 
     return buildAlchemyEmbed({

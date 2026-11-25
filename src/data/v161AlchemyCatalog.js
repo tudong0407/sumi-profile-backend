@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 export const ASSETS_ALCHEMY_DIR = path.resolve(__dirname, '..', '..', 'assets', 'alchemy');
 
-export const ALCHEMY_DAILY_LIMIT = 5;
+export const ALCHEMY_DAILY_LIMIT = 6;
 export const ALCHEMY_SLOT2_FREE_LEVEL = 45;
 export const ALCHEMY_SLOT2_UNLOCK_COST = 2500;
 export const ALCHEMY_BURN_PAYOUT_LT = 30;
@@ -36,6 +36,8 @@ export const FURNACE_TIERS = [
     cloudPct: 3,
     image: 'furnace_lv1.webp',
     explodedImage: 'furnace_lv1_exploded.webp',
+    emojiKey: 'furnace_lv1',
+    explodedEmojiKey: 'furnace_lv1_exploded',
     badgeEm: 'su_sprout',
   },
   {
@@ -50,6 +52,8 @@ export const FURNACE_TIERS = [
     cloudPct: 5,
     image: 'furnace_lv2.webp',
     explodedImage: 'furnace_lv2_exploded.webp',
+    emojiKey: 'furnace_lv2',
+    explodedEmojiKey: 'furnace_lv2_exploded',
     badgeEm: 'su_el_moc',
   },
   {
@@ -64,6 +68,8 @@ export const FURNACE_TIERS = [
     cloudPct: 7,
     image: 'furnace_lv3.webp',
     explodedImage: 'furnace_lv3_exploded.webp',
+    emojiKey: 'furnace_lv3',
+    explodedEmojiKey: 'furnace_lv3_exploded',
     badgeEm: 'su_el_hoa',
   },
   {
@@ -78,6 +84,8 @@ export const FURNACE_TIERS = [
     cloudPct: 10,
     image: 'furnace_lv4.webp',
     explodedImage: 'furnace_lv4_exploded.webp',
+    emojiKey: 'furnace_lv4',
+    explodedEmojiKey: 'furnace_lv4_exploded',
     badgeEm: 'su_el_kim',
   },
   {
@@ -92,6 +100,8 @@ export const FURNACE_TIERS = [
     cloudPct: 14,
     image: 'furnace_lv5.webp',
     explodedImage: 'furnace_lv5_exploded.webp',
+    emojiKey: 'furnace_lv5',
+    explodedEmojiKey: 'furnace_lv5_exploded',
     badgeEm: 'su_el_hondon',
   },
 ];
@@ -105,14 +115,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Tụ Khí Thanh Đan',
     minLevel: 1,
     altFurnaceLevel: 1,
-    costLt: 10,
+    costLt: 14,
     costEssence: 0,
     durationMin: 60,
     minLt: 160,
     maxLt: 200,
     exp: 20,
     image: 'pill_t1.webp',
-    iconKey: 'su_sprout',
+    iconKey: 'pill_t1',
   },
   {
     id: 'pill_t2',
@@ -120,14 +130,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Trúc Cơ Ngọc Lộ Đan',
     minLevel: 15,
     altFurnaceLevel: 2,
-    costLt: 25,
+    costLt: 35,
     costEssence: 0,
     durationMin: 75,
     minLt: 240,
     maxLt: 290,
     exp: 30,
     image: 'pill_t2.webp',
-    iconKey: 'su_el_thuy',
+    iconKey: 'pill_t2',
   },
   {
     id: 'pill_t3',
@@ -135,14 +145,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Kim Đan Hỏa Linh Đan',
     minLevel: 35,
     altFurnaceLevel: 3,
-    costLt: 40,
+    costLt: 56,
     costEssence: 0,
     durationMin: 95,
     minLt: 340,
     maxLt: 400,
     exp: 45,
     image: 'pill_t3.webp',
-    iconKey: 'su_el_hoa',
+    iconKey: 'pill_t3',
   },
   {
     id: 'pill_t4',
@@ -150,14 +160,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Nguyên Anh Cửu Chuyển Đan',
     minLevel: 60,
     altFurnaceLevel: 4,
-    costLt: 60,
+    costLt: 84,
     costEssence: 0,
     durationMin: 120,
     minLt: 420,
     maxLt: 500,
     exp: 65,
     image: 'pill_t4.webp',
-    iconKey: 'su_el_kim',
+    iconKey: 'pill_t4',
   },
   {
     id: 'pill_ess_1',
@@ -165,14 +175,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Linh Quả Thanh Tâm Đan',
     minLevel: 35,
     altFurnaceLevel: null,
-    costLt: 40,
-    costEssence: 20,
+    costLt: 56,
+    costEssence: 28,
     durationMin: 105,
     minLt: 470,
     maxLt: 530,
     exp: 60,
     image: 'pill_ess_1.webp',
-    iconKey: 'farm_essence',
+    iconKey: 'pill_ess_1',
   },
   {
     id: 'pill_ess_2',
@@ -180,14 +190,14 @@ export const ALCHEMY_RECIPES = [
     name: 'Hồng Mông Tạo Hóa Đan',
     minLevel: 60,
     altFurnaceLevel: null,
-    costLt: 60,
-    costEssence: 40,
+    costLt: 84,
+    costEssence: 56,
     durationMin: 120,
     minLt: 540,
     maxLt: 600,
     exp: 80,
     image: 'pill_ess_2.webp',
-    iconKey: 'su_el_hondon',
+    iconKey: 'pill_ess_2',
   },
 ];
 

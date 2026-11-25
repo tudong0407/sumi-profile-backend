@@ -14,8 +14,9 @@ import { em, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
 import { claimNextAlchemyDmNotification } from './alchemyService.js';
+import { invalidateInventoryCache } from './inventoryService.js';
 
-const MAX_FARM_SLOTS = 6;
+const MAX_FARM_SLOTS = 8;
 const DEFAULT_FARM_SLOTS = 4;
 
 const SLOT_TYPES_BY_INDEX = {
@@ -25,6 +26,8 @@ const SLOT_TYPES_BY_INDEX = {
   4: 'linh_cac',
   5: 'linh_dien',
   6: 'linh_cac',
+  7: 'linh_dien',
+  8: 'linh_cac',
 };
 
 const farmLocks = new Map();
@@ -217,13 +220,17 @@ export async function getFarmStatus(userId, options = {}) {
   const lockEm = uiEm('ui_lock');
 
   const linhDienLines = linhDienPlots.map((p) => `• ${p.summary}`);
-  if (linhDienPlots.length < 3) {
-    linhDienLines.push(`• ${lockEm} **Ô #5:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+  for (const lockedIdx of [5, 7]) {
+    if (cap < lockedIdx) {
+      linhDienLines.push(`• ${lockEm} **Ô #${lockedIdx}:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+    }
   }
 
   const linhCacLines = linhCacPlots.map((p) => `• ${p.summary}`);
-  if (linhCacPlots.length < 3) {
-    linhCacLines.push(`• ${lockEm} **Ô #6:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+  for (const lockedIdx of [6, 8]) {
+    if (cap < lockedIdx) {
+      linhCacLines.push(`• ${lockEm} **Ô #${lockedIdx}:** Chưa mở khóa *(Đổi tại \`/exchange\`)*`);
+    }
   }
 
   const formatSeedLine = (s) =>
@@ -248,12 +255,12 @@ export async function getFarmStatus(userId, options = {}) {
     title: `${essenceIcon} LINH ĐIỀN & LINH THÚ CÁC — ${user.username}`,
     description: [
       `• **Số Dư:** **${bal.toLocaleString('vi-VN')}** ${ltIcon} • **Linh Quả Tiên Giới:** **${essence.toLocaleString('vi-VN')}** ${essenceIcon}`,
-      `• **Linh Điền:** \`${linhDienPlots.length}/3\` • **Linh Các:** \`${linhCacPlots.length}/3\` *(Tổng \`${cap}/${MAX_FARM_SLOTS}\` ô • Tự động DM nhắc tưới & cảnh báo héo 1h/30p/15p)*`,
+      `• **Linh Điền:** \`${linhDienPlots.length}/4\` • **Linh Các:** \`${linhCacPlots.length}/4\` *(Tổng \`${cap}/${MAX_FARM_SLOTS}\` ô • Tự động DM nhắc tưới & cảnh báo héo 1h/30p/15p)*`,
       '',
-      `**${farmEmoji('seed_linh_thao')} KHU LINH ĐIỀN (${linhDienPlots.length}/3 ô):**`,
+      `**${farmEmoji('seed_linh_thao')} KHU LINH ĐIỀN (${linhDienPlots.length}/4 ô):**`,
       ...linhDienLines,
       '────────────────────────',
-      `**${farmEmoji('egg_linh_thu')} KHU LINH THÚ CÁC (${linhCacPlots.length}/3 ô):**`,
+      `**${farmEmoji('egg_linh_thu')} KHU LINH THÚ CÁC (${linhCacPlots.length}/4 ô):**`,
       ...linhCacLines,
       '────────────────────────',
       '**Bảng Giống & Trứng Thời Gian Thực (`/farm gieo <ma_giong>`):**',
@@ -572,6 +579,7 @@ export async function buyExchangeItem(userId, rawExchangeId, rawQty = 1, options
         updated_at: nowIso,
       }).eq('user_id', cleanId);
       await loadAndSyncPlots(cleanId, nextSlots, now);
+      invalidateInventoryCache(cleanId);
       return {
         success: true,
         exchange_id: item.exchange_id,
@@ -590,6 +598,7 @@ export async function buyExchangeItem(userId, rawExchangeId, rawQty = 1, options
         linh_thach: nextBal,
         updated_at: nowIso,
       }).eq('user_id', cleanId);
+      invalidateInventoryCache(cleanId);
       return {
         success: true,
         exchange_id: item.exchange_id,
@@ -625,6 +634,7 @@ export async function buyExchangeItem(userId, rawExchangeId, rawQty = 1, options
       supabase.from('users').update({ farm_essence: nextEssence, updated_at: nowIso }).eq('user_id', cleanId),
       addInventoryItem(cleanId, item.item_id, 'consumable', totalGain),
     ]);
+    invalidateInventoryCache(cleanId);
 
     return {
       success: true,

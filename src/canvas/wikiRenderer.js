@@ -22,7 +22,7 @@ import {
   FONT_FAMILY,
 } from './drawUtils.js';
 
-const RENDER_SCALE = 2;
+const RENDER_SCALE = 1.2; // 1200x600 sắc nét cho Discord Embed & giảm 64% thời gian render
 const LOGICAL_W = 1000;
 const LOGICAL_H = 500;
 

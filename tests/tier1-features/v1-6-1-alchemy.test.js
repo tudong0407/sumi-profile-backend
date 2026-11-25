@@ -121,11 +121,11 @@ test('2. Nấu đan trừ vốn LT + Linh Quả, giới hạn 5 mẻ/ngày & 2 l
   assert.equal(UNICODE_PICTO_RE.test(st0.title), false);
   assert.equal(UNICODE_PICTO_RE.test(st0.description), false);
 
-  // Nấu Tinh Hoa II trên Lò #1 (trừ 60 LT + 40 Linh Quả)
+  // Nấu Tinh Hoa II trên Lò #1 (trừ 84 LT + 56 Linh Quả)
   const b1 = await startBrew(uid, 'pill_ess_2', { now: t0 });
   assert.equal(b1.success, true);
-  assert.equal(b1.state.coins, 10000 - 60);
-  assert.equal(b1.state.farm_essence, 100 - 40);
+  assert.equal(b1.state.coins, 10000 - 84);
+  assert.equal(b1.state.farm_essence, 100 - 56);
   assert.equal(b1.state.batches_today, 1);
 
   // Nấu song song Tinh Hoa I trên Lò #2 (105p nấu + 20p ân hạn = 125p cháy)
@@ -144,8 +144,8 @@ test('2. Nấu đan trừ vốn LT + Linh Quả, giới hạn 5 mẻ/ngày & 2 l
   assert.equal(h1.harvest_summary.completed_count, 2);
   assert.equal(h1.state.total_batches_completed, 2);
 
-  // Đốt thêm 3 mẻ nữa để chạm ngưỡng 5/5 ngày
-  for (let i = 0; i < 3; i += 1) {
+  // Đốt thêm 4 mẻ nữa để chạm ngưỡng 6/6 ngày
+  for (let i = 0; i < 4; i += 1) {
     const startT = new Date(tHarvest.getTime() + i * 130 * 60000);
     const br = await startBrew(uid, 'pill_t1', { now: startT });
     assert.equal(br.success, true);
@@ -153,11 +153,11 @@ test('2. Nấu đan trừ vốn LT + Linh Quả, giới hạn 5 mẻ/ngày & 2 l
     assert.equal(hv.success, true);
   }
 
-  // Mẻ thứ 6 trong ngày phải bị chặn (trả success: false thân thiện)
-  const tCap = new Date(tHarvest.getTime() + 4 * 130 * 60000);
-  const b6 = await startBrew(uid, 'pill_t1', { now: tCap });
-  assert.equal(b6.success, false);
-  assert.match(b6.description, /5\/5 mẻ/);
+  // Mẻ thứ 7 trong ngày phải bị chặn (trả success: false thân thiện)
+  const tCap = new Date(tHarvest.getTime() + 5 * 130 * 60000);
+  const b7 = await startBrew(uid, 'pill_t1', { now: tCap });
+  assert.equal(b7.success, false);
+  assert.match(b7.description, /6\/6 mẻ/);
 });
 
 test('3. Mở Lò #2 sớm 2.500 LT trước Lv.45 & nâng cấp Lò Lv.1 -> Lv.2', async () => {
@@ -242,14 +242,14 @@ test('4. Cháy đan (30 LT) + Nổ lò khóa 4h + Sửa Lò Nhanh (300 LT) & DM 
   assert.equal(rep.success, true);
   const slot1Fixed = rep.state.slots.find((s) => Number(s.slot_index) === 1);
   assert.equal(slot1Fixed.status, 'idle');
-  assert.equal(rep.state.coins, 2000 - 10 + ALCHEMY_BURN_PAYOUT_LT - 10 - ALCHEMY_INSTANT_REPAIR_COST);
+  assert.equal(rep.state.coins, 2000 - 14 + ALCHEMY_BURN_PAYOUT_LT - 14 - ALCHEMY_INSTANT_REPAIR_COST);
 });
 
-test('5. Changelog v1.6.1 (+1.000 LT, 0 Unicode) & resolveAlchemyImageUrl an toàn', () => {
+test('5. Changelog v1.6.1 (+1.500 LT, 0 Unicode) & resolveAlchemyImageUrl an toàn', () => {
   assert.equal(LATEST_VERSION, '1.6.1');
   const payload = getChangelogPayload('1.6.1');
   assert.equal(payload.success, true);
-  assert.equal(payload.ack_reward_lt, 1000);
+  assert.equal(payload.ack_reward_lt, 1500);
   assert.equal(UNICODE_PICTO_RE.test(payload.title), false);
   assert.equal(UNICODE_PICTO_RE.test(payload.description), false);
 

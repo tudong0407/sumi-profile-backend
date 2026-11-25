@@ -26,7 +26,8 @@ import {
   realmEmojiById,
 } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
-import { normalizeEmojiAwareQuery, paginateFormattedLines } from './inventoryService.js';
+import { normalizeEmojiAwareQuery, paginateFormattedLines, invalidateInventoryCache } from './inventoryService.js';
+import { syncActiveLoadoutFromCurrentGear } from './loadoutService.js';
 import { trackQuestActivity } from './questService.js';
 
 export const DOMAIN_DISMANTLE_VALUES = {
@@ -214,18 +215,20 @@ export async function getDomainInventory(userId, options = {}) {
     }
   }
 
+  const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
+  const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
+
   const sections = [
-    `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (KÍCH HOẠT TỪ HIỆP 2)**`,
-    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** *(${domainElementEmoji(eqDomain.element)} ${eqDomain.element})*` : '`Trống`'}`,
-    `• **Thần Thức:** ${eqSense ? `${eqSense.icon} **${eqSense.name}**` : '`Trống`'}`,
-    `• **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}**` : '`Trống`'}`,
+    `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (HIỆP 2)**`,
+    `• **Linh Vực:** ${eqDomain ? eqDomain.icon : '*Trống*'}`,
+    `\u00A0\u00A0↳ **Thần Thức:** ${eqSense ? eqSense.icon : '*Trống*'}`,
+    `\u00A0\u00A0↳ **Thần Cảnh:** ${eqRealm ? eqRealm.icon : '*Trống*'}`,
     `• **Tổng Linh Mạch:** \`${totalLinhMach}\`${paged.totalPages > 1 ? ` • **Trang:** \`${paged.page}/${paged.totalPages}\`` : ''} • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
     '',
     ...bodySections,
   ];
   if (paged.totalPages > 1) {
-    const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
-    sections.push('', `• *Trang ${paged.page}/${paged.totalPages} — Chọn Trang ở menu bên dưới hoặc gõ \`/linhvuc tab:${view} trang:${nextPage}\` để xem tiếp!*`);
+    sections.push('', `• *Trang ${paged.page}/${paged.totalPages} — Bấm nút **Trang Trước / Trang Sau** bên dưới hoặc gõ \`/linhvuc tab:${view} trang:${nextPage}\` để xem tiếp!*`);
   }
 
   return {
@@ -235,6 +238,8 @@ export async function getDomainInventory(userId, options = {}) {
     view,
     page: paged.page,
     total_pages: paged.totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
     total_linh_mach: totalLinhMach,
     equipped: { domain: eqDomain, sense: eqSense, realm: eqRealm },
     domains,
@@ -314,6 +319,9 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
       .update({ is_equipped: true, updated_at: nowIso })
       .eq('id', owned.id);
 
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
+
     const icon = getDomainEntityIcon(resolved.kind, resolved.meta.id);
     const descDetail = resolved.meta.buff_desc
       ? `• **Buff:** ${resolved.meta.buff_desc}\n• **Debuff:** ${resolved.meta.debuff_desc}`
@@ -346,6 +354,8 @@ export async function unequipDomainEntity(userId, rawSlot = 'all') {
     }
     const { error } = await q;
     if (error) throw new Error(`Unequip domain failed: ${error.message}`);
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
     const labelMap = { domain: 'Linh Vực', sense: 'Thần Thức', realm: 'Thần Cảnh', all: 'toàn bộ Linh Vực • Thần Thức • Thần Cảnh' };
     return {
       success: true,

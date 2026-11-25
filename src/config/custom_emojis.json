@@ -4137,5 +4137,101 @@
     "id": "1574833059419656302",
     "name": "potion_luck_supreme",
     "animated": false
+  },
+  "furnace_lv1": {
+    "id": "1575068751861121044",
+    "name": "furnace_lv1",
+    "animated": false,
+    "tag": "<:furnace_lv1:1575068751861121044>"
+  },
+  "furnace_lv2": {
+    "id": "1575068765165592666",
+    "name": "furnace_lv2",
+    "animated": false,
+    "tag": "<:furnace_lv2:1575068765165592666>"
+  },
+  "furnace_lv3": {
+    "id": "1575068776142209177",
+    "name": "furnace_lv3",
+    "animated": false,
+    "tag": "<:furnace_lv3:1575068776142209177>"
+  },
+  "furnace_lv4": {
+    "id": "1575068786934157402",
+    "name": "furnace_lv4",
+    "animated": false,
+    "tag": "<:furnace_lv4:1575068786934157402>"
+  },
+  "furnace_lv5": {
+    "id": "1575068799403565197",
+    "name": "furnace_lv5",
+    "animated": false,
+    "tag": "<:furnace_lv5:1575068799403565197>"
+  },
+  "furnace_lv1_exploded": {
+    "id": "1575068811642544198",
+    "name": "furnace_lv1_exploded",
+    "animated": false,
+    "tag": "<:furnace_lv1_exploded:1575068811642544198>"
+  },
+  "furnace_lv2_exploded": {
+    "id": "1575068828935921724",
+    "name": "furnace_lv2_exploded",
+    "animated": false,
+    "tag": "<:furnace_lv2_exploded:1575068828935921724>"
+  },
+  "furnace_lv3_exploded": {
+    "id": "1575068845578784849",
+    "name": "furnace_lv3_exploded",
+    "animated": false,
+    "tag": "<:furnace_lv3_exploded:1575068845578784849>"
+  },
+  "furnace_lv4_exploded": {
+    "id": "1575068859076055070",
+    "name": "furnace_lv4_exploded",
+    "animated": false,
+    "tag": "<:furnace_lv4_exploded:1575068859076055070>"
+  },
+  "furnace_lv5_exploded": {
+    "id": "1575068871914815659",
+    "name": "furnace_lv5_exploded",
+    "animated": false,
+    "tag": "<:furnace_lv5_exploded:1575068871914815659>"
+  },
+  "pill_t1": {
+    "id": "1575068886053818398",
+    "name": "pill_t1",
+    "animated": false,
+    "tag": "<:pill_t1:1575068886053818398>"
+  },
+  "pill_t2": {
+    "id": "1575068896086589560",
+    "name": "pill_t2",
+    "animated": false,
+    "tag": "<:pill_t2:1575068896086589560>"
+  },
+  "pill_t3": {
+    "id": "1575068908778426420",
+    "name": "pill_t3",
+    "animated": false,
+    "tag": "<:pill_t3:1575068908778426420>"
+  },
+  "pill_t4": {
+    "id": "1575068922204659722",
+    "name": "pill_t4",
+    "animated": false,
+    "tag": "<:pill_t4:1575068922204659722>"
+  },
+  "pill_ess_1": {
+    "id": "1575068934372069426",
+    "name": "pill_ess_1",
+    "animated": false,
+    "tag": "<:pill_ess_1:1575068934372069426>"
+  },
+  "pill_ess_2": {
+    "id": "1575068949819953252",
+    "name": "pill_ess_2",
+    "animated": false,
+    "tag": "<:pill_ess_2:1575068949819953252>"
   }
 }

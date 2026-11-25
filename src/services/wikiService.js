@@ -411,7 +411,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại, Lò Luyện Đan & Cộng Đồng',
-        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /luyendan (Lò Luyện Đan): Tối đa 5 mẻ/ngày trên tối đa 2 Lò song song (Lò #2 tự mở ở Lv.45 hoặc 2.500 LT), nâng cấp Lò Lv.1–5 (+LT%, giảm giờ, ân hạn 20–60p, tăng tỉ lệ Thượng Phẩm ×1.25 / Đan Vân ×1.50). Hỗ trợ công thức Tinh Hoa dùng 20–40 Linh Quả từ /farm. Quá ân hạn bị cháy (30 LT) + nổ khóa lò 4h (Sửa nhanh 300 LT) & bot tự DM nhắc chín + trước nổ 10p.\n• /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • /farm & /exchange • Minigame (10–10.000 LT) • /marry & /giatoc.',
+        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /luyendan (Lò Luyện Đan): Tối đa 6 mẻ/ngày trên tối đa 2 Lò song song (Lò #2 tự mở ở Lv.45 hoặc 2.500 LT), nâng cấp Lò Lv.1–5 (+LT%, giảm giờ, ân hạn 20–60p, tăng tỉ lệ Thượng Phẩm ×1.25 / Đan Vân ×1.50). Hỗ trợ công thức Tinh Hoa dùng 28–56 Linh Quả từ /farm. Quá ân hạn bị cháy (30 LT) + nổ khóa lò 4h (Sửa nhanh 300 LT) & bot tự DM nhắc chín + trước nổ 10p.\n• /farm 8 ô (4 Linh Điền + 4 Linh Các, giá hạt/trứng 88–825 LT) & /exchange • /inv hỗ trợ 3 Loadout tự động lưu (Bộ 1 / Bộ 2 / Bộ 3) • /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • Minigame (10–10.000 LT) • /marry & /giatoc.',
       },
     ],
     fields: [
@@ -436,8 +436,9 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_sprout')} Nông Trại, Giải Trí, Tiên Lữ & Gia Tộc`,
         value: [
-          '• **`/farm` & `/exchange`:** Tách riêng khu **Linh Điền** & **Linh Các** (`6/12/24h`), Bot **tự nhắn DM nhắc tới giờ tưới & cảnh báo sắp héo (1h / 30p / 15p)**; đổi Linh Quả lấy LT, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Reset.',
-          '• **`/luyendan` (Lò Luyện Đan):** Tối đa `5 mẻ/ngày` trên `2 Lò` song song *(Lò #2 mở tại Lv.45 hoặc 2.500 LT)*, nâng Lò `Lv.1–5` & kết hợp `20–40 Linh Quả` săn `Thượng Phẩm (×1.25)` / `Đan Vân (×1.50)` kèm DM nhắc chín & trước nổ 10p.',
+          '• **`/farm` & `/exchange`:** Tối đa **8 ô** (`4 Linh Điền + 4 Linh Các`, `6/12/24h`, mở ô #5–#8 tại `/exchange`), Bot **tự nhắn DM nhắc tới giờ tưới & cảnh báo sắp héo (1h / 30p / 15p)**.',
+          '• **`/luyendan` (Lò Luyện Đan):** Tối đa `6 mẻ/ngày` trên `2 Lò` song song *(Lò #2 mở tại Lv.45 hoặc 2.500 LT)*, nâng Lò `Lv.1–5` & kết hợp `28–56 Linh Quả` săn `Thượng Phẩm (×1.25)` / `Đan Vân (×1.50)` kèm DM nhắc chín & trước nổ 10p.',
+          '• **`/inv` (3 Loadout Tự Lưu):** Chuyển nhanh `Bộ 1 / Bộ 2 / Bộ 3` (Linh Thú + Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh); mọi `/equip`, `/pet`, `/linhvuc` tự lưu vào bộ đang chọn.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
           `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP/LT, Clan Wars 24H).`,
         ].join('\n'),

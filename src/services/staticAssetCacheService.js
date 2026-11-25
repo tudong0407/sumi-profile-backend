@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = LATEST_VERSION;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v163-s12`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 
@@ -31,7 +31,7 @@ const uniqueRamCache = new Map();
 const inFlightUnique = new Map();
 const dynamicRamCache = new Map();
 
-const STATIC_RAM_CACHE_MAX = 48;
+const STATIC_RAM_CACHE_MAX = 260;
 const UNIQUE_RAM_CACHE_MAX = 20;
 const DYNAMIC_CACHE_MAX = 15;
 const DYNAMIC_CACHE_TTL_MS = 15000;
@@ -149,6 +149,12 @@ async function getOrBuildStaticFile(ramKey, filenameBase, format, renderFn) {
     try {
       ensureCacheDir();
       fs.writeFileSync(filePath, buf);
+      if (readManifest()?.version !== STATIC_CACHE_VERSION) {
+        writeManifest({
+          version: STATIC_CACHE_VERSION,
+          updatedAt: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       console.warn(`[StaticCache] Write failed for ${filePath}:`, err.message);
     }

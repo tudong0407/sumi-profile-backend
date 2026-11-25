@@ -906,22 +906,22 @@ export const DIVINE_REALM_BY_ID = Object.fromEntries(DIVINE_REALM_CATALOG.map((r
 // =========================================================================
 const FARM_SEED_PRICING = {
   seed_linh_thao: {
-    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 80, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 145, reward_essence: 15, min_care_recommended: 1,
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 88, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 145, reward_essence: 15, min_care_recommended: 1,
   },
   seed_tien_thao: {
-    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 200, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 390, reward_essence: 40, min_care_recommended: 2,
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 220, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 390, reward_essence: 40, min_care_recommended: 2,
   },
   seed_than_moc: {
-    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 500, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1050, reward_essence: 110, min_care_recommended: 2,
+    plot_type: 'linh_dien', plot_label: 'Linh Điền', cost_lt: 550, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1050, reward_essence: 110, min_care_recommended: 2,
   },
   egg_linh_thu: {
-    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 120, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 220, reward_essence: 22, min_care_recommended: 1,
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 132, growth_hours: 6, care_interval_hours: 2, wilt_hours: 4.5, reward_lt: 220, reward_essence: 22, min_care_recommended: 1,
   },
   egg_tien_thu: {
-    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 300, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 580, reward_essence: 60, min_care_recommended: 2,
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 330, growth_hours: 12, care_interval_hours: 4, wilt_hours: 7, reward_lt: 580, reward_essence: 60, min_care_recommended: 2,
   },
   egg_than_thu: {
-    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 750, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1600, reward_essence: 165, min_care_recommended: 2,
+    plot_type: 'linh_cac', plot_label: 'Linh Các', cost_lt: 825, growth_hours: 24, care_interval_hours: 6, wilt_hours: 12, reward_lt: 1600, reward_essence: 165, min_care_recommended: 2,
   },
 };
 
@@ -947,7 +947,7 @@ export const EXCHANGE_ITEMS = [
   { exchange_id: 'gacha_ticket_equip', name: 'Vé Triệu Hồi Pháp Bảo', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_equip', reward_amount: 1, icon: em('gacha_ticket_equip'), description: 'Dùng miễn phí 1 lượt /roll loai:equipment.' },
   { exchange_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_pet', reward_amount: 1, icon: em('gacha_ticket_pet'), description: 'Dùng miễn phí 1 lượt /roll loai:pet.' },
   { exchange_id: 'gacha_ticket_domain', name: 'Vé Khai Mở Linh Vực', cost_essence: 65, reward_kind: 'inventory', item_id: 'gacha_ticket_domain', reward_amount: 1, icon: em('su_gacha_dice'), description: 'Dùng miễn phí 1 lượt /roll loai:domain.' },
-  { exchange_id: 'farm_slot_unlock', name: 'Mở Khóa Ô Canh Tác (#5 / #6)', cost_essence: 300, reward_kind: 'farm_slot', reward_amount: 1, max_slots: 6, icon: farmEmoji('farm_essence'), description: 'Mở rộng nông trại từ 4 ô lên 5 ô và tối đa 6 ô (tối đa 2 lần mở).' },
+  { exchange_id: 'farm_slot_unlock', name: 'Mở Khóa Ô Canh Tác (#5 → #8)', cost_essence: 300, reward_kind: 'farm_slot', reward_amount: 1, max_slots: 8, icon: farmEmoji('farm_essence'), description: 'Mở rộng nông trại từ 4 ô lên tối đa 8 ô (4 Linh Điền + 4 Linh Các, tối đa 4 lần mở).' },
 ];
 
 export const EXCHANGE_ITEM_BY_ID = Object.fromEntries(EXCHANGE_ITEMS.map((it) => [it.exchange_id, it]));
