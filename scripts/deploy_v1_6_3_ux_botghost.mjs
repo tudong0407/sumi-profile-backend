@@ -566,24 +566,14 @@ export function buildInvV163Cmd() {
     ];
   }
 
-  embedMsg(gb, 'inv_edit_0', {
-    title: '{inv_res.response.view_title}',
-    description: '{inv_res.response.view_description}',
-    color: '#a855f7',
-    footer: '{inv_res.response.footer}',
-    fields: invFields('inv_res'),
-    target: { editId: 'inv_ack' },
-    action_id: 'inv_ack',
-  }, { x: 240, y: 680 });
-  gb.link(invNoAck, 'inv_edit_0');
-
   let seq = 0;
-  function attachLoadoutButtons(parentMsgId, depth, x, y) {
+  function attachLoadoutButtons(parentMsgId, activeSlot, depth, x, y) {
     if (depth >= 2) return;
+    // BotGhost renders higher weight further LEFT -> weight 3 = Bộ 1 (leftmost), 2 = Bộ 2, 1 = Bộ 3 (rightmost)
     const slots = [
-      { slot: 1, label: 'Bộ 1', style: 'PRIMARY', icon: 'su_pet_paw', weight: '1', dx: -260 },
-      { slot: 2, label: 'Bộ 2', style: 'SECONDARY', icon: 'su_crossed_swords', weight: '2', dx: 0 },
-      { slot: 3, label: 'Bộ 3', style: 'SECONDARY', icon: 'su_realm_star', weight: '3', dx: 260 },
+      { slot: 1, label: 'Bộ 1', icon: 'su_pet_paw', weight: '3', dx: -260 },
+      { slot: 2, label: 'Bộ 2', icon: 'su_crossed_swords', weight: '2', dx: 0 },
+      { slot: 3, label: 'Bộ 3', icon: 'su_realm_star', weight: '1', dx: 260 },
     ];
     for (const s of slots) {
       seq += 1;
@@ -591,8 +581,9 @@ export function buildInvV163Cmd() {
       const aId = `api_inv_s${s.slot}_${seq}`;
       const rVar = `inv_sres_${seq}`;
       const mId = `msg_inv_s${s.slot}_${seq}`;
+      const style = s.slot === activeSlot ? 'PRIMARY' : 'SECONDARY';
 
-      gb.advBtn(bId, parentMsgId, btnCfg(s.label, s.style, s.icon, '1', s.weight, 'hide'), { x: x + s.dx, y: y + 140 });
+      gb.advBtn(bId, parentMsgId, btnCfg(s.label, style, s.icon, '1', s.weight, 'hide'), { x: x + s.dx, y: y + 140 });
       apiAction(gb, aId, rVar, 'POST', `${BACKEND_BASE}/api/inv/loadout/switch`,
         `{"userId":"{user_id}","slot":${s.slot},"username":"{user_displayName}","avatarUrl":"{user_icon}"}`,
         { x: x + s.dx, y: y + 290 });
@@ -601,17 +592,38 @@ export function buildInvV163Cmd() {
         title: `{${rVar}.response.view_title}`,
         description: `{${rVar}.response.view_description}`,
         color: '#a855f7',
-        footer: `{${rVar}.response.footer}`,
+        footer: '',
         fields: invFields(rVar),
         target: { editId: 'inv_ack' },
         action_id: 'inv_ack',
       }, { x: x + s.dx, y: y + 440 });
       gb.link(aId, mId);
-      attachLoadoutButtons(mId, depth + 1, x + s.dx, y + 580);
+      attachLoadoutButtons(mId, s.slot, depth + 1, x + s.dx, y + 580);
     }
   }
 
-  attachLoadoutButtons('inv_edit_0', 0, 240, 680);
+  gb.cond('inv_slot_cond', 'comparison', { base_value: '{inv_res.response.active_loadout_slot}', target: { self: true } }, { x: 240, y: 660 });
+  gb.link(invNoAck, 'inv_slot_cond');
+
+  const brS2 = gb.branch('inv_slot_cond', 'inv_br_s2', 'comparison', { type: 'equal_to', comparison_value: '2', ignoreCase: true, option: '', not: false }, { x: 240, y: 820 });
+  const brS3 = gb.branch('inv_slot_cond', 'inv_br_s3', 'comparison', { type: 'equal_to', comparison_value: '3', ignoreCase: true, option: '', not: false }, { x: 1140, y: 820 });
+  const brS1 = gb.elseBranch('inv_slot_cond', 'inv_br_s1', 'comparison', { x: -660, y: 820 });
+
+  for (const [slotNum, brNode, bx] of [[1, brS1, -660], [2, brS2, 240], [3, brS3, 1140]]) {
+    const editId = `inv_edit_s${slotNum}`;
+    embedMsg(gb, editId, {
+      title: '{inv_res.response.view_title}',
+      description: '{inv_res.response.view_description}',
+      color: '#a855f7',
+      footer: '',
+      fields: invFields('inv_res'),
+      target: { editId: 'inv_ack' },
+      action_id: 'inv_ack',
+    }, { x: bx, y: 980 });
+    gb.link(brNode, editId);
+    attachLoadoutButtons(editId, slotNum, 0, bx, 980);
+  }
+
   return gb.elements();
 }
 

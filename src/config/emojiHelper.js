@@ -84,6 +84,9 @@ export function getEmojiEntry(name) {
 export function em(name, fallback = '') {
   const entry = getEmojiEntry(name);
   if (entry?.tag) return entry.tag;
+  if (entry?.id && entry?.name) {
+    return entry.animated ? `<a:${entry.name}:${entry.id}>` : `<:${entry.name}:${entry.id}>`;
+  }
   return fallback;
 }
 

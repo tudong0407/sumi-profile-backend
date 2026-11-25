@@ -502,7 +502,7 @@ export async function getInventory(userId, options = {}) {
 
   const f2Name = `${em('su_crossed_swords')} Pháp Bảo (Bộ ${activeSlot})`;
   const f2Value = equippedItems.length > 0
-    ? equippedItems.map((it) => `${it.icon}${it.grade_icon}`).join(' ')
+    ? `${equippedItems.map((it) => it.icon).join('\u2003')}\n${equippedItems.map((it) => it.grade_icon).join('\u2003')}`
     : '*Chưa trang bị*';
 
   const f3Name = `${em('su_realm_star')} Lãnh Địa (Bộ ${activeSlot})`;
@@ -525,7 +525,7 @@ export async function getInventory(userId, options = {}) {
   const balFmt = Number(user.linh_thach || 0).toLocaleString('vi-VN');
   const descLines = [
     ...(bannerText ? [`${em('su_sparkle')} ${bannerText}`, ''] : []),
-    `${em('su_linhthach')} \`${balFmt} LT\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')} Linh Quả\` • *Đang dùng **Bộ ${activeSlot}** — Mọi \`/equip\`, \`/pet\`, \`/linhvuc\` tự lưu vào bộ này*`,
+    `${em('su_linhthach')} \`${balFmt}\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')}\``,
     ...(activePotionLine ? [activePotionLine] : []),
   ];
 
@@ -535,7 +535,7 @@ export async function getInventory(userId, options = {}) {
     view_title: `${em('su_wiki_scroll')} TÚI ĐỒ TIÊN GIỚI — ${displayName} [Bộ ${activeSlot}]`,
     view_description: descLines.join('\n').slice(0, 3950),
     color: '#a855f7',
-    footer: 'Dùng nút Bộ 1 / Bộ 2 / Bộ 3 để chuyển nhanh Loadout • /linhthu, /phapbao, /linhvuc, /roles để xem chi tiết',
+    footer: '',
     f1_name: f1Name,
     f1_value: f1Value.slice(0, 1024),
     f2_name: f2Name,

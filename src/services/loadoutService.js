@@ -116,7 +116,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
       invalidateInventoryCache(cleanId);
       return getInventory(cleanId, {
         ...opts,
-        bannerText: `Đang ở sẵn **Bộ ${targetSlot}** *(mọi thao tác \`/equip\`, \`/pet\`, \`/linhvuc\` tự động lưu vào bộ này)*.`,
+        bannerText: `Đang dùng sẵn **Bộ ${targetSlot}**.`,
       });
     }
 
