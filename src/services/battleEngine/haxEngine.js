@@ -56,6 +56,73 @@ function getHaxProcMultiplier(combatant) {
   return Math.max(0.25, (1 + ownBoost) * (1 - enemyFail));
 }
 
+export function getTrueDamageResistPct(combatant) {
+  if (!combatant) return 0;
+  const v13TrueRes = sumV13Prop(getActiveV13List(combatant), 'trueDmgResistPct');
+  const domTrueRes = Number(getDomainOwnBuffs(combatant).trueDmgResistPct || 0);
+  return Math.min(0.65, v13TrueRes + domTrueRes);
+}
+
+export function getEffectiveCombatSpd(combatant) {
+  if (!combatant) return 0;
+  const slow = Math.min(0.75, Math.max(0, Number(combatant.state?.spdDebuffPct || 0)));
+  const boost = Math.max(0, Number(combatant.state?.earlySpdBonusPct || 0));
+  let eff = Math.round(Number(combatant.spd || 0) * (1 - slow) * (1 + boost));
+  if (hasItem(combatant, 'soul_rare_1')) eff = Math.round(eff * 1.15);
+  return Math.max(1, eff);
+}
+
+export function cleanseCombatantDebuffs(combatant, maxCount = 1) {
+  const st = combatant?.state;
+  if (!st || maxCount <= 0) return [];
+  const cleansed = [];
+  const tryClear = (cond, label, fn) => {
+    if (cleansed.length >= maxCount || !cond) return;
+    fn();
+    cleansed.push(label);
+  };
+  tryClear(Boolean(st.isStunned), 'Choáng', () => { st.isStunned = false; });
+  tryClear((st.blindTurns || 0) > 0, 'Mù', () => { st.blindTurns = 0; });
+  tryClear(Boolean(st.poisonActive && (st.poisonPct > 0 || st.poisonScaling)), 'Trúng Độc', () => {
+    st.poisonActive = false;
+    st.poisonPct = 0;
+    st.poisonScaling = null;
+    st.poisonTurns = 0;
+  });
+  tryClear((st.burnTurns || 0) > 0, 'Thiêu Đốt', () => {
+    st.burnTurns = 0;
+    st.burnPct = 0;
+    st.burnMode = null;
+    st.burnIgnoresShield = false;
+  });
+  tryClear((st.healReductionTurns || 0) > 0, 'Giảm Hồi Máu', () => {
+    st.healReductionTurns = 0;
+    st.healReductionPct = 0;
+  });
+  tryClear((st.atkDebuffTurns || 0) > 0, 'Giảm ATK', () => {
+    st.atkDebuffTurns = 0;
+    st.atkDebuffPct = 0;
+  });
+  tryClear((st.defDebuffTurns || 0) > 0, 'Phá Giáp', () => {
+    st.defDebuffTurns = 0;
+    st.defDebuffPct = 0;
+    st.defDebuffTotalPct = 0;
+  });
+  tryClear((st.spdDebuffTurns || 0) > 0, 'Giảm SPD', () => {
+    st.spdDebuffTurns = 0;
+    st.spdDebuffPct = 0;
+  });
+  tryClear((st.enemyDmgDebuffTurns || 0) > 0, 'Giảm ST', () => {
+    st.enemyDmgDebuffTurns = 0;
+    st.enemyDmgDebuffPct = 0;
+  });
+  tryClear((st.enemyAccDebuffTurns || 0) > 0, 'Giảm Chính Xác', () => {
+    st.enemyAccDebuffTurns = 0;
+    st.enemyAccDebuffPct = 0;
+  });
+  return cleansed;
+}
+
 /**
  * Kiểm tra khả năng miễn nhiễm Khống Chế (Quang Minh Thánh Thú, Tinh Tú Huyền Nữ Hồn & v1.3 Immunity)
  */
@@ -440,14 +507,9 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     || (e.turnCleanseInterval && turnNumber % e.turnCleanseInterval === 0),
   );
   if (hasPet(actor, 'bach_ngoc_thien_nga') || hasItem(actor, 'soul_epic_3') || hasIntervalCleanse) {
-    const cleansed = [];
-    if (actor.state.isStunned) { actor.state.isStunned = false; cleansed.push('Choáng'); }
-    else if (actor.state.blindTurns > 0) { actor.state.blindTurns = 0; cleansed.push('Mù'); }
-    else if (actor.state.burnTurns > 0) { actor.state.burnTurns = 0; cleansed.push('Thiêu Đốt'); }
-    else if (actor.state.atkDebuffTurns > 0) { actor.state.atkDebuffTurns = 0; actor.state.atkDebuffPct = 0; cleansed.push('Giảm ATK'); }
-    else if (actor.state.defDebuffTurns > 0) { actor.state.defDebuffTurns = 0; actor.state.defDebuffPct = 0; cleansed.push('Phá Giáp'); }
+    const cleansed = cleanseCombatantDebuffs(actor, 1);
     if (cleansed.length > 0) {
-      result.events.push({ actor: actor.id, action: 'cleanse', skill: `Hóa Giải (${cleansed[0]})` });
+      result.events.push({ actor: actor.id, action: 'cleanse', skill: `Hóa Giải (${cleansed.join(' + ')})` });
     }
   }
 
@@ -466,9 +528,15 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     actor.state.burnTurns -= 1;
     if (getDotResistance(actor) < 1) {
       const res = getDotResistance(actor);
-      const dmg = Math.floor(actor.maxHp * actor.state.burnPct * (1 - res));
+      const burnBaseHp = actor.state.burnMode === 'current' ? actor.currentHp : actor.maxHp;
+      const dmg = Math.max(1, Math.floor(burnBaseHp * actor.state.burnPct * (1 - res)));
       actor.currentHp = Math.max(1, actor.currentHp - dmg);
       result.events.push({ actor: actor.id, action: 'dot', skill: `Thiêu Đốt (-${dmg.toLocaleString('vi-VN')} HP, bỏ qua khiên)` });
+    }
+    if (actor.state.burnTurns === 0) {
+      actor.state.burnPct = 0;
+      actor.state.burnMode = null;
+      actor.state.burnIgnoresShield = false;
     }
   }
 
@@ -515,12 +583,20 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
     if (h.stripEnemyBuffInterval && (turnNumber % h.stripEnemyBuffInterval === 0)) {
       if (target.state.atkStacks > 0) {
         target.state.atkStacks -= 1;
-        target.atk = Math.max(50, Math.round(target.atk / 1.07));
+        target.atk = Math.max(50, Math.round(target.atk - (target.baseAtk || target.atk) * 0.06));
         result.events.push({ actor: actor.id, action: 'cleanse', skill: `${h.source} (Xóa Buff ATK)` });
+      } else if (target.state.defStacks > 0) {
+        target.state.defStacks -= 1;
+        target.def = Math.max(50, Math.round(target.def - (target.baseDef || target.def) * 0.05));
+        result.events.push({ actor: actor.id, action: 'cleanse', skill: `${h.source} (Xóa Buff DEF)` });
       } else if (target.state.damageReductionTurns > 0) {
         target.state.damageReductionTurns = 0;
         target.state.damageReductionPct = 0;
         result.events.push({ actor: actor.id, action: 'cleanse', skill: `${h.source} (Xóa Giảm ST)` });
+      } else if (target.state.earlySpdBonusTurns > 0) {
+        target.state.earlySpdBonusTurns = 0;
+        target.state.earlySpdBonusPct = 0;
+        result.events.push({ actor: actor.id, action: 'cleanse', skill: `${h.source} (Xóa Buff SPD)` });
       }
     }
     if (h.siphonEvery3TurnsPct && (turnNumber === 1 || (turnNumber - 1) % 3 === 0)) {
@@ -544,8 +620,14 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
   }
 
   // Hồi phục HP mỗi hiệp (Pet + Gem + Soul)
-  let totalHealPct = sumV13Prop(activeV13, 'turnHealPct');
-  const healSources = totalHealPct > 0 ? [`Hồi ${Math.round(totalHealPct * 100)}%`] : [];
+  let totalHealPct = 0;
+  const healSources = [];
+  for (const h of activeV13) {
+    if (typeof h.turnHealPct === 'number' && h.turnHealPct > 0) {
+      totalHealPct += h.turnHealPct;
+      healSources.push(`${h.label || h.source} ${Math.round(h.turnHealPct * 100)}%`);
+    }
+  }
   if (hasPet(actor, 'thanh_truc_tien_loc')) { totalHealPct += 0.08; healSources.push('Linh Mộc 8%'); }
   if (hasPet(actor, 'thanh_long_au_xa')) {
     totalHealPct += 0.10;
@@ -573,7 +655,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
   if (totalHealPct > 0) {
     const healed = applyHeal(actor, actor.maxHp * Math.min(0.35, totalHealPct));
     if (healed > 0) {
-      result.events.push({ actor: actor.id, action: 'heal', skill: `Hồi +${healed.toLocaleString('vi-VN')} HP (${healSources[0]})` });
+      result.events.push({ actor: actor.id, action: 'heal', skill: `Hồi +${healed.toLocaleString('vi-VN')} HP (${healSources.join(' + ')})` });
     }
   }
 
@@ -581,11 +663,14 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
   if (hasItem(actor, 'soul_epic_1') && actor.state.atkStacks < 5) {
     actor.state.atkStacks += 1;
     actor.atk = Math.round(actor.atk + actor.baseAtk * 0.05);
+    result.events.push({ actor: actor.id, action: 'buff', skill: `Tích Lũy +5% ATK (${actor.state.atkStacks}/5)` });
   }
   for (const h of activeV13) {
-    if (h.atkStackPct && actor.state.atkStacks < (h.atkStackMax || 5)) {
+    const maxSt = h.atkStackMax || 5;
+    if (h.atkStackPct && actor.state.atkStacks < maxSt) {
       actor.state.atkStacks += 1;
       actor.atk = Math.round(actor.atk + actor.baseAtk * h.atkStackPct);
+      result.events.push({ actor: actor.id, action: 'buff', skill: `Tích Lũy +${Math.round(h.atkStackPct * 100)}% ATK (${actor.state.atkStacks}/${maxSt})` });
     }
   }
 
@@ -659,7 +744,7 @@ export function triggerTurnStart(actor, target, rng, turnNumber = 1) {
 /**
  * Giai đoạn 3: Tính toán ra đòn (onAttack)
  */
-export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { multiplier: 1, isTrueDamage: false }) {
+export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { multiplier: 1, isTrueDamage: false }, opts = {}) {
   const haxNotes = [];
   let isMiss = false;
   let isDodged = false;
@@ -685,6 +770,8 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
         isDodged: false,
         shieldPiercePct: 0,
         lifestealPct: 0,
+        onHitMaxHpHealPct: 0,
+        applyOnHitEffects: null,
         instantExecute: false,
         haxTriggered: 'Mù Lòa Thái Dương (Đánh Trượt)',
       };
@@ -702,6 +789,8 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
       isDodged: false,
       shieldPiercePct: 0,
       lifestealPct: 0,
+      onHitMaxHpHealPct: 0,
+      applyOnHitEffects: null,
       instantExecute: false,
       haxTriggered: 'Nhiễu Loạn Chính Xác (Đánh Trượt)',
     };
@@ -738,6 +827,8 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
       counterLabel: v13Counter?.dodgeCounterLabel || (legacyCounter ? 'Nguyệt Hoa Phản Công (80% ATK)' : null),
       shieldPiercePct: 0,
       lifestealPct: 0,
+      onHitMaxHpHealPct: 0,
+      applyOnHitEffects: null,
       instantExecute: false,
       haxTriggered: v13Counter
         ? `${v13Counter.dodgeCounterLabel} (Né & Phản Công)`
@@ -752,9 +843,13 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
   const totalDefRed = Math.min(0.75, (target.state.defDebuffPct || 0) + Number(targetDomInDeb.defReductionPct || 0));
   const baseDefTarget = elemData.isTrueDamage ? 0 : Math.max(0, Math.round(target.def * (1 - totalDefRed)));
 
-  let defPiercePct = sumV13Prop(actorV13, 'defPiercePct')
+  const v13DefPierce = sumV13Prop(actorV13, 'defPiercePct');
+  let defPiercePct = v13DefPierce
     + Number(actorDomOwn.defPiercePct || 0)
     + (Number(actor?.setBonus?.defPiercePct || 0) / 100);
+  if (v13DefPierce > 0) {
+    haxNotes.push(`Xuyên ${Math.round(Math.min(0.90, v13DefPierce) * 100)}% DEF`);
+  }
   if (hasPet(actor, 'thai_duong_kim_o')) { defPiercePct += 0.65; haxNotes.push('Xuyên 65% DEF'); }
   else if (hasPet(actor, 'hoa_diem_ho')) { defPiercePct += 0.50; haxNotes.push('Thiêu Hồn Xuyên 50% DEF'); }
   else if (hasPet(actor, 'bach_kim_ho_tu')) { defPiercePct += 0.35; haxNotes.push('Phá Giáp Trảm Xuyên 35% DEF'); }
@@ -799,6 +894,7 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
     actor.state.nextHitBonusPct = 0;
   }
 
+  const targetTrueRes = getTrueDamageResistPct(target);
   for (const h of actorV13) {
     if (h.shieldActiveAtkBonusPct && actor.shield > 0) {
       damage = Math.floor(damage * (1 + h.shieldActiveAtkBonusPct));
@@ -817,7 +913,7 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
       damage = Math.floor(damage * (1 + h.lowHpBonusDmgPct));
     }
     if (h.bonusTrueAtkPct) {
-      damage += Math.floor(effectiveAtk * h.bonusTrueAtkPct * (1 + domHaxDmgBonus));
+      damage += Math.floor(effectiveAtk * h.bonusTrueAtkPct * (1 + domHaxDmgBonus) * (1 - targetTrueRes));
     }
   }
 
@@ -858,7 +954,7 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
 
     const critTrueAtk = sumV13Prop(actorV13, 'critBonusTrueAtkPct');
     if (critTrueAtk > 0) {
-      damage += Math.floor(effectiveAtk * critTrueAtk * (1 + domHaxDmgBonus));
+      damage += Math.floor(effectiveAtk * critTrueAtk * (1 + domHaxDmgBonus) * (1 - targetTrueRes));
     }
     critLifestealBonus = sumV13Prop(actorV13, 'critLifestealPct');
   }
@@ -873,120 +969,144 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
     shieldPiercePct += 0.25;
   }
   shieldPiercePct = Math.min(1.0, shieldPiercePct);
-
-  if (hasPet(actor, 'dia_long_nham_vuong')) {
-    if (target.shield > 0) {
-      target.shield = Math.floor(target.shield * 0.50);
-      haxNotes.push('Địa Chấn Phá 50% Khiên');
-    }
-    if (!isControlImmune(target, 'debuff')) {
-      target.state.defDebuffPct = Math.max(target.state.defDebuffPct, 0.20);
-      target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, 2);
+  const shieldDamageMult = Math.max(1.0, maxV13Prop(actorV13, 'shieldDamageMult') || 1.0);
+  if (target.shield > 0) {
+    if (shieldDamageMult > 1.0) haxNotes.push(`Phá Khiên ×${shieldDamageMult}`);
+    if (shieldPiercePct > 0 && !(actor.state.antiShieldTurns > 0 && hasItem(actor, 'weapon_mythic_1'))) {
+      haxNotes.push(`Xuyên ${Math.round(shieldPiercePct * 100)}% Khiên`);
     }
   }
 
-  // 6. Áp dụng hiệu ứng lên mục tiêu (Stun, Burn, Heal Reduction, EnemyDmgDebuff, Steal ATK, v1.3)
-  if (hasPet(actor, 'bang_tuyet_ho') || hasItem(actor, 'weapon_epic_3')) {
-    if (rng() < Math.min(0.45, 0.25 * actorHaxProc)) {
-      const res = rollControlResist(target, rng, 'cc');
-      if (!res.resisted) { target.state.isStunned = true; haxNotes.push('Đóng Băng'); }
-    }
-  }
-  if (hasPet(actor, 'tu_dien_linh_ung') || hasItem(actor, 'weapon_epic_5')) {
-    if (rng() < Math.min(0.45, 0.25 * actorHaxProc)) {
-      const res = rollControlResist(target, rng, 'cc');
-      if (!res.resisted) { target.state.isStunned = true; haxNotes.push('Choáng'); }
-    }
-  }
-  if (hasItem(actor, 'weapon_rare_1') && rng() < 0.15 * actorHaxProc) {
-    const res = rollControlResist(target, rng, 'cc');
-    if (!res.resisted) { target.state.isStunned = true; haxNotes.push('Tê Liệt 15%'); }
-  }
-  if (hasItem(actor, 'soul_rare_4') && rng() < 0.15 * actorHaxProc) {
-    const res = rollControlResist(target, rng, 'cc');
-    if (!res.resisted) { target.state.isStunned = true; haxNotes.push('Ru Ngủ 15%'); }
-  }
-  if (hasPet(actor, 'hoa_linh_tieu_ho')) {
-    target.state.burnPct = Math.max(target.state.burnPct, 0.04);
-    target.state.burnTurns = Math.max(target.state.burnTurns, 2);
-    haxNotes.push('Đốm Lửa Đốt 4%');
-  }
-  if (hasItem(actor, 'weapon_rare_2')) {
-    target.state.burnPct = Math.max(target.state.burnPct, 0.05);
-    target.state.burnTurns = Math.max(target.state.burnTurns, 2);
-  }
-  if (hasItem(actor, 'weapon_mythic_4')) {
-    target.state.burnPct = Math.max(target.state.burnPct, 0.08);
-    target.state.burnTurns = Math.max(target.state.burnTurns, 2);
-    haxNotes.push('Phần Thiên Đốt 8%');
-  }
-  if (hasPet(actor, 'minh_gioi_u_ho') && !isControlImmune(target, 'debuff')) {
-    target.state.healReductionPct = Math.max(target.state.healReductionPct, 0.40);
-    target.state.healReductionTurns = Math.max(target.state.healReductionTurns, 3);
-  }
-  if (hasItem(actor, 'weapon_epic_6') && !isControlImmune(target, 'debuff')) {
-    target.state.enemyDmgDebuffPct = Math.max(target.state.enemyDmgDebuffPct, 0.18);
-    target.state.enemyDmgDebuffTurns = Math.max(target.state.enemyDmgDebuffTurns, 2);
-  }
-
-  for (const h of actorV13) {
-    if (h.ccProc) {
-      const effectiveChance = Math.min(0.55, h.ccProc.chance * actorHaxProc);
-      if (rng() < effectiveChance) {
-        const res = rollControlResist(target, rng, h.ccProc.kind || 'cc');
-        if (!res.resisted) {
-          target.state.isStunned = true;
-          haxNotes.push(h.ccProc.skill);
-        }
+  // 6. Hiệu ứng On-Hit lên mục tiêu (chỉ áp dụng nếu đòn không bị chặn bởi Bất Tử / Nghịch Đảo)
+  const applyOnHitEffects = () => {
+    const appliedNotes = [];
+    if (hasPet(actor, 'dia_long_nham_vuong')) {
+      if (target.shield > 0) {
+        target.shield = Math.floor(target.shield * 0.50);
+        appliedNotes.push('Địa Chấn Phá 50% Khiên');
+      }
+      if (!isControlImmune(target, 'debuff')) {
+        target.state.defDebuffPct = Math.max(target.state.defDebuffPct, 0.20);
+        target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, 2);
       }
     }
-    if (h.burnOnHitPct) {
-      const bChance = h.burnChance ?? 1.0;
-      if (rng() < bChance) {
-        const burnVal = Math.min(0.14, h.burnOnHitPct * (1 + domHaxDmgBonus));
-        target.state.burnPct = Math.max(target.state.burnPct, burnVal);
-        target.state.burnTurns = Math.max(target.state.burnTurns, 2);
+
+    if (hasPet(actor, 'bang_tuyet_ho') || hasItem(actor, 'weapon_epic_3')) {
+      if (rng() < Math.min(0.45, 0.25 * actorHaxProc)) {
+        const res = rollControlResist(target, rng, 'cc');
+        if (!res.resisted) { target.state.isStunned = true; appliedNotes.push('Đóng Băng'); }
       }
     }
-    if (h.defDebuffPct && !isControlImmune(target, 'debuff')) {
-      target.state.defDebuffPct = Math.max(target.state.defDebuffPct, h.defDebuffPct);
-      target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, h.defDebuffTurns || 2);
+    if (hasPet(actor, 'tu_dien_linh_ung') || hasItem(actor, 'weapon_epic_5')) {
+      if (rng() < Math.min(0.45, 0.25 * actorHaxProc)) {
+        const res = rollControlResist(target, rng, 'cc');
+        if (!res.resisted) { target.state.isStunned = true; appliedNotes.push('Choáng'); }
+      }
     }
-    if (h.defDebuffPerHitPct && !isControlImmune(target, 'debuff')) {
-      const cap = h.defDebuffMaxTotal || 0.48;
-      target.state.defDebuffTotalPct = Math.min(cap, (target.state.defDebuffTotalPct || 0) + h.defDebuffPerHitPct);
-      target.state.defDebuffPct = Math.max(target.state.defDebuffPct, target.state.defDebuffTotalPct);
-      target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, 3);
+    if (hasItem(actor, 'weapon_rare_1') && rng() < 0.15 * actorHaxProc) {
+      const res = rollControlResist(target, rng, 'cc');
+      if (!res.resisted) { target.state.isStunned = true; appliedNotes.push('Tê Liệt 15%'); }
     }
-    if (h.stealAtkPerHitPct && (actor.state.atkStealStacks || 0) < (h.stealAtkMaxStacks || 3)) {
-      actor.state.atkStealStacks = (actor.state.atkStealStacks || 0) + 1;
-      const stolen = Math.floor(target.atk * h.stealAtkPerHitPct);
-      target.atk = Math.max(50, target.atk - stolen);
-      actor.atk += stolen;
-      haxNotes.push(`Đoạt +${stolen} ATK`);
+    if (hasItem(actor, 'soul_rare_4') && rng() < 0.15 * actorHaxProc) {
+      const res = rollControlResist(target, rng, 'cc');
+      if (!res.resisted) { target.state.isStunned = true; appliedNotes.push('Ru Ngủ 15%'); }
     }
-    if (h.hitEnemyDmgDebuffPct && !isControlImmune(target, 'debuff')) {
-      target.state.enemyDmgDebuffPct = Math.max(target.state.enemyDmgDebuffPct, h.hitEnemyDmgDebuffPct);
-      target.state.enemyDmgDebuffTurns = Math.max(target.state.enemyDmgDebuffTurns, h.hitEnemyDmgDebuffTurns || 2);
+    if (hasPet(actor, 'hoa_linh_tieu_ho')) {
+      target.state.burnPct = Math.max(target.state.burnPct, 0.04);
+      target.state.burnTurns = Math.max(target.state.burnTurns, 2);
+      target.state.burnMode = 'max';
+      appliedNotes.push('Đốm Lửa Đốt 4%');
     }
-    if (h.enemyAccDebuffPct && !isControlImmune(target, 'blind')) {
-      target.state.enemyAccDebuffPct = Math.max(target.state.enemyAccDebuffPct, h.enemyAccDebuffPct);
-      target.state.enemyAccDebuffTurns = Math.max(target.state.enemyAccDebuffTurns, h.enemyAccDebuffTurns || 2);
+    if (hasItem(actor, 'weapon_rare_2')) {
+      target.state.burnPct = Math.max(target.state.burnPct, 0.05);
+      target.state.burnTurns = Math.max(target.state.burnTurns, 2);
+      target.state.burnMode = 'max';
     }
-    if (h.enemyHealRedPct && !isControlImmune(target, 'debuff')) {
-      target.state.healReductionPct = Math.max(target.state.healReductionPct, h.enemyHealRedPct);
+    if (hasItem(actor, 'weapon_mythic_4')) {
+      target.state.burnPct = Math.max(target.state.burnPct, 0.08);
+      target.state.burnTurns = Math.max(target.state.burnTurns, 2);
+      target.state.burnMode = 'max';
+      appliedNotes.push('Phần Thiên Đốt 8%');
+    }
+    if (hasPet(actor, 'minh_gioi_u_ho') && !isControlImmune(target, 'debuff')) {
+      target.state.healReductionPct = Math.max(target.state.healReductionPct, 0.40);
       target.state.healReductionTurns = Math.max(target.state.healReductionTurns, 3);
     }
+    if (hasItem(actor, 'weapon_epic_6') && !isControlImmune(target, 'debuff')) {
+      target.state.enemyDmgDebuffPct = Math.max(target.state.enemyDmgDebuffPct, 0.18);
+      target.state.enemyDmgDebuffTurns = Math.max(target.state.enemyDmgDebuffTurns, 2);
+    }
+
+    for (const h of actorV13) {
+      if (h.ccProc) {
+        const effectiveChance = Math.min(0.55, h.ccProc.chance * actorHaxProc);
+        if (rng() < effectiveChance) {
+          const res = rollControlResist(target, rng, h.ccProc.kind || 'cc');
+          if (!res.resisted) {
+            target.state.isStunned = true;
+            appliedNotes.push(h.ccProc.skill);
+          }
+        }
+      }
+      if (h.burnOnHitPct) {
+        const bChance = h.burnChance ?? 1.0;
+        if (rng() < bChance) {
+          const burnVal = Math.min(0.14, h.burnOnHitPct * (1 + domHaxDmgBonus));
+          if (burnVal >= (target.state.burnPct || 0)) {
+            target.state.burnPct = burnVal;
+            target.state.burnMode = h.burnMode || 'max';
+          }
+          target.state.burnTurns = Math.max(target.state.burnTurns, 2);
+          if (h.burnIgnoresShield) target.state.burnIgnoresShield = true;
+        }
+      }
+      if (h.defDebuffPct && !isControlImmune(target, 'debuff')) {
+        target.state.defDebuffPct = Math.max(target.state.defDebuffPct, h.defDebuffPct);
+        target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, h.defDebuffTurns || 2);
+      }
+      if (h.defDebuffPerHitPct && !isControlImmune(target, 'debuff')) {
+        const cap = h.defDebuffMaxTotal || 0.48;
+        target.state.defDebuffTotalPct = Math.min(cap, (target.state.defDebuffTotalPct || 0) + h.defDebuffPerHitPct);
+        target.state.defDebuffPct = Math.max(target.state.defDebuffPct, target.state.defDebuffTotalPct);
+        target.state.defDebuffTurns = Math.max(target.state.defDebuffTurns, 3);
+      }
+      if (h.stealAtkPerHitPct && (actor.state.atkStealStacks || 0) < (h.stealAtkMaxStacks || 3)) {
+        actor.state.atkStealStacks = (actor.state.atkStealStacks || 0) + 1;
+        const stolen = Math.floor(target.atk * h.stealAtkPerHitPct);
+        target.atk = Math.max(50, target.atk - stolen);
+        actor.atk += stolen;
+        appliedNotes.push(`Đoạt +${stolen} ATK`);
+      }
+      if (h.hitEnemyDmgDebuffPct && !isControlImmune(target, 'debuff')) {
+        target.state.enemyDmgDebuffPct = Math.max(target.state.enemyDmgDebuffPct, h.hitEnemyDmgDebuffPct);
+        target.state.enemyDmgDebuffTurns = Math.max(target.state.enemyDmgDebuffTurns, h.hitEnemyDmgDebuffTurns || 2);
+      }
+      if (h.enemyAccDebuffPct && !isControlImmune(target, 'blind')) {
+        target.state.enemyAccDebuffPct = Math.max(target.state.enemyAccDebuffPct, h.enemyAccDebuffPct);
+        target.state.enemyAccDebuffTurns = Math.max(target.state.enemyAccDebuffTurns, h.enemyAccDebuffTurns || 2);
+      }
+      if (h.enemyHealRedPct && !isControlImmune(target, 'debuff')) {
+        target.state.healReductionPct = Math.max(target.state.healReductionPct, h.enemyHealRedPct);
+        target.state.healReductionTurns = Math.max(target.state.healReductionTurns, 3);
+      }
+    }
+    return appliedNotes;
+  };
+
+  if (!opts.deferOnHitEffects && (target.state?.isImmortalTurns || 0) === 0) {
+    haxNotes.push(...applyOnHitEffects());
   }
 
-  // 7. Lifesteal %
+  // 7. Lifesteal % & Hồi HP theo đòn đánh (Thanh Phong Ngọc Tiêu)
   let lifestealPct = sumV13Prop(actorV13, 'lifestealPct') + critLifestealBonus + Number(actorDomOwn.lifestealPct || 0);
-  if (hasPet(actor, 'u_minh_tieu_mieu')) lifestealPct += 0.12;
+  if (hasPet(actor, 'u_linh_tieu_mieu') || hasPet(actor, 'u_minh_tieu_mieu')) lifestealPct += 0.12;
   if (hasPet(actor, 'minh_gioi_u_ho')) lifestealPct += 0.22;
   if (hasItem(actor, 'weapon_epic_1')) lifestealPct += 0.15;
   if (hasItem(actor, 'weapon_mythic_5')) lifestealPct += 0.25;
   if (hasItem(actor, 'soul_rare_2')) lifestealPct += 0.10;
   if (hasItem(actor, 'soul_epic_4')) lifestealPct += 0.25;
+
+  const onHitMaxHpHealPct = (hasItem(actor, 'weapon_rare_5') ? 0.05 : 0) + sumV13Prop(actorV13, 'onHitMaxHpHealPct');
 
   // 8. Kết Liễu Tức Thì (Execute)
   let instantExecute = false;
@@ -1021,11 +1141,13 @@ export function triggerAttackPhase(actor, target, baseDamage, rng, elemData = { 
     isMiss: false,
     isDodged: false,
     shieldPiercePct,
-    shieldDamageMult: Math.max(1.0, maxV13Prop(actorV13, 'shieldDamageMult') || 1.0),
+    shieldDamageMult,
     bonusTrueOnShieldBreakPct: sumV13Prop(actorV13, 'bonusTrueOnShieldBreakPct'),
     ignoreEnemyDmgRedPct: sumV13Prop(actorV13, 'ignoreEnemyDmgRedPct'),
     isTrueDamage: Boolean(elemData.isTrueDamage),
     lifestealPct: Math.min(0.65, lifestealPct),
+    onHitMaxHpHealPct,
+    applyOnHitEffects: opts.deferOnHitEffects ? applyOnHitEffects : null,
     instantExecute,
     haxTriggered: haxNotes.length > 0 ? haxNotes.join(' + ') : null,
   };
@@ -1049,7 +1171,7 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
     const healed = applyHeal(target, finalDamage);
     reflectedDamage = Math.floor(finalDamage * Math.max(0.20, 1 - Number(attackerDomOwn.reflectResistPct || 0)));
     events.push({ actor: target.id, action: 'absorb_reflect', skill: `Hỗn Độn Nghịch Đảo (+${healed.toLocaleString('vi-VN')} HP & Phản 100%)` });
-    return { finalDamage: 0, reflectedDamage, events };
+    return { finalDamage: 0, reflectedDamage, events, nullified: true };
   }
 
   // 2. Cửu Vĩ Hộ Thể / Kim Thân Bất Tử: Bất tử & phản 100% (trừ tự đánh bản thân)
@@ -1061,7 +1183,7 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
     } else {
       events.push({ actor: target.id, action: 'immune', skill: 'Kim Thân Miễn Nhiễm ST' });
     }
-    return { finalDamage: 0, reflectedDamage, events };
+    return { finalDamage: 0, reflectedDamage, events, nullified: true };
   }
 
   // 3. Giảm sát thương nhận vào
@@ -1090,8 +1212,9 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
     if (h.dmgRedPct) applyRed(h.dmgRedPct);
   }
   if (target.element && (target.element.includes('Hỗn Độn') || target.element.includes('Hư Không'))) applyRed(0.15);
-  if (dmgOpts.isTrueDamage && targetDomOwn.trueDmgResistPct) {
-    applyRed(Number(targetDomOwn.trueDmgResistPct));
+  if (dmgOpts.isTrueDamage) {
+    const trueRes = getTrueDamageResistPct(target);
+    if (trueRes > 0) applyRed(trueRes);
   }
 
   finalDamage = Math.max(0, Math.floor(finalDamage * Math.max(0.15, 1 - totalReduction)));
@@ -1099,40 +1222,35 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
   // Hấp thụ % sát thương thành Khiên (Hắc Diệu Thôn Linh Ấn, Hoàng Tuyền Bất Diệt)
   const absorbShieldPct = maxV13Prop(targetV13, 'absorbDmgAsShieldPct');
   if (absorbShieldPct > 0 && finalDamage > 0) {
-    addShield(target, finalDamage * absorbShieldPct);
+    const gainedShield = addShield(target, finalDamage * absorbShieldPct);
+    if (gainedShield > 0) {
+      events.push({ actor: target.id, action: 'shield_absorb', skill: `Hấp Thụ Khiên +${gainedShield.toLocaleString('vi-VN')}` });
+    }
   }
 
   if (isSelfHit) {
-    return { finalDamage, reflectedDamage: 0, events };
+    return { finalDamage, reflectedDamage: 0, events, nullified: false };
   }
 
-  // 4. Phản đòn
-  let rawReflect = 0;
-  if (hasItem(target, 'gem_mythic_2')) {
-    rawReflect += Math.floor(finalDamage * 0.75);
-    events.push({ actor: target.id, action: 'reflect', skill: 'Kính Hoa Thủy Nguyệt (Phản 75%)' });
-  } else if (hasPet(target, 'huyen_vu_linh_quy')) {
-    rawReflect += Math.floor(finalDamage * 0.35);
-    events.push({ actor: target.id, action: 'reflect', skill: 'Huyền Vũ Phản 35%' });
-  } else if (hasPet(target, 'thiet_giap_xich_giac')) {
-    rawReflect += Math.floor(finalDamage * 0.30);
-    events.push({ actor: target.id, action: 'reflect', skill: 'Phản Chấn 30%' });
-  } else if (hasPet(target, 'thuy_tinh_huyen_ngao')) {
-    rawReflect += Math.floor(finalDamage * 0.25);
-    events.push({ actor: target.id, action: 'reflect', skill: 'Nghịch Lưu Phản 25%' });
-  }
-  if (hasItem(target, 'gem_epic_2')) {
-    rawReflect += Math.floor(finalDamage * 0.30);
-    events.push({ actor: target.id, action: 'reflect', skill: 'Hàn Băng Phản 30%' });
-  }
+  // 4. Phản đòn (cộng dồn đồng nhất & chặn trần tổng 85%)
+  let reflectPctTotal = 0;
+  const reflectLabels = [];
+  if (hasItem(target, 'gem_mythic_2')) { reflectPctTotal += 0.75; reflectLabels.push('Kính Hoa 75%'); }
+  if (hasItem(target, 'gem_epic_2')) { reflectPctTotal += 0.30; reflectLabels.push('Hàn Băng 30%'); }
+  if (hasPet(target, 'huyen_vu_linh_quy')) { reflectPctTotal += 0.35; reflectLabels.push('Huyền Vũ 35%'); }
+  else if (hasPet(target, 'thiet_giap_xich_giac')) { reflectPctTotal += 0.30; reflectLabels.push('Phản Chấn 30%'); }
+  else if (hasPet(target, 'thuy_tinh_huyen_ngao')) { reflectPctTotal += 0.25; reflectLabels.push('Nghịch Lưu 25%'); }
   const v13Reflect = sumV13Prop(targetV13, 'reflectPct');
   if (v13Reflect > 0) {
-    rawReflect += Math.floor(finalDamage * Math.min(0.85, v13Reflect));
-    events.push({ actor: target.id, action: 'reflect', skill: `Phản Đòn (${Math.round(v13Reflect * 100)}%)` });
+    reflectPctTotal += v13Reflect;
+    reflectLabels.push(`${Math.round(v13Reflect * 100)}%`);
   }
-  if (rawReflect > 0) {
+  if (reflectPctTotal > 0) {
+    const cappedReflectPct = Math.min(0.85, reflectPctTotal);
+    const rawReflect = Math.floor(finalDamage * cappedReflectPct);
     const atkReflectRes = Number(attackerDomOwn.reflectResistPct || 0);
     reflectedDamage = Math.floor(rawReflect * Math.max(0.20, 1 - atkReflectRes));
+    events.push({ actor: target.id, action: 'reflect', skill: `Phản Đòn (${reflectLabels.join(' + ')})` });
   }
 
   // 5. Hiệu ứng khống chế / đốt / giảm ATK khi bị tấn công
@@ -1161,7 +1279,10 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
 
   for (const h of targetV13) {
     if (h.reflectBurnPct && getDotResistance(attacker) < 1) {
-      attacker.state.burnPct = Math.max(attacker.state.burnPct, h.reflectBurnPct);
+      if (h.reflectBurnPct >= (attacker.state.burnPct || 0)) {
+        attacker.state.burnPct = h.reflectBurnPct;
+        attacker.state.burnMode = 'max';
+      }
       attacker.state.burnTurns = Math.max(attacker.state.burnTurns, 2);
     }
     if (h.reflectAtkDebuffPct && !isControlImmune(attacker, 'debuff')) {
@@ -1184,7 +1305,7 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
     }
   }
 
-  return { finalDamage, reflectedDamage, events };
+  return { finalDamage, reflectedDamage, events, nullified: false };
 }
 
 /**
@@ -1214,15 +1335,7 @@ export function triggerPostDamage(target, attacker) {
   // Nguyệt Thần Bạch Vĩ Hồ: 1 lần/trận khi HP < 35%, giải hiệu ứng xấu, hồi 30% HP & thêm 1 lượt
   if (!target.state.phaseShiftUsed && (target.currentHp / target.maxHp) < 0.35 && hasPet(target, 'nguyet_than_cuu_vy_bach')) {
     target.state.phaseShiftUsed = true;
-    target.state.isStunned = false;
-    target.state.blindTurns = 0;
-    target.state.burnTurns = 0;
-    target.state.atkDebuffTurns = 0;
-    target.state.atkDebuffPct = 0;
-    target.state.defDebuffTurns = 0;
-    target.state.defDebuffPct = 0;
-    target.state.spdDebuffTurns = 0;
-    target.state.spdDebuffPct = 0;
+    cleanseCombatantDebuffs(target, 99);
     const healed = applyHeal(target, target.maxHp * 0.30);
     target.state.isDoubleTurn = true;
     events.push({
@@ -1270,13 +1383,7 @@ export function triggerPostDamage(target, attacker) {
     }
     if (!target.state.phaseShiftUsed && h.phaseShift && (target.currentHp / target.maxHp) < h.phaseShift.hpRatio) {
       target.state.phaseShiftUsed = true;
-      target.state.isStunned = false;
-      target.state.blindTurns = 0;
-      target.state.burnTurns = 0;
-      target.state.atkDebuffTurns = 0;
-      target.state.atkDebuffPct = 0;
-      target.state.defDebuffTurns = 0;
-      target.state.defDebuffPct = 0;
+      cleanseCombatantDebuffs(target, 99);
       const healed = applyHeal(target, target.maxHp * h.phaseShift.healPct);
       if (h.phaseShift.doubleTurn) target.state.isDoubleTurn = true;
       events.push({

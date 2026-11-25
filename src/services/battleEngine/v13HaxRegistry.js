@@ -27,7 +27,7 @@ export const V13_PET_HAX = {
   tu_vi_huyen_quy: { dmgRedPct: 0.28, reflectPct: 0.40, label: 'Bắc Đẩu Giáp Thần' },
   hon_nguyen_thanh_long: { turnHealPct: 0.07, turnCleanse: 1, label: 'Thái Ất Trường Sinh' },
   loi_than_cuu_ung: { ccProc: { chance: 0.30, kind: 'stun', skill: 'Thần Lôi Chiết Quang' }, startSpdStealPct: 0.25 },
-  thien_co_ngoc_ho: { dodgePct: 0.28, dodgeCounterAtkRatio: 0.90, dodgeCounterLabel: 'Thiên Cơ Đảo Ảnh' },
+  thien_co_ngoc_ho: { dodgePct: 0.28, dodgeCounterAtkRatio: 0.90, dodgeCounterDefPierce: 1.0, dodgeCounterLabel: 'Thiên Cơ Đảo Ảnh' },
   u_do_ma_lang: { lifestealPct: 0.28, enemyHealRedPct: 0.45, label: 'Phệ Hồn Huyết Trảo' },
   van_nhac_than_ngu: { startShieldPct: 0.70, critDmgRedPct: 0.35, label: 'Trấn Nhạc Sơn Hà' },
   tinh_van_cuu_loc: { cheatDeathHpPct: 0.15, cheatDeathImmortalTurns: 1, turnHealPct: 0.06, label: 'Tinh Thần Độ Thế' },

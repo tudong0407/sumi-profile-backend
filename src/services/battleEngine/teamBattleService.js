@@ -20,6 +20,8 @@ import {
   applyHeal,
   hasPet,
   hasItem,
+  getEffectiveCombatSpd,
+  getTrueDamageResistPct,
 } from './haxEngine.js';
 import { V13_PET_HAX, getCombatantV13HaxList } from './v13HaxRegistry.js';
 import { em, uiEm, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
@@ -393,7 +395,8 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       const p1 = hasThunderFirstStrike(u1) ? 1 : 0;
       const p2 = hasThunderFirstStrike(u2) ? 1 : 0;
       if (p1 !== p2) return p2 - p1;
-      if (u2.spd !== u1.spd) return u2.spd - u1.spd;
+      const spdDiff = getEffectiveCombatSpd(u2) - getEffectiveCombatSpd(u1);
+      if (spdDiff !== 0) return spdDiff;
       return rng() < 0.5 ? -1 : 1;
     });
 
@@ -441,10 +444,11 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
 
         let attackPhase;
         if (forcedDamage !== null) {
+          const totalDefRed = Math.min(0.75, (defender.state?.defDebuffPct || 0) + Number(defender.domainRuntime?.incomingDebuffs?.defReductionPct || 0));
           const baseDef = elemAdv.isTrueDamage
             ? 0
-            : Math.max(0, Math.round(defender.def * (1 - Math.min(0.75, defender.state?.defDebuffPct || 0))));
-          const effDef = Math.floor(baseDef * (1 - Math.min(1, Math.max(0, forcedDefPiercePct || 0))));
+            : Math.max(0, Math.round(defender.def * (1 - totalDefRed)));
+          const effDef = (forcedDefPiercePct || 0) >= 1.0 ? 0 : Math.floor(baseDef * (1 - Math.min(1, Math.max(0, forcedDefPiercePct || 0))));
           const computedForcedDmg = Math.max(50, Math.floor((forcedDamage - effDef * 0.35) * (elemAdv.multiplier || 1)));
           attackPhase = {
             damage: computedForcedDmg,
@@ -453,6 +457,8 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
             shieldPiercePct: forcedShieldPiercePct || 0,
             shieldDamageMult: 1.0,
             lifestealPct: 0,
+            onHitMaxHpHealPct: 0,
+            applyOnHitEffects: null,
             ignoreEnemyDmgRedPct: 0,
             isTrueDamage: Boolean(elemAdv.isTrueDamage),
             bonusTrueOnShieldBreakPct: 0,
@@ -464,7 +470,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
             multiplier: Number(elemAdv.multiplier || 1.0),
             isTrueDamage: Boolean(elemAdv.isTrueDamage),
             elementAdvantage: elemAdv.label,
-          });
+          }, { deferOnHitEffects: true });
         }
 
         if (attackPhase.isMiss) {
@@ -481,6 +487,10 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         const notes = [];
         if (extraLabel && forcedDamage === null) notes.push(extraLabel);
         if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
+        if (!damageRecv.nullified && typeof attackPhase.applyOnHitEffects === 'function') {
+          const onHitNotes = attackPhase.applyOnHitEffects();
+          if (onHitNotes.length > 0) notes.push(...onHitNotes);
+        }
         for (const ev of damageRecv.events || []) {
           if (ev?.skill) notes.push(ev.skill);
         }
@@ -508,14 +518,14 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
 
           if (defender.shield === 0) {
             if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
-              const breakBonus = Math.floor(defender.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
+              const breakBonus = Math.floor(defender.maxHp * attackPhase.bonusTrueOnShieldBreakPct * (1 - getTrueDamageResistPct(defender)));
               dmgToApply += breakBonus;
               notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
             }
             if (defender.state?.shieldExplodePct > 0) {
               const pct = defender.state.shieldExplodePct;
               defender.state.shieldExplodePct = 0;
-              const explodeDmg = Math.floor(defender.maxHp * pct);
+              const explodeDmg = Math.floor(defender.maxHp * pct * (1 - getTrueDamageResistPct(striker)));
               striker.currentHp = Math.max(0, striker.currentHp - explodeDmg);
               notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
               if (striker.currentHp <= 0) {
@@ -535,6 +545,10 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
           const healPenalty = Math.min(0.85, Number(strikerDebuffs.healReductionPct || 0));
           const healAmt = applyHeal(striker, dmgToApply * totalLifestealPct * (1 - healPenalty));
           if (healAmt > 0) notes.push(`Hút +${healAmt.toLocaleString('vi-VN')} HP`);
+        }
+        if (!damageRecv.nullified && attackPhase.onHitMaxHpHealPct > 0 && striker.currentHp > 0 && striker.id !== defender.id) {
+          const healAmt = applyHeal(striker, striker.maxHp * attackPhase.onHitMaxHpHealPct);
+          if (healAmt > 0) notes.push(`Ngọc Tiêu Hồi +${healAmt.toLocaleString('vi-VN')} HP`);
         }
 
         // Phản sát thương (Damage Reflection từ Bảo Ngọc / Pet / HAX)

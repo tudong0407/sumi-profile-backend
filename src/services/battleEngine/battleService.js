@@ -47,6 +47,8 @@ import {
   hasPet,
   hasItem,
   applyHeal,
+  getEffectiveCombatSpd,
+  getTrueDamageResistPct,
 } from './haxEngine.js';
 
 export const PVP_DAILY_LT_LIMIT = 15;
@@ -688,11 +690,12 @@ function buildFullBattleLog({
     }
     const cIcon = compactMode ? `${em('su_crit_boom')}` : em('su_crit_boom');
     const critTag = t.isCrit ? ` ${cIcon} **CRIT**` : '';
+    const shieldTag = t.absorbedByShield > 0 ? ` *(khiên chặn ${t.absorbedByShield.toLocaleString('vi-VN')})*` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
     if (compactMode) {
-      return `• **H${t.turn}** **${actorObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')}/${t.defenderHp.toLocaleString('vi-VN')})*`;
+      return `• **H${t.turn}** **${actorObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')}/${t.defenderHp.toLocaleString('vi-VN')})*`;
     }
-    return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+    return `• **H${t.turn}** **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
   });
 
   const allTurnLines = buildTurnLines(false);
@@ -1052,8 +1055,9 @@ function executeHit({
 }) {
   let attackPhase;
   if (forcedDamage !== null) {
-    const baseDefTarget = elemData.isTrueDamage ? 0 : Math.max(0, Math.round(target.def * (1 - (target.state.defDebuffPct || 0))));
-    const effDef = Math.floor(baseDefTarget * Math.max(0, 1 - forcedDefPiercePct));
+    const totalDefRed = Math.min(0.75, (target.state?.defDebuffPct || 0) + Number(target.domainRuntime?.incomingDebuffs?.defReductionPct || 0));
+    const baseDefTarget = elemData.isTrueDamage ? 0 : Math.max(0, Math.round(target.def * (1 - totalDefRed)));
+    const effDef = forcedDefPiercePct >= 1.0 ? 0 : Math.floor(baseDefTarget * Math.max(0, 1 - forcedDefPiercePct));
     const calc = Math.max(50, Math.floor((forcedDamage - effDef * 0.4) * (elemData.multiplier || 1)));
     attackPhase = {
       damage: calc,
@@ -1067,22 +1071,29 @@ function executeHit({
       ignoreEnemyDmgRedPct: 0,
       isTrueDamage: Boolean(elemData.isTrueDamage),
       lifestealPct: 0,
+      onHitMaxHpHealPct: 0,
+      applyOnHitEffects: null,
       instantExecute: false,
       haxTriggered: label,
     };
   } else {
-    attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, elemData);
+    attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, elemData, { deferOnHitEffects: true });
   }
 
   const notes = [...extraEvents];
   if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
   let actualDamageDealt = 0;
+  let absorbedByShield = 0;
 
   if (!attackPhase.isMiss) {
     const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng, {
       ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
       isTrueDamage: Boolean(attackPhase.isTrueDamage),
     });
+    if (!damageRecv.nullified && typeof attackPhase.applyOnHitEffects === 'function') {
+      const onHitNotes = attackPhase.applyOnHitEffects();
+      if (onHitNotes.length > 0) notes.push(...onHitNotes);
+    }
     for (const ev of damageRecv.events || []) {
       if (ev?.skill) notes.push(ev.skill);
     }
@@ -1099,9 +1110,10 @@ function executeHit({
       const shieldCost = Math.ceil(shieldableDmg * shieldMult);
       if (target.shield >= shieldCost) {
         target.shield -= shieldCost;
+        absorbedByShield = shieldableDmg;
         shieldableDmg = 0;
       } else {
-        const absorbedByShield = Math.floor(target.shield / shieldMult);
+        absorbedByShield = Math.floor(target.shield / shieldMult);
         shieldableDmg = Math.max(0, shieldableDmg - absorbedByShield);
         target.shield = 0;
       }
@@ -1109,14 +1121,14 @@ function executeHit({
 
       if (target.shield === 0) {
         if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
-          const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct);
+          const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct * (1 - getTrueDamageResistPct(target)));
           dmgToApply += breakBonus;
           notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
         }
         if (target.state.shieldExplodePct > 0) {
           const pct = target.state.shieldExplodePct;
           target.state.shieldExplodePct = 0;
-          const explodeDmg = Math.floor(target.maxHp * pct);
+          const explodeDmg = Math.floor(target.maxHp * pct * (1 - getTrueDamageResistPct(actor)));
           actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
           notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
           if (actor.currentHp <= 0) {
@@ -1133,6 +1145,11 @@ function executeHit({
     if (attackPhase.lifestealPct > 0 && actualDamageDealt > 0 && actor.currentHp > 0) {
       const healed = applyHeal(actor, actualDamageDealt * attackPhase.lifestealPct);
       if (healed > 0) notes.push(`Hút Máu +${healed.toLocaleString('vi-VN')}`);
+    }
+
+    if (!damageRecv.nullified && attackPhase.onHitMaxHpHealPct > 0 && actor.currentHp > 0) {
+      const healed = applyHeal(actor, actor.maxHp * attackPhase.onHitMaxHpHealPct);
+      if (healed > 0) notes.push(`Ngọc Tiêu Hồi +${healed.toLocaleString('vi-VN')} HP`);
     }
 
     if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
@@ -1162,6 +1179,7 @@ function executeHit({
     actor: role,
     action: attackPhase.isMiss ? 'miss' : 'attack',
     damage: actualDamageDealt,
+    absorbedByShield,
     isCrit: attackPhase.isCrit,
     elementAdvantage: elemData.elementAdvantage,
     haxTriggered: notes.length > 0 ? notes.join(' • ') : null,
@@ -1253,23 +1271,15 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   const domainState = initDomainBattleState(attacker, defender);
   const domainEvents = [];
 
-  const getEffSpd = (c) => {
-    let base = Math.round(c.spd * (1 - (c.state.spdDebuffPct || 0)) * (1 + (c.state.earlySpdBonusPct || 0)));
-    if (hasItem(c, 'soul_rare_1')) base = Math.round(base * 1.15);
-    return base;
-  };
-
-  let attackerFirst = true;
   const atkHasSpeedPriority = hasPet(attacker, 'loi_dinh_kim_ho') || hasHax(attacker, 'lôi quang tốc') || Boolean(V13_PET_HAX[attacker.petType]?.firstStrike);
   const defHasSpeedPriority = hasPet(defender, 'loi_dinh_kim_ho') || hasHax(defender, 'lôi quang tốc') || Boolean(V13_PET_HAX[defender.petType]?.firstStrike);
 
-  if (atkHasSpeedPriority && !defHasSpeedPriority) {
-    attackerFirst = true;
-  } else if (!atkHasSpeedPriority && defHasSpeedPriority) {
-    attackerFirst = false;
-  } else {
-    attackerFirst = getEffSpd(attacker) >= getEffSpd(defender);
-  }
+  const computeAttackerFirst = () => {
+    if (atkHasSpeedPriority && !defHasSpeedPriority) return true;
+    if (!atkHasSpeedPriority && defHasSpeedPriority) return false;
+    return getEffectiveCombatSpd(attacker) >= getEffectiveCombatSpd(defender);
+  };
+  let attackerFirst = computeAttackerFirst();
 
   const formatDomainTurnInfo = () => {
     const da = domainState.attacker;
@@ -1317,6 +1327,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       }
     }
 
+    attackerFirst = computeAttackerFirst();
     const order = attackerFirst
       ? [{ actor: attacker, target: defender, role: 'attacker' }, { actor: defender, target: attacker, role: 'defender' }]
       : [{ actor: defender, target: attacker, role: 'defender' }, { actor: attacker, target: defender, role: 'attacker' }];
@@ -1337,7 +1348,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
           damage: 0,
           isCrit: false,
           elementAdvantage: null,
-          haxTriggered: startTags[0] || 'Mất lượt do khống chế',
+          haxTriggered: startTags.length > 0 ? startTags.join(' • ') : 'Mất lượt do khống chế',
           attackerHp: attacker.currentHp,
           defenderHp: defender.currentHp,
         });
@@ -1503,8 +1514,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         return `• **${actorObj.petName}** → **${targetObj.petName}**: *Trượt (${t.haxTriggered || 'Né'})*`;
       }
       const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
+      const shieldTag = t.absorbedByShield > 0 ? ` *(khiên chặn ${t.absorbedByShield.toLocaleString('vi-VN')})*` : '';
       const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
-      return `• **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+      return `• **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
     });
 
     turnSnapshots.push({

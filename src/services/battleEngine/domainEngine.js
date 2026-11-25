@@ -12,6 +12,7 @@
 import { V13_DOMAIN_ELEMENTS } from '../../data/v13ExpansionCatalog.js';
 import { V14_DAO_AP_CONFIG } from '../../data/v14ExpansionCatalog.js';
 import { em, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import { cleanseCombatantDebuffs } from './haxEngine.js';
 
 function getEquipDomainBonuses(combatant) {
   let extraEnergy = 0;
@@ -26,18 +27,19 @@ function getEquipDomainBonuses(combatant) {
     if (id === 'gem_mythic_22') extraEnergy += 1;
     if (id === 'gem_unique_10') {
       extraEnergy += 1;
-      drainResistChance += 0.20;
+      drainResistChance += 0.25;
+      buffBonusPct += 0.10;
     }
     if (id === 'weapon_mythic_6') buffBonusPct += 0.15;
-    if (id === 'weapon_mythic_18') buffBonusPct += 0.15;
+    if (id === 'weapon_mythic_18') buffBonusPct += 0.10;
     if (id === 'weapon_unique_10') {
       buffBonusPct += 0.20;
       debuffBonusPct += 0.10;
     }
-    if (id === 'soul_mythic_20') buffBonusPct += 0.18;
+    if (id === 'soul_mythic_20') debuffBonusPct += 0.12;
     if (id === 'soul_unique_10') {
-      buffBonusPct += 0.22;
-      debuffBonusPct += 0.22;
+      extraEnergy += 2;
+      debuffBonusPct += 0.20;
     }
   }
   return { extraEnergy, buffBonusPct, debuffBonusPct, drainResistChance: Math.min(0.95, drainResistChance) };
@@ -371,11 +373,15 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
       const senseTxt = side.sense ? `${senseEmoji(side.sense.sense_id, em('su_sparkle'))} ${side.sense.name}`.trim() : null;
       const realmTxt = side.realm ? `${realmEmojiById(side.realm.realm_id, em('su_arena'))} ${side.realm.name}`.trim() : null;
       const extras = [senseTxt, realmTxt].filter(Boolean).join(' • ');
+      const otherSide = side === sideA ? sideB : sideA;
+      const waitNote = otherSide.hasDomain && !side.domain.is_exclusive_fuyumi && Number(side.domain.enemy_active_debuff_pierce || 0) === 0
+        ? ' *(Debuff Vực/Cảnh chờ Vực địch vỡ)*'
+        : '';
       events.push({
         actor: owner.id,
         action: 'domain_open',
         skill: `Khai Mở Linh Vực: ${domElIcon} ${side.domain.name}`,
-        desc: `${owner.name} triển khai ${domElIcon} **${side.domain.name}** (${side.domain.element} • ${eLabel} Linh Mạch${extras ? ` • ${extras}` : ''})!`,
+        desc: `${owner.name} triển khai ${domElIcon} **${side.domain.name}** (${side.domain.element} • ${eLabel} Linh Mạch${extras ? ` • ${extras}` : ''})${waitNote}!`,
       });
     }
   }
@@ -484,12 +490,13 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
 
     const cleanCount = Number(mods.buffs?.cleansePerTurn || 0);
     if (cleanCount > 0) {
-      for (let i = 0; i < cleanCount; i += 1) {
-        if (owner.state.isStunned) owner.state.isStunned = false;
-        else if (owner.state.blindTurns > 0) owner.state.blindTurns = 0;
-        else if (owner.state.burnTurns > 0) owner.state.burnTurns = 0;
-        else if (owner.state.atkDebuffTurns > 0) { owner.state.atkDebuffTurns = 0; owner.state.atkDebuffPct = 0; }
-        else if (owner.state.defDebuffTurns > 0) { owner.state.defDebuffTurns = 0; owner.state.defDebuffPct = 0; }
+      const cleansed = cleanseCombatantDebuffs(owner, cleanCount);
+      if (cleansed.length > 0) {
+        events.push({
+          actor: owner.id,
+          action: 'domain_cleanse',
+          skill: `Linh Vực Thanh Tẩy (${cleansed.join(' + ')})`,
+        });
       }
     }
 

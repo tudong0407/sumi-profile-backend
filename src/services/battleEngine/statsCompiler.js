@@ -313,6 +313,7 @@ export function createInitialCombatState() {
     healReductionPct: 0,
     burnTurns: 0,
     burnPct: 0,
+    burnMode: null,
     burnIgnoresShield: false,
     poisonActive: false,
     poisonPct: 0,
