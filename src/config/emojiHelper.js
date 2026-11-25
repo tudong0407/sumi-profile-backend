@@ -235,9 +235,9 @@ export function realmEmoji(level, fallback = '') {
 
 export function levelMilestoneEmojiKey(level) {
   const lv = Number(level) || 5;
-  const known = [100, 80, 60, 45, 35, 20, 15, 5];
+  const known = [100, 80, 60, 45, 35, 20, 10, 5];
   const matched = known.find((m) => lv >= m) || 5;
-  return `su_lv${matched}`;
+  return matched === 10 ? 'su_lv15' : `su_lv${matched}`;
 }
 
 export function levelMilestoneEmoji(level, fallback = '') {

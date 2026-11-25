@@ -495,17 +495,24 @@ export async function getInventory(userId, options = {}) {
   const senseIcon = equippedSense ? senseEmoji(equippedSense.entity_id, em('su_sparkle')) : '*Trống*';
   const realmIcon = equippedRealm ? realmEmojiById(equippedRealm.entity_id, em('su_arena')) : '*Trống*';
 
-  const f1Name = `${em('su_pet_paw')} Linh Thú (Bộ ${activeSlot})`;
+  const f1Name = `${em('su_pet_paw')} Linh Thú`;
   const f1Value = mainPet
     ? `${mainPet.icon} ${mainPet.grade_icon} Lv.${mainPet.level} • **${mainPet.star}★**\nLực: \`${(Number(mainPet.power_score) || 0).toLocaleString('vi-VN')}\``
     : '*Chưa xuất trận*';
 
-  const f2Name = `${em('su_crossed_swords')} Pháp Bảo (Bộ ${activeSlot})`;
-  const f2Value = equippedItems.length > 0
-    ? `${equippedItems.map((it) => it.icon).join('\u2003')}\n${equippedItems.map((it) => it.grade_icon).join('\u2003')}`
-    : '*Chưa trang bị*';
+  const eqBySlot = {
+    weapon: equippedItems.find((it) => it.item_type === 'weapon') || null,
+    gem: equippedItems.find((it) => it.item_type === 'gem') || null,
+    soul: equippedItems.find((it) => it.item_type === 'soul') || null,
+  };
+  const f2Name = `${em('su_crossed_swords')} Pháp Bảo`;
+  const f2Value = [
+    `**Vũ Khí:** ${eqBySlot.weapon ? `${eqBySlot.weapon.icon} | ${eqBySlot.weapon.grade_icon}` : '*Trống*'}`,
+    `**Bảo Ngọc:** ${eqBySlot.gem ? `${eqBySlot.gem.icon} | ${eqBySlot.gem.grade_icon}` : '*Trống*'}`,
+    `**Chiến Hồn:** ${eqBySlot.soul ? `${eqBySlot.soul.icon} | ${eqBySlot.soul.grade_icon}` : '*Trống*'}`,
+  ].join('\n');
 
-  const f3Name = `${em('su_realm_star')} Lãnh Địa (Bộ ${activeSlot})`;
+  const f3Name = `${em('su_realm_star')} Lãnh Địa`;
   const f3Value = [
     `**Linh Vực:** ${domIcon}`,
     `\u00A0\u00A0↳ **Thần Thức:** ${senseIcon}`,

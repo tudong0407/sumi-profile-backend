@@ -446,6 +446,9 @@ function buildAlchemyEmbed({
     harvest_title: harvestPayload?.title || '',
     harvest_description: harvestPayload?.description || '',
     harvest_color: harvestPayload?.color || '#10b981',
+    has_error_msg: success ? 'false' : 'true',
+    error_title: success ? '' : `${uiEm('ui_warn') || em('su_sparkle')} KHÔNG THỂ THỰC HIỆN`,
+    error_message: success ? '' : bannerText,
     state: {
       user_id: user.user_id,
       furnace_level: profile.furnace_level,

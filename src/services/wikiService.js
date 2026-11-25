@@ -159,7 +159,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nguồn EXP & Mốc Level Role',
-        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 78 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.15 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
+        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 78 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.10 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
       },
     ],
     fields: [
@@ -176,8 +176,8 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_medal_role')} Mốc Level Role & Quyền Cơ Bản Discord`,
         value: [
-          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp • ${levelMilestoneEmoji(15)} \`Lv.15\` (+5% EXP): Emoji Nitro liên server`,
-          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Nhúng liên kết & Lập Gia Tộc • ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Stream`,
+          `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp • ${levelMilestoneEmoji(10)} \`Lv.10\` (+5% EXP): Phát trực tiếp (Stream)`,
+          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Emoji Nitro liên server & Lập Gia Tộc • ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Nhúng liên kết`,
           `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15%/+10%/+5% Pet): Sticker liên server • ${levelMilestoneEmoji(60)} \`Lv.60\` (+20%/+15%/+8%): Voice Message`,
           `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30%/+25%/+12%): Soundboard • ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50%/+50%/+20%): Âm thanh liên server`,
           `• *Đặc quyền nâng cao (Đổi nick, Thread, Ghim, Priority, Poll, Slowmode...) đến từ các Role Quyền Năng trong \`/roll loai:role\`!*`,

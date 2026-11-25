@@ -44,7 +44,7 @@ export function formatRarityLabel(raw) {
 
 export const LEVEL_ROLE_MILESTONES = [
   { level: 5, roleId: '1038406122417176586', name: '« 5・U Linh Chớm Nở »' },
-  { level: 15, roleId: '1038405196662976562', name: '« 15・Linh Cáo Học Giả »' },
+  { level: 10, roleId: '1038405196662976562', name: '« 10・Linh Cáo Học Giả »' },
   { level: 20, roleId: '1032988544874061836', name: '« 20・ Linh Cáo Tinh Anh »' },
   { level: 35, roleId: '1375446293119369331', name: '« 35・Yêu Hồ Nguyệt Ảnh »' },
   { level: 45, roleId: '1375451249952161903', name: '« 45・Huyễn Linh Thú »' },
@@ -499,9 +499,9 @@ export const ROLE_DISCORD_PERMS_BY_ID = {
 
 export const LEVEL_ROLE_DISCORD_PERMS = {
   5: 'Gửi Ảnh/File (Attach Files)',
-  15: 'Dùng Emoji Nitro Ngoại Server',
-  20: 'Nhúng Liên Kết (Embed Links) & Lập Gia Tộc',
-  35: 'Phát Trực Tiếp (Stream)',
+  10: 'Phát Trực Tiếp (Stream)',
+  20: 'Dùng Emoji Nitro Ngoại Server & Lập Gia Tộc',
+  35: 'Nhúng Liên Kết (Embed Links)',
   45: 'Dùng Sticker Ngoại Server',
   60: 'Gửi Tin Nhắn Thoại (Voice Message)',
   80: 'Dùng Bảng Âm Thanh (Soundboard)',
@@ -543,7 +543,7 @@ export const LEVEL_ROLE_BUFF_CONFIG = [
   { level: 45, expPct: 15, dailyLtPct: 10, petPowerPct: 5, label: '« 45・Huyễn Linh Thú »' },
   { level: 35, expPct: 12, dailyLtPct: 10, petPowerPct: 0, label: '« 35・Yêu Hồ Nguyệt Ảnh »' },
   { level: 20, expPct: 8, dailyLtPct: 5, petPowerPct: 0, label: '« 20・ Linh Cáo Tinh Anh »' },
-  { level: 15, expPct: 5, dailyLtPct: 0, petPowerPct: 0, label: '« 15・Linh Cáo Học Giả »' },
+  { level: 10, expPct: 5, dailyLtPct: 0, petPowerPct: 0, label: '« 10・Linh Cáo Học Giả »' },
   { level: 5, expPct: 3, dailyLtPct: 0, petPowerPct: 0, label: '« 5・U Linh Chớm Nở »' },
 ];
 

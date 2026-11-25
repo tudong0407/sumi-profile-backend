@@ -334,6 +334,21 @@ export function buildLuyendanV163Cmd() {
       }, { x: cx, y: cy });
       gb.link(apiId, mId);
 
+      // Nếu thao tác bị từ chối (has_error_msg == "true"), gửi thêm 1 embed đỏ mới vào kênh (depth 0 để giữ DAG <= 1.000 els)
+      if (depth === 0) {
+        const eGate = gb.cmp(uid('ld_egate'), `{${outResVar}.response.has_error_msg}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx - 180, y: cy + 150 });
+        gb.link(mId, eGate.condId);
+        const eReply = uid('ld_ereply');
+        embedMsg(gb, eReply, {
+          title: `{${outResVar}.response.error_title}`,
+          description: `{${outResVar}.response.error_message}`,
+          color: '#ef4444',
+          footer: '',
+          target: { id: '{channel_id}' },
+        }, { x: cx - 280, y: cy + 300 });
+        gb.link(eGate.yes, eReply);
+      }
+
       const isHarvest = actionKey === 'harvest';
       let nextParent = mId;
       if (isHarvest) {
