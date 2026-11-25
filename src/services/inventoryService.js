@@ -227,11 +227,11 @@ export function toSuperscriptCount(n, minDigits = 3) {
   return [...str].map((ch) => SUPERSCRIPT_DIGITS[Number(ch)] || ch).join('');
 }
 
-function chunkEmojiGrid(tokens = [], perRow = 5, emptyText = '• Trống', maxChars = 1500) {
+function chunkEmojiGrid(tokens = [], perRow = 5, emptyText = '• Trống', maxChars = 1500, sep = '\u2003 ') {
   if (!tokens.length) return emptyText;
   const rows = [];
   for (let i = 0; i < tokens.length; i += perRow) {
-    rows.push(tokens.slice(i, i + perRow).join('\u2003 '));
+    rows.push(tokens.slice(i, i + perRow).join(sep));
   }
   const joined = [];
   let len = 0;
@@ -463,25 +463,26 @@ export async function getInventory(userId, options = {}) {
     .sort((a, b) => (slotRank[a.item_type] || 9) - (slotRank[b.item_type] || 9));
   const storageItems = items.filter((it) => !it.equipped_to_pet && !it.slot);
 
-  const petGrid = buildDividerEmojiGrid(
-    activePets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`),
+  const petGrid = chunkEmojiGrid(
     storagePets.map((p) => `${p.icon}${toSuperscriptCount(p.quantity || 1)}`),
-    5,
-    '• Chưa có Linh Thú nào.',
+    3,
+    '• Trống',
     900,
+    ' ',
   );
-  const itemGrid = buildDividerEmojiGrid(
-    equippedItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
+  const itemGrid = chunkEmojiGrid(
     storageItems.map((it) => `${it.icon}${toSuperscriptCount(it.quantity || 1)}`),
-    5,
-    '• Chưa có Pháp Bảo nào.',
+    3,
+    '• Trống',
     900,
+    ' ',
   );
   const consumableGrid = chunkEmojiGrid(
     consumables.map((c) => `${c.icon}${toSuperscriptCount(c.quantity || 1)}`),
-    5,
-    '• Chưa có vật phẩm tiêu hao nào.',
+    3,
+    '• Trống',
     900,
+    ' ',
   );
 
   const activeSlot = [1, 2, 3].includes(Number(user.active_loadout_slot)) ? Number(user.active_loadout_slot) : 1;
@@ -519,10 +520,10 @@ export async function getInventory(userId, options = {}) {
     `\u00A0\u00A0↳ **Thần Cảnh:** ${realmIcon}`,
   ].join('\n');
 
-  const f4Name = `${em('su_pet_paw')} Kho Linh Thú (${pets.length})`;
+  const f4Name = `${em('su_pet_paw')} Kho Linh Thú (${storagePets.length})`;
   const f4Value = petGrid.slice(0, 1020) || '• Trống';
 
-  const f5Name = `${em('su_crossed_swords')} Kho Pháp Bảo (${items.length})`;
+  const f5Name = `${em('su_crossed_swords')} Kho Pháp Bảo (${storageItems.length})`;
   const f5Value = itemGrid.slice(0, 1020) || '• Trống';
 
   const f6Name = `${em('enchant_stone')} Tiêu Hao (${consumables.length})`;

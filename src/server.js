@@ -237,13 +237,22 @@ app.use('/assets', (req, res, next) => {
 });
 app.use('/assets', express.static(ASSETS_PUBLIC_DIR, { maxAge: '30d', etag: true }));
 
+function safeDecodeParam(s) {
+  if (!s || /^https?:\/\//i.test(s) || !/%[0-9A-Fa-f]{2}/.test(s)) return s;
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 function getCleanParam(val, fallback) {
   if (val && typeof val === 'string') {
-    const trimmed = val.trim();
+    const trimmed = safeDecodeParam(val.trim());
     if (trimmed && !isUnresolvedBotGhostVar(trimmed)) return trimmed;
   }
   if (fallback && typeof fallback === 'string') {
-    const trimmed = fallback.trim();
+    const trimmed = safeDecodeParam(fallback.trim());
     if (trimmed && !isUnresolvedBotGhostVar(trimmed)) return trimmed;
   }
   return null;
