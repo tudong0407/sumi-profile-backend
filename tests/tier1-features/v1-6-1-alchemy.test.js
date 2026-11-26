@@ -143,6 +143,15 @@ test('2. Nấu đan trừ vốn LT + Linh Quả, giới hạn 5 mẻ/ngày & 2 l
   assert.equal(h1.success, true);
   assert.equal(h1.harvest_summary.completed_count, 2);
   assert.equal(h1.state.total_batches_completed, 2);
+  assert.equal(h1.has_harvest_msg, 'true');
+  assert.equal(h1.has_error_msg, 'false');
+  assert.ok(h1.harvest_title.length > 0);
+  assert.equal(UNICODE_PICTO_RE.test(h1.harvest_title), false);
+  assert.match(h1.harvest_description, /Tổng Thu:.*\+.*LT/);
+  assert.match(h1.harvest_description, /Số dư mới:/);
+  assert.equal(UNICODE_PICTO_RE.test(h1.harvest_description), false);
+  assert.match(h1.description, /Vừa thu đan:.*\+.*LT/);
+  assert.equal(UNICODE_PICTO_RE.test(h1.description), false);
 
   // Đốt thêm 4 mẻ nữa để chạm ngưỡng 6/6 ngày
   for (let i = 0; i < 4; i += 1) {
@@ -230,6 +239,10 @@ test('4. Cháy đan (30 LT) + Nổ lò khóa 4h + Sửa Lò Nhanh (300 LT) & DM 
   assert.equal(hBurn.harvest_summary.burned_count, 1);
   assert.equal(hBurn.harvest_summary.total_gain_lt, ALCHEMY_BURN_PAYOUT_LT);
   assert.equal(hBurn.state.total_batches_completed, 0, 'Cháy đan không cộng mẻ thành công');
+  assert.equal(hBurn.has_harvest_msg, 'true');
+  assert.equal(hBurn.show_repair_btn, 'true');
+  assert.match(hBurn.harvest_description, /\+30 LT/);
+  assert.match(hBurn.description, /Vừa thu & dọn lò:.*\+30 LT/);
   const slot1After = hBurn.state.slots.find((s) => Number(s.slot_index) === 1);
   assert.equal(slot1After.status, 'exploded');
 

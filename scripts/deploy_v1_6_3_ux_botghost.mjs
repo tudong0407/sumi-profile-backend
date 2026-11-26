@@ -31,6 +31,7 @@ import { ALCHEMY_RECIPES } from '../src/data/v161AlchemyCatalog.js';
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
 const AI_MENTION_INT_ID = '4cc5db30-029c-4a55-86e6-6e6850012afd';
+const AUTHOR_ONLY_MSG = 'Chỉ người gọi lệnh mới được thao tác trên bảng này! Hãy tự gọi lệnh của bạn nhé.';
 
 const CUSTOM_EMOJIS_RAW = JSON.parse(
   fs.readFileSync(new URL('../src/config/custom_emojis.json', import.meta.url), 'utf8'),
@@ -54,6 +55,8 @@ class V163GraphBuilder extends GraphBuilder {
     row = '1',
     weight = '1',
     showReplies = 'hide',
+    who_can_press = 'user',
+    who_can_press_message = AUTHOR_ONLY_MSG,
   }, { x = 0, y = 0 } = {}) {
     if (!Array.isArray(basic_options) || basic_options.length === 0 || basic_options.length > 25) {
       throw new Error(`Select menu "${id}" must have 1..25 options (got ${basic_options?.length})`);
@@ -86,6 +89,7 @@ class V163GraphBuilder extends GraphBuilder {
           row: String(row),
           weight: String(weight),
           showReplies,
+          ...(who_can_press ? { who_can_press, who_can_press_message } : {}),
           validated: true,
           customVariableName,
         },
@@ -93,11 +97,12 @@ class V163GraphBuilder extends GraphBuilder {
     });
     this._addEdge({
       source: parentMsgId,
+      sourceHandle: 'components_source',
       target: id,
       animated: false,
       arrowHeadType: 'arrowclosed',
-      type: 'custom',
-      id: `reactflow__edge-${parentMsgId}-${id}`,
+      type: 'step',
+      id: `reactflow__edge-${parentMsgId}components_source-${id}`,
     });
     return id;
   }
@@ -223,7 +228,7 @@ function embedMsg(gb, id, {
   return gb.act(id, 'advanced_message', data, pos);
 }
 
-function btnCfg(label, style, emojiName, row = '1', weight = '1', showReplies = 'hide') {
+function btnCfg(label, style, emojiName, row = '1', weight = '1', showReplies = 'hide', whoCanPress = 'user') {
   const eid = uidId(emojiName);
   return {
     label,
@@ -233,6 +238,7 @@ function btnCfg(label, style, emojiName, row = '1', weight = '1', showReplies = 
     row,
     weight,
     showReplies,
+    ...(style !== 'LINK' && whoCanPress ? { who_can_press: whoCanPress, who_can_press_message: AUTHOR_ONLY_MSG } : {}),
   };
 }
 
@@ -320,122 +326,133 @@ export function buildLuyendanV163Cmd() {
     const isBroken = variant === 's1_broken' || variant === 's2_broken';
     const btnRow = hasSlot2 ? '3' : '2';
 
-    const emitEditAndContinue = (apiId, outResVar, actionKey, cx, cy) => {
-      const mId = uid('ld_msg');
-      embedMsg(gb, mId, {
+    const emitBoardEdit = (nodeId, outResVar, color, cx, cy) => {
+      embedMsg(gb, nodeId, {
         title: `{${outResVar}.response.title}`,
         description: `{${outResVar}.response.description}`,
-        color: '#ec4899',
+        color,
         imageUrl: '',
         footer: `{${outResVar}.response.footer}`,
         fields: renderBoardFields(outResVar),
         target: { editId: 'ld_board_msg' },
         action_id: 'ld_board_msg',
       }, { x: cx, y: cy });
-      gb.link(apiId, mId);
+    };
 
-      // Nếu thao tác bị từ chối (has_error_msg == "true"), gửi thêm 1 embed đỏ mới vào kênh (depth 0 để giữ DAG <= 1.000 els)
-      if (depth === 0) {
-        const eGate = gb.cmp(uid('ld_egate'), `{${outResVar}.response.has_error_msg}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx - 180, y: cy + 150 });
-        gb.link(mId, eGate.condId);
-        const eReply = uid('ld_ereply');
-        embedMsg(gb, eReply, {
-          title: `{${outResVar}.response.error_title}`,
-          description: `{${outResVar}.response.error_message}`,
-          color: '#ef4444',
-          footer: '',
-          target: { id: '{channel_id}' },
-        }, { x: cx - 280, y: cy + 300 });
-        gb.link(eGate.yes, eReply);
-      }
+    const chainErrorReply = (afterNodeId, outResVar, cx, cy) => {
+      const eGate = gb.cmp(uid('ld_egate'), `{${outResVar}.response.has_error_msg}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy });
+      gb.link(afterNodeId, eGate.condId);
+      const eReply = uid('ld_ereply');
+      embedMsg(gb, eReply, {
+        title: `{${outResVar}.response.error_title}`,
+        description: `{${outResVar}.response.error_message}`,
+        color: '#ef4444',
+        footer: '',
+        target: { trigger_channel: true },
+      }, { x: cx - 160, y: cy + 160 });
+      gb.link(eGate.yes, eReply);
+    };
 
-      const isHarvest = actionKey === 'harvest';
-      let nextParent = mId;
-      if (isHarvest) {
-        const hGate = gb.cmp(uid('ld_hgate'), `{${outResVar}.response.has_harvest_msg}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy + 150 });
-        gb.link(mId, hGate.condId);
-        const hReply = uid('ld_hreply');
-        embedMsg(gb, hReply, {
-          title: `{${outResVar}.response.harvest_title}`,
-          description: `{${outResVar}.response.harvest_description}`,
-          color: '#10b981',
-          footer: '',
-          target: { id: '{channel_id}' },
-        }, { x: cx - 150, y: cy + 300 });
-        gb.link(hGate.yes, hReply);
+    const chainHarvestReply = (afterNodeId, outResVar, color, cx, cy) => {
+      const hReply = uid('ld_hreply');
+      embedMsg(gb, hReply, {
+        title: `{${outResVar}.response.harvest_title}`,
+        description: `{${outResVar}.response.harvest_description}`,
+        color,
+        footer: '',
+        target: { trigger_channel: true },
+      }, { x: cx, y: cy });
+      gb.link(afterNodeId, hReply);
+    };
 
-        if (depth < 1) {
-          if (!isBroken) {
-            // Nếu thu đan bị nổ -> hiện ngay nút Sửa Lò; ngược lại giữ variant hiện tại
-            const bGate = gb.cmp(uid('ld_bgate'), `{${outResVar}.response.show_repair_btn}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx + 150, y: cy + 300 });
-            gb.link(mId, bGate.condId);
-            const brokenVariant = hasSlot2 ? 's2_broken' : 's1_broken';
-            const mBroken = uid('ld_msg_br');
-            embedMsg(gb, mBroken, {
-              title: `{${outResVar}.response.title}`,
-              description: `{${outResVar}.response.description}`,
-              color: '#ef4444',
-              imageUrl: '',
-              footer: `{${outResVar}.response.footer}`,
-              fields: renderBoardFields(outResVar),
-              target: { editId: 'ld_board_msg' },
-              action_id: 'ld_board_msg',
-            }, { x: cx + 80, y: cy + 450 });
-            gb.link(bGate.yes, mBroken);
-            attachVariantControls(mBroken, brokenVariant, outResVar, depth + 1, cx + 80, cy + 600);
-            attachVariantControls(hGate.no, variant, outResVar, depth + 1, cx + 260, cy + 450);
-          } else {
-            attachVariantControls(mId, variant, outResVar, depth + 1, cx, cy + 320);
+    const emitEditAndContinue = (apiId, outResVar, actionKey, cx, cy) => {
+      // Strictly <= 1 outgoing action edge per action/conditionChild node;
+      // attachVariantControls ONLY attaches to advanced_message nodes (never conditionChild).
+      if (actionKey === 'harvest') {
+        const hGate = gb.cmp(uid('ld_hgate'), `{${outResVar}.response.has_harvest_msg}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy });
+        gb.link(apiId, hGate.condId);
+
+        if (depth === 0 && !isBroken) {
+          const bGate = gb.cmp(uid('ld_bgate'), `{${outResVar}.response.show_repair_btn}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx - 200, y: cy + 160 });
+          gb.link(hGate.yes, bGate.condId);
+
+          const brokenVariant = hasSlot2 ? 's2_broken' : 's1_broken';
+          const mBroken = uid('ld_msg_br');
+          emitBoardEdit(mBroken, outResVar, '#ef4444', cx - 340, cy + 320);
+          gb.link(bGate.yes, mBroken);
+          attachVariantControls(mBroken, brokenVariant, outResVar, depth + 1, cx - 340, cy + 480);
+          chainHarvestReply(mBroken, outResVar, '#ef4444', cx - 480, cy + 480);
+
+          const mOk = uid('ld_msg_hok');
+          emitBoardEdit(mOk, outResVar, '#ec4899', cx - 60, cy + 320);
+          gb.link(bGate.no, mOk);
+          attachVariantControls(mOk, variant, outResVar, depth + 1, cx - 60, cy + 480);
+          chainHarvestReply(mOk, outResVar, '#10b981', cx - 180, cy + 480);
+        } else {
+          const mHarv = uid('ld_msg_harv');
+          const harvColor = isBroken ? '#ef4444' : '#ec4899';
+          const replyColor = isBroken ? '#ef4444' : '#10b981';
+          emitBoardEdit(mHarv, outResVar, harvColor, cx - 180, cy + 160);
+          gb.link(hGate.yes, mHarv);
+          if (depth === 0) {
+            attachVariantControls(mHarv, variant, outResVar, depth + 1, cx - 180, cy + 320);
           }
+          chainHarvestReply(mHarv, outResVar, replyColor, cx - 320, cy + 320);
+        }
+
+        const mErr = uid('ld_msg_herr');
+        emitBoardEdit(mErr, outResVar, '#f59e0b', cx + 220, cy + 160);
+        gb.link(hGate.no, mErr);
+        if (depth === 0) {
+          attachVariantControls(mErr, variant, outResVar, depth + 1, cx + 220, cy + 320);
+          chainErrorReply(mErr, outResVar, cx + 380, cy + 320);
         }
         return;
       }
 
-      if (depth >= 1) return;
+      if (actionKey === 'slot2' && !hasSlot2 && depth === 0) {
+        const s2Gate = gb.cmp(uid('ld_s2gate'), `{${outResVar}.response.slot2_unlocked}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy });
+        gb.link(apiId, s2Gate.condId);
 
-      if (actionKey === 'slot2' && !hasSlot2) {
-        const s2Gate = gb.cmp(uid('ld_s2gate'), `{${outResVar}.response.slot2_unlocked}`, 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy + 150 });
-        gb.link(mId, s2Gate.condId);
         const s2Variant = isBroken ? 's2_broken' : 's2_ok';
         const mS2 = uid('ld_msg_s2');
-        embedMsg(gb, mS2, {
-          title: `{${outResVar}.response.title}`,
-          description: `{${outResVar}.response.description}`,
-          color: '#ec4899',
-          imageUrl: '',
-          footer: `{${outResVar}.response.footer}`,
-          fields: renderBoardFields(outResVar),
-          target: { editId: 'ld_board_msg' },
-          action_id: 'ld_board_msg',
-        }, { x: cx - 140, y: cy + 300 });
+        emitBoardEdit(mS2, outResVar, '#ec4899', cx - 160, cy + 160);
         gb.link(s2Gate.yes, mS2);
-        attachVariantControls(mS2, s2Variant, outResVar, depth + 1, cx - 140, cy + 450);
-        attachVariantControls(s2Gate.no, variant, outResVar, depth + 1, cx + 140, cy + 300);
+        attachVariantControls(mS2, s2Variant, outResVar, depth + 1, cx - 160, cy + 320);
+
+        const mS2Fail = uid('ld_msg_s2f');
+        emitBoardEdit(mS2Fail, outResVar, '#f59e0b', cx + 160, cy + 160);
+        gb.link(s2Gate.no, mS2Fail);
+        attachVariantControls(mS2Fail, variant, outResVar, depth + 1, cx + 160, cy + 320);
+        chainErrorReply(mS2Fail, outResVar, cx + 320, cy + 320);
         return;
       }
 
-      if (actionKey === 'repair' && isBroken) {
-        const rGate = gb.cmp(uid('ld_rgate'), `{${outResVar}.response.show_repair_btn}`, 'false', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy + 150 });
-        gb.link(mId, rGate.condId);
+      if (actionKey === 'repair' && isBroken && depth === 0) {
+        const rGate = gb.cmp(uid('ld_rgate'), `{${outResVar}.response.show_repair_btn}`, 'false', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: cx, y: cy });
+        gb.link(apiId, rGate.condId);
+
         const okVariant = hasSlot2 ? 's2_ok' : 's1_ok';
-        const mOk = uid('ld_msg_ok');
-        embedMsg(gb, mOk, {
-          title: `{${outResVar}.response.title}`,
-          description: `{${outResVar}.response.description}`,
-          color: '#ec4899',
-          imageUrl: '',
-          footer: `{${outResVar}.response.footer}`,
-          fields: renderBoardFields(outResVar),
-          target: { editId: 'ld_board_msg' },
-          action_id: 'ld_board_msg',
-        }, { x: cx - 140, y: cy + 300 });
-        gb.link(rGate.yes, mOk);
-        attachVariantControls(mOk, okVariant, outResVar, depth + 1, cx - 140, cy + 450);
-        attachVariantControls(rGate.no, variant, outResVar, depth + 1, cx + 140, cy + 300);
+        const mRepOk = uid('ld_msg_ok');
+        emitBoardEdit(mRepOk, outResVar, '#10b981', cx - 160, cy + 160);
+        gb.link(rGate.yes, mRepOk);
+        attachVariantControls(mRepOk, okVariant, outResVar, depth + 1, cx - 160, cy + 320);
+
+        const mRepFail = uid('ld_msg_rf');
+        emitBoardEdit(mRepFail, outResVar, '#f59e0b', cx + 160, cy + 160);
+        gb.link(rGate.no, mRepFail);
+        attachVariantControls(mRepFail, variant, outResVar, depth + 1, cx + 160, cy + 320);
+        chainErrorReply(mRepFail, outResVar, cx + 320, cy + 320);
         return;
       }
 
-      attachVariantControls(nextParent, variant, outResVar, depth + 1, cx, cy + 160);
+      const mId = uid('ld_msg');
+      emitBoardEdit(mId, outResVar, '#ec4899', cx, cy);
+      gb.link(apiId, mId);
+      if (depth === 0) {
+        attachVariantControls(mId, variant, outResVar, depth + 1, cx, cy + 160);
+        chainErrorReply(mId, outResVar, cx + 180, cy + 160);
+      }
     };
 
     // Dropdown Lò #1 (Row 1)
@@ -1136,6 +1153,70 @@ function validateTreeStrict(els, label) {
   const v = validateGraph(els);
   if (v && (v.ok === false || v.valid === false || (Array.isArray(v.errors) && v.errors.length > 0))) {
     throw new Error(`validateGraph failed for ${label}: ${JSON.stringify(v)}`);
+  }
+
+  const nodes = new Map(els.filter((x) => !x.source).map((x) => [x.id, x]));
+  const edges = els.filter((x) => x.source && x.target);
+
+  for (const [id, n] of nodes.entries()) {
+    if (n.type !== 'root' && n.type !== 'condition') {
+      const actionOuts = edges.filter((e) => e.source === id && e.sourceHandle === 'action');
+      if (actionOuts.length > 1) {
+        throw new Error(`Node "${id}" in ${label} has ${actionOuts.length} outgoing action edges (must be <= 1)`);
+      }
+    }
+    if (n.type === 'advMessageButton' || n.type === 'advMessageSelectMenu') {
+      const inEdges = edges.filter((e) => e.target === id);
+      if (inEdges.length === 0) {
+        throw new Error(`Component "${id}" in ${label} has no parent edge`);
+      }
+      for (const ie of inEdges) {
+        const src = nodes.get(ie.source);
+        if (ie.sourceHandle !== 'components_source' || ie.type !== 'step' || src?.type !== 'action' || src?.data?.data?.type !== 'advanced_message') {
+          throw new Error(`Component "${id}" in ${label} has invalid parent edge from ${ie.source} (sh=${ie.sourceHandle}, type=${ie.type}, srcType=${src?.data?.data?.type})`);
+        }
+      }
+    }
+  }
+
+  if (label === 'luyendan') {
+    for (const n of nodes.values()) {
+      if (n.type === 'action' && n.data?.data?.type === 'advanced_message' && n.data?.data?.target?.id === '{channel_id}') {
+        throw new Error(`luyendan node "${n.id}" still uses target.id === '{channel_id}'`);
+      }
+      if ((n.type === 'advMessageButton' && n.data?.data?.style !== 'LINK') || n.type === 'advMessageSelectMenu') {
+        if (n.data?.data?.who_can_press !== 'user') {
+          throw new Error(`luyendan component "${n.id}" missing who_can_press='user'`);
+        }
+      }
+    }
+    const harvestBtns = [...nodes.values()].filter((n) => n.id.startsWith('btn_ld_harvest_'));
+    if (harvestBtns.length === 0) throw new Error('luyendan missing btn_ld_harvest_*');
+    for (const hb of harvestBtns) {
+      const q = [hb.id];
+      const vis = new Set([hb.id]);
+      let foundHarvestReply = false;
+      while (q.length) {
+        const cur = q.shift();
+        const cn = nodes.get(cur);
+        if (cn?.type === 'action' && cn.data?.data?.type === 'advanced_message') {
+          const ttl = cn.data?.data?.message?.embeds?.[0]?.title || '';
+          if (ttl.includes('harvest_title') && cn.data?.data?.target?.trigger_channel === true) {
+            foundHarvestReply = true;
+            break;
+          }
+        }
+        for (const e of edges) {
+          if (e.source === cur && (e.sourceHandle === 'action' || e.type === 'step') && !vis.has(e.target)) {
+            vis.add(e.target);
+            q.push(e.target);
+          }
+        }
+      }
+      if (!foundHarvestReply) {
+        throw new Error(`luyendan harvest button "${hb.id}" does not reach harvest_title trigger_channel reply`);
+      }
+    }
   }
 }
 

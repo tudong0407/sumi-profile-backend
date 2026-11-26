@@ -18,6 +18,7 @@ import { invalidateInventoryCache } from './inventoryService.js';
 
 const MAX_FARM_SLOTS = 8;
 const DEFAULT_FARM_SLOTS = 4;
+export const FARM_CARE_SPEEDUP_MS = 30 * 60000; // Rút ngắn 30 phút thời gian chín mỗi lần tưới/cho ăn đúng giờ (lưu công bố vào Update 1.7)
 
 const SLOT_TYPES_BY_INDEX = {
   1: 'linh_dien',
@@ -70,7 +71,17 @@ export function resolveSeedQuery(raw) {
   return FARM_SEEDS.find((sd) => sd.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(clean)) || null;
 }
 
-function computePlotSnapshot(row, now) {
+function computePlotTimings(row, seed, now) {
+  const plantedMs = new Date(row.planted_at || now).getTime();
+  const lastCaredMs = new Date(row.last_cared_at || row.planted_at || now).getTime();
+  const careCount = Math.max(0, Number(row.care_count || 0));
+  const matureMs = Math.max(plantedMs, plantedMs + seed.growth_hours * 3600000 - careCount * FARM_CARE_SPEEDUP_MS);
+  const wiltDeadlineMs = lastCaredMs + seed.wilt_hours * 3600000;
+  const careDueMs = lastCaredMs + seed.care_interval_hours * 3600000;
+  return { plantedMs, lastCaredMs, careCount, matureMs, wiltDeadlineMs, careDueMs };
+}
+
+export function computePlotSnapshot(row, now) {
   const isCac = row.plot_type === 'linh_cac';
   const plotLabel = isCac ? 'Linh Các' : 'Linh Điền';
   if (!row.seed_id || row.status === 'empty') {
@@ -103,11 +114,7 @@ function computePlotSnapshot(row, now) {
   }
 
   const nowMs = now.getTime();
-  const plantedMs = new Date(row.planted_at || now).getTime();
-  const lastCaredMs = new Date(row.last_cared_at || row.planted_at || now).getTime();
-  const matureMs = plantedMs + seed.growth_hours * 3600000;
-  const wiltDeadlineMs = lastCaredMs + seed.wilt_hours * 3600000;
-  const careDueMs = lastCaredMs + seed.care_interval_hours * 3600000;
+  const { matureMs, wiltDeadlineMs, careDueMs } = computePlotTimings(row, seed, now);
 
   if (row.status === 'ready' || (nowMs >= matureMs && matureMs <= wiltDeadlineMs)) {
     return {
@@ -370,24 +377,36 @@ export async function careAllPlots(userId, options = {}) {
     }
 
     const nowIso = now.toISOString();
+    let ripenedNowCount = 0;
     await Promise.all([
-      ...duePlots.map((p) =>
-        supabase.from('user_farm_plots').update({
+      ...duePlots.map((p) => {
+        const nextCareCount = (Number(p.care_count) || 0) + 1;
+        const plantedMs = new Date(p.planted_at || now).getTime();
+        const growthHours = Number(p.seed?.growth_hours || 0);
+        const nextMatureMs = growthHours > 0
+          ? Math.max(plantedMs, plantedMs + growthHours * 3600000 - nextCareCount * FARM_CARE_SPEEDUP_MS)
+          : Infinity;
+        const ripenedNow = now.getTime() >= nextMatureMs;
+        if (ripenedNow) ripenedNowCount += 1;
+        return supabase.from('user_farm_plots').update({
           last_cared_at: nowIso,
-          care_count: (Number(p.care_count) || 0) + 1,
+          care_count: nextCareCount,
+          status: ripenedNow ? 'ready' : 'growing',
           dm_care_notified: false,
           dm_wilt_stage: 0,
           updated_at: nowIso,
-        }).eq('id', p.id),
-      ),
+        }).eq('id', p.id);
+      }),
       trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
+    const readyNote = ripenedNowCount > 0 ? ` (${ripenedNowCount} ô đã chín muồi, có thể thu hoạch ngay!)` : '';
     return {
       success: true,
       cared_count: duePlots.length,
+      ripened_now_count: ripenedNowCount,
       slots: duePlots.map((p) => p.slot_index),
-      message: `${em('su_el_thuy')} Đã tưới Linh Tuyền & cho ăn thành công cho **${duePlots.length} ô** (${duePlots.map((p) => `#${p.slot_index}`).join(', ')})! Đồng hồ sinh trưởng được gia cố an toàn.`,
+      message: `${em('su_el_thuy')} Đã tưới Linh Tuyền & cho ăn thành công cho **${duePlots.length} ô** (${duePlots.map((p) => `#${p.slot_index}`).join(', ')})! Đồng hồ sinh trưởng được gia cố an toàn.${readyNote}`,
     };
   });
 }
@@ -679,11 +698,7 @@ export function evaluatePlotReminder(row, now = new Date()) {
   }
 
   const nowMs = now.getTime();
-  const plantedMs = new Date(row.planted_at || now).getTime();
-  const lastCaredMs = new Date(row.last_cared_at || row.planted_at || now).getTime();
-  const matureMs = plantedMs + seed.growth_hours * 3600000;
-  const wiltDeadlineMs = lastCaredMs + seed.wilt_hours * 3600000;
-  const careDueMs = lastCaredMs + seed.care_interval_hours * 3600000;
+  const { matureMs, wiltDeadlineMs, careDueMs } = computePlotTimings(row, seed, now);
 
   if (nowMs >= matureMs && matureMs <= wiltDeadlineMs) {
     return { transitionStatus: 'ready', alert: null };

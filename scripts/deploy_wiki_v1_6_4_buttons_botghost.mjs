@@ -25,6 +25,7 @@ import { WIKI_CATEGORIES } from '../src/services/wikiService.js';
 
 const PROFILE_GROUP_ID = '1782127263978';
 const BACKEND_BASE = 'https://sumi-profile-backend.onrender.com';
+const AUTHOR_ONLY_MSG = 'Chỉ người gọi lệnh mới được thao tác trên bảng này! Hãy tự gọi lệnh của bạn nhé.';
 
 const CUSTOM_EMOJIS_RAW = JSON.parse(
   fs.readFileSync(new URL('../src/config/custom_emojis.json', import.meta.url), 'utf8'),
@@ -52,6 +53,7 @@ function btnCfg(label, style, emojiKey, row, weight, showReplies = 'hide') {
     row: String(row),
     weight: String(weight),
     showReplies,
+    ...(style !== 'LINK' ? { who_can_press: 'user', who_can_press_message: AUTHOR_ONLY_MSG } : {}),
   };
 }
 
@@ -95,6 +97,8 @@ class WikiGraphBuilder extends GraphBuilder {
           row: String(row),
           weight: String(weight),
           showReplies,
+          who_can_press: 'user',
+          who_can_press_message: AUTHOR_ONLY_MSG,
           validated: true,
           customVariableName,
         },

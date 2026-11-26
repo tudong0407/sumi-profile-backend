@@ -802,13 +802,17 @@ export async function harvestBatch(userId, opts = {}) {
       `• **Tổng Thu:** **+${totalGainLt.toLocaleString('vi-VN')} LT** & **+${totalGainExp} EXP** *(Số dư mới: \`${newCoins.toLocaleString('vi-VN')} LT\`)*`,
     ].join('\n');
 
+    const harvestBoardBanner = anyExplodedNow
+      ? `${uiEm('ui_warn') || em('su_sparkle')} **Vừa thu & dọn lò:** **+${totalGainLt.toLocaleString('vi-VN')} LT**${totalGainExp > 0 ? ` & **+${totalGainExp} EXP**` : ''} *(xem chi tiết bên dưới)*`
+      : `${em('su_level_up') || em('su_sparkle')} **Vừa thu đan:** **+${totalGainLt.toLocaleString('vi-VN')} LT**${totalGainExp > 0 ? ` & **+${totalGainExp} EXP**` : ''} *(xem chi tiết bên dưới)*`;
+
     return {
       ...buildAlchemyEmbed({
         user: nextUser,
         profile: nextProfile,
         slots: nextSlots,
         now,
-        bannerText: '',
+        bannerText: harvestBoardBanner,
         overrideColor: anyExplodedNow ? '#ef4444' : '#ec4899',
         harvestPayload: {
           title: harvestTitle,
