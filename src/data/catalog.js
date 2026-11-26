@@ -432,7 +432,7 @@ export const MULTI_PERK_ROLES = [
   { role_id: '1573577805286080523', name: '« Thái Hư Chân Quân »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_pin_sigil')}${em('su_pin_sigil')} Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577808867762186', name: '« Vạn Bảo Tài Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${uiEm('ui_coin_gold')}${em('su_sparkle')} +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577811786993756', name: '« Bát Hoang Chiến Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_el_hoa')}${em('su_crossed_swords')} +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
-  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_sakura')} +25% EXP, +10% Chiến Lực Pet, Stream HD & Sound/Emoji/Sticker`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_sakura')} Stream/Sound/Emoji • +25% EXP • +10% Pet`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577816690401401', name: '« Tinh Hà Pháp Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_realm_star')}${em('su_shield_def')} Move/Mute/Deafen Voice, Ghim Tin & +25% EXP`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
 ];
 
@@ -440,11 +440,11 @@ export const MULTI_PERK_ROLES = [
  * 5 Role Tối Thượng Thần Thoại (0.5% — 5+ chức năng) trong Gacha Role
  */
 export const SUPREME_ROLES = [
-  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_shield_def')} Full Voice/Chat/Thread, +70% EXP & Daily LT, +25% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${uiEm('ui_crown_king')} Full Voice/Chat/Thread, +60% EXP & Daily LT, +20% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_realm_star')} Bá Chủ Voice/Thread, +50% EXP & Daily LT, +18% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sparkle')} Full Voice/Thread, x2.5 Daily LT & -15% Shop`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sakura')} Voice/Chat/Thread VIP, +80% EXP & +15% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_shield_def')} Full Voice/Chat • +70% EXP & Daily LT • +25% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${uiEm('ui_crown_king')} Full Voice/Chat • +60% EXP & Daily LT • +20% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_realm_star')} Voice/Thread VIP • +50% EXP & Daily LT • +18% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sparkle')} Voice/Thread VIP • x2.5 Daily LT • -15% Shop`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sakura')} Voice/Chat VIP • +80% EXP • +15% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
 ];
 
 /**

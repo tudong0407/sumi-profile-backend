@@ -1156,10 +1156,17 @@ export function drawAutoFitSingleLineText(ctx, text, x, y, maxWidth, options = {
     }
   }
   ctx.font = makeFont(chosen);
+  let measuredW = ctx.measureText(clean).width;
+  if (measuredW > maxWidth && measuredW > 0) {
+    const scaled = Math.max(4.2, Number((chosen * (maxWidth / measuredW)).toFixed(2)));
+    chosen = scaled;
+    ctx.font = makeFont(chosen);
+    measuredW = ctx.measureText(clean).width;
+  }
   ctx.fillStyle = color;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
-  if (ctx.measureText(clean).width > maxWidth) {
+  if (measuredW > maxWidth) {
     ctx.fillText(clean, x, y, maxWidth);
   } else {
     ctx.fillText(clean, x, y);

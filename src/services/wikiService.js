@@ -85,6 +85,9 @@ const CATEGORY_ALIASES = {
   glossary_2: 'glossary',
   glossary_3: 'glossary',
   glossary_4: 'glossary',
+  roles_1: 'roles',
+  roles_2: 'roles',
+  roles_3: 'roles',
 };
 
 export const WIKI_METADATA = {
@@ -341,61 +344,150 @@ export const WIKI_CATEGORIES = {
     id: 'roles',
     title: `${em('su_medal_role')} Role Quyền Năng & Quyền Discord (40 Role + 8 Mốc Cấp)`,
     icon: em('su_medal_role'),
-    description: 'Chi tiết quyền Discord & Buff Tu Tiên của 40 Role Quyền Năng (/shop, /roll) và 8 Level Roles. Dùng /info <tên role> để xem đầy đủ.',
+    description: 'Bố cục 3 trang: (1) Role Cao Cấp, (2) 21 Role Phàm & Cảnh Giới, (3) Giải thích chi tiết từng gói quyền & Buff.',
     image_url: '',
     sections: [
       {
         heading: '1. Hệ Thống 40 Role Quyền Năng & 8 Level Roles',
-        content: '• 5 Thần Thoại (0.5%) + 6 Tiên Phẩm (14%) + 8 Linh Phẩm (25%) + 21 Phàm Phẩm (Shop & 60.5%).\n• Mở tối đa 5 Slot Role theo Cảnh Giới (/roles, /equip, /unequip). Tra từng Role bằng /info <tên role>.',
+        content: '• Trang 1: 5 Thần Thoại (0.5%) + 6 Tiên Phẩm (14%) + 8 Linh Phẩm (25%).\n• Trang 2: 21 Phàm Phẩm (/shop & 60.5%) + 8 Level Roles (Lv.5–100).\n• Trang 3: Giải thích chi tiết Full Voice, Full Chat/Thread, Voice/Chat VIP & Phạm vi Buff Tu Tiên.',
       },
     ],
-    fields: [
+    pages: [
       {
-        name: `${tierEmoji('mythic')} 5 Role Thần Thoại (0.5% /roll — Full Quyền + Siêu Buff)`,
-        value: [
-          '• **Cửu Vĩ Tối Thượng Thần Hồ:** Full Voice/Chat/Thread/Nick/TTS/Sound (`+70% EXP & Daily LT, +25% Pet`)',
-          '• **SuMi Đệ Nhất Khách Tôn:** Full Voice (Move/Mute/Deafen/Ưu tiên/HD/Sound), Full Chat/Thread/Nick/TTS (`+60% EXP & Daily LT, +20% Pet`)',
-          '• **Vạn Cổ Chí Tôn:** Voice (Move/Mute/Deafen/Ưu tiên/HD), Chat/Thread/Nick/Emoji+Sticker ngoại (`+50% EXP & Daily LT, +18% Pet`)',
-          '• **Sáng Thế Thần Quân:** Voice (Move/Ưu tiên/HD), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`x2.5 Daily LT, -15% Shop`)',
-          '• **Cửu Vĩ Yêu Hậu:** Voice (Move/Mute/HD/Sound ngoại), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`+80% EXP, +15% Pet`)',
-        ].join('\n'),
-        inline: false,
+        page: 1,
+        subtitle: 'Trang 1/3 — Role Cao Cấp (5 Thần Thoại • 6 Tiên Phẩm • 8 Linh Phẩm)',
+        fields: [
+          {
+            name: `${tierEmoji('mythic')} 5 Role Thần Thoại (0.5% /roll)`,
+            value: [
+              '• **« Cửu Vĩ Tối Thượng Thần Hồ »**',
+              '-# ↳ Full Voice/Chat • +70% EXP & Daily LT • +25% Pet',
+              '• **« SuMi Đệ Nhất Khách Tôn »**',
+              '-# ↳ Full Voice/Chat • +60% EXP & Daily LT • +20% Pet',
+              '• **« Vạn Cổ Chí Tôn »**',
+              '-# ↳ Voice/Thread VIP • +50% EXP & Daily LT • +18% Pet',
+              '• **« Sáng Thế Thần Quân »**',
+              '-# ↳ Voice/Thread VIP • x2.5 Daily LT • -15% Shop',
+              '• **« Cửu Vĩ Yêu Hậu »**',
+              '-# ↳ Voice/Chat VIP • +80% EXP • +15% Pet',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${tierEmoji('epic')} 6 Role Tiên Phẩm (14% /roll)`,
+            value: [
+              '• **« Cửu Tiêu Phong Vương »**',
+              '-# ↳ Move/Mute Voice, Miễn Slowmode • +20% EXP',
+              '• **« Thái Hư Chân Quân »**',
+              '-# ↳ Quản Lý Nick, Ghim Tin, Thread Kín • +20% Daily LT',
+              '• **« Vạn Bảo Tài Thần »**',
+              '-# ↳ Nhúng Link/Ảnh, Emoji/Sticker Ngoại • +35% Daily LT • -10% Shop/Roll',
+              '• **« Bát Hoang Chiến Thần »**',
+              '-# ↳ Stream HD, Ghim Tin, Miễn Slowmode • +20% EXP • +15% Pet',
+              '• **« Hồng Trần Tiên Lữ »**',
+              '-# ↳ Stream/Sound/Emoji/Sticker Ngoại • +25% EXP • +10% Pet',
+              '• **« Tinh Hà Pháp Vương »**',
+              '-# ↳ Move/Mute/Deafen Voice, Ghim Tin • +25% EXP',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${tierEmoji('rare')} 8 Role Linh Phẩm (25% /roll)`,
+            value: [
+              '• **« Song Tuyệt Kiếm Khách »**',
+              '-# ↳ Ghim Tin Nhắn, Miễn Slowmode',
+              '• **« Huyễn Ảnh Linh Tôn »**',
+              '-# ↳ Tự Do Đổi Nick, Emoji/Sticker Ngoại • +10% EXP',
+              '• **« Lôi Vũ Hộ Pháp »**',
+              '-# ↳ Di Chuyển & Ưu Tiên Nói Voice',
+              '• **« Hàn Ngọc Tiên Tử »**',
+              '-# ↳ Stream HD, Soundboard & Âm Ngoại • +10% Daily LT',
+              '• **« Mật Các Trưởng Lão »**',
+              '-# ↳ Thread Mở/Kín, Đọc Kênh Lưu Trữ • +12% EXP',
+              '• **« Kim Tiền Đạo Nhân »**',
+              '-# ↳ Biểu Cảm & Emoji Ngoại • +25% Daily LT • -5% Shop',
+              '• **« Chiến Hồn Tiên Phong »**',
+              '-# ↳ Nhúng Link/Ảnh, Miễn Slowmode • +8% Pet',
+              '• **« Thiên Âm Nhạc Sư »**',
+              '-# ↳ Ưu Tiên Voice, Soundboard & Âm Ngoại • +12% EXP',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
       },
       {
-        name: `${tierEmoji('epic')} 6 Role Tiên Phẩm (14% /roll — 3–4 Chức Năng)`,
-        value: [
-          '• **Cửu Tiêu Phong Vương:** Move/Mute Voice, Miễn Slowmode (`+20% EXP`) • **Thái Hư Chân Quân:** Quản lý Nick, Ghim, Thread Kín (`+20% Daily LT`)',
-          '• **Vạn Bảo Tài Thần:** Nhúng Link/Ảnh, Emoji & Sticker Ngoại (`+35% Daily LT, -10% Shop/Roll`) • **Bát Hoang Chiến Thần:** Stream HD, Ghim, Miễn Slowmode (`+20% EXP, +15% Pet`)',
-          '• **Hồng Trần Tiên Lữ:** Stream HD, Sound/Emoji/Sticker Ngoại (`+25% EXP, +10% Pet`) • **Tinh Hà Pháp Vương:** Move/Mute/Deafen Voice, Ghim (`+25% EXP`)',
-        ].join('\n'),
-        inline: false,
+        page: 2,
+        subtitle: 'Trang 2/3 — 21 Role Phàm Phẩm (/shop & 60.5% /roll) & 8 Mốc Cảnh Giới',
+        fields: [
+          {
+            name: `${tierEmoji('common')} 8 Role Voice Phàm Phẩm`,
+            value: [
+              '• **« Linh Âm Hồ Ca »** — *Ưu Tiên Nói, Soundboard & Âm Ngoại*',
+              '• **« Phong Thanh Hộ Pháp »** — *Di Chuyển Thành Viên Voice (Move)*',
+              '• **« Lôi Âm Tôn Giả »** — *Ưu Tiên Nói Voice (Priority Speaker)*',
+              '• **« Tịch Tĩnh Tán Nhân »** — *Tắt Mic Thành Viên Voice (Mute)*',
+              '• **« Bế Tức Chân Nhân »** — *Tắt Tai Nghe Thành Viên Voice (Deafen)*',
+              '• **« Huyễn Âm Tiên Cô »** — *Dùng Bảng Âm Thanh (Soundboard)*',
+              '• **« Cửu Châu Diễn Âm »** — *Dùng Soundboard & Âm Ngoại Server*',
+              '• **« Tiêu Dao Khách »** — *Phát Trực Tiếp Video HD 1080p (Stream)*',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${tierEmoji('common')} 11 Role Chat/Nick/Thread & 2 Role Thuần Buff`,
+            value: [
+              '• **« Huyễn Diện Đạo Quân »** *(Đổi Nick)* • **« Định Danh Sứ Giả »** *(Quản Lý Nick)*',
+              '• **« Thần Hành Cốt Cách »** *(Miễn Slowmode)* • **« Họa Đồ Linh Sư »** *(Link & Ảnh/File)*',
+              '• **« Vạn Tượng Linh Hồ »** *(Emoji Ngoại)* • **« Thần Phù Thượng Quan »** *(Sticker Ngoại)*',
+              '• **« Khai Sơn Tiên Phong »** *(Thread Mở)* • **« Mật Tàng Hộ Vệ »** *(Thread Kín)*',
+              '• **« Trấn Thư Pháp Vương »** *(Ghim Tin)* • **« Trảm Phong Kiếm Khách »** *(TTS)* • **« Thần Thông Thấu Thị »** *(Đọc Lịch Sử)*',
+              '• **« Linh Hồn Tu Luyện »** (`+15% EXP`) • **« Tài Vận Hanh Thông »** (`+20% Daily LT`)',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_level_up')} 8 Mốc Role Cảnh Giới Tự Mở Theo Cấp`,
+            value: [
+              '• `Lv.5` Gửi Ảnh/File (`+3% EXP`) • `Lv.10` Stream (`+5% EXP`)',
+              '• `Lv.20` Emoji Nitro & Lập Gia Tộc (`+8% EXP, +5% Daily LT`) • `Lv.35` Nhúng Link (`+12% EXP, +10% Daily LT`)',
+              '• `Lv.45` Sticker Ngoại (`+15% EXP, +10% Daily LT, +5% Pet`) • `Lv.60` Voice Message (`+20% EXP, +15% Daily LT, +8% Pet`)',
+              '• `Lv.80` Soundboard (`+30% EXP, +25% Daily LT, +12% Pet`) • `Lv.100` Âm Ngoại (`+50% EXP, +50% Daily LT, +20% Pet`)',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
       },
       {
-        name: `${tierEmoji('rare')} 8 Role Linh Phẩm (25% /roll — 2–3 Chức Năng)`,
-        value: [
-          '• **Song Tuyệt Kiếm Khách:** Ghim Tin, Miễn Slowmode • **Huyễn Ảnh Linh Tôn:** Đổi Nick, Emoji/Sticker Ngoại (`+10% EXP`)',
-          '• **Lôi Vũ Hộ Pháp:** Move & Ưu Tiên Voice • **Hàn Ngọc Tiên Tử:** Stream HD, Sound/Âm Ngoại (`+10% Daily LT`)',
-          '• **Mật Các Trưởng Lão:** Thread Mở/Kín, Đọc Kênh Ẩn (`+12% EXP`) • **Kim Tiền Đạo Nhân:** Biểu Cảm & Emoji Ngoại (`+25% Daily LT, -5% Shop`)',
-          '• **Chiến Hồn Tiên Phong:** Link/Ảnh, Miễn Slowmode (`+8% Pet`) • **Thiên Âm Nhạc Sư:** Ưu Tiên Voice, Sound/Âm Ngoại (`+12% EXP`)',
-        ].join('\n'),
-        inline: false,
-      },
-      {
-        name: `${tierEmoji('common')} 21 Role Phàm Phẩm (/shop & 60.5% /roll — Chuyên Biệt)`,
-        value: [
-          '• **Voice (8):** `Linh Âm Hồ Ca` *(Ưu tiên+Âm ngoại)* • `Phong Thanh Hộ Pháp` *(Move)* • `Lôi Âm Tôn Giả` *(Ưu tiên nói)* • `Tịch Tĩnh Tán Nhân` *(Mute)* • `Bế Tức Chân Nhân` *(Deafen)* • `Huyễn Âm Tiên Cô` *(Soundboard)* • `Cửu Châu Diễn Âm` *(Âm ngoại)* • `Tiêu Dao Khách` *(Stream HD)*',
-          '• **Chat/Nick/Thread (11):** `Huyễn Diện` *(Đổi Nick)* • `Định Danh` *(Quản lý Nick)* • `Thần Hành` *(Miễn Slowmode)* • `Họa Đồ` *(Link/Ảnh)* • `Vạn Tượng` *(Emoji ngoại)* • `Thần Phù` *(Sticker ngoại)* • `Khai Sơn` *(Thread mở)* • `Mật Tàng` *(Thread kín)* • `Trấn Thư` *(Ghim)* • `Trảm Phong` *(TTS)* • `Thần Thông` *(Đọc lịch sử)*',
-          '• **Thuần Buff (2):** `Linh Hồn Tu Luyện` (`+15% EXP`) • `Tài Vận Hanh Thông` (`+20% Daily LT`)',
-        ].join('\n'),
-        inline: false,
-      },
-      {
-        name: `${em('su_pin_sigil')} Quy Tắc Slot, Phạm Vi Buff & Tra Cứu`,
-        value: '• Mở **1→5 Slot** theo Cảnh Giới (`/roles` xem full Quyền Discord + Buff, `/equip`, `/unequip`). Gacha Role: `40% 7d • 30% 30d • 18% 60d • 10% 90d • 2% Vĩnh Viễn`. Giảm giá cộng dồn tối đa `-25% Shop / -20% Roll`.\n• **Phạm vi Buff:** `EXP` *(Chat, Voice & /job)* • `Daily LT` *(+100% /daily & +25% hiệu lực /job)* • **8 Level Roles** tự mở theo cấp (tra từng Role bằng `/info <tên role>`).',
-        inline: false,
+        page: 3,
+        subtitle: 'Trang 3/3 — Giải Thích Chi Tiết Chức Năng & Phạm Vi Buff',
+        fields: [
+          {
+            name: `${em('su_pin_sigil')} Chi Tiết Các Gói Quyền Discord`,
+            value: [
+              '• **`Full Voice`**: Di chuyển thành viên (`Move`), Tắt mic (`Mute`), Tắt tai nghe (`Deafen`), Ưu tiên nói (`Priority`), Stream HD 1080p, Soundboard & Âm thanh ngoại server.',
+              '• **`Full Chat/Thread`**: Ghim tin (`Pin`), Miễn Slowmode, Tạo & Quản lý Thread công khai/kín, Quản lý biệt danh, Gửi TTS, Nhúng Link/Ảnh/File, Emoji & Sticker ngoại, Đọc lịch sử kênh.',
+              '• **`Voice/Thread VIP (Vạn Cổ Chí Tôn)`**: Voice (`Move/Mute/Deafen/Ưu tiên/Stream HD`) + Chat/Thread (`Ghim, Miễn Slowmode, Tạo & Quản lý Thread, Quản lý Nick, Ảnh/Link, Emoji & Sticker ngoại`).',
+              '• **`Voice/Thread VIP (Sáng Thế Thần Quân)`**: Voice (`Move/Ưu tiên/Stream HD`) + Chat/Thread (`Ghim, Miễn Slowmode, Tạo Thread, Quản lý Nick, Ảnh/Link, Emoji & Sticker ngoại`).',
+              '• **`Voice/Chat VIP (Cửu Vĩ Yêu Hậu)`**: Voice (`Move/Mute/Stream HD/Soundboard & Âm ngoại`) + Chat/Thread (`Ghim, Miễn Slowmode, Tạo Thread, Đổi Nick, Ảnh/Link, Emoji & Sticker ngoại`).',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_sparkle')} Phạm Vi Buff Tu Tiên & Quy Tắc Slot`,
+            value: [
+              '• **`EXP` (Role & Cảnh Giới)**: Cộng vào **Chat EXP, Voice EXP & `/job` EXP**.',
+              '• **`Daily LT` (Role & Cảnh Giới)**: Cộng **`+100%` vào `/daily`** & **`+25%` hiệu lực vào `/job`** *(không cộng vào `/explorer`, Tháp, `/farm`, `/luyendan`; riêng Viền Avatar & Ảnh Nền `/shop` cộng vào `/daily`, `/job`, `/explorer` & Tháp)*.',
+              '• **`Chiến Lực Pet`**: Cộng thẳng vào **ATK / DEF / SPD** của Linh Thú.',
+              '• **`Giảm Giá`**: Cộng dồn tối đa **`-25% Giá Shop`** và **`-20% Giá /roll`**.',
+              '• **`Slot & Gacha`**: Mở **1 → 5 Slot** theo Cảnh Giới (`/roles`, `/equip`, `/unequip`); Gacha ra `40% 7d • 30% 30d • 18% 60d • 10% 90d • 2% Vĩnh Viễn`. Tra chi tiết từng Role bằng **`/info <tên role>`**.',
+            ].join('\n'),
+            inline: false,
+          },
+        ],
       },
     ],
-    content: '40 Role Quyền Năng (5 Thần Thoại, 6 Tiên Phẩm, 8 Linh Phẩm, 21 Phàm Phẩm) & 8 Level Roles kèm đầy đủ quyền Discord và Buff Tu Tiên.',
+    fields: [],
+    content: '40 Role Quyền Năng (5 Thần Thoại, 6 Tiên Phẩm, 8 Linh Phẩm, 21 Phàm Phẩm) & 8 Level Roles chia 3 trang rõ ràng.',
   },
 
   economy: {
@@ -656,7 +748,7 @@ export function getWikiData(categoryId = null, page = 1) {
   };
 
   let requestedPage = Number(page);
-  if ((!Number.isFinite(requestedPage) || requestedPage < 1) && /^glossary_(\d+)$/.test(raw)) {
+  if ((!Number.isFinite(requestedPage) || requestedPage < 1) && /^(glossary|roles)_(\d+)$/.test(raw)) {
     requestedPage = Number(raw.split('_')[1]);
   }
   const hasPages = Array.isArray(catObj.pages) && catObj.pages.length > 0;

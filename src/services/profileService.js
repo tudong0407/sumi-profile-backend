@@ -285,11 +285,11 @@ export function getFuyumiProfileMock() {
       },
     },
     equipped_roles: [
-      { slot: 1, role_id: '1473419957655175169', name: '« 100 • Hỗn Độn Chúa Tể »', perk: ROLE_PERKS_MAP['1473419957655175169'], rarity: 'mythic' },
-      { slot: 2, role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: ROLE_PERKS_MAP['1573185998857183253'], rarity: 'mythic' },
-      { slot: 3, role_id: '1573186024048173076', name: '« Phong Thanh Hộ Pháp »', perk: ROLE_PERKS_MAP['1573186024048173076'], rarity: 'rare' },
-      { slot: 4, role_id: '1573186049289756712', name: '« Thần Hành Cốt Cách »', perk: ROLE_PERKS_MAP['1573186049289756712'], rarity: 'epic' },
-      { slot: 5, role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', perk: ROLE_PERKS_MAP['1573186074153324608'], rarity: 'legendary' },
+      { slot: 1, role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', perk: ROLE_PERKS_MAP['1573185998857183253'], rarity: 'mythic' },
+      { slot: 2, role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', perk: ROLE_PERKS_MAP['1573186003101941830'], rarity: 'mythic' },
+      { slot: 3, role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', perk: ROLE_PERKS_MAP['1573186007262695644'], rarity: 'mythic' },
+      { slot: 4, role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', perk: ROLE_PERKS_MAP['1573186011478102096'], rarity: 'mythic' },
+      { slot: 5, role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', perk: ROLE_PERKS_MAP['1573186015785521265'], rarity: 'mythic' },
     ],
     domain_loadout: {
       domain: DOMAIN_BY_ID.domain_fuyumi_cuu_vi_hong_mong || null,

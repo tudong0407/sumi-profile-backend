@@ -31,9 +31,9 @@ function assertCleanText(text, label) {
   assert.equal(hasRawEmoji, false, `${label}: contains raw Unicode emoji -> ${stripped.match(/\p{Extended_Pictographic}/u)?.[0]}`);
 }
 
-test('Wiki categories & glossary pages contain zero undefined, NaN, or raw Unicode emojis', () => {
+test('Wiki categories & glossary/roles pages contain zero undefined, NaN, or raw Unicode emojis', () => {
   for (const catId of VALID_CATEGORIES) {
-    const maxPages = catId === 'glossary' ? 4 : 1;
+    const maxPages = catId === 'glossary' ? 4 : catId === 'roles' ? 3 : 1;
     for (let page = 1; page <= maxPages; page += 1) {
       const res = getWikiData(catId, page);
       assert.equal(res.success, true, `getWikiData(${catId}, ${page}) failed`);

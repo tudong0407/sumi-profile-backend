@@ -1114,8 +1114,8 @@ export async function renderProfileCard(data, options = {}) {
       drawAutoFitIconText(ctx, icoSparkle, cleanPerkRaw, layout.x + 24, layout.y + 23.5, layout.w - 30, {
         iconSize: 10,
         gap: 4,
-        maxFont: 8.8,
-        minFont: 6.0,
+        maxFont: 8.6,
+        minFont: 4.8,
         weight: '',
         color: roleItem.rarity === 'mythic' ? '#fbcfe8' : '#93c5fd',
       });

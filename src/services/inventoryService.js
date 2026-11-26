@@ -845,19 +845,33 @@ export async function getUserRoles(userId, options = {}) {
       let rarity = roleMeta?.rarity || 'Phàm Phẩm';
       let discordPerms = roleMeta?.discord_perms || null;
       let detailedBuff = roleMeta ? (ROLE_BUFF_CONFIG[r.role_id] ? formatRoleBuffDetailedText(r.role_id) : null) : null;
+      const stripTags = (s) => String(s || '').replace(/<a?:[a-zA-Z0-9_]+:\d+>/g, '').replace(/\s+/g, ' ').trim();
+      let compactSummary = stripTags(roleMeta?.perk || r.role_perk || '');
 
       if (lvlMilestone) {
         const lvl = lvlMilestone.level;
         rarityKey = lvl >= 100 ? 'mythic' : lvl >= 60 ? 'epic' : lvl >= 20 ? 'rare' : 'common';
         rarity = `Cảnh Giới (Lv.${lvl})`;
         discordPerms = LEVEL_ROLE_DISCORD_PERMS[lvl] || null;
+        const cParts = [];
+        if (discordPerms) cParts.push(discordPerms.split(' (')[0]);
         if (lvlCfg) {
           const bParts = [];
-          if (lvlCfg.expPct) bParts.push(`+${lvlCfg.expPct}% EXP (Chat, Voice & /job)`);
-          if (lvlCfg.dailyLtPct) bParts.push(`+${lvlCfg.dailyLtPct}% Daily LT (+${lvlCfg.dailyLtPct}% /daily & +${Math.round(lvlCfg.dailyLtPct * 0.25)}% /job)`);
-          if (lvlCfg.petPowerPct) bParts.push(`+${lvlCfg.petPowerPct}% Chiến Lực Pet (ATK/DEF/SPD)`);
+          if (lvlCfg.expPct) {
+            bParts.push(`+${lvlCfg.expPct}% EXP (Chat, Voice & /job)`);
+            cParts.push(`+${lvlCfg.expPct}% EXP`);
+          }
+          if (lvlCfg.dailyLtPct) {
+            bParts.push(`+${lvlCfg.dailyLtPct}% Daily LT (+${lvlCfg.dailyLtPct}% /daily & +${Math.round(lvlCfg.dailyLtPct * 0.25)}% /job)`);
+            cParts.push(`+${lvlCfg.dailyLtPct}% Daily LT`);
+          }
+          if (lvlCfg.petPowerPct) {
+            bParts.push(`+${lvlCfg.petPowerPct}% Chiến Lực Pet (ATK/DEF/SPD)`);
+            cParts.push(`+${lvlCfg.petPowerPct}% Pet`);
+          }
           detailedBuff = bParts.length ? bParts.join(' • ') : null;
         }
+        compactSummary = cParts.join(' • ') || compactSummary;
       }
 
       const hasDiscordPerms = Boolean(discordPerms && !discordPerms.startsWith('Không cấp quyền'));
@@ -868,6 +882,7 @@ export async function getUserRoles(userId, options = {}) {
         rarity_key: rarityKey,
         rarity,
         perk: roleMeta?.perk || r.role_perk || '',
+        compact_summary: compactSummary,
         discord_perms: hasDiscordPerms ? discordPerms : null,
         detailed_buff: detailedBuff,
         icon: roleTierEmoji(rarityKey),
@@ -906,21 +921,10 @@ export async function getUserRoles(userId, options = {}) {
     (r) => {
       const slotTag = r.is_equipped ? ` • **Slot #${r.equipped_slot}/${maxSlots}**` : '';
       const head = `• ${r.icon} **${r.role_name}** \`${r.role_id}\`${slotTag}`;
-      const sub = [];
-      if (r.discord_perms && r.detailed_buff) {
-        sub.push(`-# ↳ ${r.rarity} • ${r.duration_label}`);
-        sub.push(`-# ↳ Quyền: ${r.discord_perms}`);
-        sub.push(`-# ↳ Buff: ${r.detailed_buff}`);
-      } else if (r.discord_perms) {
-        sub.push(`-# ↳ ${r.rarity} • ${r.duration_label} • Quyền: ${r.discord_perms}`);
-      } else if (r.detailed_buff) {
-        sub.push(`-# ↳ ${r.rarity} • ${r.duration_label} • Buff: ${r.detailed_buff}`);
-      } else {
-        sub.push(`-# ↳ ${r.rarity} • ${r.duration_label}${r.perk ? ` • ${r.perk}` : ''}`);
-      }
-      return [head, ...sub].join('\n');
+      const sub = `-# ↳ ${r.rarity} • ${r.duration_label}${r.compact_summary ? ` • ${r.compact_summary}` : ''}`;
+      return `${head}\n${sub}`;
     },
-    { page: options.page || 1, pageSize: 7, maxChars: 3350 },
+    { page: options.page || 1, pageSize: 10, maxChars: 3350 },
   );
 
   const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
@@ -928,13 +932,17 @@ export async function getUserRoles(userId, options = {}) {
 
   const lines = [...paged.lines];
   if (paged.totalPages > 1) {
-    lines.push(`-# *Trang ${paged.page}/${paged.totalPages} — Bấm nút **Trang Trước / Trang Sau** bên dưới hoặc gõ \`/roles trang:${nextPage}\` để xem tiếp!*`);
+    lines.push(`-# *Trang ${paged.page}/${paged.totalPages} — Bấm **Trang Trước / Trang Sau** hoặc gõ \`/roles trang:${nextPage}\`.*`);
   }
-  if (!lines.length) lines.push('• Chưa có Role Quyền Năng nào khớp bộ lọc. Mua tại `/shop` hoặc quay `/roll loai:role`!');
+  if (lines.length) {
+    lines.push(`-# *Chi tiết các gói quyền (Full Voice/Chat...) & phạm vi Buff xem tại \`/wiki chuyen_muc:roles\` hoặc \`/info <tên role>\`.*`);
+  } else {
+    lines.push('• Chưa có Role Quyền Năng nào khớp bộ lọc. Mua tại `/shop` hoặc quay `/roll loai:role`!');
+  }
 
   const activeBuffParts = [];
-  if (activeBuffs.expBonusPct) activeBuffParts.push(`+${activeBuffs.expBonusPct}% EXP (Chat/Voice/Job)`);
-  if (activeBuffs.dailyLtBonusPct) activeBuffParts.push(`+${activeBuffs.dailyLtBonusPct}% Daily LT (+${Math.round(activeBuffs.dailyLtBonusPct * 0.25)}% /job)`);
+  if (activeBuffs.expBonusPct) activeBuffParts.push(`+${activeBuffs.expBonusPct}% EXP`);
+  if (activeBuffs.dailyLtBonusPct) activeBuffParts.push(`+${activeBuffs.dailyLtBonusPct}% Daily LT`);
   if (activeBuffs.petPowerBonusPct) activeBuffParts.push(`+${activeBuffs.petPowerBonusPct}% Chiến Lực Pet`);
   if (activeBuffs.shopDiscountPct) activeBuffParts.push(`-${activeBuffs.shopDiscountPct}% Shop`);
   if (activeBuffs.gachaDiscountPct) activeBuffParts.push(`-${activeBuffs.gachaDiscountPct}% /roll`);
@@ -954,13 +962,13 @@ export async function getUserRoles(userId, options = {}) {
     total_pages: paged.totalPages,
     prev_page: prevPage,
     next_page: nextPage,
-    page_size: 7,
+    page_size: 10,
     total_count: roles.length,
     equipped_count: equippedCount,
     max_role_slots: maxSlots,
     active_buffs: activeBuffs,
     roles,
-    filter_summary: `Slot đang đeo: **${equippedCount}/${maxSlots}** • Bộ lọc: **${filterMode}** • Tổng: **${roles.length} Role** • Trang **${paged.page}/${paged.totalPages}**\n-# ↳ Tổng Buff Role (gồm Cảnh Giới): ${activeBuffSummary}`,
+    filter_summary: `Slot: **${equippedCount}/${maxSlots}** • Lọc: **${filterMode}** • Tổng: **${roles.length}** • Trang **${paged.page}/${paged.totalPages}**\n-# ↳ Tổng Buff Role (gồm Cảnh Giới): ${activeBuffSummary}`,
     summary: lines.join('\n'),
   };
 }
