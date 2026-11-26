@@ -16,3 +16,7 @@
 3. **Zero Hidden/Truncated Battle Logs:** Never use `[0]` on `healSources` or `startTags`; always record `absorbedByShield` in 1v1 logs (`*(khiên chặn X)*`).
 4. **Zero Unicode Windows Emojis:** Keep `src/services/**` and `src/data/**` free of Unicode pictographs; use `emojiHelper.js` tags only.
 5. **Mandatory Verification Gate:** Run `node --test tests/tier1-features/hax-full-integrity.test.js tests/tier1-features/catalog-sync-integrity.test.js` (must pass with 0 failures) before any commit or Render deploy.
+
+## BotGhost UX & GraphBuilder Guardrail
+1. **Button-Only Pagination:** All page switching and dedicated sub-views (e.g. `/roles`, `/linhvuc`, `/phapbao`, `/wiki roles` + `Chi Tiết Chức Năng`, `/wiki glossary`) MUST use **Buttons** (`advBtn`), NEVER select-menu dropdowns for pagination.
+2. **Never Hand-Craft Raw BotGhost Edges:** Always build/modify graphs using `GraphBuilder` (`scripts/ga_builder_lib.mjs` `gb.link()`, `gb.advBtn()`, `gb.branch()`, `gb.advSelectMenu()`) so `sourceHandle`, `targetHandle`, and `type` (`step` vs `custom`) are always valid; never append bare `{ source, target }` edges.
