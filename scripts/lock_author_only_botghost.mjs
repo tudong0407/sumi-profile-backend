@@ -156,7 +156,21 @@ async function main() {
       enabled: item.enabled,
     });
     console.log(`    [RESULT] ${item.name}`, JSON.stringify(res || {}));
-    if (!res?.ok || res?.builderSaveRequired) {
+    if (!res?.ok) {
+      if (res?.timeout && res?.canSave) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const verifyCmds = await fetchSlashCommands();
+        const verifyCmd = verifyCmds.find((c) => c.name === item.name);
+        const verifyEls = verifyCmd ? JSON.parse(LZString.decompressFromBase64(verifyCmd.compressed_tree)) : [];
+        const recheck = patchAuthorOnlyTree(item.name, verifyEls);
+        if (!recheck.changed) {
+          console.log(`    [CLOUD VERIFIED] ${item.name}: 100% locked on cloud (${verifyEls.length} els)`);
+          continue;
+        }
+      }
+      throw new Error(`Deploy failed for ${item.name}: ${JSON.stringify(res)}`);
+    }
+    if (res?.builderSaveRequired) {
       throw new Error(`Deploy failed for ${item.name}: ${JSON.stringify(res)}`);
     }
   }
