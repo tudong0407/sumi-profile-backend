@@ -37,9 +37,11 @@ test('Wiki categories & glossary/roles pages contain zero undefined, NaN, or raw
     for (let page = 1; page <= maxPages; page += 1) {
       const res = getWikiData(catId, page);
       assert.equal(res.success, true, `getWikiData(${catId}, ${page}) failed`);
+      assert.ok(Number.isInteger(res.prev_page) && res.prev_page >= 1 && res.prev_page <= res.total_pages, `Invalid prev_page on ${catId}:${page}`);
+      assert.ok(Number.isInteger(res.next_page) && res.next_page >= 1 && res.next_page <= res.total_pages, `Invalid next_page on ${catId}:${page}`);
       const d = res.data;
-      assertCleanText(d.title, `wiki:${catId}:title`);
-      assertCleanText(d.description, `wiki:${catId}:description`);
+      assertCleanText(res.embed_flat?.title || d.title, `wiki:${catId}:title`);
+      assertCleanText(res.embed_flat?.description || d.description, `wiki:${catId}:description`);
       for (const f of d.fields || []) {
         assertCleanText(f.name, `wiki:${catId}:field.name`);
         assertCleanText(f.value, `wiki:${catId}:field.value`);

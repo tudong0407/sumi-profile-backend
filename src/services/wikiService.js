@@ -766,16 +766,28 @@ export function getWikiData(categoryId = null, page = 1) {
   let flatDesc = [activeSubtitle ? `*${activeSubtitle}*` : '', fieldLines].filter(Boolean).join('\n\n');
   if (flatDesc.length > 3950) flatDesc = `${flatDesc.slice(0, 3940)}\n…`;
 
+  const prevPage = currentPage > 1 ? currentPage - 1 : totalPages;
+  const nextPage = currentPage < totalPages ? currentPage + 1 : 1;
+
+  let flatTitle = hasPages ? `${catObj.title} — Trang ${currentPage}/${totalPages}` : catObj.title;
+  if (resolvedId === 'roles') {
+    if (currentPage === 1) flatTitle = `${em('su_medal_role')} Role Quyền Năng — Trang 1/2: Role Cao Cấp`;
+    else if (currentPage === 2) flatTitle = `${em('su_medal_role')} Role Quyền Năng — Trang 2/2: Role Phàm & Cảnh Giới`;
+    else if (currentPage === 3) flatTitle = `${em('su_pin_sigil')} Chi Tiết Chức Năng Role & Phạm Vi Buff`;
+  }
+
   return {
     success: true,
     ...WIKI_METADATA,
     category: resolvedId,
     page: currentPage,
     total_pages: totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
     pages: hasPages ? catObj.pages : undefined,
     data: catObj,
     embed_flat: {
-      title: hasPages ? `${catObj.title} — Trang ${currentPage}/${totalPages}` : catObj.title,
+      title: flatTitle,
       description: flatDesc,
       image_url: catObj.image_url || '',
       color: colorMap[resolvedId] || '#ec4899',
