@@ -13,12 +13,17 @@ import {
 import { em, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
-import { claimNextAlchemyDmNotification } from './alchemyService.js';
+import { claimNextAlchemyDmNotification, runAlchemyAutoProtect } from './alchemyService.js';
 import { invalidateInventoryCache } from './inventoryService.js';
 
 const MAX_FARM_SLOTS = 8;
 const DEFAULT_FARM_SLOTS = 4;
-export const FARM_CARE_SPEEDUP_MS = 30 * 60000; // Rút ngắn 30 phút thời gian chín mỗi lần tưới/cho ăn đúng giờ (lưu công bố vào Update 1.7)
+export const FARM_CARE_SPEEDUP_MS = 30 * 60000; // Rút ngắn 30 phút thời gian chín mỗi lần tưới/cho ăn đúng giờ (công bố Ver 1.7)
+export const FARM_PROTECT_EXTENSION_MS = 2 * 3600000;
+export const FARM_PROTECT_TRIGGER_WINDOW_MS = 5 * 60000;
+export const FARM_AUTO_CARD_DURATION_MS = 24 * 3600000;
+export const FARM_GROWTH_MED_REDUCTION_RATE = 0.25;
+export const FARM_YIELD_STARCH_BONUS_RATE = 0.30;
 
 const SLOT_TYPES_BY_INDEX = {
   1: 'linh_dien',
@@ -327,21 +332,32 @@ export async function plantFarmPlot(userId, rawSeedId, options = {}) {
 
     const nextBal = bal - seed.cost_lt;
     const nowIso = now.toISOString();
+    const growthMedActive = Boolean(user.farm_growth_med_active);
+    const medShiftMs = growthMedActive ? Math.round(seed.growth_hours * 3600000 * FARM_GROWTH_MED_REDUCTION_RATE) : 0;
+    const effectivePlantedIso = new Date(now.getTime() - medShiftMs).toISOString();
+    const userPatch = {
+      linh_thach: nextBal,
+      ...(growthMedActive ? { farm_growth_med_active: false } : {}),
+      updated_at: nowIso,
+    };
+
     await Promise.all([
-      supabase.from('users').update({ linh_thach: nextBal, updated_at: nowIso }).eq('user_id', cleanId),
+      supabase.from('users').update(userPatch).eq('user_id', cleanId),
       supabase.from('user_farm_plots').update({
         seed_id: seed.seed_id,
         status: 'growing',
-        planted_at: nowIso,
+        planted_at: effectivePlantedIso,
         last_cared_at: nowIso,
         care_count: 0,
         dm_care_notified: false,
         dm_wilt_stage: 0,
+        protected_this_cycle: false,
         updated_at: nowIso,
       }).eq('id', targetPlot.id),
       trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
+    const medNote = growthMedActive ? ` *(Đã tiêu hao ${em('farm_growth_med')} Thuốc Kích Thích -25% thời gian chín!)*` : '';
     return {
       success: true,
       slot_index: targetPlot.slot_index,
@@ -349,7 +365,7 @@ export async function plantFarmPlot(userId, rawSeedId, options = {}) {
       seed_name: seed.name,
       cost_lt: seed.cost_lt,
       linh_thach: nextBal,
-      message: `${seed.icon} Đã đặt **${seed.name}** vào **Ô #${targetPlot.slot_index} (${seed.plot_label})**!\n• Thời gian trưởng thành: **${seed.growth_hours} giờ** • Nhắc chăm sóc: **${seed.care_window}**\n• Số dư còn lại: **${nextBal.toLocaleString('vi-VN')}** ${em('su_linhthach')}`,
+      message: `${seed.icon} Đã đặt **${seed.name}** vào **Ô #${targetPlot.slot_index} (${seed.plot_label})**!${medNote}\n• Thời gian trưởng thành: **${growthMedActive ? (seed.growth_hours * (1 - FARM_GROWTH_MED_REDUCTION_RATE)).toFixed(1) : seed.growth_hours} giờ** • Nhắc chăm sóc: **${seed.care_window}**\n• Số dư còn lại: **${nextBal.toLocaleString('vi-VN')}** ${em('su_linhthach')}`,
     };
   });
 }
@@ -439,6 +455,12 @@ export async function harvestAllPlots(userId, options = {}) {
       gainEssence += Number(p.seed.reward_essence) || 0;
     }
 
+    const yieldStarchActive = Boolean(user.farm_yield_starch_active);
+    if (yieldStarchActive) {
+      gainLt = Math.round(gainLt * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+      gainEssence = Math.round(gainEssence * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+    }
+
     const nextBal = Number(user.linh_thach || 0) + gainLt;
     const nextEssence = Number(user.farm_essence || 0) + gainEssence;
     const nowIso = now.toISOString();
@@ -447,6 +469,7 @@ export async function harvestAllPlots(userId, options = {}) {
       supabase.from('users').update({
         linh_thach: nextBal,
         farm_essence: nextEssence,
+        ...(yieldStarchActive ? { farm_yield_starch_active: false } : {}),
         updated_at: nowIso,
       }).eq('user_id', cleanId),
       ...readyPlots.map((p) =>
@@ -458,6 +481,7 @@ export async function harvestAllPlots(userId, options = {}) {
           care_count: 0,
           dm_care_notified: false,
           dm_wilt_stage: 0,
+          protected_this_cycle: false,
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
@@ -465,14 +489,16 @@ export async function harvestAllPlots(userId, options = {}) {
     ]);
 
     const essIcon = farmEmoji('farm_essence');
+    const starchNote = yieldStarchActive ? ` *(Đã kích hoạt ${em('farm_yield_starch')} Bột Tăng Sản Lượng +30%!)*` : '';
     return {
       success: true,
       harvested_count: readyPlots.length,
+      yield_starch_applied: yieldStarchActive,
       reward_linh_thach: gainLt,
       reward_essence: gainEssence,
       linh_thach: nextBal,
       farm_essence: nextEssence,
-      message: `${essIcon} **THU HOẠCH NÔNG TRẠI THÀNH CÔNG (${readyPlots.length} Ô)!**\n• Thu về: **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEssence.toLocaleString('vi-VN')}** ${essIcon} **Linh Quả Tiên Giới**\n• Kho hiện tại: **${nextBal.toLocaleString('vi-VN')} LT** • **${nextEssence.toLocaleString('vi-VN')} Linh Quả** *(Dùng tại \`/exchange\` & \`/luyendan\`)*`,
+      message: `${essIcon} **THU HOẠCH NÔNG TRẠI THÀNH CÔNG (${readyPlots.length} Ô)!**${starchNote}\n• Thu về: **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEssence.toLocaleString('vi-VN')}** ${essIcon} **Linh Quả Tiên Giới**\n• Kho hiện tại: **${nextBal.toLocaleString('vi-VN')} LT** • **${nextEssence.toLocaleString('vi-VN')} Linh Quả** *(Dùng tại \`/exchange\` & \`/luyendan\`)*`,
     };
   });
 }
@@ -820,6 +846,336 @@ function formatFarmDmPayload(userId, alerts, remainingUsers) {
 
 let dmClaimQueue = Promise.resolve();
 
+export function evaluateFarmAutoProtect(row, protectQty, now = new Date()) {
+  if (!row || row.status !== 'growing' || !row.seed_id || row.protected_this_cycle) {
+    return { shouldProtect: false };
+  }
+  if (Number(protectQty || 0) <= 0) return { shouldProtect: false };
+  const seed = FARM_SEED_BY_ID[row.seed_id];
+  if (!seed) return { shouldProtect: false };
+  const nowMs = now.getTime();
+  const { matureMs, wiltDeadlineMs } = computePlotTimings(row, seed, now);
+  if (nowMs >= matureMs) return { shouldProtect: false };
+  const remWiltMs = wiltDeadlineMs - nowMs;
+  if (remWiltMs > FARM_PROTECT_TRIGGER_WINDOW_MS) return { shouldProtect: false };
+  const newLastCaredIso = new Date(new Date(row.last_cared_at || row.planted_at || now).getTime() + FARM_PROTECT_EXTENSION_MS).toISOString();
+  return {
+    shouldProtect: true,
+    seed,
+    newLastCaredIso,
+  };
+}
+
+export async function activateFarmAutoCard(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' };
+
+  return withFarmLock(cleanId, async () => {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const { user } = await ensureUserInitialized(cleanId, { username: options.username });
+    if (!options.skipInventoryCheck) {
+      const { data: invRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_auto_card')
+        .maybeSingle();
+      const qty = Number(invRow?.quantity || 0);
+      if (qty <= 0) {
+        return {
+          success: false,
+          status: 400,
+          error: 'NO_ITEM',
+          message: `Bạn không có ${em('farm_auto_card')} **Thẻ Tự Động Chăm Farm 24h**! Hãy mua ở \`/shop_dacbiet\` hoặc đi \`/explorer\`.`,
+        };
+      }
+      await supabase
+        .from('user_inventory')
+        .update({ quantity: Math.max(0, qty - 1), updated_at: now.toISOString() })
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_auto_card');
+    }
+    const baseMs = user?.farm_auto_until && new Date(user.farm_auto_until).getTime() > now.getTime()
+      ? new Date(user.farm_auto_until).getTime()
+      : now.getTime();
+    const nextUntil = new Date(baseMs + FARM_AUTO_CARD_DURATION_MS).toISOString();
+    await supabase.from('users').update({ farm_auto_until: nextUntil, updated_at: now.toISOString() }).eq('user_id', cleanId);
+    const remHours = Math.round((new Date(nextUntil).getTime() - now.getTime()) / 3600000);
+    return {
+      success: true,
+      item_id: 'farm_auto_card',
+      farm_auto_until: nextUntil,
+      message: `${em('farm_auto_card')} Đã kích hoạt **Thẻ Tự Động Chăm Farm 24h**! Bot sẽ tự tưới/cho ăn \`-30p\` và tự thu hoạch khi chín *(còn ~**${remHours} giờ** • Không tự trồng lại)*!`,
+    };
+  });
+}
+
+export async function useFarmGrowthMed(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' };
+
+  return withFarmLock(cleanId, async () => {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const nowIso = now.toISOString();
+    const { user } = await ensureUserInitialized(cleanId, { username: options.username });
+    if (!options.skipInventoryCheck) {
+      const { data: invRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_growth_med')
+        .maybeSingle();
+      const qty = Number(invRow?.quantity || 0);
+      if (qty <= 0) {
+        return { success: false, status: 400, error: 'NO_ITEM', message: `Bạn không có ${em('farm_growth_med')} **Thuốc Kích Thích Tăng Trưởng**!` };
+      }
+      await supabase
+        .from('user_inventory')
+        .update({ quantity: Math.max(0, qty - 1), updated_at: nowIso })
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_growth_med');
+    }
+
+    const { plots } = await loadAndSyncPlots(cleanId, user?.farm_slots_unlocked, now);
+    const growing = plots.filter((p) => p.computed_status === 'growing' && p.seed);
+    if (growing.length > 0) {
+      await Promise.all(growing.map((p) => {
+        const shiftMs = Math.round(p.seed.growth_hours * 3600000 * FARM_GROWTH_MED_REDUCTION_RATE);
+        const newPlantedMs = new Date(p.planted_at || nowIso).getTime() - shiftMs;
+        const { careCount } = computePlotTimings(p, p.seed, now);
+        const nextMatureMs = newPlantedMs + p.seed.growth_hours * 3600000 - careCount * FARM_CARE_SPEEDUP_MS;
+        return supabase.from('user_farm_plots').update({
+          planted_at: new Date(newPlantedMs).toISOString(),
+          status: now.getTime() >= nextMatureMs ? 'ready' : 'growing',
+          updated_at: nowIso,
+        }).eq('id', p.id);
+      }));
+      return {
+        success: true,
+        item_id: 'farm_growth_med',
+        affected_plots: growing.length,
+        message: `${em('farm_growth_med')} Đã rải **Thuốc Kích Thích Tăng Trưởng (-25% thời gian chín)** lên **${growing.length} ô** đang phát triển!`,
+      };
+    }
+
+    await supabase.from('users').update({ farm_growth_med_active: true, updated_at: nowIso }).eq('user_id', cleanId);
+    return {
+      success: true,
+      item_id: 'farm_growth_med',
+      queued_next_plant: true,
+      message: `${em('farm_growth_med')} Đã chuẩn bị **Thuốc Kích Thích Tăng Trưởng (-25% thời gian chín)** cho vụ trồng/ấp trứng kế tiếp!`,
+    };
+  });
+}
+
+export async function useFarmYieldStarch(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID không hợp lệ.' };
+  if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' };
+
+  return withFarmLock(cleanId, async () => {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const nowIso = now.toISOString();
+    const { user } = await ensureUserInitialized(cleanId, { username: options.username });
+    if (user?.farm_yield_starch_active) {
+      return {
+        success: false,
+        status: 409,
+        error: 'ALREADY_ACTIVE',
+        message: `${em('farm_yield_starch')} Bạn đã bật sẵn **Bột Tăng Sản Lượng (+30% LT & Linh Quả)** cho lần thu hoạch tới rồi!`,
+      };
+    }
+    if (!options.skipInventoryCheck) {
+      const { data: invRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_yield_starch')
+        .maybeSingle();
+      const qty = Number(invRow?.quantity || 0);
+      if (qty <= 0) {
+        return { success: false, status: 400, error: 'NO_ITEM', message: `Bạn không có ${em('farm_yield_starch')} **Bột Tăng Sản Lượng**!` };
+      }
+      await supabase
+        .from('user_inventory')
+        .update({ quantity: Math.max(0, qty - 1), updated_at: nowIso })
+        .eq('user_id', cleanId)
+        .eq('item_id', 'farm_yield_starch');
+    }
+    await supabase.from('users').update({ farm_yield_starch_active: true, updated_at: nowIso }).eq('user_id', cleanId);
+    return {
+      success: true,
+      item_id: 'farm_yield_starch',
+      message: `${em('farm_yield_starch')} Đã bật **Bột Tăng Sản Lượng**! Lần thu hoạch \`/farm\` kế tiếp nhận **+30% Linh Thạch & +30% Linh Quả**!`,
+    };
+  });
+}
+
+async function runFarmAutoProtectAndAutomation({ now = new Date(), userIds = null } = {}) {
+  if (!supabase) return null;
+  const nowIso = now.toISOString();
+  const scopedSet = Array.isArray(userIds) && userIds.length > 0 ? new Set(userIds) : null;
+
+  // 1. Auto-Rescue (Bùa Bảo Vệ Nông Trại +2h, tối đa 1 lần/chu kỳ)
+  let growQ = supabase.from('user_farm_plots').select('*').eq('status', 'growing').eq('protected_this_cycle', false);
+  if (scopedSet) growQ = growQ.in('user_id', [...scopedSet]);
+  const { data: protectCandidates } = await growQ;
+  const nearWiltUsers = [...new Set((protectCandidates || [])
+    .filter((r) => evaluateFarmAutoProtect(r, 1, now).shouldProtect)
+    .map((r) => r.user_id))];
+
+  for (const uid of nearWiltUsers) {
+    const rescuedDm = await withFarmLock(uid, async () => {
+      const { data: invRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', uid)
+        .eq('item_id', 'farm_protect_card')
+        .maybeSingle();
+      let qty = Number(invRow?.quantity || 0);
+      if (qty <= 0) return null;
+
+      const { data: plots } = await supabase
+        .from('user_farm_plots')
+        .select('*')
+        .eq('user_id', uid)
+        .eq('status', 'growing')
+        .eq('protected_this_cycle', false);
+
+      const rescued = [];
+      for (const p of plots || []) {
+        const res = evaluateFarmAutoProtect(p, qty, now);
+        if (!res.shouldProtect) continue;
+        qty -= 1;
+        rescued.push({ slot_index: p.slot_index, seed: res.seed });
+        await supabase.from('user_farm_plots').update({
+          last_cared_at: res.newLastCaredIso,
+          protected_this_cycle: true,
+          dm_wilt_stage: 0,
+          updated_at: nowIso,
+        }).eq('id', p.id);
+      }
+      if (rescued.length === 0) return null;
+      await supabase
+        .from('user_inventory')
+        .update({ quantity: Math.max(0, qty), updated_at: nowIso })
+        .eq('user_id', uid)
+        .eq('item_id', 'farm_protect_card');
+
+      return {
+        success: true,
+        has_notification: true,
+        source: 'farm_protect',
+        user_id: uid,
+        dm_title: `${em('farm_protect_card')} BÙA BẢO VỆ NÔNG TRẠI ĐÃ CỨU ${rescued.length} Ô!`,
+        dm_description: [
+          ...rescued.map((r) => `• **Ô #${r.slot_index}:** ${r.seed.icon} **${r.seed.name}** đã được **gia hạn +2 giờ** trước khi héo!`),
+          '',
+          `${uiEm('ui_bulb_tip')} *Số Bùa Bảo Vệ còn lại: **${qty}** (Tối đa 1 lần cứu / chu kỳ).*`,
+        ].join('\n'),
+        dm_color: '#10b981',
+        remaining_users: Math.max(0, nearWiltUsers.length - 1),
+      };
+    });
+    if (rescuedDm) return rescuedDm;
+  }
+
+  // 2. Auto-Protect Lò Luyện Đan (nhanh tay cứu +2h trước cháy nổ)
+  const alchemyRescue = await runAlchemyAutoProtect({ now, userIds }).catch(() => null);
+  if (alchemyRescue?.has_notification) return alchemyRescue;
+
+  // 3. Thẻ Tự Động Chăm Farm 24h (auto-tưới -30p & auto-thu hoạch, KHÔNG tự trồng lại)
+  let autoQ = supabase.from('users').select('user_id, linh_thach, farm_essence, farm_slots_unlocked, farm_auto_until, farm_yield_starch_active').gt('farm_auto_until', nowIso);
+  if (scopedSet) autoQ = autoQ.in('user_id', [...scopedSet]);
+  const { data: autoUsers } = await autoQ;
+
+  for (const au of autoUsers || []) {
+    const autoDm = await withFarmLock(au.user_id, async () => {
+      const { plots } = await loadAndSyncPlots(au.user_id, au.farm_slots_unlocked, now);
+      const duePlots = plots.filter((p) => p.needs_care);
+      let wateredSlots = [];
+      if (duePlots.length > 0) {
+        await Promise.all(duePlots.map((p) => {
+          const nextCareCount = (Number(p.care_count) || 0) + 1;
+          const plantedMs = new Date(p.planted_at || nowIso).getTime();
+          const growthHours = Number(p.seed?.growth_hours || 0);
+          const nextMatureMs = growthHours > 0
+            ? Math.max(plantedMs, plantedMs + growthHours * 3600000 - nextCareCount * FARM_CARE_SPEEDUP_MS)
+            : Infinity;
+          return supabase.from('user_farm_plots').update({
+            last_cared_at: nowIso,
+            care_count: nextCareCount,
+            status: now.getTime() >= nextMatureMs ? 'ready' : 'growing',
+            dm_care_notified: false,
+            dm_wilt_stage: 0,
+            updated_at: nowIso,
+          }).eq('id', p.id);
+        }));
+        wateredSlots = duePlots.map((p) => `#${p.slot_index}`);
+      }
+
+      const freshSnap = await loadAndSyncPlots(au.user_id, au.farm_slots_unlocked, now);
+      const readyPlots = freshSnap.plots.filter((p) => p.computed_status === 'ready' && p.seed);
+      let gainLt = 0;
+      let gainEss = 0;
+      if (readyPlots.length > 0) {
+        for (const p of readyPlots) {
+          gainLt += Number(p.seed.reward_lt) || 0;
+          gainEss += Number(p.seed.reward_essence) || 0;
+        }
+        const starchActive = Boolean(au.farm_yield_starch_active);
+        if (starchActive) {
+          gainLt = Math.round(gainLt * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+          gainEss = Math.round(gainEss * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+        }
+        await Promise.all([
+          supabase.from('users').update({
+            linh_thach: Number(au.linh_thach || 0) + gainLt,
+            farm_essence: Number(au.farm_essence || 0) + gainEss,
+            ...(starchActive ? { farm_yield_starch_active: false } : {}),
+            updated_at: nowIso,
+          }).eq('user_id', au.user_id),
+          ...readyPlots.map((p) => supabase.from('user_farm_plots').update({
+            seed_id: null,
+            status: 'empty',
+            planted_at: null,
+            last_cared_at: null,
+            care_count: 0,
+            dm_care_notified: false,
+            dm_wilt_stage: 0,
+            protected_this_cycle: false,
+            updated_at: nowIso,
+          }).eq('id', p.id)),
+        ]);
+      }
+
+      if (wateredSlots.length === 0 && readyPlots.length === 0) return null;
+      const lines = [];
+      if (wateredSlots.length > 0) {
+        lines.push(`• ${em('su_el_thuy')} **Đã tự tưới/cho ăn (-30p):** Ô ${wateredSlots.join(', ')}`);
+      }
+      if (readyPlots.length > 0) {
+        lines.push(`• ${farmEmoji('farm_essence')} **Đã tự thu hoạch (${readyPlots.length} ô):** **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEss.toLocaleString('vi-VN')}** Linh Quả *(Vào \`/farm\` để gieo vụ mới)*`);
+      }
+      return {
+        success: true,
+        has_notification: true,
+        source: 'farm_auto_card',
+        user_id: au.user_id,
+        dm_title: `${em('farm_auto_card')} QUẢN GIA NÔNG TRẠI TỰ ĐỘNG BÁO CÁO`,
+        dm_description: lines.join('\n'),
+        dm_color: '#10b981',
+        remaining_users: 0,
+      };
+    });
+    if (autoDm) return autoDm;
+  }
+
+  return null;
+}
+
 /**
  * Lấy & đánh dấu lô thông báo DM nông trại kế tiếp (gom theo từng người chơi).
  */
@@ -834,6 +1190,11 @@ export async function claimNextFarmDmNotification(options = {}) {
 
     if (now.getTime() - Date.now() > 5 * 60000 && (!scopedUserIds || scopedUserIds.length === 0)) {
       throw new Error('REFUSED_FUTURE_CLOCK_WITHOUT_USER_SCOPE');
+    }
+
+    const preHookDm = await runFarmAutoProtectAndAutomation({ now, userIds: scopedUserIds });
+    if (preHookDm?.has_notification) {
+      return preHookDm;
     }
 
     let query = supabase

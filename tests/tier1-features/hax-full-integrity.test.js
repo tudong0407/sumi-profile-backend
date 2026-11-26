@@ -72,7 +72,7 @@ function makeUnit(overrides = {}) {
   return { ...base, ...overrides, state: { ...st, ...(overrides.state || {}) } };
 }
 
-test('1. 100% Pet (91) & Equipment (165) IDs are wired in V13 registry or engine code', () => {
+test('1. 100% Pet (151) & Equipment (264) IDs are wired in V13 registry or engine code', () => {
   const src = readEngineFiles();
   const allSrc = `${src.haxEngine}\n${src.statsCompiler}\n${src.domainEngine}\n${src.battleService}`;
 

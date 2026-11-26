@@ -54,7 +54,7 @@ test('Wiki categories & glossary/roles pages contain zero undefined, NaN, or raw
   }
 });
 
-test('Wiki Pet (90 public), Item (165), and Domain/Sense/Realm (60 public) details have zero undefined/NaN', async () => {
+test('Wiki Pet (150 public), Item (264), and Domain/Sense/Realm (161 public) details have zero undefined/NaN', async () => {
   for (const pet of cat.PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi)) {
     const res = await getWikiPetDetail(pet.pet_type);
     assert.equal(res.success, true, `getWikiPetDetail(${pet.pet_type}) failed`);

@@ -5,9 +5,45 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.6.1';
+export const LATEST_VERSION = '1.7';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+
+/**
+ * Bản cập nhật LỚN v1.7 (+2.000 LT):
+ * - Tiến Hóa Pet Tối Thượng Chân Thần (/tienhoa) cho 40 Pet Độc Nhất + 40 Skill Ultimate tái kích hoạt
+ * - Mở rộng +260 item mới (+60 Pet, +99 Pháp Bảo, +101 Lãnh Địa) & 9 Khung Viền Avatar mới
+ * - Shop Đặc Biệt Chủ Nhật (/shop_dacbiet) dùng Tinh Thể Đỏ Vàng (750 LT = 1 TT, trần 200 TT/tuần)
+ * - Gacha 0.65% Thần Thoại+ (tách 5% Tối Thượng cố định miễn nhiễm Luck), buff +30% /job & /nhiemvu, +10% Đổ Thạch, Tháp tầng 100/200/300/400/500 +1 Mảnh Tinh Hoa Hỗn Độn
+ * - /farm giảm -30p khi tưới/cho ăn, Bùa Bảo Vệ (+2h chống héo/cháy), Thẻ Tự Động Chăm Farm 24h & Thuốc Nông Trại
+ * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level, KHÔNG thông báo buff Viền/Ảnh Nền, và KHÔNG dùng emoji Unicode Windows.
+ */
+export const V17_CHANGELOG = {
+  version: '1.7',
+  title: 'ĐẠI CẬP NHẬT v1.7 — TIẾN HÓA CHÂN THẦN (/TIENHOA), +260 MÓN MỚI & SHOP ĐẶC BIỆT',
+  released_at: '2026-11-27',
+  color: '#f43f5e',
+  is_big_update: true,
+  ack_reward_lt: 2000,
+  summary: 'Đại cập nhật v1.7 mở khóa Tiến Hóa Pet Tối Thượng Chân Thần (/tienhoa) cho 40 Pet Độc Nhất kèm 40 Ultimate tái kích hoạt, bổ sung +60 Pet, +99 Pháp Bảo, +101 Lãnh Địa, 9 Khung Viền mới, Shop Đặc Biệt Chủ Nhật (/shop_dacbiet) & quà +2.000 LT!',
+  sections: [
+    {
+      heading: `${em('su_tier_toithuong')} Tiến Hóa Chân Thần (/tienhoa) & 40 Skill Ultimate`,
+      bullets: [
+        '**Tiến Hóa Pet Tối Thượng Chân Thần (`/tienhoa`):** Toàn bộ **40 Pet Độc Nhất** *(10 gốc + 20 Linh Thú mới + 10 Thú Nhân mới)* đạt **`Lv.40 & 8★`** có thể tiến hóa bằng **`1 Hồng Mông Tiến Hóa Tinh`** *(chế tạo từ `3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT`)*, tăng mạnh chỉ số, đổi ảnh & mở khóa **Ultimate Tái Kích Hoạt** trong 1v1 / 3v3 / 3vBoss!',
+        '**Mở Rộng `+260` Trang Bị & Pet Mới:** Bổ sung **`+60 Pet Thần Thoại`** *(gồm 20 Tối Thượng Linh Thú, 10 Tối Thượng Thú Nhân & 30 Thần Thoại thường)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực / Thần Thức / Thần Cảnh)* và **9 Khung Viền Avatar** *(phân trang `/shop` & `/wiki`)*.',
+      ],
+    },
+    {
+      heading: `${em('su_sparkle')} Shop Đặc Biệt Chủ Nhật, Gacha 0.65% & Cân Bằng Kinh Tế`,
+      bullets: [
+        '**Shop Đặc Biệt (`/shop_dacbiet` — `08:00–24:00` Chủ Nhật):** Quy đổi **`750 LT = 1 Tinh Thể Đỏ Vàng (TT)`** *(tối thiểu `5 TT`, trần `200 TT/tuần`)* để mua **Hồng Mông Tiến Hóa Tinh**, **Thẻ Chọn Thần Thoại** (`7 nhóm`), **Mảnh Tinh Hoa Hỗn Độn**, **Bùa Tuyệt Ấn**, **Thẻ Tự Động Farm** & 5 Viền đặc biệt.',
+        '**Tăng Thưởng Kinh Tế & Gacha `0.65%`:** `/roll` tăng trần **Thần Thoại+ lên `0.65%`** *(tách cố định `5%` ra Tối Thượng miễn nhiễm Luck)*; `/dothach` giảm `-10%` xịt đá; **Tháp mỗi 100 tầng (`100..500`)** tặng **`+1 Mảnh Hỗn Độn`**; `/daily` (`55–80 LT`), `/job` & `/nhiemvu` tăng **`+30%`**!',
+        '**Nâng Cấp `/farm`, `/luyendan` & `/explorer`:** Tưới/cho ăn `/farm` nay rút ngắn **`-30 phút`** chín; bổ sung **Bùa Bảo Vệ +2h**, **Thẻ Tự Động Chăm Farm 24h**, **Thuốc Tốc Độ (-25%)** & **Bột Tăng Sản Lượng (+30%)**. `/explorer` đồng bộ **Bộ 1/2/3** từ `/inv` & tặng **`+2.000 Linh Thạch`** khi xác nhận!',
+      ],
+    },
+  ],
+};
 
 /**
  * Bản cập nhật v1.6.1 (+1.000 LT):
@@ -183,6 +219,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V17_CHANGELOG,
   V161_CHANGELOG,
   V16_CHANGELOG,
   V152_CHANGELOG,

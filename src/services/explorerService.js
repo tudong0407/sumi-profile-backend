@@ -45,7 +45,7 @@ import {
 } from './profileService.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { trackQuestActivity } from './questService.js';
-import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
+import { getEffectiveLuckAndFortune, getAbsEnchantCharmRuns, consumeAbsEnchantCharmRun } from './luckAndFortuneService.js';
 import { evaluateSetBonus, DOMAIN_TO_PET_ELEMENTS } from './battleEngine/setBonusEngine.js';
 
 export const VALID_EXPLORER_DURATIONS = [2, 3, 6, 12];
@@ -350,13 +350,18 @@ function formatDurationLeft(endsAtIso, now = new Date()) {
 }
 
 async function resolveUserLoadoutDetails(userId) {
-  const [{ data: loadoutRow }, { data: pets }, { data: equipRows }, { data: domainRows }, { data: userRow }] = await Promise.all([
-    supabase.from('explorer_loadouts').select('*').eq('user_id', userId).maybeSingle(),
+  const [{ data: userRow }, { data: loadoutRows }, { data: pets }, { data: equipRows }, { data: domainRows }] = await Promise.all([
+    supabase.from('users').select('level, marry_user_id, marry_ring_id, marry_date, active_loadout_slot').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_loadouts').select('*').eq('user_id', userId),
     supabase.from('user_pets').select('*').eq('user_id', userId).order('power_score', { ascending: false }),
     supabase.from('user_pet_items').select('*').eq('user_id', userId),
     supabase.from('user_domains').select('*').eq('user_id', userId),
-    supabase.from('users').select('level, marry_user_id, marry_ring_id, marry_date').eq('user_id', userId).maybeSingle(),
   ]);
+
+  const activeSlot = [1, 2, 3].includes(Number(userRow?.active_loadout_slot))
+    ? Number(userRow.active_loadout_slot)
+    : 1;
+  const loadoutRow = (loadoutRows || []).find((r) => Number(r.slot_index) === activeSlot && r.is_initialized) || null;
 
   const userLevel = Number(userRow?.level || 1);
   let couplePowerPct = 0;
@@ -374,7 +379,7 @@ async function resolveUserLoadoutDetails(userId) {
   const allEquip = equipRows || [];
   const allDomains = domainRows || [];
 
-  const hasSavedLoadout = Boolean(loadoutRow?.pet_id);
+  const hasSavedLoadout = Boolean(loadoutRow?.pet_id || loadoutRow?.pet_type);
   const findEqById = (itemId, type) => {
     if (!itemId) return null;
     return allEquip.find((e) => e.item_id === itemId && EQUIPMENT_BY_ID[e.item_id]?.item_type === type) || null;
@@ -391,25 +396,27 @@ async function resolveUserLoadoutDetails(userId) {
   let realm = null;
 
   if (hasSavedLoadout) {
-    chosenPet = allPets.find((p) => String(p.pet_id) === String(loadoutRow.pet_id)) || null;
+    chosenPet = allPets.find((p) => (
+      (loadoutRow.pet_id && String(p.pet_id) === String(loadoutRow.pet_id)) || p.pet_type === loadoutRow.pet_type
+    )) || null;
     if (!chosenPet) {
       chosenPet = allPets.find((p) => p.is_active && p.status === 'ready')
         || allPets.find((p) => p.status === 'ready')
         || allPets[0]
         || null;
     }
-    weapon = findEqById(loadoutRow?.weapon_id, 'weapon');
-    gem = findEqById(loadoutRow?.gem_id, 'gem');
-    soul = findEqById(loadoutRow?.soul_id, 'soul');
+    weapon = findEqById(loadoutRow?.weapon_id, 'weapon') || findEquippedSlot('weapon');
+    gem = findEqById(loadoutRow?.gem_id, 'gem') || findEquippedSlot('gem');
+    soul = findEqById(loadoutRow?.soul_id, 'soul') || findEquippedSlot('soul');
     domain = loadoutRow?.domain_id
       ? allDomains.find((d) => d.entity_kind === 'domain' && d.entity_id === loadoutRow.domain_id) || null
-      : null;
+      : (allDomains.find((d) => d.entity_kind === 'domain' && d.is_equipped) || null);
     sense = loadoutRow?.sense_id
       ? allDomains.find((d) => d.entity_kind === 'sense' && d.entity_id === loadoutRow.sense_id) || null
-      : null;
+      : (allDomains.find((d) => d.entity_kind === 'sense' && d.is_equipped) || null);
     realm = loadoutRow?.realm_id
       ? allDomains.find((d) => d.entity_kind === 'realm' && d.entity_id === loadoutRow.realm_id) || null
-      : null;
+      : (allDomains.find((d) => d.entity_kind === 'realm' && d.is_equipped) || null);
   } else {
     // Mặc định dùng Pet Chính đang xuất trận + 3 Pháp Bảo đang mặc + Linh Vực / Thần Thức / Thần Cảnh đang trang bị
     chosenPet = allPets.find((p) => p.is_active && p.status === 'ready')
@@ -427,6 +434,7 @@ async function resolveUserLoadoutDetails(userId) {
 
   const power = computeExplorerLoadoutPower(chosenPet, [weapon, gem, soul].filter(Boolean), domain, buffContext);
   return {
+    activeSlot,
     hasSavedLoadout,
     loadoutRow,
     chosenPet,
@@ -458,9 +466,10 @@ export async function getExplorerHub(userId, opts = {}) {
   });
 
   const now = opts.now instanceof Date ? opts.now : new Date();
-  const [busy, details, { data: invFoods }] = await Promise.all([
+  const [busy, details, absCharmRuns, { data: invFoods }] = await Promise.all([
     getUserBusyExplorationAssets(cleanId),
     resolveUserLoadoutDetails(cleanId),
+    getAbsEnchantCharmRuns(cleanId),
     supabase
       .from('user_inventory')
       .select('item_id, quantity')
@@ -482,7 +491,7 @@ export async function getExplorerHub(userId, opts = {}) {
     ? `${domainEmoji(details.domain.entity_id)} **${DOMAIN_BY_ID[details.domain.entity_id]?.name || details.domain.entity_id}**`
     : '*Không dùng Linh Vực*';
 
-  let activeBlock = '• **Trạng Thái:** Sẵn sàng xuất hành! Bấm **[Xuất Phát Khám Phá]** hoặc **[Chỉnh Loadout]** bên dưới.';
+  let activeBlock = '• **Trạng Thái:** Sẵn sàng xuất hành! Bấm **[Xuất Phát Khám Phá]** hoặc đổi **Bộ 1 / Bộ 2 / Bộ 3** bên dưới.';
   let canClaim = false;
   if (busy.isExploring && busy.expedition) {
     const exp = busy.expedition;
@@ -497,19 +506,30 @@ export async function getExplorerHub(userId, opts = {}) {
     ].join('\n');
   }
 
+  const uiVariant = !busy.isExploring
+    ? 'idle'
+    : canClaim
+      ? 'claimable'
+      : 'exploring_locked';
+
   const injuredBlock = injuredPets.length > 0
     ? `\n${uiEm('ui_heal_band')} **Linh Thú Độc Nhất Trọng Thương (${injuredPets.length}):** ${injuredPets.map((p) => `${petEmoji(p.pet_type)} **${p.pet_name}**`).join(', ')} — dùng ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ** *(đang có ×${foodCounts.explorer_revive_elixir || 0})* để hồi sinh!`
+    : '';
+
+  const charmLine = absCharmRuns > 0
+    ? `• ${em('abs_enchant_charm')} **Bùa Đá Tuyệt Ấn Đang Bật:** \`25%\` rơi Đá Tuyệt Ấn *(còn **${absCharmRuns}** chuyến)*`
     : '';
 
   const desc = [
     activeBlock,
     '',
-    `**${uiEm('ui_backpack_inv')} Đội Hình Khám Phá Hiện Tại (${details.hasSavedLoadout ? 'Đã Lưu' : 'Mặc Định Pet Chính'}):**`,
+    `**${uiEm('ui_backpack_inv')} Đội Hình Khám Phá Hiện Tại (Bộ ${details.activeSlot} — Đồng bộ \`/inv\`):**`,
     `• **Linh Thú:** ${petLine}`,
     `• **Pháp Bảo (3 ô):** ${eqLine}`,
     `• **Linh Vực:** ${domLine}`,
     `• **Tổng Lực Chiến Đội Hình:** **${details.power.toLocaleString('vi-VN')} Lực**`,
     `• **Lương Thảo & Dược Phẩm:** ${em('food_survival_pill')}×${foodCounts.food_survival_pill || 0} | ${em('food_yield_tea')}×${foodCounts.food_yield_tea || 0} | ${em('food_speed_fruit')}×${foodCounts.food_speed_fruit || 0} | ${em('explorer_revive_elixir')}×${foodCounts.explorer_revive_elixir || 0}`,
+    charmLine,
     injuredBlock,
   ].filter(Boolean).join('\n');
 
@@ -517,6 +537,9 @@ export async function getExplorerHub(userId, opts = {}) {
     success: true,
     is_exploring: busy.isExploring,
     can_claim: canClaim,
+    ui_variant: uiVariant,
+    active_loadout_slot: details.activeSlot,
+    abs_enchant_charm_runs: absCharmRuns,
     has_saved_loadout: details.hasSavedLoadout,
     injured_count: injuredPets.length,
     loadout_power: details.power,
@@ -525,6 +548,26 @@ export async function getExplorerHub(userId, opts = {}) {
     description: desc,
     message: desc,
   };
+}
+
+export async function switchExplorerLoadoutSlot(userId, rawSlot, opts = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI LOADOUT`, 'ID không hợp lệ.');
+  if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
+
+  const busy = await getUserBusyExplorationAssets(cleanId);
+  if (busy.isExploring) {
+    return explorerError(
+      400,
+      'EXPEDITION_IN_PROGRESS',
+      `${uiEm('ui_clock_timer')} KHÔNG THỂ ĐỔI BỘ LÚC NÀY`,
+      'Đang có chuyến khám phá đang diễn ra! Hãy chờ hoàn thành và nhận quà hoặc đổi Bộ từ `/inv`.',
+    );
+  }
+
+  const { switchLoadout } = await import('./loadoutService.js');
+  await switchLoadout(cleanId, Number(rawSlot) || 1, opts);
+  return getExplorerHub(cleanId, opts);
 }
 
 /**
@@ -675,15 +718,21 @@ export async function saveExplorerLoadout(userId, patch = {}) {
       if (!ownedDom) return explorerError(404, 'DOMAIN_NOT_OWNED', `${uiEm('ui_warn')} CHƯA SỞ HỮU LINH VỰC`, `Bạn không sở hữu Linh Vực \`${nextDomain}\`!`);
     }
 
-    await supabase.from('explorer_loadouts').upsert({
+    const activeSlot = [1, 2, 3].includes(Number(details.activeSlot)) ? Number(details.activeSlot) : 1;
+    await supabase.from('user_loadouts').upsert({
       user_id: cleanId,
+      slot_index: activeSlot,
       pet_id: nextPetId,
+      pet_type: details.allPets.find((p) => String(p.pet_id) === String(nextPetId))?.pet_type || null,
       weapon_id: nextWeapon,
       gem_id: nextGem,
       soul_id: nextSoul,
       domain_id: nextDomain,
+      sense_id: details.sense?.entity_id || null,
+      realm_id: details.realm?.entity_id || null,
+      is_initialized: true,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
+    }, { onConflict: 'user_id,slot_index' });
 
     const hub = await getExplorerHub(cleanId);
     const updatedMsg = [
@@ -1250,10 +1299,29 @@ export async function claimExpedition(userId, opts = {}) {
         }
       }
 
-      // 4. Đá Khắc Ấn Tuyệt Đối (0.5%)
-      const gotAbsoluteStone = opts.forceAbsoluteStone === true || rng() < 0.005;
+      // 4. Đá Khắc Ấn Tuyệt Đối (5% thường, 25% khi bật Bùa Đá Tuyệt Ấn)
+      const charmRes = await consumeAbsEnchantCharmRun(cleanId);
+      const absChance = charmRes.used ? 0.25 : 0.05;
+      const gotAbsoluteStone = opts.forceAbsoluteStone === true || rng() < absChance;
       if (gotAbsoluteStone) {
         gainedItems.set('enchant_stone_absolute', (gainedItems.get('enchant_stone_absolute') || 0) + 1);
+      }
+
+      // 4b. Mảnh Tinh Hoa Hỗn Độn (0.5% CỐ ĐỊNH — MIỄN NHIỄM hoàn toàn Luck Potion & /gieoque; KHÔNG rơi evo_crystal)
+      const gotChaosShard = opts.forceChaosShard === true || rng() < 0.005;
+      if (gotChaosShard) {
+        gainedItems.set('chaos_essence_shard', (gainedItems.get('chaos_essence_shard') || 0) + 1);
+      }
+
+      // 4c. Thẻ Tự Động Chăm Farm 24h (5%) & Thuốc Nông Trại (55% rơi 1–2 gói)
+      const gotFarmAutoCard = opts.forceFarmAutoCard === true || rng() < 0.05;
+      if (gotFarmAutoCard) {
+        gainedItems.set('farm_auto_card', (gainedItems.get('farm_auto_card') || 0) + 1);
+      }
+      if (opts.forceFarmPack === true || rng() < 0.55) {
+        const packId = rng() < 0.5 ? 'farm_growth_med' : 'farm_yield_starch';
+        const packQty = 1 + Math.floor(rng() * 2);
+        gainedItems.set(packId, (gainedItems.get(packId) || 0) + packQty);
       }
 
       for (const [iid, qty] of gainedItems.entries()) {
@@ -1307,6 +1375,10 @@ export async function claimExpedition(userId, opts = {}) {
         earnedLt,
         gainedItems: Object.fromEntries(gainedItems),
         gotAbsoluteStone,
+        gotChaosShard,
+        gotFarmAutoCard,
+        absCharmUsed: charmRes.used,
+        absCharmRemaining: charmRes.remaining,
         mythicWeaponDrop: mythicWeaponDrop ? mythicWeaponDrop.item_id : null,
         salvagedDrop: salvagedDrop ? { drop_id: salvagedDrop.drop_id, item_id: salvagedDrop.item_id, enchant_grade: salvagedDrop.enchant_grade } : null,
       };
@@ -1326,7 +1398,10 @@ export async function claimExpedition(userId, opts = {}) {
         terrain.active ? `• **Thuận Hệ Địa Hình (${terrain.matchedElements.join('/')}):** **+6% Sống Sót • +10% Linh Thạch**` : '',
         `• **Linh Thạch Thu Hoạch:** **+${earnedLt.toLocaleString('vi-VN')}** ${ltIcon}`,
         lootText ? `• **Vật Phẩm Nhặt Được:** ${lootText}` : '',
-        gotAbsoluteStone ? `• ${em('su_sparkle')} **CỰC PHẨM 0.5%:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn — khuyên dùng A → S)*!` : '',
+        gotAbsoluteStone ? `• ${em('su_sparkle')} **CỰC PHẨM ${charmRes.used ? '25%' : '5%'}:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn)*!` : '',
+        gotChaosShard ? `• ${em('chaos_essence_shard')} **HỖN ĐỘN KỲ NGỘ (0.5%):** Nhặt được **Mảnh Tinh Hoa Hỗn Độn** *(dùng cho `/tienhoa`)*!` : '',
+        gotFarmAutoCard ? `• ${em('farm_auto_card')} **NÔNG TRẠI (5%):** Nhặt được **Thẻ Tự Động Chăm Farm 24h**!` : '',
+        charmRes.used ? `• ${em('abs_enchant_charm')} *Đã dùng 1 lượt Bùa Đá Tuyệt Ấn (còn **${charmRes.remaining}** chuyến).*` : '',
         mythicWeaponDrop ? `• ${em('su_crossed_swords')} **KỲ NGỘ 0.01%:** Nhặt được Vũ Khí Thần Thoại ${itemEmoji(mythicWeaponDrop.item_id)} **${mythicWeaponDrop.item_name}**!` : '',
         salvagedDrop
           ? `• ${em('su_linhthach')} **NHẶT BẢO VẬT RƠI TRÊN BẢN ĐỒ (60%):** Nhặt được ${itemEmoji(salvagedDrop.item_id)} ${gradeEmoji(salvagedDrop.enchant_grade)} **${EQUIPMENT_BY_ID[salvagedDrop.item_id]?.item_name || salvagedDrop.item_id}** *(Bậc ${salvagedDrop.enchant_grade} — của tu sĩ đi trước bỏ lại)*!`
@@ -1442,8 +1517,9 @@ export async function claimExpedition(userId, opts = {}) {
       }
     }
 
-    // Gỡ loadout cũ để tránh tham chiếu tới pet/item đã mất
-    await supabase.from('explorer_loadouts').delete().eq('user_id', cleanId);
+    // Đồng bộ lại Loadout (Bộ hiện tại) để loại bỏ tham chiếu tới pet/item đã mất
+    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
 
     const outcome = {
       survived: false,

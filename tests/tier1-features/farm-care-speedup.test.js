@@ -55,6 +55,6 @@ test('1. Tưới nước / cho ăn giảm 30 phút thời gian chín mỗi lần
   assert.equal(snap2At55.computed_status, 'ready');
 });
 
-test('2. Không công bố sớm lên /updates (giữ nguyên 1.6.1 cho bản 1.7 tương lai)', () => {
-  assert.equal(LATEST_VERSION, '1.6.1');
+test('2. Đã công bố chính thức speedup -30p lên /updates (LATEST_VERSION = 1.7)', () => {
+  assert.equal(LATEST_VERSION, '1.7');
 });

@@ -50,6 +50,11 @@ import {
   getEffectiveCombatSpd,
   getTrueDamageResistPct,
 } from './haxEngine.js';
+import {
+  tickUltimateTurn,
+  recordUltimateCombatMetrics,
+  tryTriggerUltimate,
+} from './ultimateEngine.js';
 
 export const PVP_DAILY_LT_LIMIT = 15;
 export const PVE_FREE_DAILY_LT_LIMIT = 25;
@@ -1145,6 +1150,13 @@ function executeHit({
 
     target.currentHp = Math.max(0, target.currentHp - dmgToApply);
     actualDamageDealt = dmgToApply;
+    recordUltimateCombatMetrics(actor, target, {
+      damageDealt: actualDamageDealt,
+      isCrit: attackPhase.isCrit,
+      dodgedByTarget: attackPhase.isMiss,
+      burnApplied: Boolean(target.state?.burnTurns > 0),
+      stunApplied: Boolean(target.state?.isStunned),
+    });
 
     if (attackPhase.lifestealPct > 0 && actualDamageDealt > 0 && actor.currentHp > 0) {
       const healed = applyHeal(actor, actualDamageDealt * attackPhase.lifestealPct);
@@ -1341,6 +1353,7 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
 
       const { actor, target, role } = step;
       const oppRole = role === 'attacker' ? 'defender' : 'attacker';
+      tickUltimateTurn(actor, turnNumber);
       const turnStartResult = triggerTurnStart(actor, target, rng, turnNumber);
       const startTags = (turnStartResult.events || []).map((e) => (typeof e === 'object' ? e.skill : e)).filter(Boolean);
 
@@ -1487,6 +1500,25 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         }
       }
 
+      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần)
+      if (!turnStartResult.attackSelf && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        const ultRes = tryTriggerUltimate(actor, actualTarget, { rng, turnNumber });
+        if (ultRes.triggered) {
+          turns.push({
+            turn: turnNumber,
+            actor: role,
+            action: 'ultimate',
+            damage: ultRes.damage || 0,
+            shieldAbsorbed: ultRes.shieldAbsorbed || 0,
+            isCrit: false,
+            elementAdvantage: null,
+            haxTriggered: `[ULTIMATE #${ultRes.triggerCount}] ${ultRes.ultimateName} • ${ultRes.logs.join(' • ')}`,
+            attackerHp: attacker.currentHp,
+            defenderHp: defender.currentHp,
+          });
+        }
+      }
+
       // Thời Không Đình Chỉ / Nguyệt Thần Bạch Vĩ Hồ: Đánh thêm 1 lượt qua cùng pipeline chuẩn!
       if (actor.state.isDoubleTurn) {
         actor.state.isDoubleTurn = false;
@@ -1602,6 +1634,8 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
     avatarFrame: c.avatarFrame || 'default',
     petName: c.petName,
     petType: c.petType,
+    isEvolved: Boolean(c.isEvolved),
+    ultCount: Number(c.state?.ultimate?.triggerCount || 0),
     petRarity: c.petRarity || 'Phàm Phẩm',
     petIcon: c.petIcon || petEmoji(c.petType, em('su_pet_paw')),
     element: c.element,

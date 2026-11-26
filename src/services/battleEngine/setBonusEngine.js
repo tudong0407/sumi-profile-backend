@@ -13,7 +13,7 @@
 
 export const DOMAIN_TO_PET_ELEMENTS = {
   'Kiếm Vực': ['Kim', 'Lôi'],
-  'Huyễn Vực': ['Thủy', 'Mộc'],
+  'Huyễn Vực': ['Thủy', 'Mộc', 'Hư Không'],
   'Trận Vực': ['Thổ', 'Hỏa'],
   'Minh Vực': ['Ám'],
   'Thánh Vực': ['Quang'],
@@ -29,7 +29,7 @@ const MYTHIC_SET_PCT_BY_COUNT = {
 
 function isMythicOrSupreme(rarityKey) {
   const rk = String(rarityKey || '').toLowerCase();
-  return rk === 'mythic' || rk === 'supreme';
+  return rk === 'mythic' || rk === 'unique_supreme' || rk === 'evolved_supreme' || rk === 'supreme';
 }
 
 export function doesDomainMatchElement(domain, petElement) {

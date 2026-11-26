@@ -68,7 +68,7 @@ export const DEFAULT_AUTOSELL_CONFIG = {
 };
 
 export const MYTHIC_PITY_THRESHOLD = 350;
-export const PITY_UNIQUE_CHANCE = 0.02;
+export const PITY_UNIQUE_CHANCE = 0.05;
 export const PITY_ENABLED_POOLS = ['pet', 'equipment', 'domain'];
 
 export function normalizePityState(raw) {
@@ -202,8 +202,8 @@ export async function updateAutoSellConfig(userId, options = {}) {
   });
 }
 
-export const DAILY_BASE_MIN = 40;
-export const DAILY_BASE_MAX = 60;
+export const DAILY_BASE_MIN = 55;
+export const DAILY_BASE_MAX = 80;
 export const DOIQUA_EXP_UNIT = 1000;
 export const DOIQUA_LINH_THACH_PER_UNIT = 10;
 export const ROLL_SINGLE_COST = 50;
@@ -472,16 +472,26 @@ export async function convertExpToLinhThach(userId, amountExp, options = {}) {
   });
 }
 
+export const ROLL_FIXED_UNIQUE_PCT = 0.0325;
+export const ROLL_BASE_NON_UNIQUE_MYTHIC_PCT = 0.6175;
+
 function rollRarityByRate(rng = Math.random, luckMult = 1) {
+  return rollRarityWithUniqueSplit(rng, luckMult).rarityKey;
+}
+
+export function rollRarityWithUniqueSplit(rng = Math.random, luckMult = 1) {
   const safeMult = Math.max(0.5, Number(luckMult) || 1);
-  const mythicCut = 0.5 * safeMult;
+  // 0.0325% Tối Thượng Độc Nhất CỐ ĐỊNH 100%, MIỄN NHIỄM với Luck Potion & /gieoque
+  const uniqueCut = ROLL_FIXED_UNIQUE_PCT;
+  const mythicCut = uniqueCut + ROLL_BASE_NON_UNIQUE_MYTHIC_PCT * safeMult;
   const epicCut = mythicCut + 14.0 * Math.min(1.5, Math.max(0.85, safeMult));
   const rareCut = epicCut + 25.0;
   const r = rng() * 100;
-  if (r < mythicCut) return 'mythic';
-  if (r < epicCut) return 'epic';
-  if (r < rareCut) return 'rare';
-  return 'common';
+  if (r < uniqueCut) return { rarityKey: 'mythic', naturalWantUnique: true };
+  if (r < mythicCut) return { rarityKey: 'mythic', naturalWantUnique: false };
+  if (r < epicCut) return { rarityKey: 'epic', naturalWantUnique: null };
+  if (r < rareCut) return { rarityKey: 'rare', naturalWantUnique: null };
+  return { rarityKey: 'common', naturalWantUnique: null };
 }
 
 function rollRoleDurationTier(rng = Math.random) {
@@ -669,12 +679,12 @@ export async function rollGacha(userId, options = {}) {
     for (let i = 0; i < count; i += 1) {
       const stepLuckPct = (i < Number(potionConsume.chargesUsed || 0) ? Number(potionConsume.luckPctApplied || 0) : 0) + Number(fortuneInfo?.fortuneLuckPct || 0);
       const stepLuckMult = Math.max(0.5, 1 + stepLuckPct / 100);
-      const naturalRarityKey = rollRarityByRate(rng, stepLuckMult);
-      const pityStep = advanceMythicPityStep(pityState, pool, naturalRarityKey, rng);
+      const naturalRoll = rollRarityWithUniqueSplit(rng, stepLuckMult);
+      const pityStep = advanceMythicPityStep(pityState, pool, naturalRoll.rarityKey, rng);
       pityState = pityStep.nextPity;
       const rarityKey = pityStep.rarityKey;
       const isPityRoll = pityStep.pityTriggered;
-      const wantUnique = pityStep.wantUnique;
+      const wantUnique = isPityRoll ? pityStep.wantUnique : naturalRoll.naturalWantUnique;
       if (isPityRoll) anyPityTriggered = true;
 
       if (pool === 'role') {
@@ -815,6 +825,7 @@ export async function rollGacha(userId, options = {}) {
 
       if (pool === 'equipment') {
         let candidates = EQUIPMENT_CATALOG.filter((it) => it.rarity_key === rarityKey);
+        let exhaustionCompLt = 0;
         if (rarityKey === 'mythic') {
           const { data: ownedMythics } = await supabase
             .from('user_pet_items')
@@ -822,14 +833,18 @@ export async function rollGacha(userId, options = {}) {
             .in('item_id', [...MYTHIC_UNIQUE_ITEM_IDS]);
           const takenSet = new Set((ownedMythics || []).map((r) => r.item_id));
           candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.item_id)));
-          if (isPityRoll) {
-            const nonUniques = candidates.filter((c) => !c.is_unique);
-            const availUniques = candidates.filter((c) => c.is_unique);
-            if (wantUnique && availUniques.length > 0) {
+          const nonUniques = candidates.filter((c) => !c.is_unique);
+          const availUniques = candidates.filter((c) => c.is_unique);
+          if (wantUnique === true) {
+            if (availUniques.length > 0) {
               candidates = availUniques;
             } else if (nonUniques.length > 0) {
               candidates = nonUniques;
+              exhaustionCompLt = 300;
+              refundLinhThach += 300;
             }
+          } else if (nonUniques.length > 0) {
+            candidates = nonUniques;
           }
           if (candidates.length === 0) {
             refundLinhThach += 300;
@@ -846,7 +861,7 @@ export async function rollGacha(userId, options = {}) {
         }
 
         const ENCHANT_GRADE_RANK = { D: 0, C: 1, B: 2, A: 3, S: 4 };
-        const picked = candidates[Math.floor(rng() * candidates.length)];
+        let picked = candidates[Math.floor(rng() * candidates.length)];
         const rolledGrade = rollDefaultEnchantGrade(rng);
         const { data: ownItem } = await supabase
           .from('user_pet_items')
@@ -880,7 +895,7 @@ export async function rollGacha(userId, options = {}) {
             grade_upgraded: upgradedGrade,
             item_id: picked.item_id,
             name: picked.item_name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
             slot: picked.item_type,
             sell_lt: sellLt,
           });
@@ -904,7 +919,7 @@ export async function rollGacha(userId, options = {}) {
 
           results.push({
             kind: 'duplicate_item',
-            emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
+            emoji: itemEmoji(picked.item_id, tierEmoji(picked.display_rarity_key || picked.rarity_key)),
             grade_emoji: gradeEmoji(bestGrade),
             enchant_grade: bestGrade,
             rolled_grade: rolledGrade,
@@ -913,11 +928,11 @@ export async function rollGacha(userId, options = {}) {
             quantity: nextQty,
             item_id: picked.item_id,
             name: picked.item_name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
             slot: picked.item_type,
           });
         } else {
-          await supabase.from('user_pet_items').insert({
+          const { error: insertItemErr } = await supabase.from('user_pet_items').insert({
             user_id: cleanId,
             item_id: picked.item_id,
             equipped_to_pet: null,
@@ -927,29 +942,76 @@ export async function rollGacha(userId, options = {}) {
             enchant_grade: rolledGrade,
             enchant_pity: 0,
             quantity: 1,
+            is_unique: Boolean(picked.is_unique),
           });
+          if (insertItemErr) {
+            if (String(insertItemErr.code) === '23505') {
+              const fallbackPool = EQUIPMENT_CATALOG.filter((it) => it.rarity_key === 'mythic' && !it.is_unique);
+              if (picked.is_unique && fallbackPool.length > 0) {
+                picked = fallbackPool[Math.floor(rng() * fallbackPool.length)];
+                refundLinhThach += 300;
+                exhaustionCompLt += 300;
+                const { data: exFb } = await supabase
+                  .from('user_pet_items')
+                  .select('id, quantity, enchant_grade')
+                  .eq('user_id', cleanId)
+                  .eq('item_id', picked.item_id)
+                  .maybeSingle();
+                if (exFb) {
+                  await supabase.from('user_pet_items').update({ quantity: Number(exFb.quantity || 1) + 1 }).eq('id', exFb.id);
+                } else {
+                  await supabase.from('user_pet_items').insert({
+                    user_id: cleanId,
+                    item_id: picked.item_id,
+                    equipped_to_pet: null,
+                    slot: null,
+                    source: 'gacha',
+                    paid_price: 0,
+                    enchant_grade: rolledGrade,
+                    enchant_pity: 0,
+                    quantity: 1,
+                    is_unique: false,
+                  });
+                }
+              } else {
+                const { data: exOwn } = await supabase
+                  .from('user_pet_items')
+                  .select('id, quantity')
+                  .eq('user_id', cleanId)
+                  .eq('item_id', picked.item_id)
+                  .maybeSingle();
+                if (exOwn) {
+                  await supabase.from('user_pet_items').update({ quantity: Number(exOwn.quantity || 1) + 1 }).eq('id', exOwn.id);
+                }
+              }
+            } else {
+              throw new Error(`Item insert failed: ${insertItemErr.message}`);
+            }
+          }
           if (picked.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(picked.item_id)) {
             invalidateUniqueItemCard(picked.item_id);
           }
           results.push({
             kind: 'new_item',
-            emoji: itemEmoji(picked.item_id, tierEmoji(picked.rarity_key)),
+            emoji: itemEmoji(picked.item_id, tierEmoji(picked.display_rarity_key || picked.rarity_key)),
             grade_emoji: gradeEmoji(rolledGrade),
             enchant_grade: rolledGrade,
             quantity: 1,
             item_id: picked.item_id,
             name: picked.item_name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
             slot: picked.item_type,
+            ...(exhaustionCompLt > 0 ? { extra_note: `+${exhaustionCompLt} LT hết Độc Nhất` } : {}),
           });
         }
       } else if (pool === 'domain') {
         const subRoll = rng();
-        const entityKind = subRoll < 0.50 ? 'domain' : subRoll < 0.75 ? 'sense' : 'realm';
+        const entityKind = subRoll < 0.34 ? 'domain' : subRoll < 0.67 ? 'sense' : 'realm';
         const fullPool = entityKind === 'domain' ? DOMAIN_CATALOG : entityKind === 'sense' ? DIVINE_SENSE_CATALOG : DIVINE_REALM_CATALOG;
         const uniqueSet = entityKind === 'domain' ? MYTHIC_UNIQUE_DOMAIN_IDS : entityKind === 'sense' ? MYTHIC_UNIQUE_SENSE_IDS : MYTHIC_UNIQUE_REALM_IDS;
 
         let candidates = fullPool.filter((x) => !x.is_exclusive_fuyumi && x.rarity_key === rarityKey);
+        let exhaustionCompLt = 0;
         if (rarityKey === 'mythic') {
           const { data: takenUniqueRows } = await supabase
             .from('user_domains')
@@ -958,14 +1020,18 @@ export async function rollGacha(userId, options = {}) {
             .in('entity_id', [...uniqueSet]);
           const takenSet = new Set((takenUniqueRows || []).map((r) => r.entity_id));
           candidates = candidates.filter((c) => !(c.is_unique && takenSet.has(c.id)));
-          if (isPityRoll) {
-            const nonUniques = candidates.filter((c) => !c.is_unique);
-            const availUniques = candidates.filter((c) => c.is_unique);
-            if (wantUnique && availUniques.length > 0) {
+          const nonUniques = candidates.filter((c) => !c.is_unique);
+          const availUniques = candidates.filter((c) => c.is_unique);
+          if (wantUnique === true) {
+            if (availUniques.length > 0) {
               candidates = availUniques;
             } else if (nonUniques.length > 0) {
               candidates = nonUniques;
+              exhaustionCompLt = 300;
+              refundLinhThach += 300;
             }
+          } else if (nonUniques.length > 0) {
+            candidates = nonUniques;
           }
           if (candidates.length === 0) {
             refundLinhThach += 300;
@@ -981,7 +1047,7 @@ export async function rollGacha(userId, options = {}) {
           }
         }
 
-        const picked = candidates[Math.floor(rng() * candidates.length)];
+        let picked = candidates[Math.floor(rng() * candidates.length)];
         const dIcon = entityKind === 'domain'
           ? domainEmoji(picked.id, tierEmoji(picked.rarity_key))
           : entityKind === 'sense'
@@ -1025,10 +1091,10 @@ export async function rollGacha(userId, options = {}) {
             entity_kind: entityKind,
             entity_id: picked.id,
             name: picked.name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
           });
         } else {
-          await supabase.from('user_domains').insert({
+          const { error: insertDomErr } = await supabase.from('user_domains').insert({
             user_id: cleanId,
             entity_kind: entityKind,
             entity_id: picked.id,
@@ -1037,6 +1103,49 @@ export async function rollGacha(userId, options = {}) {
             is_unique: Boolean(picked.is_unique),
             source: 'gacha',
           });
+          if (insertDomErr) {
+            if (String(insertDomErr.code) === '23505') {
+              const fallbackPool = fullPool.filter((x) => !x.is_exclusive_fuyumi && x.rarity_key === 'mythic' && !x.is_unique);
+              if (picked.is_unique && fallbackPool.length > 0) {
+                picked = fallbackPool[Math.floor(rng() * fallbackPool.length)];
+                refundLinhThach += 300;
+                exhaustionCompLt += 300;
+                const { data: exFb } = await supabase
+                  .from('user_domains')
+                  .select('id, quantity')
+                  .eq('user_id', cleanId)
+                  .eq('entity_kind', entityKind)
+                  .eq('entity_id', picked.id)
+                  .maybeSingle();
+                if (exFb) {
+                  await supabase.from('user_domains').update({ quantity: Number(exFb.quantity || 1) + 1, updated_at: new Date().toISOString() }).eq('id', exFb.id);
+                } else {
+                  await supabase.from('user_domains').insert({
+                    user_id: cleanId,
+                    entity_kind: entityKind,
+                    entity_id: picked.id,
+                    quantity: 1,
+                    is_equipped: false,
+                    is_unique: false,
+                    source: 'gacha',
+                  });
+                }
+              } else {
+                const { data: exOwn } = await supabase
+                  .from('user_domains')
+                  .select('id, quantity')
+                  .eq('user_id', cleanId)
+                  .eq('entity_kind', entityKind)
+                  .eq('entity_id', picked.id)
+                  .maybeSingle();
+                if (exOwn) {
+                  await supabase.from('user_domains').update({ quantity: Number(exOwn.quantity || 1) + 1, updated_at: new Date().toISOString() }).eq('id', exOwn.id);
+                }
+              }
+            } else {
+              throw new Error(`Domain insert failed: ${insertDomErr.message}`);
+            }
+          }
           results.push({
             kind: 'new_domain',
             emoji: dIcon,
@@ -1044,12 +1153,14 @@ export async function rollGacha(userId, options = {}) {
             entity_kind: entityKind,
             entity_id: picked.id,
             name: picked.name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
+            ...(exhaustionCompLt > 0 ? { extra_note: `+${exhaustionCompLt} LT hết Độc Nhất` } : {}),
           });
         }
       } else {
         const ENCHANT_GRADE_RANK = { D: 0, C: 1, B: 2, A: 3, S: 4 };
         let candidates = standardPets.filter((p) => p.rarity_key === rarityKey);
+        let exhaustionCompLt = 0;
         if (rarityKey === 'mythic') {
           const { data: ownedUniquePets } = await supabase
             .from('user_pets')
@@ -1057,14 +1168,18 @@ export async function rollGacha(userId, options = {}) {
             .in('pet_type', [...MYTHIC_UNIQUE_PET_TYPES]);
           const takenPets = new Set((ownedUniquePets || []).map((r) => r.pet_type));
           candidates = candidates.filter((p) => !(p.is_unique && takenPets.has(p.pet_type)));
-          if (isPityRoll) {
-            const nonUniques = candidates.filter((p) => !p.is_unique);
-            const availUniques = candidates.filter((p) => p.is_unique);
-            if (wantUnique && availUniques.length > 0) {
+          const nonUniques = candidates.filter((p) => !p.is_unique);
+          const availUniques = candidates.filter((p) => p.is_unique);
+          if (wantUnique === true) {
+            if (availUniques.length > 0) {
               candidates = availUniques;
             } else if (nonUniques.length > 0) {
               candidates = nonUniques;
+              exhaustionCompLt = 300;
+              refundLinhThach += 300;
             }
+          } else if (nonUniques.length > 0) {
+            candidates = nonUniques;
           }
           if (candidates.length === 0) {
             refundLinhThach += 300;
@@ -1079,7 +1194,7 @@ export async function rollGacha(userId, options = {}) {
             continue;
           }
         }
-        const picked = candidates[Math.floor(rng() * candidates.length)];
+        let picked = candidates[Math.floor(rng() * candidates.length)];
         const rolledGrade = rollDefaultEnchantGrade(rng);
         const { data: ownPet } = await supabase
           .from('user_pets')
@@ -1137,7 +1252,7 @@ export async function rollGacha(userId, options = {}) {
 
           results.push({
             kind: 'duplicate_pet',
-            emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
+            emoji: petEmoji(picked.pet_type, tierEmoji(picked.display_rarity_key || picked.rarity_key)),
             grade_emoji: gradeEmoji(bestGrade),
             enchant_grade: bestGrade,
             rolled_grade: rolledGrade,
@@ -1146,11 +1261,11 @@ export async function rollGacha(userId, options = {}) {
             quantity: nextQty,
             pet_type: picked.pet_type,
             name: picked.pet_name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
             element: picked.element,
           });
         } else {
-          await supabase.from('user_pets').insert({
+          const { error: insertPetErr } = await supabase.from('user_pets').insert({
             user_id: cleanId,
             pet_name: picked.pet_name,
             pet_type: picked.pet_type,
@@ -1171,16 +1286,70 @@ export async function rollGacha(userId, options = {}) {
             enchant_pity: 0,
             quantity: 1,
           });
+          if (insertPetErr) {
+            if (String(insertPetErr.code) === '23505') {
+              const fallbackPool = standardPets.filter((p) => p.rarity_key === 'mythic' && !p.is_unique);
+              if (picked.is_unique && fallbackPool.length > 0) {
+                picked = fallbackPool[Math.floor(rng() * fallbackPool.length)];
+                refundLinhThach += 300;
+                exhaustionCompLt += 300;
+                const { data: exFb } = await supabase
+                  .from('user_pets')
+                  .select('pet_id, quantity')
+                  .eq('user_id', cleanId)
+                  .eq('pet_type', picked.pet_type)
+                  .maybeSingle();
+                if (exFb) {
+                  await supabase.from('user_pets').update({ quantity: Number(exFb.quantity || 1) + 1 }).eq('pet_id', exFb.pet_id);
+                } else {
+                  await supabase.from('user_pets').insert({
+                    user_id: cleanId,
+                    pet_name: picked.pet_name,
+                    pet_type: picked.pet_type,
+                    pet_rarity: picked.rarity,
+                    element: picked.element,
+                    hax_skill: picked.hax_skill,
+                    hax_description: picked.hax_description,
+                    level: 1,
+                    star: 1,
+                    atk: picked.base_atk,
+                    def: picked.base_def,
+                    spd: picked.base_spd,
+                    is_active: false,
+                    is_unique: false,
+                    source: 'gacha',
+                    paid_price: 0,
+                    enchant_grade: rolledGrade,
+                    enchant_pity: 0,
+                    quantity: 1,
+                  });
+                }
+              } else {
+                const { data: exOwn } = await supabase
+                  .from('user_pets')
+                  .select('pet_id, quantity')
+                  .eq('user_id', cleanId)
+                  .eq('pet_type', picked.pet_type)
+                  .maybeSingle();
+                if (exOwn) {
+                  await supabase.from('user_pets').update({ quantity: Number(exOwn.quantity || 1) + 1 }).eq('pet_id', exOwn.pet_id);
+                }
+              }
+            } else {
+              throw new Error(`Pet insert failed: ${insertPetErr.message}`);
+            }
+          }
           results.push({
             kind: 'new_pet',
-            emoji: petEmoji(picked.pet_type, tierEmoji(picked.rarity_key)),
+            emoji: petEmoji(picked.pet_type, tierEmoji(picked.display_rarity_key || picked.rarity_key)),
             grade_emoji: gradeEmoji(rolledGrade),
             enchant_grade: rolledGrade,
             quantity: 1,
             pet_type: picked.pet_type,
             name: picked.pet_name,
-            rarity: `${tierEmoji(picked.rarity_key)} ${picked.rarity}`.trim(),
+            rarity: `${tierEmoji(picked.display_rarity_key || picked.rarity_key)} ${picked.rarity}`.trim(),
             element: picked.element,
+            ...(exhaustionCompLt > 0 ? { extra_note: `+${exhaustionCompLt} LT hết Độc Nhất` } : {}),
           });
         }
       }

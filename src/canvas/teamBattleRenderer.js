@@ -17,6 +17,7 @@ import {
   loadImageSafe,
   drawAntiAliasedAvatarWithBorder,
   preloadAvatarFrameOverlay,
+  drawElementalPetBorderFX,
 } from './drawUtils.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -138,6 +139,7 @@ function getNormalizedUnitDisplay(unit) {
   const petObj = unit.pet || {};
   const petType = petObj.pet_type || unit.petType || '';
   const petName = petObj.pet_name || unit.petName || 'Linh Thú';
+  const isEvolved = Boolean(unit.isEvolved || petObj.is_evolved);
   const element = petObj.element || unit.element || '';
   const level = Number(petObj.level || unit.level || 1);
   const star = Number(petObj.star || unit.star || 1);
@@ -146,14 +148,19 @@ function getNormalizedUnitDisplay(unit) {
   const def = Number(unit.def || 0);
   const spd = Number(unit.spd || 0);
   const power = Number(unit.powerScore || unit.power || 0) || (atk * 3 + def * 2 + spd * 2 + level * 50);
-  return { petType, petName, element, level, star, grade, power };
+  return { petType, petName, isEvolved, element, level, star, grade, power };
 }
 
-async function loadPetSprite(petType) {
+async function loadPetSprite(petType, isEvolved = false) {
   if (!petType) return null;
+  if (isEvolved) {
+    const evoImg = await safeLoadImage(`pets/${petType}_evo.webp`);
+    if (evoImg) return evoImg;
+  }
   const mappedPetFile = PET_IMAGE_MAP[petType];
   return (mappedPetFile ? await safeLoadImage(mappedPetFile) : null)
     || await safeLoadImage(`pets/${petType}.png`)
+    || await safeLoadImage(`pets/${petType}.webp`)
     || await safeLoadImage(`${petType}.png`);
 }
 
@@ -187,12 +194,18 @@ async function drawFighterStrip(ctx, unit, x, y, w, h, sideColor) {
   ctx.stroke();
 
   // Pet sprite bên trái (contain để giữ nền trong suốt đẹp)
-  const petImg = await loadPetSprite(meta.petType);
+  const petImg = await loadPetSprite(meta.petType, meta.isEvolved);
   const spX = x + 16;
   const spY = y + (h - spriteBox) / 2;
   drawRoundRect(ctx, spX, spY, spriteBox, spriteBox, 16);
   ctx.fillStyle = 'rgba(15, 11, 28, 0.9)';
   ctx.fill();
+  if (meta.isEvolved || meta.petType === 'cuu_vi_hong_ho') {
+    drawElementalPetBorderFX(ctx, spX, spY, spriteBox, spriteBox, 16, meta.element, {
+      allowShadowBlur: false,
+      lineWidth: 2.2,
+    });
+  }
   if (petImg) {
     ctx.save();
     drawRoundRect(ctx, spX + 4, spY + 4, spriteBox - 8, spriteBox - 8, 12);
@@ -379,8 +392,14 @@ async function drawSoloFighterPanel(ctx, unit, x, y, w, h, sideColor) {
   ctx.strokeStyle = sideColor;
   ctx.lineWidth = 2;
   ctx.stroke();
+  if (meta.isEvolved || meta.petType === 'cuu_vi_hong_ho') {
+    drawElementalPetBorderFX(ctx, imgX - 6, imgY - 6, imgSize + 12, imgSize + 12, 24, meta.element, {
+      allowShadowBlur: false,
+      lineWidth: 2.6,
+    });
+  }
 
-  const petImg = await loadPetSprite(meta.petType);
+  const petImg = await loadPetSprite(meta.petType, meta.isEvolved);
   if (petImg) {
     ctx.save();
     drawRoundRect(ctx, imgX, imgY, imgSize, imgSize, 20);

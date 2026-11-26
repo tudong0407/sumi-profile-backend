@@ -23,8 +23,13 @@ import {
   getEffectiveCombatSpd,
   getTrueDamageResistPct,
 } from './haxEngine.js';
+import {
+  tickUltimateTurn,
+  recordUltimateCombatMetrics,
+  tryTriggerUltimate,
+} from './ultimateEngine.js';
 import { V13_PET_HAX, getCombatantV13HaxList } from './v13HaxRegistry.js';
-import { em, uiEm, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
+import { em, uiEm, tierEmoji, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import {
   PUBLIC_BASE_URL,
   PET_BY_TYPE,
@@ -66,6 +71,7 @@ function normalizeUnitPetAndPower(u) {
     ...p,
     pet_type: p.pet_type || u.petType || 'hoa_thach_nham_nham',
     pet_name: p.pet_name || u.petName || 'Linh Thú',
+    is_evolved: Boolean(u.isEvolved || p.is_evolved),
     element: p.element || u.element || 'Thổ',
     rarity: p.rarity || u.petRarity || 'Phàm Phẩm',
     rarity_key: p.rarity_key || u.petRarityKey || 'common',
@@ -408,6 +414,7 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
       if (!target) break;
 
       // 3a. Pha Đầu Lượt (triggerTurnStart: hồi máu, giải khống chế, choáng/đóng băng, đốt DoT)
+      tickUltimateTurn(actor, turn);
       const turnStartRes = triggerTurnStart(actor, target, rng, turn);
       for (const ev of turnStartRes?.events || []) {
         if (ev?.desc || ev?.skill) {
@@ -537,6 +544,13 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         }
 
         defender.currentHp = Math.max(0, defender.currentHp - dmgToApply);
+        recordUltimateCombatMetrics(striker, defender, {
+          damageDealt: dmgToApply,
+          isCrit: attackPhase.isCrit,
+          dodgedByTarget: attackPhase.isMiss,
+          burnApplied: Boolean(defender.state?.burnTurns > 0),
+          stunApplied: Boolean(defender.state?.isStunned),
+        });
 
         // Hút máu (HAX + Linh Vực)
         const strikerDebuffs = striker.domainRuntime?.incomingDebuffs || {};
@@ -706,6 +720,24 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
               });
             }
           }
+        }
+      }
+
+      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần)
+      if (!turnStartRes?.attackSelf && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        const ultRes = tryTriggerUltimate(actor, actualTarget, { rng, turnNumber: turn });
+        if (ultRes.triggered) {
+          turnEvents.push({
+            actor: actor.id,
+            actorName: actor.name,
+            target: actualTarget.id,
+            targetName: actualTarget.name,
+            action: 'ultimate',
+            dmg: ultRes.damage || 0,
+            ko: ultRes.ko,
+          });
+          thisTurnLines.push(`  • ${tierEmoji('evolved_supreme')} **[ULTIMATE #${ultRes.triggerCount}] ${actor.name} — ${ultRes.ultimateName}:** ${ultRes.logs.join(' • ')}${actualTarget.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ''}`);
+          highlights.push(`**Hiệp ${turn}:** ${actor.name} kích hoạt **${ultRes.ultimateName}** (${ultRes.logs.join(' • ')})!`);
         }
       }
 

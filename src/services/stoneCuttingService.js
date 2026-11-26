@@ -15,6 +15,9 @@ import { supabase } from '../config/supabase.js';
 import {
   PET_CATALOG,
   EQUIPMENT_CATALOG,
+  DOMAIN_CATALOG,
+  DIVINE_SENSE_CATALOG,
+  DIVINE_REALM_CATALOG,
   PUBLIC_BASE_URL,
   rollDefaultEnchantGrade,
   ENCHANT_GRADE_ORDER,
@@ -24,11 +27,6 @@ import {
 function compareEnchantGrades(a, b) {
   return ENCHANT_GRADE_ORDER.indexOf(normalizeEnchantGrade(a)) - ENCHANT_GRADE_ORDER.indexOf(normalizeEnchantGrade(b));
 }
-import {
-  V13_DOMAINS,
-  V13_DIVINE_SENSES,
-  V13_DIVINE_REALMS,
-} from '../data/v13ExpansionCatalog.js';
 import {
   STONE_TIERS,
   STONE_TIER_BY_KEY,
@@ -265,9 +263,9 @@ export async function getStoneStall(userId, rawTier = 'common', options = {}) {
     const lines = [
       `${lt} **Số dư:** **${balance.toLocaleString('vi-VN')} LT** • **Giá cắt/viên:** **${tier.price.toLocaleString('vi-VN')} LT** • **Đổi lô mới:** \`${tier.reroll_cost} LT\``,
       formatLuckLine(luck),
-      `${em('dao_ap_crest')} **Tối Thượng Cực Phẩm:** \`${effSupremePct}%\` *(tự chọn 1 Thần Thoại không độc nhất ở 7 nhóm)*`,
+      `${em('dao_ap_crest')} **Hộp Thần Thoại Cực Phẩm:** \`${effSupremePct}%\` *(tự chọn 1 Thần Thoại không độc nhất ở 7 nhóm)*`,
       rw.pending_supreme_picks > 0
-        ? `${em('su_winner_trophy')} **BẠN ĐANG CÓ \`${rw.pending_supreme_picks}\` HỘP TỐI THƯỢNG CHỜ MỞ!** Hãy chọn nhóm quà ở menu bên dưới!`
+        ? `${em('su_winner_trophy')} **BẠN ĐANG CÓ \`${rw.pending_supreme_picks}\` HỘP THẦN THOẠI CỰC PHẨM CHỜ MỞ!** Hãy chọn nhóm quà ở menu bên dưới!`
         : '',
       '',
       `**3 Viên Đá Đang Bày Tại Sạp (${tier.short_name}):**`,
@@ -318,7 +316,7 @@ export async function previewStallStone(userId, rawTier = 'common', slotIndex = 
     const lines = [
       `${tierEmoji(tierKey)} **Phân khúc:** ${tier.name} • **Giá Thiết Thạch:** **${tier.price.toLocaleString('vi-VN')}** ${em('su_linhthach')}`,
       formatLuckLine(luck),
-      `${em('dao_ap_crest')} **Tỉ lệ Tối Thượng Cực Phẩm:** \`${effSupremePct}%\``,
+      `${em('dao_ap_crest')} **Tỉ lệ Hộp Thần Thoại Cực Phẩm:** \`${effSupremePct}%\``,
       '',
       `**Đặc Điểm Bề Mặt:** *${st.lore}*`,
       `**Manh Mối Giám Định:**`,
@@ -532,8 +530,8 @@ export async function cutStallStone(userId, rawTier = 'common', slotIndex = 1, o
       outcomeLine = `Mạch khoáng thuần khiết vỡ òa trong **${pickedStone.name}**! Nhận ngay: ${rewardParts.join(' • ')}!`;
       color = '#a855f7';
     } else {
-      outcomeTitle = `${em('su_winner_trophy')} TỐI THƯỢNG CỰC PHẨM XUẤT THẾ!!`;
-      outcomeLine = `Thiên địa dị tượng! Lõi **${pickedStone.name}** bộc phát kim quang **TỐI THƯỢNG CỰC PHẨM**! Bạn nhận được **1 Hộp Chọn Thần Thoại** *(chọn ngay bên dưới trong 7 nhóm: Linh Thú / 3 Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh — không độc nhất)*!`;
+      outcomeTitle = `${em('su_winner_trophy')} HỘP THẦN THOẠI CỰC PHẨM XUẤT THẾ!!`;
+      outcomeLine = `Thiên địa dị tượng! Lõi **${pickedStone.name}** bộc phát kim quang **HỘP THẦN THOẠI CỰC PHẨM**! Bạn nhận được **1 Hộp Thần Thoại Cực Phẩm** *(chọn ngay bên dưới trong 7 nhóm: Linh Thú / 3 Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh — không độc nhất)*!`;
       color = '#f59e0b';
     }
 
@@ -589,12 +587,12 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
   return withStoneLock(cleanId, async () => {
     const rw = await getStoneRewardsRow(cleanId);
     if (rw.pending_supreme_picks <= 0) {
-      const msg = 'Bạn chưa có Hộp Chọn Tối Thượng Cực Phẩm nào đang chờ mở! Hãy cắt Nguyên Thạch để săn **Tối Thượng Cực Phẩm** trước.';
+      const msg = 'Bạn chưa có Hộp Thần Thoại Cực Phẩm nào đang chờ mở! Hãy cắt Nguyên Thạch để săn **Hộp Thần Thoại Cực Phẩm** trước.';
       return {
         success: false,
         status: 200,
         error: 'NO_PENDING_PICK',
-        title: `${em('dao_ap_crest')} CHƯA CÓ HỘP TỐI THƯỢNG`,
+        title: `${em('dao_ap_crest')} CHƯA CÓ HỘP THẦN THOẠI CỰC PHẨM`,
         description: msg,
         image_url: '',
         message: msg,
@@ -607,11 +605,11 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
     } else if (['weapon', 'gem', 'soul'].includes(catKey)) {
       pool = EQUIPMENT_CATALOG.filter((e) => e.item_type === catKey && e.rarity_key === 'mythic' && !e.is_unique);
     } else if (catKey === 'domain') {
-      pool = V13_DOMAINS.filter((d) => d.rarity_key === 'mythic' && !d.is_unique && !d.is_exclusive_fuyumi);
+      pool = DOMAIN_CATALOG.filter((d) => d.rarity_key === 'mythic' && !d.is_unique && !d.is_exclusive_fuyumi);
     } else if (catKey === 'sense') {
-      pool = V13_DIVINE_SENSES.filter((s) => s.rarity_key === 'mythic' && !s.is_unique && !s.is_exclusive_fuyumi);
+      pool = DIVINE_SENSE_CATALOG.filter((s) => s.rarity_key === 'mythic' && !s.is_unique && !s.is_exclusive_fuyumi);
     } else if (catKey === 'realm') {
-      pool = V13_DIVINE_REALMS.filter((r) => r.rarity_key === 'mythic' && !r.is_unique && !r.is_exclusive_fuyumi);
+      pool = DIVINE_REALM_CATALOG.filter((r) => r.rarity_key === 'mythic' && !r.is_unique && !r.is_exclusive_fuyumi);
     }
 
     if (pool.length === 0) {
@@ -619,9 +617,6 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
     }
 
     const picked = pool[Math.floor(rng() * pool.length)];
-    await saveStoneRewardsRow(cleanId, {
-      pending_supreme_picks: Math.max(0, rw.pending_supreme_picks - 1),
-    });
 
     let label = '';
     let imageUrl = '';
@@ -634,25 +629,31 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
         const { data: ex } = await supabase.from('user_pets').select('pet_id, quantity, enchant_grade').eq('user_id', cleanId).eq('pet_type', picked.pet_type).maybeSingle();
         if (ex) {
           const bestGrade = compareEnchantGrades(grade, ex.enchant_grade) > 0 ? grade : ex.enchant_grade;
-          await supabase.from('user_pets').update({ quantity: Number(ex.quantity || 1) + 1, enchant_grade: bestGrade }).eq('pet_id', ex.pet_id);
+          const { error: updErr } = await supabase.from('user_pets').update({ quantity: Number(ex.quantity || 1) + 1, enchant_grade: bestGrade }).eq('pet_id', ex.pet_id);
+          if (updErr) throw new Error(`Stone pet update failed: ${updErr.message}`);
         } else {
-          await supabase.from('user_pets').insert({
+          const { error: insErr } = await supabase.from('user_pets').insert({
             user_id: cleanId,
             pet_type: picked.pet_type,
             pet_name: picked.pet_name,
+            pet_rarity: picked.rarity,
             element: picked.element,
-            rarity: picked.rarity,
             level: 1,
             star: 1,
             atk: picked.base_atk,
             def: picked.base_def,
             spd: picked.base_spd,
-            power_score: picked.base_power,
+            is_active: false,
+            is_unique: false,
+            source: 'stone_cutting',
+            paid_price: 0,
             hax_skill: picked.hax_skill,
             hax_description: picked.hax_description,
             enchant_grade: grade,
+            enchant_pity: 0,
             quantity: 1,
           });
+          if (insErr) throw new Error(`Stone pet insert failed: ${insErr.message}`);
         }
       }
     } else if (['weapon', 'gem', 'soul'].includes(catKey)) {
@@ -663,25 +664,22 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
         const { data: ex } = await supabase.from('user_pet_items').select('id, quantity, enchant_grade').eq('user_id', cleanId).eq('item_id', picked.item_id).maybeSingle();
         if (ex) {
           const bestGrade = compareEnchantGrades(grade, ex.enchant_grade) > 0 ? grade : ex.enchant_grade;
-          await supabase.from('user_pet_items').update({ quantity: Number(ex.quantity || 1) + 1, enchant_grade: bestGrade }).eq('id', ex.id);
+          const { error: updErr } = await supabase.from('user_pet_items').update({ quantity: Number(ex.quantity || 1) + 1, enchant_grade: bestGrade }).eq('id', ex.id);
+          if (updErr) throw new Error(`Stone item update failed: ${updErr.message}`);
         } else {
-          await supabase.from('user_pet_items').insert({
+          const { error: insErr } = await supabase.from('user_pet_items').insert({
             user_id: cleanId,
             item_id: picked.item_id,
-            item_name: picked.item_name,
-            item_type: picked.item_type,
-            rarity: picked.rarity,
-            element: picked.element,
-            bonus_atk: picked.bonus_atk || 0,
-            bonus_def: picked.bonus_def || 0,
-            bonus_spd: picked.bonus_spd || 0,
-            bonus_hp: picked.bonus_hp || 0,
-            bonus_crit: picked.bonus_crit || 0,
-            hax_skill: picked.hax_skill || null,
-            hax_description: picked.hax_description || null,
+            equipped_to_pet: null,
+            slot: null,
+            source: 'stone_cutting',
+            paid_price: 0,
             enchant_grade: grade,
+            enchant_pity: 0,
             quantity: 1,
+            is_unique: false,
           });
+          if (insErr) throw new Error(`Stone item insert failed: ${insErr.message}`);
         }
       }
     } else {
@@ -691,9 +689,10 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
       if (supabase) {
         const { data: ex } = await supabase.from('user_domains').select('id, quantity').eq('user_id', cleanId).eq('entity_kind', catKey).eq('entity_id', entityId).maybeSingle();
         if (ex) {
-          await supabase.from('user_domains').update({ quantity: Number(ex.quantity || 1) + 1 }).eq('id', ex.id);
+          const { error: updErr } = await supabase.from('user_domains').update({ quantity: Number(ex.quantity || 1) + 1 }).eq('id', ex.id);
+          if (updErr) throw new Error(`Stone domain update failed: ${updErr.message}`);
         } else {
-          await supabase.from('user_domains').insert({
+          const { error: insErr } = await supabase.from('user_domains').insert({
             user_id: cleanId,
             entity_kind: catKey,
             entity_id: entityId,
@@ -701,9 +700,14 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
             is_equipped: false,
             is_unique: false,
           });
+          if (insErr) throw new Error(`Stone domain insert failed: ${insErr.message}`);
         }
       }
     }
+
+    await saveStoneRewardsRow(cleanId, {
+      pending_supreme_picks: Math.max(0, rw.pending_supreme_picks - 1),
+    });
 
     return {
       success: true,
@@ -713,7 +717,7 @@ export async function claimSupremeStonePick(userId, pickCategory = 'pet', option
       is_unique: Boolean(picked.is_unique),
       is_exclusive_fuyumi: Boolean(picked.is_exclusive_fuyumi),
       pending_supreme_picks: Math.max(0, rw.pending_supreme_picks - 1),
-      title: `${em('su_winner_trophy')} MỞ HỘP TỐI THƯỢNG CỰC PHẨM THÀNH CÔNG!`,
+      title: `${em('su_winner_trophy')} MỞ HỘP THẦN THOẠI CỰC PHẨM THÀNH CÔNG!`,
       description: `${tierEmoji('mythic')} Chúc mừng đạo hữu đã nhận được ${label} *(Thần Thoại)* vào kho đồ!`,
       image_url: imageUrl,
       color: '#f59e0b',

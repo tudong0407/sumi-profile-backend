@@ -1,7 +1,8 @@
 /**
  * src/services/battleEngine/v13HaxRegistry.js
- * Bảng khai báo chuẩn hóa toàn bộ hiệu ứng HAX cho 50 Linh Thú mới & 100 Pháp Bảo mới (v1.3).
+ * Bảng khai báo chuẩn hóa toàn bộ hiệu ứng HAX cho Linh Thú & Pháp Bảo (v1.3 + v1.7).
  */
+import { V17_PET_HAX, V17_EQUIP_HAX } from '../../data/v17ExpansionCatalog.js';
 
 export const V13_PET_HAX = {
   // 3 Phàm Phẩm
@@ -63,6 +64,7 @@ export const V13_PET_HAX = {
   thanh_de_van_co_long: { turnHealPct: 0.09, dotImmune: true, startShieldPct: 0.35, label: 'Thần Mộc Bất Diệt' },
   cuu_thien_loi_de_ho: { firstStrike: true, startSpdStealPct: 0.28, ccProc: { chance: 0.26, kind: 'stun', skill: 'Lôi Đế Thần Tốc' } },
   hoang_thien_ban_co_lan: { startShieldPct: 0.72, shieldExplodePct: 0.20, label: 'Bàn Cổ Trấn Thiên' },
+  ...V17_PET_HAX,
 };
 
 export const V13_EQUIP_HAX = {
@@ -171,6 +173,7 @@ export const V13_EQUIP_HAX = {
   soul_unique_8: { lifestealPct: 0.32, enemyHealRedPct: 0.55, executeHpPct: 0.22, executeChance: 0.35 },
   soul_unique_9: { turnHealPct: 0.14, turnCleanse: 1, dotImmune: true },
   soul_unique_10: { startShieldPct: 0.72 },
+  ...V17_EQUIP_HAX,
 };
 
 /**

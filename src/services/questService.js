@@ -28,24 +28,24 @@ export const DAILY_QUEST_WINS_TARGET = 3;
 export const DAILY_QUEST_BATTLE_TARGET = DAILY_QUEST_WINS_TARGET;
 export const DAILY_QUEST_JOBS_TARGET = 2;
 export const DAILY_QUEST_ACTIVITY_TARGET = 1;
-export const DAILY_QUEST_REWARD_LT = 130;
+export const DAILY_QUEST_REWARD_LT = 170;
 
 export const FIXED_DAILY_QUESTS = {
-  daily: { id: 'daily', name: 'Điểm danh /daily hôm nay', target: 1, rewardLt: 17 },
-  exp: { id: 'exp', name: `Tích lũy ${DAILY_QUEST_EXP_TARGET} EXP Chat/Voice`, target: DAILY_QUEST_EXP_TARGET, rewardLt: 22 },
+  daily: { id: 'daily', name: 'Điểm danh /daily hôm nay', target: 1, rewardLt: 25 },
+  exp: { id: 'exp', name: `Tích lũy ${DAILY_QUEST_EXP_TARGET} EXP Chat/Voice`, target: DAILY_QUEST_EXP_TARGET, rewardLt: 30 },
 };
 
 export const ROTATING_DAILY_QUEST_POOL = [
-  { id: 'wins', name: `Chiến thắng ${DAILY_QUEST_WINS_TARGET} trận /battle hoặc Tháp`, target: DAILY_QUEST_WINS_TARGET, rewardLt: 28 },
-  { id: 'tower', name: 'Khiêu chiến 2 lượt Tháp Thí Luyện', target: 2, rewardLt: 24 },
-  { id: 'jobs', name: `Hoàn thành ${DAILY_QUEST_JOBS_TARGET} ca Làm Việc (/job)`, target: DAILY_QUEST_JOBS_TARGET, rewardLt: 22 },
-  { id: 'roll', name: 'Triệu hồi /roll ít nhất 1 lượt', target: 1, rewardLt: 22 },
-  { id: 'farm', name: 'Trồng hoặc chăm sóc /farm 1 lần', target: 1, rewardLt: 22 },
-  { id: 'minigame', name: 'Chơi 2 ván Minigame bất kỳ', target: 2, rewardLt: 22 },
-  { id: 'explorer', name: 'Khởi hành hoặc nhận quà /explorer 1 lần', target: 1, rewardLt: 26 },
-  { id: 'craft', name: 'Thực hiện 1 lần /enchant hoặc /dismantle', target: 1, rewardLt: 22 },
-  { id: 'shop', name: 'Mua 1 vật phẩm tại /shop (hoặc Shop Ngày)', target: 1, rewardLt: 22 },
-  { id: 'battles', name: 'Tham gia 3 trận /battle bất kỳ', target: 3, rewardLt: 22 },
+  { id: 'wins', name: `Chiến thắng ${DAILY_QUEST_WINS_TARGET} trận /battle hoặc Tháp`, target: DAILY_QUEST_WINS_TARGET, rewardLt: 40 },
+  { id: 'tower', name: 'Khiêu chiến 2 lượt Tháp Thí Luyện', target: 2, rewardLt: 35 },
+  { id: 'jobs', name: `Hoàn thành ${DAILY_QUEST_JOBS_TARGET} ca Làm Việc (/job)`, target: DAILY_QUEST_JOBS_TARGET, rewardLt: 30 },
+  { id: 'roll', name: 'Triệu hồi /roll ít nhất 1 lượt', target: 1, rewardLt: 30 },
+  { id: 'farm', name: 'Trồng hoặc chăm sóc /farm 1 lần', target: 1, rewardLt: 30 },
+  { id: 'minigame', name: 'Chơi 2 ván Minigame bất kỳ', target: 2, rewardLt: 30 },
+  { id: 'explorer', name: 'Khởi hành hoặc nhận quà /explorer 1 lần', target: 1, rewardLt: 35 },
+  { id: 'craft', name: 'Thực hiện 1 lần /enchant hoặc /dismantle', target: 1, rewardLt: 30 },
+  { id: 'shop', name: 'Mua 1 vật phẩm tại /shop (hoặc Shop Ngày)', target: 1, rewardLt: 30 },
+  { id: 'battles', name: 'Tham gia 3 trận /battle bất kỳ', target: 3, rewardLt: 30 },
 ];
 
 export const ALL_DAILY_QUESTS_BY_ID = Object.fromEntries([
@@ -58,7 +58,7 @@ export const DAILY_QUESTS_CONFIG = {
   q2: { id: 'exp', col: 'daily_claimed_q2', ...FIXED_DAILY_QUESTS.exp },
   q3: { id: 'wins', col: 'daily_claimed_q3', ...ROTATING_DAILY_QUEST_POOL[0] },
   q4: { id: 'jobs', col: 'daily_claimed_q4', ...ROTATING_DAILY_QUEST_POOL[2] },
-  q5: { id: 'activity', col: 'daily_claimed_q5', name: 'Chăm sóc /farm hoặc chơi 1 ván Minigame', target: 1, rewardLt: 22 },
+  q5: { id: 'activity', col: 'daily_claimed_q5', name: 'Chăm sóc /farm hoặc chơi 1 ván Minigame', target: 1, rewardLt: 30 },
 };
 
 export function selectDailyQuestIds(userId, dateKey) {
@@ -120,15 +120,15 @@ export function computeTowerFloorRewardLt(floor) {
 
 export const TOWER_MILESTONE_BONUSES = {
   50: { lt: 575, enchantStones: 5, tickets: 0 },
-  100: { lt: 1150, enchantStones: 10, tickets: 1 },
+  100: { lt: 1150, enchantStones: 10, tickets: 1, chaosShards: 1 },
   150: { lt: 2300, enchantStones: 15, tickets: 2 },
-  200: { lt: 4600, enchantStones: 22, tickets: 3 },
+  200: { lt: 4600, enchantStones: 22, tickets: 3, chaosShards: 1 },
   250: { lt: 6325, enchantStones: 28, tickets: 4 },
-  300: { lt: 8050, enchantStones: 35, tickets: 5 },
+  300: { lt: 8050, enchantStones: 35, tickets: 5, chaosShards: 1 },
   350: { lt: 9775, enchantStones: 40, tickets: 6 },
-  400: { lt: 12075, enchantStones: 46, tickets: 7 },
+  400: { lt: 12075, enchantStones: 46, tickets: 7, chaosShards: 1 },
   450: { lt: 14375, enchantStones: 52, tickets: 8 },
-  500: { lt: 17250, enchantStones: 60, tickets: 10, absoluteStones: 1 },
+  500: { lt: 17250, enchantStones: 60, tickets: 10, absoluteStones: 1, chaosShards: 1 },
 };
 
 const TOWER_BOSS_NAMES = [
@@ -1022,6 +1022,7 @@ export async function challengeTower(userId, options = {}) {
     let rewardEnchantStones = 0;
     let rewardTickets = 0;
     let rewardAbsoluteStones = 0;
+    let rewardChaosShards = 0;
 
     if (won) {
       const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
@@ -1038,6 +1039,7 @@ export async function challengeTower(userId, options = {}) {
         rewardEnchantStones += milestone.enchantStones;
         rewardTickets += milestone.tickets;
         rewardAbsoluteStones += Number(milestone.absoluteStones || 0);
+        rewardChaosShards += Number(milestone.chaosShards || 0);
       }
     }
 
@@ -1075,6 +1077,9 @@ export async function challengeTower(userId, options = {}) {
     if (rewardAbsoluteStones > 0) {
       dbTasks.push(addInventoryItem(cleanId, 'enchant_stone_absolute', 'consumable', rewardAbsoluteStones));
     }
+    if (rewardChaosShards > 0) {
+      dbTasks.push(addInventoryItem(cleanId, 'chaos_essence_shard', 'consumable', rewardChaosShards));
+    }
     await Promise.all(dbTasks);
 
     const rewardSummary = [
@@ -1083,6 +1088,7 @@ export async function challengeTower(userId, options = {}) {
       rewardEnchantStones > 0 ? `+${rewardEnchantStones} ${em('enchant_stone')}` : '',
       rewardTickets > 0 ? `+${rewardTickets} ${em('gacha_ticket_pet')}` : '',
       rewardAbsoluteStones > 0 ? `+${rewardAbsoluteStones} ${em('enchant_stone_absolute')}` : '',
+      rewardChaosShards > 0 ? `+${rewardChaosShards} ${em('chaos_essence_shard')} **Mảnh Tinh Hoa Hỗn Độn**` : '',
     ].filter(Boolean).join(' • ');
 
     return {

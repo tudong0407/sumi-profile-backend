@@ -11,16 +11,16 @@ import {
   EQUIPMENT_BY_ID,
   PET_CATALOG,
   PET_BY_TYPE,
+  DOMAIN_CATALOG,
+  DIVINE_SENSE_CATALOG,
+  DIVINE_REALM_CATALOG,
+  V17_PET_EVOLUTIONS,
   RARITY_TIERS,
+  resolveEntityDisplayRarityKey,
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
 import { V14_EXPLORER_MAPS } from '../data/v14ExpansionCatalog.js';
-import {
-  V13_DOMAINS,
-  V13_DIVINE_SENSES,
-  V13_DIVINE_REALMS,
-} from '../data/v13ExpansionCatalog.js';
 import {
   em,
   tierEmoji,
@@ -702,7 +702,105 @@ export const WIKI_CATEGORIES = {
 /**
  * Tra cứu danh mục Wiki (tất cả 10 chuyên mục hoặc lọc 1 chuyên mục duy nhất, hỗ trợ phân trang)
  */
-export function getWikiData(categoryId = null, page = 1) {
+export function getWikiSubHubList(categoryId, rawSubhub = 'all', page = 1) {
+  const cat = String(categoryId || '').trim().toLowerCase();
+  const sub = String(rawSubhub || 'all').trim().toLowerCase();
+  const pageSize = 15;
+  const lt = em('su_linhthach');
+
+  if (cat === 'pets') {
+    const publicPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+    let filtered = publicPets;
+    let heading = 'TẤT CẢ LINH THÚ CÔNG KHAI';
+    if (sub === 'unique') {
+      filtered = publicPets.filter((p) => p.is_unique);
+      heading = '40 TỐI THƯỢNG ĐỘC NHẤT TOÀN SERVER (TIẾN HÓA CHÂN THẦN)';
+    } else if (sub === 'kemonomimi') {
+      filtered = publicPets.filter((p) => p.is_kemonomimi);
+      heading = '10 TỐI THƯỢNG THÚ NHÂN (KEMONOMIMI)';
+    } else if (['mythic', 'epic', 'rare', 'common'].includes(sub)) {
+      filtered = publicPets.filter((p) => p.rarity_key === sub && (sub !== 'mythic' || !p.is_unique));
+      heading = `PHẨM CHẤT ${(RARITY_TIERS[sub]?.label || sub).toUpperCase()}`;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const safePage = Math.min(Math.max(1, Math.floor(Number(page) || 1)), totalPages);
+    const slice = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const lines = slice.map((p) => {
+      const rKey = resolveEntityDisplayRarityKey(p, false);
+      return `• ${petEmoji(p.pet_type, p.icon)} \`${p.pet_type}\` **${p.pet_name}** — ${tierEmoji(rKey)} *${p.rarity}* (${elementEmoji(p.element)} ${p.element})`;
+    });
+    return {
+      success: true,
+      category: 'pets',
+      subhub: sub,
+      heading,
+      total_items: filtered.length,
+      page: safePage,
+      total_pages: totalPages,
+      prev_page: safePage > 1 ? safePage - 1 : totalPages,
+      next_page: safePage < totalPages ? safePage + 1 : 1,
+      items: slice,
+      embed_flat: {
+        title: `${em('su_pet_paw')} CẨM NANG LINH THÚ — ${heading} (${safePage}/${totalPages})`,
+        description: [
+          `Tổng cộng **${filtered.length}** Linh Thú *(dùng \`/info\` hoặc menu chọn bên dưới để xem chi tiết & chỉ số)*:`,
+          '',
+          ...lines,
+        ].join('\n'),
+        color: '#ec4899',
+        image_url: '',
+      },
+    };
+  }
+
+  if (cat === 'domains') {
+    const pubs = [
+      ...DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi),
+      ...DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi),
+      ...DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi),
+    ];
+    let filtered = pubs;
+    let heading = 'LINH VỰC • THẦN THỨC • THẦN CẢNH';
+    if (['domain', 'sense', 'realm'].includes(sub)) {
+      filtered = pubs.filter((x) => x.entity_kind === sub);
+      heading = sub === 'domain' ? 'LINH VỰC CHIẾN TRƯỜNG' : sub === 'sense' ? 'THẦN THỨC CẢNH GIỚI' : 'THẦN CẢNH ĐẠO VỰC';
+    }
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const safePage = Math.min(Math.max(1, Math.floor(Number(page) || 1)), totalPages);
+    const slice = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const lines = slice.map((d) => {
+      const rKey = resolveEntityDisplayRarityKey(d, false);
+      const kindTag = d.entity_kind === 'domain' ? 'Vực' : d.entity_kind === 'sense' ? 'Thức' : 'Cảnh';
+      return `• ${d.icon} \`${d.id}\` **${d.name}** — ${tierEmoji(rKey)} *${d.rarity}* [${kindTag}]`;
+    });
+    return {
+      success: true,
+      category: 'domains',
+      subhub: sub,
+      heading,
+      total_items: filtered.length,
+      page: safePage,
+      total_pages: totalPages,
+      prev_page: safePage > 1 ? safePage - 1 : totalPages,
+      next_page: safePage < totalPages ? safePage + 1 : 1,
+      items: slice,
+      embed_flat: {
+        title: `${em('su_realm_star')} CẨM NANG LÃNH ĐỊA — ${heading} (${safePage}/${totalPages})`,
+        description: [
+          `Tổng cộng **${filtered.length}** món *(tỉ lệ \`/roll loai:domain\`: 34% Vực • 33% Thức • 33% Cảnh)* • Đọc giá ${lt}:`,
+          '',
+          ...lines,
+        ].join('\n'),
+        color: '#a855f7',
+        image_url: '',
+      },
+    };
+  }
+  return null;
+}
+
+export function getWikiData(categoryId = null, page = 1, subhub = null) {
   if (!categoryId || typeof categoryId !== 'string') {
     return {
       success: true,
@@ -723,6 +821,17 @@ export function getWikiData(categoryId = null, page = 1) {
   const resolvedId = Object.prototype.hasOwnProperty.call(CATEGORY_ALIASES, raw)
     ? CATEGORY_ALIASES[raw]
     : raw;
+
+  if ((resolvedId === 'pets' || resolvedId === 'domains') && subhub) {
+    const subRes = getWikiSubHubList(resolvedId, subhub, page);
+    if (subRes) {
+      return {
+        ...subRes,
+        ...WIKI_METADATA,
+        data: WIKI_CATEGORIES[resolvedId],
+      };
+    }
+  }
 
   if (!VALID_CATEGORIES.includes(resolvedId) || !Object.prototype.hasOwnProperty.call(WIKI_CATEGORIES, resolvedId)) {
     return {
@@ -800,9 +909,9 @@ export function getWikiData(categoryId = null, page = 1) {
  */
 export function getWikiCatalogSummary() {
   const standardPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
-  const publicDomains = V13_DOMAINS.filter((d) => !d.is_exclusive_fuyumi);
-  const publicSenses = V13_DIVINE_SENSES.filter((s) => !s.is_exclusive_fuyumi);
-  const publicRealms = V13_DIVINE_REALMS.filter((r) => !r.is_exclusive_fuyumi);
+  const publicDomains = DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi);
+  const publicSenses = DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi);
+  const publicRealms = DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi);
   return {
     success: true,
     equipment: {
@@ -815,6 +924,8 @@ export function getWikiCatalogSummary() {
       rare: standardPets.filter((p) => p.rarity_key === 'rare'),
       epic: standardPets.filter((p) => p.rarity_key === 'epic'),
       mythic: standardPets.filter((p) => p.rarity_key === 'mythic'),
+      unique: standardPets.filter((p) => p.is_unique),
+      kemonomimi: standardPets.filter((p) => p.is_kemonomimi),
     },
     domains: {
       domain: publicDomains.map((d) => ({ id: d.domain_id, name: d.name, rarity: d.rarity, rarity_key: d.rarity_key, element: d.element, is_unique: d.is_unique })),
@@ -933,8 +1044,37 @@ export async function getWikiItemDetail(itemId) {
   };
 }
 
+async function resolveMythicPetOwner(petType) {
+  if (!supabase) return null;
+  try {
+    const { data: ownership } = await supabase
+      .from('user_pets')
+      .select('user_id, is_evolved')
+      .eq('pet_type', petType)
+      .limit(1)
+      .maybeSingle();
+
+    if (!ownership?.user_id) return null;
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('user_id, username')
+      .eq('user_id', ownership.user_id)
+      .maybeSingle();
+
+    return {
+      user_id: ownership.user_id,
+      username: user?.username || `Tu Sĩ #${String(ownership.user_id).slice(-4)}`,
+      is_evolved: Boolean(ownership.is_evolved),
+    };
+  } catch (err) {
+    console.warn(`[WikiService] Failed to query mythic pet owner for ${petType}:`, err.message);
+    return null;
+  }
+}
+
 /**
- * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (chỉ trả 90 Linh Thú tiêu chuẩn, ẩn pet độc quyền Fuyumi khỏi /wiki)
+ * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (ẩn pet độc quyền Fuyumi khỏi /wiki)
  */
 export async function getWikiPetDetail(petType) {
   if (!petType || typeof petType !== 'string') {
@@ -951,23 +1091,42 @@ export async function getWikiPetDetail(petType) {
   }
 
   const pet = PET_BY_TYPE[cleanType];
-  const tier = RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+  const dispKey = resolveEntityDisplayRarityKey(pet, false);
+  const tier = RARITY_TIERS[dispKey] || RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+  const currentOwner = pet.is_unique ? await resolveMythicPetOwner(pet.pet_type) : null;
+  const evoData = V17_PET_EVOLUTIONS[pet.pet_type] || null;
 
   const tagNotes = [];
   if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
+  if (pet.is_kemonomimi) tagNotes.push(`${em('su_sparkle')} Thú Nhân (Kemonomimi)`);
+
+  const ownerLine = pet.is_unique
+    ? (currentOwner
+      ? `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)${currentOwner.is_evolved ? ' • *Đã Tiến Hóa Chân Thần*' : ''}`
+      : `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu *(Có thể quay trúng từ \`/roll loai:pet\`)*`)
+    : null;
+
+  const evoLine = evoData?.ultimate
+    ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần (\`/tienhoa\`):** **${evoData.evolved_name}** • **Ultimate:** **${evoData.ultimate.name}** — *${evoData.ultimate.desc}*`
+    : null;
 
   const descriptionLines = [
     `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
     `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
     `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];
+  if (evoLine) descriptionLines.push(evoLine);
+  if (ownerLine) descriptionLines.push(ownerLine);
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.4.7`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7`;
 
   return {
     success: true,
     data: {
       ...pet,
+      current_owner: currentOwner,
+      owner_label: pet.is_unique ? (currentOwner ? currentOwner.username : 'Chưa có chủ sở hữu') : null,
+      evo_data: evoData,
       image_url: imageUrl,
     },
     embed: {
@@ -1023,15 +1182,15 @@ export async function getWikiDomainDetail(entityId) {
 
   const cleanId = entityId.trim().toLowerCase().replace(/\.(png|webp)$/i, '');
   let entityKind = null;
-  let item = V13_DOMAINS.find((d) => d.domain_id === cleanId);
+  let item = DOMAIN_CATALOG.find((d) => d.domain_id === cleanId);
   if (item) {
     entityKind = 'domain';
   } else {
-    item = V13_DIVINE_SENSES.find((s) => s.sense_id === cleanId);
+    item = DIVINE_SENSE_CATALOG.find((s) => s.sense_id === cleanId);
     if (item) {
       entityKind = 'sense';
     } else {
-      item = V13_DIVINE_REALMS.find((r) => r.realm_id === cleanId);
+      item = DIVINE_REALM_CATALOG.find((r) => r.realm_id === cleanId);
       if (item) entityKind = 'realm';
     }
   }
@@ -1052,8 +1211,8 @@ export async function getWikiDomainDetail(entityId) {
       : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
     : null;
 
-  const dropRateMap = { common: '60.5%', rare: '25%', epic: '14%', mythic: '0.5%' };
-  const dropRate = dropRateMap[item.rarity_key] || '0.5%';
+  const dropRateMap = { common: '60.35%', rare: '25%', epic: '14%', mythic: '0.65%' };
+  const dropRate = dropRateMap[item.rarity_key] || '0.65%';
   const kindLabel = entityKind === 'domain' ? 'Linh Vực' : entityKind === 'sense' ? 'Thần Thức' : 'Thần Cảnh';
 
   const lines = [];

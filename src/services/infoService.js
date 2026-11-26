@@ -28,6 +28,7 @@ import {
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
   getCosmeticBuffByRarity,
+  V17_PET_EVOLUTIONS,
 } from '../data/catalog.js';
 import { STONE_SPECIES, STONE_TIER_BY_KEY, FORTUNE_TIERS } from '../data/v16ExpansionCatalog.js';
 import { ALCHEMY_RECIPES, FURNACE_TIERS } from '../data/v161AlchemyCatalog.js';
@@ -136,7 +137,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     matchedSeed = FARM_SEEDS.find((s) => normText(s.name).includes(qNorm) || s.seed_id.toLowerCase().includes(qLower));
   }
   if (!hasExactMatch()) {
-    matchedCons = SHOP_CONSUMABLES.find((c) => normText(c.name).includes(qNorm) || c.item_id.toLowerCase().includes(qLower));
+    matchedCons = ALL_CONSUMABLES.find((c) => normText(c.name).includes(qNorm) || c.item_id.toLowerCase().includes(qLower));
   }
   if (!hasExactMatch()) {
     matchedExchange = EXCHANGE_ITEMS.find((ex) => normText(ex.name).includes(qNorm) || ex.exchange_id.toLowerCase().includes(qLower));
@@ -185,9 +186,12 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
     const lines = [
       `• **Mã UID:** \`${p.pet_type}\``,
-      `• **Phẩm chất:** ${tierEmoji(p.rarity_key)} **${p.rarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
+      `• **Phẩm chất:** ${tierEmoji(p.display_rarity_key || p.rarity_key)} **${p.rarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
       `• **Chỉ số gốc (Lv.1 • 1★):** \`ATK ${p.base_atk.toLocaleString('vi-VN')} | DEF ${p.base_def.toLocaleString('vi-VN')} | SPD ${p.base_spd.toLocaleString('vi-VN')} | HP ${p.base_hp.toLocaleString('vi-VN')} | Lực ${p.base_power.toLocaleString('vi-VN')}\``,
       `• ${em('su_thunder_hax')} **Kỹ năng HAX (${p.hax_skill}):** ${p.hax_description}`,
+      ...(V17_PET_EVOLUTIONS?.[p.pet_type]?.ultimate
+        ? [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${V17_PET_EVOLUTIONS[p.pet_type].ultimate.name}):** ${V17_PET_EVOLUTIONS[p.pet_type].ultimate.desc}`]
+        : []),
       `• **Nguồn sở hữu:** ${sourceText}`,
       p.is_exclusive_fuyumi
         ? '• **Phân rã (`/dismantle`):** Không thể phân rã'
@@ -325,7 +329,9 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       title: `${c.icon} VẬT PHẨM: ${c.name}`,
       description: [
         `• **Mã UID:** \`${c.item_id}\``,
-        `• **Giá bán (\`/shop\`):** **${c.price.toLocaleString('vi-VN')}** ${lt}`,
+        c.price_tt > 0
+          ? `• **Giá bán (\`/shop_dacbiet\`):** **${c.price_tt} TT** ${em('red_gold_crystal')}`
+          : `• **Giá bán (\`/shop\`):** **${c.price.toLocaleString('vi-VN')}** ${lt}`,
         `• **Công dụng:** ${c.description}`,
         isTowerCard
           ? `• **Giới hạn:** Mua tối đa **5 thẻ/ngày** • Tích trữ tối đa **15 thẻ** trong túi • Dùng qua \`/nhiemvu hanh_dong:reset\`.`
