@@ -1053,8 +1053,11 @@ export async function startExpedition(userId, opts = {}) {
     const lockedDomainIds = [details.domain?.entity_id, details.sense?.entity_id, details.realm?.entity_id].filter(Boolean);
     const isUniquePet = Boolean(pet.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(pet.pet_type) || pet.pet_type === 'cuu_vi_hong_ho');
 
-    // Khóa Pet sang trạng thái 'exploring'
+    // Khóa Pet sang trạng thái 'exploring' & lưu snapshot Loadout hiện tại trước khi xuất phát
     await supabase.from('user_pets').update({ status: 'exploring' }).eq('pet_id', pet.pet_id);
+    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
 
     const { data: exp, error: expErr } = await supabase
       .from('explorer_expeditions')

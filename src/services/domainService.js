@@ -27,7 +27,7 @@ import {
 } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { normalizeEmojiAwareQuery, paginateFormattedLines, invalidateInventoryCache } from './inventoryService.js';
-import { syncActiveLoadoutFromCurrentGear } from './loadoutService.js';
+import { syncActiveLoadoutFromCurrentGear, checkActiveLoadoutExplorerLock } from './loadoutService.js';
 import { computeEffectiveDomainEnergy } from './battleEngine/domainEngine.js';
 import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
 import { trackQuestActivity } from './questService.js';
@@ -300,6 +300,10 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
 
   return withDomainLock(cleanId, async () => {
     await ensureUserInitialized(cleanId, { username: options.username });
+    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+    if (loadoutLock.locked) {
+      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+    }
     const { data: owned } = await supabase
       .from('user_domains')
       .select('*')
@@ -375,6 +379,10 @@ export async function unequipDomainEntity(userId, rawSlot = 'all') {
 
   const slot = String(rawSlot || 'all').trim().toLowerCase();
   return withDomainLock(cleanId, async () => {
+    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+    if (loadoutLock.locked) {
+      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+    }
     let q = supabase
       .from('user_domains')
       .update({ is_equipped: false, updated_at: new Date().toISOString() })

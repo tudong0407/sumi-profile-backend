@@ -7,6 +7,7 @@
 
 import { supabase } from '../config/supabase.js';
 import { EQUIPMENT_BY_ID } from '../data/catalog.js';
+import { uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
 import { getInventory, invalidateInventoryCache } from './inventoryService.js';
@@ -26,6 +27,65 @@ async function withLoadoutLock(userId, fn) {
     release();
     if (loadoutLocks.get(userId) === queued) loadoutLocks.delete(userId);
   }
+}
+
+export function evaluateLoadoutExplorerLock({ slotIndex = 1, pet = null, equippedItems = [], equippedDomains = [], busyExp = null } = {}) {
+  const slotNum = [1, 2, 3].includes(Number(slotIndex)) ? Number(slotIndex) : 1;
+  if (!busyExp?.isExploring) {
+    return { locked: false, activeSlot: slotNum };
+  }
+
+  const petLocked = Boolean(
+    pet && (
+      pet.status === 'exploring'
+      || (busyExp.busyPetId && pet.pet_id && String(pet.pet_id) === String(busyExp.busyPetId))
+    ),
+  );
+  const equipLocked = (equippedItems || []).some((it) => (
+    it?.item_id && busyExp.busyEquipIds?.has(String(it.item_id)) && Number(it.quantity ?? 1) <= 1
+  ));
+  const domainLocked = (equippedDomains || []).some((d) => (
+    d?.entity_id && busyExp.busyDomainIds?.has(String(d.entity_id)) && Number(d.quantity ?? 1) <= 1
+  ));
+
+  if (!petLocked && !equipLocked && !domainLocked) {
+    return { locked: false, activeSlot: slotNum };
+  }
+
+  const otherSlots = [1, 2, 3].filter((s) => s !== slotNum).map((s) => `**Bộ ${s}**`).join(' hoặc ');
+  return {
+    locked: true,
+    activeSlot: slotNum,
+    error: 'LOADOUT_LOCKED_BY_EXPLORER',
+    status: 400,
+    message: `${uiEm('ui_compass_dir')} **Bộ ${slotNum}** đang có Linh Thú / trang bị đi **Khám Phá Bản Đồ** (\`/explorer\`) nên đã được **khóa nguyên bộ** — không thể thay đổi lúc này!\n• Hãy mở \`/inv\` bấm chuyển sang ${otherSlots} để trang bị bộ khác mà không ảnh hưởng **Bộ ${slotNum}**.`,
+  };
+}
+
+export async function checkActiveLoadoutExplorerLock(userId) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId || !supabase) return { locked: false, activeSlot: 1 };
+
+  const busyExp = await getUserBusyExplorationAssets(cleanId).catch(() => null);
+  if (!busyExp?.isExploring) return { locked: false, activeSlot: 1 };
+
+  const [{ data: user }, { data: activePet }, { data: itemRows }, { data: equippedDomains }] = await Promise.all([
+    supabase.from('users').select('active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
+    supabase.from('user_pets').select('pet_id, pet_type, status').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
+    supabase.from('user_pet_items').select('item_id, slot, equipped_to_pet, quantity').eq('user_id', cleanId),
+    supabase.from('user_domains').select('entity_id, quantity').eq('user_id', cleanId).eq('is_equipped', true),
+  ]);
+
+  const activeSlot = [1, 2, 3].includes(Number(user?.active_loadout_slot)) ? Number(user.active_loadout_slot) : 1;
+  const equippedItems = (itemRows || []).filter((r) => r.equipped_to_pet || r.slot);
+
+  return evaluateLoadoutExplorerLock({
+    slotIndex: activeSlot,
+    pet: activePet,
+    equippedItems,
+    equippedDomains: equippedDomains || [],
+    busyExp,
+  });
 }
 
 export async function syncActiveLoadoutFromCurrentGear(userId) {
@@ -120,6 +180,46 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
       });
     }
 
+    const [busyExp, targetRowRes, petsRes, itemsRes, domainsRes] = await Promise.all([
+      getUserBusyExplorationAssets(cleanId).catch(() => null),
+      supabase.from('user_loadouts').select('*').eq('user_id', cleanId).eq('slot_index', targetSlot).maybeSingle(),
+      supabase.from('user_pets').select('*').eq('user_id', cleanId),
+      supabase.from('user_pet_items').select('*').eq('user_id', cleanId),
+      supabase.from('user_domains').select('*').eq('user_id', cleanId),
+    ]);
+
+    const targetRow = targetRowRes.data || null;
+    const pets = petsRes.data || [];
+    const ownedItems = itemsRes.data || [];
+    const ownedDomains = domainsRes.data || [];
+
+    // Chặn chuyển NGƯỢC lại Bộ đang bị khóa bởi chuyến Khám Phá (/explorer)
+    if (targetRow?.is_initialized && busyExp?.isExploring) {
+      const targetPetObj = pets.find((p) => (
+        (targetRow.pet_id && String(p.pet_id) === String(targetRow.pet_id)) || p.pet_type === targetRow.pet_type
+      )) || (targetRow.pet_id ? { pet_id: targetRow.pet_id, pet_type: targetRow.pet_type } : null);
+      const targetEquipObjs = [targetRow.weapon_id, targetRow.gem_id, targetRow.soul_id]
+        .filter(Boolean)
+        .map((id) => ({ item_id: id, quantity: ownedItems.find((it) => it.item_id === id)?.quantity ?? 1 }));
+      const targetDomObjs = [targetRow.domain_id, targetRow.sense_id, targetRow.realm_id]
+        .filter(Boolean)
+        .map((id) => ({ entity_id: id, quantity: ownedDomains.find((d) => d.entity_id === id)?.quantity ?? 1 }));
+
+      const targetLock = evaluateLoadoutExplorerLock({
+        slotIndex: targetSlot,
+        pet: targetPetObj,
+        equippedItems: targetEquipObjs,
+        equippedDomains: targetDomObjs,
+        busyExp,
+      });
+      if (targetLock.locked) {
+        return getInventory(cleanId, {
+          ...opts,
+          bannerText: `${uiEm('ui_compass_dir')} **Bộ ${targetSlot}** đang có Linh Thú / trang bị đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa — không thể chuyển về lúc này! Hãy chờ chuyến khám phá hoàn tất hoặc tiếp tục dùng **Bộ ${currentSlot}**.`,
+        });
+      }
+    }
+
     // 1. Lưu trạng thái bộ cũ trước khi chuyển
     await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
 
@@ -130,46 +230,72 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
       .update({ active_loadout_slot: targetSlot, updated_at: nowIso })
       .eq('user_id', cleanId);
 
-    const { data: targetRow } = await supabase
-      .from('user_loadouts')
-      .select('*')
-      .eq('user_id', cleanId)
-      .eq('slot_index', targetSlot)
-      .maybeSingle();
+    const pickStrongestFreePet = () => pets
+      .filter((p) => p.status !== 'exploring' && p.status !== 'injured' && String(p.pet_id) !== String(busyExp?.busyPetId || ''))
+      .sort((a, b) => (Number(b.power_score || 0) - Number(a.power_score || 0)) || (Number(b.level || 0) - Number(a.level || 0)))[0] || null;
 
     let bannerText = '';
 
     if (targetSlot > 1 && !targetRow?.is_initialized) {
-      // Lần đầu mở Bộ 2 hoặc Bộ 3: giữ nguyên Linh Thú hiện tại, tháo hết Pháp Bảo & Lãnh Địa
+      // Lần đầu mở Bộ 2 hoặc Bộ 3: tháo hết Pháp Bảo & Lãnh Địa; nếu Pet hiện tại đang bận /explorer thì tự chuyển sang Pet rảnh mạnh nhất
       await Promise.all([
         supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId),
         supabase.from('user_domains').update({ is_equipped: false, updated_at: nowIso }).eq('user_id', cleanId).eq('is_equipped', true),
       ]);
+
+      const curActivePet = pets.find((p) => p.is_active);
+      const curBusy = curActivePet && (
+        curActivePet.status === 'exploring'
+        || curActivePet.status === 'injured'
+        || (busyExp?.busyPetId && String(curActivePet.pet_id) === String(busyExp.busyPetId))
+      );
+
+      let petNote = 'giữ nguyên Linh Thú hiện tại';
+      if (curBusy) {
+        await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
+        const freePet = pickStrongestFreePet();
+        if (freePet) {
+          await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', freePet.pet_id);
+          petNote = `tự chọn Linh Thú rảnh **${freePet.pet_name}**`;
+        } else {
+          petNote = 'tạm trống Linh Thú (Pet đang đi `/explorer`)';
+        }
+      }
+
       await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
-      bannerText = `Đã mở mới **Bộ ${targetSlot}** — giữ nguyên Linh Thú hiện tại, tháo Pháp Bảo & Lãnh Địa để bạn tự phối bộ!`;
+      bannerText = `Đã mở mới **Bộ ${targetSlot}** — ${petNote}, tháo Pháp Bảo & Lãnh Địa để bạn tự phối bộ!`;
     } else if (targetRow) {
       const notes = [];
-      const [busyExp, petsRes, itemsRes, domainsRes] = await Promise.all([
-        getUserBusyExplorationAssets(cleanId).catch(() => null),
-        supabase.from('user_pets').select('*').eq('user_id', cleanId),
-        supabase.from('user_pet_items').select('*').eq('user_id', cleanId),
-        supabase.from('user_domains').select('*').eq('user_id', cleanId),
-      ]);
-
-      const pets = petsRes.data || [];
-      const ownedItems = itemsRes.data || [];
-      const ownedDomains = domainsRes.data || [];
 
       // Áp dụng Linh Thú đã lưu
       let activePetType = pets.find((p) => p.is_active)?.pet_type || 'hoa_thach_nham_nham';
+      let matchedValidPet = null;
       if (targetRow.pet_id || targetRow.pet_type) {
         const matchedPet = pets.find((p) => (targetRow.pet_id && String(p.pet_id) === String(targetRow.pet_id)) || p.pet_type === targetRow.pet_type);
-        if (matchedPet && matchedPet.status !== 'exploring' && matchedPet.status !== 'injured') {
+        if (matchedPet && matchedPet.status !== 'exploring' && matchedPet.status !== 'injured' && String(matchedPet.pet_id) !== String(busyExp?.busyPetId || '')) {
+          matchedValidPet = matchedPet;
           await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
           await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', matchedPet.pet_id);
           activePetType = matchedPet.pet_type;
         } else if (targetRow.pet_type) {
           notes.push('Linh Thú cũ đang bận/không còn');
+        }
+      }
+
+      if (!matchedValidPet) {
+        const curActivePet = pets.find((p) => p.is_active);
+        const curBusy = curActivePet && (
+          curActivePet.status === 'exploring'
+          || curActivePet.status === 'injured'
+          || (busyExp?.busyPetId && String(curActivePet.pet_id) === String(busyExp.busyPetId))
+        );
+        if (curBusy) {
+          await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
+          const freePet = pickStrongestFreePet();
+          if (freePet) {
+            await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', freePet.pet_id);
+            activePetType = freePet.pet_type;
+          }
         }
       }
 
@@ -216,7 +342,9 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
       }
 
       await Promise.all([...equipItemPromises, ...equipDomPromises]);
-      await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      if (notes.length === 0) {
+        await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      }
       bannerText = notes.length > 0
         ? `Đã chuyển sang **Bộ ${targetSlot}** *(bỏ qua món đang bận/đã phân rã: ${notes.slice(0, 3).join(', ')})*.`
         : `Đã chuyển sang **Bộ ${targetSlot}** và tự động trang bị đầy đủ!`;

@@ -541,9 +541,14 @@ export async function getInventory(userId, options = {}) {
 
   const displayName = pickCleanDisplayValue(options.username, options.fallbackUsername, user.username, `TuSi_${cleanId.slice(-4)}`);
   const balFmt = Number(user.linh_thach || 0).toLocaleString('vi-VN');
+  const otherSlotsHint = [1, 2, 3].filter((s) => s !== activeSlot).map((s) => `Bộ ${s}`).join('/');
+  const explorerLockLine = mainPet?.status === 'exploring'
+    ? `${uiEm('ui_compass_dir')} **Bộ ${activeSlot}** đang khóa đi \`/explorer\` — bấm **${otherSlotsHint}** để dùng bộ khác.`
+    : null;
   const descLines = [
     ...(bannerText ? [`${em('su_sparkle')} ${bannerText}`, ''] : []),
     `${em('su_linhthach')} \`${balFmt}\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')}\``,
+    ...(explorerLockLine ? [explorerLockLine] : []),
     ...(activePotionLine ? [activePotionLine] : []),
   ];
 
@@ -1157,6 +1162,12 @@ export async function equipTarget(userId, payload = {}) {
   }
 
   if (category === 'item') {
+    const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
+    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+    if (loadoutLock.locked) {
+      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+    }
+
     const itemMeta = EQUIPMENT_BY_ID[targetId];
     if (!itemMeta) return { success: false, status: 404, error: 'ITEM_NOT_FOUND', message: `Không tìm thấy pháp bảo '${targetId}'.` };
 
@@ -1427,6 +1438,12 @@ export async function unequipTarget(userId, payload = {}) {
   const targetId = category === 'item' ? normalizeEmojiAwareQuery(rawTargetId) : rawTargetId;
 
   if (category === 'item') {
+    const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
+    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+    if (loadoutLock.locked) {
+      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+    }
+
     let itemMatchId = targetId;
     if (!['weapon', 'gem', 'soul'].includes(targetId.toLowerCase()) && !EQUIPMENT_BY_ID[targetId]) {
       const normIn = normalizeTargetText(targetId);
@@ -2226,6 +2243,12 @@ export async function setActivePet(userId, petIdentifier) {
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
   await ensureUserInitialized(cleanId);
+  const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
+  const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+  if (loadoutLock.locked) {
+    return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+  }
+
   const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
 
   const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
