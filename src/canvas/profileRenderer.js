@@ -1156,8 +1156,8 @@ export async function renderProfileCard(data, options = {}) {
     const energyCalc = computeEffectiveDomainEnergy({
       domain: dl.domain,
       sense: dl.sense,
-      equipment: pet?.equipment || {},
-      setBonus: pet?.set_bonus || null,
+      equipment: profile.pet?.equipment || {},
+      setBonus: data.set_bonus || profile.pet?.set_bonus || null,
     });
     const lmTotal = energyCalc.isInfinite ? '∞' : energyCalc.totalEnergy;
     const domTag = `${dl.domain.element} • ${lmTotal} Mạch`;

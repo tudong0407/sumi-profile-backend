@@ -201,7 +201,6 @@ export async function getDomainInventory(userId, options = {}) {
     ? options.page
     : (viewParts[1] || 1);
 
-  const domainCycleDisplay = DOMAIN_ELEMENTS.cycle.map((el) => `${domainElementEmoji(el)} **${el}**`).join(' → ');
   let paged;
   const bodySections = [];
 
@@ -250,16 +249,12 @@ export async function getDomainInventory(userId, options = {}) {
   const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
   const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
 
-  const eqSenseSummary = eqSense
-    ? `${eqSense.icon} **${eqSense.name}** (+${eqSense.bonus_energy >= 999 ? '∞' : eqSense.bonus_energy} LM • +${Math.round((eqSense.buff_boost_pct || 0) * 100)}% Buff Vực${eqSense.clash_resist_chance > 0 ? ` • ${Math.round(eqSense.clash_resist_chance * 100)}% Kháng Mạch` : ''})`
-    : '*Trống*';
-
   const sections = [
     `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (HIỆP 2)**`,
-    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** (${domainElementEmoji(eqDomain.element)} ${eqDomain.element} • ${eqDomain.buff_desc})` : '*Trống*'}`,
-    `\u00A0\u00A0↳ **Thần Thức:** ${eqSenseSummary}`,
-    `\u00A0\u00A0↳ **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}** (${eqRealm.desc})` : '*Trống*'}`,
-    `• **Tổng Linh Mạch:** \`${totalLinhMach}\`${paged.totalPages > 1 ? ` • **Trang:** \`${paged.page}/${paged.totalPages}\`` : ''} • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
+    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}**` : '*Trống*'}`,
+    `\u00A0\u00A0↳ **Thần Thức:** ${eqSense ? `${eqSense.icon} **${eqSense.name}**` : '*Trống*'}`,
+    `\u00A0\u00A0↳ **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}**` : '*Trống*'}`,
+    `• **Tổng Linh Mạch:** \`${totalLinhMach}\`${paged.totalPages > 1 ? ` • **Trang:** \`${paged.page}/${paged.totalPages}\`` : ''}`,
     '',
     ...bodySections,
   ];

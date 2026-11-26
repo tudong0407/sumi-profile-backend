@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import * as cat from '../../src/data/catalog.js';
 import { STONE_SPECIES, FORTUNE_TIERS } from '../../src/data/v16ExpansionCatalog.js';
 import { ALCHEMY_RECIPES, FURNACE_TIERS } from '../../src/data/v161AlchemyCatalog.js';
-import { ROLE_PERKS_MAP } from '../../src/services/profileService.js';
+import { ROLE_PERKS_MAP, getFuyumiProfileMock } from '../../src/services/profileService.js';
+import { renderProfileCard } from '../../src/canvas/profileRenderer.js';
 import {
   VALID_CATEGORIES,
   getWikiData,
@@ -162,4 +163,10 @@ test('Farm & Exchange catalog prices and caps stay 100% synced', () => {
   const shopTower = cat.SHOP_CONSUMABLE_BY_ID.tower_reset_card;
   assert.equal(exTower.max_stack, shopTower.max_stack);
   assert.equal(exTower.max_stack, 15);
+});
+
+test('renderProfileCard(getFuyumiProfileMock()) renders valid PNG buffer without ReferenceError', async () => {
+  const buf = await renderProfileCard(getFuyumiProfileMock());
+  assert.ok(Buffer.isBuffer(buf), 'renderProfileCard must return a Buffer');
+  assert.ok(buf.length > 10000, `Rendered profile buffer too small: ${buf.length}`);
 });
