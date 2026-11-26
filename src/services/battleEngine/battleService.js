@@ -12,7 +12,7 @@ import {
   DIVINE_REALM_BY_ID,
 } from '../../data/catalog.js';
 import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById, uiEm } from '../../config/emojiHelper.js';
-import { initDomainBattleState, processTurnDomainPhase } from './domainEngine.js';
+import { initDomainBattleState, processTurnDomainPhase, computeEffectiveDomainEnergy } from './domainEngine.js';
 import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
@@ -332,9 +332,13 @@ function resolveCombatantDomainMeta(c, domSummarySide = null) {
     || (domSummarySide?.realmName ? Object.values(DIVINE_REALM_BY_ID).find((x) => x.name === domSummarySide.realmName) : null);
   const realm = rawRealm?.realm_id ? (DIVINE_REALM_BY_ID[rawRealm.realm_id] || rawRealm) : rawRealm;
 
-  const lm = Number(dom.base_energy || 0) >= 999
-    ? '∞ Linh Mạch'
-    : `${Number(dom.base_energy || 0) + Number(sense?.bonus_energy || 0)} Linh Mạch`;
+  const energyInfo = computeEffectiveDomainEnergy({
+    domain: dom,
+    sense,
+    equipment: c?.equipment,
+    setBonus: c?.setBonus,
+  });
+  const lm = energyInfo.isInfinite ? '∞ Linh Mạch' : `${energyInfo.totalEnergy} Linh Mạch`;
 
   return {
     iconTag: domainEmoji(dom.domain_id, em('su_realm_star')),

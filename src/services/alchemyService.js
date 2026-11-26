@@ -4,7 +4,7 @@
  * - Tối đa 2 Lò song song (Lò #1 miễn phí; Lò #2 tự mở ở Lv.45 hoặc trả 2.500 LT).
  * - Nâng cấp Lò Lv.1 -> Lv.5 (+LT%, giảm thời gian nấu, tăng ân hạn 20p->60p, tăng tỉ lệ Thượng Phẩm/Đan Vân).
  * - 6 công thức (4 bậc LT thường + 2 công thức Tinh Hoa dùng 20/40 Linh Quả từ /farm).
- * - Giới hạn 5 mẻ/ngày (UTC+7), trừ lượt ngay lúc bắt đầu nấu.
+ * - Giới hạn 6 mẻ/ngày (UTC+7), trừ lượt ngay lúc bắt đầu nấu.
  * - Quá ân hạn: cháy đan thu 30 LT + nổ khóa riêng lò đó 4 giờ (hỗ trợ Sửa Lò Nhanh 300 LT).
  * - DM nhắc tự động 2 mốc: khi chín & cảnh báo khẩn <=10 phút trước nổ lò.
  * Tuyệt đối KHÔNG dùng emoji Unicode Windows.

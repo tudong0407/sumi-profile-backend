@@ -443,7 +443,7 @@ export const V13_DIVINE_REALMS = RAW_DIVINE_REALMS.map((r) => ({
 const RAW_NEW_PETS = [
   // 3 Phàm Phẩm
   { pet_type: 'linh_ho_tieu_bach', pet_name: 'Linh Hồ Tiểu Bạch', element: 'Quang', rarity: 'Phàm Phẩm', rarity_key: 'common', is_unique: false, atk: 185, def: 175, spd: 220, hax_skill: 'Bạch Quang Hộ Thể', hax_desc: 'Đầu trận nhận khiên 18% HP tối đa & tăng +8% chính xác.', scene: 'a cute fluffy white spirit fox kit with glowing silver-gold tail tip' },
-  { pet_type: 'xich_thach_tieu_quy', pet_name: 'Xích Thạch Tiểu Quy', element: 'Thổ', rarity: 'Phàm Phẩm', rarity_key: 'common', is_unique: false, atk: 145, def: 265, spd: 130, hax_skill: 'Thạch Giáp Nặng Nề', hax_desc: 'Giảm 14% sát thương vật lý nhận vào trong 3 hiệp đầu.', scene: 'an adorable moss-backed red basalt baby tortoise with glowing amber shell cracks' },
+  { pet_type: 'xich_thach_tieu_quy', pet_name: 'Xích Thạch Tiểu Quy', element: 'Thổ', rarity: 'Phàm Phẩm', rarity_key: 'common', is_unique: false, atk: 145, def: 265, spd: 130, hax_skill: 'Thạch Giáp Nặng Nề', hax_desc: 'Giảm 14% sát thương nhận vào trong 3 hiệp đầu.', scene: 'an adorable moss-backed red basalt baby tortoise with glowing amber shell cracks' },
   { pet_type: 'thanh_lam_tieu_dieu', pet_name: 'Thanh Lam Tiểu Diều', element: 'Thủy', rarity: 'Phàm Phẩm', rarity_key: 'common', is_unique: false, atk: 195, def: 165, spd: 235, hax_skill: 'Thủy Tiễn Liên Kích', hax_desc: '18% xác suất bắn thêm mũi tên băng gây 35% ATK.', scene: 'a sleek turquoise water spirit hawk perched on a floating frost droplet' },
 
   // 3 Linh Phẩm
@@ -454,7 +454,7 @@ const RAW_NEW_PETS = [
   // 4 Tiên Phẩm
   { pet_type: 'bach_ngoc_ky_lan', pet_name: 'Bạch Ngọc Kỳ Lân', element: 'Quang', rarity: 'Tiên Phẩm', rarity_key: 'epic', is_unique: false, atk: 430, def: 440, spd: 420, hax_skill: 'Thánh Ngọc Hộ Chủ', hax_desc: 'Đầu trận tạo khiên 45% HP tối đa & miễn nhiễm Choáng trong 2 hiệp.', scene: 'a majestic carved white-jade qilin with golden hooves and a luminous horn' },
   { pet_type: 'thien_loi_thach_vien', pet_name: 'Thiên Lôi Thạch Viên', element: 'Lôi', rarity: 'Tiên Phẩm', rarity_key: 'epic', is_unique: false, atk: 470, def: 390, spd: 430, hax_skill: 'Lôi Côn Chấn Địa', hax_desc: '25% tỉ lệ gây Choáng 1 hiệp & tăng +15% Crit toàn trận.', scene: 'a muscular celestial storm ape wielding crackling violet thunderstones' },
-  { pet_type: 'huyen_bang_thuy_long', pet_name: 'Huyền Băng Thủy Long', element: 'Thủy', rarity: 'Tiên Phẩm', rarity_key: 'epic', is_unique: false, atk: 440, def: 430, spd: 425, hax_skill: 'Hàn Long Thổ Tức', hax_desc: '25% đóng băng địch 1 hiệp & giảm 15% SPD đối phương.', scene: 'a sinuous sapphire-ice dragon coiled around frozen frost lotus crystals' },
+  { pet_type: 'huyen_bang_thuy_long', pet_name: 'Huyền Băng Thủy Long', element: 'Thủy', rarity: 'Tiên Phẩm', rarity_key: 'epic', is_unique: false, atk: 440, def: 430, spd: 425, hax_skill: 'Hàn Long Thổ Tức', hax_desc: '25% đóng băng địch 1 hiệp & đầu trận giảm 15% SPD đối phương trong 3 hiệp.', scene: 'a sinuous sapphire-ice dragon coiled around frozen frost lotus crystals' },
   { pet_type: 'huyet_sat_kiem_ho', pet_name: 'Huyết Sát Kiếm Hổ', element: 'Kim', rarity: 'Tiên Phẩm', rarity_key: 'epic', is_unique: false, atk: 485, def: 360, spd: 455, hax_skill: 'Bạch Hổ Kiếm Khí', hax_desc: 'Xuyên 40% DEF & tăng +20% sát thương khi máu địch trên 60%.', scene: 'a fierce crimson-armored white tiger surrounded by floating spirit blades' },
 
   // 30 Thần Thoại Không Độc Nhất (Sum Base Stats: 1620 - 1680)
@@ -463,11 +463,11 @@ const RAW_NEW_PETS = [
   { pet_type: 'huyen_minh_cuu_phuong', pet_name: 'Huyền Minh Cửu Phượng', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 575, def: 480, spd: 605, hax_skill: 'Cửu Vỹ Hỏa Vũ', hax_desc: 'Đòn đánh thiêu đốt 9% HP tối đa địch & hồi sinh 1 lần với 45% HP.', scene: 'a nine-plumed crimson-gold phoenix unleashing blazing celestial feathers' },
   { pet_type: 'tu_vi_huyen_quy', pet_name: 'Tử Vi Huyền Quy', element: 'Thủy', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 490, def: 640, spd: 510, hax_skill: 'Bắc Đẩu Giáp Thần', hax_desc: 'Giảm 28% mọi sát thương nhận vào & phản lại 40% sát thương (thẳng máu, bỏ qua khiên).', scene: 'a cosmic purple starlight tortoise carrying a glowing constellation dome' },
   { pet_type: 'hon_nguyen_thanh_long', pet_name: 'Hỗn Nguyên Thanh Long', element: 'Mộc', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 530, def: 560, spd: 560, hax_skill: 'Thái Ất Trường Sinh', hax_desc: 'Hồi 7% HP tối đa mỗi hiệp & tự hóa giải 1 debuff/hiệp.', scene: 'an emerald celestial wood dragon entwined with luminous spirit vines' },
-  { pet_type: 'loi_than_cuu_ung', pet_name: 'Lôi Thần Cửu Ưng', element: 'Lôi', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 570, def: 460, spd: 630, hax_skill: 'Thần Lôi Chiết Quang', hax_desc: '30% gây Tê Liệt & cướp 25% SPD địch chuyển thành ATK trong 4 hiệp.', scene: 'a storm-crowned nine-eyed thunder eagle crackling with violet plasma' },
-  { pet_type: 'thien_co_ngoc_ho', pet_name: 'Thiên Cơ Ngọc Hồ', element: 'Quang', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 540, def: 520, spd: 590, hax_skill: 'Thiên Cơ Đảo Ảnh', hax_desc: '28% né hoàn toàn đòn đánh & phản công 90% ATK chuẩn.', scene: 'a graceful translucent white jade fox spirit orbited by golden astrolabe rings' },
+  { pet_type: 'loi_than_cuu_ung', pet_name: 'Lôi Thần Cửu Ưng', element: 'Lôi', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 570, def: 460, spd: 630, hax_skill: 'Thần Lôi Chiết Quang', hax_desc: '30% gây Tê Liệt & đầu trận cướp 25% SPD địch chuyển thành ATK suốt trận.', scene: 'a storm-crowned nine-eyed thunder eagle crackling with violet plasma' },
+  { pet_type: 'thien_co_ngoc_ho', pet_name: 'Thiên Cơ Ngọc Hồ', element: 'Quang', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 540, def: 520, spd: 590, hax_skill: 'Thiên Cơ Đảo Ảnh', hax_desc: '28% né hoàn toàn đòn đánh & phản công 90% ATK (Xuyên 100% DEF).', scene: 'a graceful translucent white jade fox spirit orbited by golden astrolabe rings' },
   { pet_type: 'u_do_ma_lang', pet_name: 'U Đô Ma Lang', element: 'Ám', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 600, def: 460, spd: 590, hax_skill: 'Phệ Hồn Huyết Trảo', hax_desc: 'Hút 28% sát thương thành HP & giảm 45% hiệu lực hồi máu của địch.', scene: 'a fierce abyssal shadow wolf with crimson runes burning across obsidian fur' },
   { pet_type: 'van_nhac_than_ngu', pet_name: 'Vạn Nhạc Thần Ngưu', element: 'Thổ', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 510, def: 630, spd: 490, hax_skill: 'Trấn Nhạc Sơn Hà', hax_desc: 'Đầu trận tạo khiên 70% HP & giảm 35% sát thương Bạo Kích nhận vào.', scene: 'a colossal amber mountain ox armored in ancient golden monolith plates' },
-  { pet_type: 'tinh_van_cuu_loc', pet_name: 'Tinh Vân Cửu Lộc', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 535, def: 545, spd: 580, hax_skill: 'Tinh Thần Độ Thế', hax_desc: 'Đầu trận miễn nhiễm 1 đòn chí tử & hồi 6% HP mỗi hiệp.', scene: 'a celestial nine-antlered starlight stag floating amidst glowing nebula dust' },
+  { pet_type: 'tinh_van_cuu_loc', pet_name: 'Tinh Vân Cửu Lộc', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 535, def: 545, spd: 580, hax_skill: 'Tinh Thần Độ Thế', hax_desc: 'Chặn đòn chí tử giữ 15% HP + bất tử 1 hiệp (1 lần/trận) & hồi 6% HP tối đa mỗi hiệp.', scene: 'a celestial nine-antlered starlight stag floating amidst glowing nebula dust' },
   { pet_type: 'xich_diem_ky_lan', pet_name: 'Xích Diễm Kỳ Lân', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 585, def: 505, spd: 560, hax_skill: 'Phần Thiên Thánh Hỏa', hax_desc: 'Xuyên 55% DEF & thiêu đốt 9% HP tối đa địch bỏ qua khiên.', scene: 'a blazing crimson fire qilin galloping across molten golden embers' },
   { pet_type: 'thuy_vu_thanh_phuong', pet_name: 'Thủy Vũ Thánh Phượng', element: 'Thủy', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 540, def: 530, spd: 580, hax_skill: 'Băng Tâm Tịnh Hóa', hax_desc: '28% Đóng Băng địch 1 hiệp & thanh tẩy hiệu ứng bất lợi mỗi 2 hiệp.', scene: 'an elegant ice-blue phoenix trailing sparkling crystalline frost ribbons' },
   { pet_type: 'cuu_u_huyen_xoa', pet_name: 'Cửu U Huyền Xà', element: 'Ám', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 575, def: 495, spd: 580, hax_skill: 'Thất Bộ Đoạt Mệnh Độc', hax_desc: 'Tẩm kịch độc cộng dồn 5%→11% HP tối đa địch mỗi hiệp.', scene: 'a coiled obsidian-purple abyssal serpent crowned with glowing ruby scales' },
@@ -484,7 +484,7 @@ const RAW_NEW_PETS = [
   { pet_type: 'xich_nguyet_tue_ho', pet_name: 'Xích Nguyệt Tuế Hồ', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 570, def: 485, spd: 605, hax_skill: 'Huyết Nguyệt Hỏa Ấn', hax_desc: 'Tăng +18% Crit & hồi máu bằng 22% sát thương Bạo Kích gây ra.', scene: 'a scarlet blood-moon spirit fox shrouded in swirling vermilion embers' },
   { pet_type: 'thach_hoang_cu_linh', pet_name: 'Thạch Hoàng Cự Linh', element: 'Thổ', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 520, def: 625, spd: 495, hax_skill: 'Đại Địa Bất Bại', hax_desc: 'Chặn 1 đòn chí tử tại 15% HP (1 lần/trận) & nổ khiên 18% HP địch (thẳng máu, bỏ qua khiên).', scene: 'an ancient obsidian-gold rune golem guardian pulsing with earth magma' },
   { pet_type: 'tinh_tu_thien_nga', pet_name: 'Tinh Tú Thiên Nga', element: 'Quang', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 530, def: 540, spd: 590, hax_skill: 'Tinh Hà Thánh Vũ', hax_desc: 'Miễn nhiễm Choáng/Đóng Băng & hồi 6% HP tối đa mỗi hiệp.', scene: 'a celestial silver-winged swan glowing with golden constellation trails' },
-  { pet_type: 'u_linh_kiem_ma', pet_name: 'U Linh Kiếm Ma', element: 'Ám', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 595, def: 455, spd: 600, hax_skill: 'Quỷ Kiếm Tuyệt Sát', hax_desc: 'Xuyên 60% DEF & đánh cắp 15% ATK địch cộng dồn 3 hiệp.', scene: 'a spectral phantom wolf knight holding cursed violet spirit blades' },
+  { pet_type: 'u_linh_kiem_ma', pet_name: 'U Linh Kiếm Ma', element: 'Ám', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 595, def: 455, spd: 600, hax_skill: 'Quỷ Kiếm Tuyệt Sát', hax_desc: 'Xuyên 60% DEF; mỗi đòn đánh cắp 5% ATK địch cộng dồn tối đa 3 tầng (15% suốt trận).', scene: 'a spectral phantom wolf knight holding cursed violet spirit blades' },
   { pet_type: 'vu_tru_khong_lo', pet_name: 'Vũ Trụ Không Lô', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 550, def: 540, spd: 580, hax_skill: 'Không Gian Đoạn Tầng', hax_desc: 'Đầu trận khóa HAX đối thủ 1 hiệp & xuyên 50% Khiên Chắn.', scene: 'a dimensional crystal spirit lynx stepping out of a glowing starry portal' },
   { pet_type: 'van_moc_xuan_long', pet_name: 'Vạn Mộc Xuân Long', element: 'Mộc', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 525, def: 570, spd: 565, hax_skill: 'Thiên Địa Hồi Xuân', hax_desc: 'Hồi 7% HP mỗi hiệp & tạo lá chắn 25% HP đầu trận.', scene: 'a spring blossom jade dragon adorned with glowing emerald petals' },
   { pet_type: 'thai_duong_than_su', pet_name: 'Thái Dương Thần Sư', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: false, atk: 590, def: 500, spd: 570, hax_skill: 'Nhật Diệm Phá Giáp', hax_desc: 'Mỗi đòn giảm 12% DEF địch (tối đa 4 tầng) & đốt 8% HP/hiệp.', scene: 'a blazing sun-maned golden lion guardian radiating solar flare halos' },
@@ -540,7 +540,7 @@ const RAW_NEW_EQUIPMENT = [
   // 17 Vũ Khí Thần Thoại Không Độc Nhất
   { item_id: 'weapon_mythic_6', item_name: '« Thiên Cương Trảm Vực Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Kim', bonus_atk: 745, bonus_def: 60, bonus_spd: 295, bonus_hp: 0, bonus_crit: 16, hax_skill: 'Trảm Vực Xuyên Giáp', hax_desc: 'Xuyên 60% Khiên Chắn & +15% sát thương khi Linh Vực bản thân đang kích hoạt.', scene: 'an imperial golden-silver great sword bisecting floating seal runes' },
   { item_id: 'weapon_mythic_7', item_name: '« Phần Nhật Viêm Long Thương »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Hỏa', bonus_atk: 750, bonus_def: 0, bonus_spd: 300, bonus_hp: 0, bonus_crit: 15, hax_skill: 'Viêm Long Thiêu Hồn', hax_desc: 'Xuyên 50% DEF & thiêu đốt 9% HP tối đa địch mỗi hiệp (bỏ qua khiên).', scene: 'a blazing red-gold dragon lance spiraled with sacred solar flames' },
-  { item_id: 'weapon_mythic_8', item_name: '« Huyền Băng Phá Lãng Kích »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thủy', bonus_atk: 730, bonus_def: 150, bonus_spd: 310, bonus_hp: 0, bonus_crit: 14, hax_skill: 'Băng Phong Tịch Diệt', hax_desc: '28% đóng băng địch 1 hiệp & giảm 20% SPD đối phương.', scene: 'a glacial sapphire halberd forged from eternal northern sea ice' },
+  { item_id: 'weapon_mythic_8', item_name: '« Huyền Băng Phá Lãng Kích »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thủy', bonus_atk: 730, bonus_def: 150, bonus_spd: 310, bonus_hp: 0, bonus_crit: 14, hax_skill: 'Băng Phong Tịch Diệt', hax_desc: '28% đóng băng địch 1 hiệp & đầu trận giảm 20% SPD đối phương (3 hiệp).', scene: 'a glacial sapphire halberd forged from eternal northern sea ice' },
   { item_id: 'weapon_mythic_9', item_name: '« Tử Tiêu Thần Lôi Cung »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Lôi', bonus_atk: 735, bonus_def: 0, bonus_spd: 335, bonus_hp: 0, bonus_crit: 18, hax_skill: 'Lôi Tiễn Liên Hoàn', hax_desc: '30% tung mũi tên sét phụ 65% ATK xuyên 50% Khiên.', scene: 'a glowing amethyst lightning longbow charged with crackling starlight bolts' },
   { item_id: 'weapon_mythic_10', item_name: '« Thái Ất Thần Mộc Trượng »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Mộc', bonus_atk: 720, bonus_def: 190, bonus_spd: 290, bonus_hp: 0, bonus_crit: 12, hax_skill: 'Thanh Mộc Phản Phệ', hax_desc: 'Hút 22% sát thương thành HP & thanh tẩy 1 hiệu ứng bất lợi mỗi 2 hiệp.', scene: 'an ancient emerald dragon-wood staff crowned with blooming glowing lotus' },
   { item_id: 'weapon_mythic_11', item_name: '« Bàn Cổ Khai Sơn Cự Phủ »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thổ', bonus_atk: 760, bonus_def: 180, bonus_spd: 250, bonus_hp: 0, bonus_crit: 14, hax_skill: 'Liệt Địa Phá Thuẫn', hax_desc: 'Phá Khiên (×2 ST lên Khiên) & Xuyên 55% DEF.', scene: 'a monumental obsidian-gold rune waraxe radiating earth shockwaves' },
@@ -559,13 +559,13 @@ const RAW_NEW_EQUIPMENT = [
   // 10 Vũ Khí Thần Thoại Độc Nhất (Hơn bản Mythic thường ~6% stats + ~6% HAX => <= 15%)
   { item_id: 'weapon_unique_1', item_name: '« Khai Thiên Phá Vạn Pháp Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Kim', bonus_atk: 785, bonus_def: 110, bonus_spd: 325, bonus_hp: 0, bonus_crit: 19, hax_skill: 'Vạn Pháp Quy Không', hax_desc: 'Xuyên 70% Khiên, 55% DEF & giảm 15% hiệu lực giảm ST của địch.', scene: 'imperial silver-gold supreme sword cleaving floating law seal tablets' },
   { item_id: 'weapon_unique_2', item_name: '« Cửu Diệu Phần Thế Thần Thương »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Hỏa', bonus_atk: 790, bonus_def: 90, bonus_spd: 330, bonus_hp: 0, bonus_crit: 17, hax_skill: 'Cửu Nhật Phần Thiên', hax_desc: 'Xuyên 58% DEF & thiêu đốt 11% HP tối đa địch mỗi hiệp (bỏ qua khiên).', scene: 'a mythical spear ringed by nine miniature burning suns and golden runes' },
-  { item_id: 'weapon_unique_3', item_name: '« Thái Thủy Tuyệt Đống Thần Kích »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Thủy', bonus_atk: 770, bonus_def: 180, bonus_spd: 335, bonus_hp: 0, bonus_crit: 16, hax_skill: 'Vĩnh Đống Cấm Chế', hax_desc: '32% Đóng Băng 1 hiệp, giảm 24% SPD & khóa 25% hồi phục địch.', scene: 'an absolute-zero celestial sapphire halberd trailed by aurora frost trails' },
+  { item_id: 'weapon_unique_3', item_name: '« Thái Thủy Tuyệt Đống Thần Kích »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Thủy', bonus_atk: 770, bonus_def: 180, bonus_spd: 335, bonus_hp: 0, bonus_crit: 16, hax_skill: 'Vĩnh Đống Cấm Chế', hax_desc: '32% Đóng Băng 1 hiệp, đầu trận giảm 24% SPD (3 hiệp) & khóa 25% hồi phục địch (3 hiệp).', scene: 'an absolute-zero celestial sapphire halberd trailed by aurora frost trails' },
   { item_id: 'weapon_unique_4', item_name: '« Cửu Kiếp Thần Lôi Đế Cung »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Lôi', bonus_atk: 780, bonus_def: 60, bonus_spd: 360, bonus_hp: 0, bonus_crit: 20, hax_skill: 'Thần Kiếp Xuyên Vân', hax_desc: '35% bắn đòn sét phụ 75% ATK xuyên 60% Khiên & cướp 25% SPD.', scene: 'a divine golden-violet dragon-rib bow firing pure lightning spears' },
   { item_id: 'weapon_unique_5', item_name: '« Hỗn Độn Sinh Diệt Thần Trượng »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Mộc', bonus_atk: 765, bonus_def: 220, bonus_spd: 315, bonus_hp: 0, bonus_crit: 15, hax_skill: 'Luân Hồi Sinh Tức', hax_desc: 'Hút 26% ST thành HP, thanh tẩy debuff & đốt 7% HP địch/hiệp.', scene: 'a world-tree jade scepter blooming with glowing emerald lotus spirits' },
   { item_id: 'weapon_unique_6', item_name: '« Trấn Nhạc Thần Hoàng Đại Phủ »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Thổ', bonus_atk: 795, bonus_def: 210, bonus_spd: 275, bonus_hp: 0, bonus_crit: 16, hax_skill: 'Hoàng Thiên Trấn Sát', hax_desc: 'Xuyên 60% DEF & Phá Khiên (×2.2 ST lên Khiên).', scene: 'an imperial dragon-engraved amber battleaxe dripping golden molten lava' },
   { item_id: 'weapon_unique_7', item_name: '« Vạn Quang Thái Dương Thánh Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Quang', bonus_atk: 775, bonus_def: 170, bonus_spd: 335, bonus_hp: 0, bonus_crit: 18, hax_skill: 'Thái Dương Phá Ám', hax_desc: 'Xóa 1 buff địch mỗi 2 hiệp & tăng +20% sát thương Bạo Kích chuẩn.', scene: 'an immaculate pearl-gold sunblade encircled by rotating angel-wing halos' },
   { item_id: 'weapon_unique_8', item_name: '« Thệ Hồn Đoạn Tuyệt Ma Đao »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Ám', bonus_atk: 790, bonus_def: 100, bonus_spd: 325, bonus_hp: 0, bonus_crit: 19, hax_skill: 'Tuyệt Mệnh Hấp Huyết', hax_desc: 'Giảm 58% Hồi Máu địch, hút 26% ST & kết liễu dưới 22% HP (38%).', scene: 'a cursed obsidian-crimson greatsword bound with glowing phantom spirit chains' },
-  { item_id: 'weapon_unique_9', item_name: '« Thời Không Vạn Tượng Thần Nhận »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Hư Không', bonus_atk: 780, bonus_def: 120, bonus_spd: 350, bonus_hp: 0, bonus_crit: 19, hax_skill: 'Thời Không Trảm', hax_desc: 'Xuyên 55% DEF + 35% tung thêm nhát chém phụ 55% ATK chuẩn.', scene: 'a crystalline crescent twin-blade distorting space-time starlight' },
+  { item_id: 'weapon_unique_9', item_name: '« Thời Không Vạn Tượng Thần Nhận »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Hư Không', bonus_atk: 780, bonus_def: 120, bonus_spd: 350, bonus_hp: 0, bonus_crit: 19, hax_skill: 'Thời Không Trảm', hax_desc: 'Xuyên 55% DEF + 35% tung thêm nhát chém phụ 55% ATK (Xuyên 100% DEF).', scene: 'a crystalline crescent twin-blade distorting space-time starlight' },
   { item_id: 'weapon_unique_10', item_name: '« Hồng Mông Đế Tôn Kiếm »', item_type: 'weapon', rarity: 'Thần Thoại', rarity_key: 'mythic', is_unique: true, element: 'Hỗn Độn', bonus_atk: 785, bonus_def: 160, bonus_spd: 335, bonus_hp: 0, bonus_crit: 18, hax_skill: 'Hồng Mông Khai Vực', hax_desc: 'Xuyên 68% Khiên, +20% Cường Hóa Buff Vực & +10% Cường Hóa Debuff Vực.', scene: 'a primordial rainbow-gold chaos sword wreathed in swirling sakura nebula' },
 
   // ---- 33 BẢO NGỌC (6 Phàm/Linh/Tiên + 17 Thần Thoại Thường + 10 Độc Nhất) ----
@@ -824,10 +824,10 @@ export const V13_FARM_ASSETS = [
   {
     uid: 'farm_essence',
     name: 'Linh Quả Tiên Giới',
-    slot_type: 'Tiền tệ /exchange',
+    slot_type: 'Tiền tệ /exchange & /luyendan',
     growth_hours: null,
-    care_window: 'Thu hoạch từ /farm & tiêu tại /exchange',
-    reward_summary: 'Đổi Linh Thạch, Đá Khắc Ấn, Tinh Thạch Sao, Vé Reset Tháp & Vé Gacha',
+    care_window: 'Thu hoạch từ /farm & tiêu tại /exchange hoặc /luyendan',
+    reward_summary: 'Đổi thưởng tại /exchange (mở ô canh tác #5–#8, LT, Vé Gacha...) & luyện Tinh Hoa Đan tại /luyendan',
     visual_prompt: `A glowing celestial peach-shaped crystal fruit dripping rainbow golden nectar droplets with two emerald leaves, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -836,7 +836,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Điền (6 giờ)',
     growth_hours: 6,
     care_window: 'Tưới mỗi 2h • Quá 4.5h bỏ quên sẽ héo',
-    reward_summary: 'Giá 80 LT -> Thu 145 LT + 15 Linh Quả',
+    reward_summary: 'Giá 88 LT -> Thu 145 LT + 15 Linh Quả',
     visual_prompt: `A glowing emerald herbal seed sprouting two luminous cyan dew-kissed leaves in rich golden soil pouch, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -845,7 +845,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Điền (12 giờ)',
     growth_hours: 12,
     care_window: 'Tưới mỗi 4h • Quá 7h bỏ quên sẽ héo',
-    reward_summary: 'Giá 200 LT -> Thu 390 LT + 40 Linh Quả',
+    reward_summary: 'Giá 220 LT -> Thu 390 LT + 40 Linh Quả',
     visual_prompt: `A luminous amethyst-gold immortal lotus bulb with swirling starry spirit petals ready to bloom, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -854,7 +854,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Điền (24 giờ)',
     growth_hours: 24,
     care_window: 'Tưới mỗi 6h • Quá 12h bỏ quên sẽ héo',
-    reward_summary: 'Giá 500 LT -> Thu 1.050 LT + 110 Linh Quả',
+    reward_summary: 'Giá 550 LT -> Thu 1.050 LT + 110 Linh Quả',
     visual_prompt: `A sacred golden world-tree acorn inlaid with ancient glowing jade runes and shimmering divine sprouts, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -863,7 +863,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Các (6 giờ)',
     growth_hours: 6,
     care_window: 'Cho ăn mỗi 2h • Quá 4.5h bỏ đói sẽ bỏ đi',
-    reward_summary: 'Giá 120 LT -> Thu 220 LT + 22 Linh Quả',
+    reward_summary: 'Giá 132 LT -> Thu 220 LT + 22 Linh Quả',
     visual_prompt: `A pastel cyan speckled spirit beast egg nestled in a warm golden nest pulsing with gentle aura, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -872,7 +872,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Các (12 giờ)',
     growth_hours: 12,
     care_window: 'Cho ăn mỗi 4h • Quá 7h bỏ đói sẽ bỏ đi',
-    reward_summary: 'Giá 300 LT -> Thu 580 LT + 60 Linh Quả',
+    reward_summary: 'Giá 330 LT -> Thu 580 LT + 60 Linh Quả',
     visual_prompt: `An ornate purple-and-silver dragon-scaled immortal beast egg ringed by glowing celestial feathers, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
   {
@@ -881,7 +881,7 @@ export const V13_FARM_ASSETS = [
     slot_type: 'Linh Các (24 giờ)',
     growth_hours: 24,
     care_window: 'Cho ăn mỗi 6h • Quá 12h bỏ đói sẽ bỏ đi',
-    reward_summary: 'Giá 750 LT -> Thu 1.600 LT + 165 Linh Quả',
+    reward_summary: 'Giá 825 LT -> Thu 1.600 LT + 165 Linh Quả',
     visual_prompt: `A majestic radiant gold-and-crimson mythic nine-tailed beast egg haloed by ancient runes and phoenix fire, ${EMOJI_ICON_STYLE_DIRECTIVE}.`,
   },
 ];

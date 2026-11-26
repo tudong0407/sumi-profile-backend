@@ -17,6 +17,7 @@ import {
   LEVEL_ROLE_BUFF_CONFIG,
   LEVEL_ROLE_DISCORD_PERMS,
   formatRoleBuffText,
+  formatRoleBuffDetailedText,
   SHOP_CONSUMABLES,
   ALL_CONSUMABLES,
   MARRY_RINGS,
@@ -28,6 +29,8 @@ import {
   FUYUMI_USER_ID,
   getCosmeticBuffByRarity,
 } from '../data/catalog.js';
+import { STONE_SPECIES, STONE_TIER_BY_KEY, FORTUNE_TIERS } from '../data/v16ExpansionCatalog.js';
+import { ALCHEMY_RECIPES, FURNACE_TIERS } from '../data/v161AlchemyCatalog.js';
 import { GACHA_DISMANTLE_VALUES, normalizeEmojiAwareQuery } from './inventoryService.js';
 import { LATEST_VERSION } from '../data/changelogs.js';
 import { resolvePublicAssetPath } from '../canvas/drawUtils.js';
@@ -96,11 +99,16 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   let matchedRing = MARRY_RINGS.find((r) => r.item_id.toLowerCase() === qLower);
   let matchedBg = BACKGROUND_CATALOG.find((b) => b.bg_id.toLowerCase() === qLower);
   let matchedFrame = AVATAR_FRAMES.find((f) => f.frame_id.toLowerCase() === qLower || `frame_${f.frame_id}`.toLowerCase() === qLower);
+  let matchedStone = STONE_SPECIES.find((s) => s.stone_id.toLowerCase() === qLower);
+  let matchedRecipe = ALCHEMY_RECIPES.find((r) => r.id.toLowerCase() === qLower);
+  let matchedFurnace = FURNACE_TIERS.find((f) => `furnace_lv${f.level}` === qLower || `lo_${f.level}` === qLower);
+  let matchedFortune = FORTUNE_TIERS.find((f) => f.tier_key.toLowerCase() === qLower);
 
   const hasExactMatch = () => Boolean(
     matchedPet || matchedItem || matchedDomain || matchedSense || matchedRealm
     || matchedSeed || matchedExchange || matchedRole || matchedLvlRole
-    || matchedCons || matchedRing || matchedBg || matchedFrame,
+    || matchedCons || matchedRing || matchedBg || matchedFrame
+    || matchedStone || matchedRecipe || matchedFurnace || matchedFortune,
   );
 
   // 2. Partial name fallback
@@ -147,6 +155,18 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
   }
   if (!hasExactMatch()) {
     matchedFrame = AVATAR_FRAMES.find((f) => normText(f.name).includes(qNorm));
+  }
+  if (!hasExactMatch()) {
+    matchedStone = STONE_SPECIES.find((s) => normText(s.name).includes(qNorm) || s.stone_id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
+    matchedRecipe = ALCHEMY_RECIPES.find((r) => normText(r.name).includes(qNorm) || r.id.toLowerCase().includes(qLower));
+  }
+  if (!hasExactMatch()) {
+    matchedFurnace = FURNACE_TIERS.find((f) => normText(f.name).includes(qNorm));
+  }
+  if (!hasExactMatch()) {
+    matchedFortune = FORTUNE_TIERS.find((f) => normText(f.label).includes(qNorm) || f.tier_key.toLowerCase().includes(qLower));
   }
 
   const lt = em('su_linhthach');
@@ -244,8 +264,8 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• **Mã Role ID:** \`${r.role_id}\``,
       `• **Bậc Role:** ${roleTierEmoji(r.rarity_key)} **${r.rarity}**`,
       `• **Quyền Discord:** ${r.discord_perms || 'Theo cấu hình Role server'}`,
-      `• **Buff Tu Tiên:** ${formatRoleBuffText(r.role_id)}`,
-      `• **Tóm tắt:** ${r.perk}`,
+      `• **Buff Tu Tiên:** ${formatRoleBuffDetailedText(r.role_id)}`,
+      `• **Hiển thị trên /profile:** ${r.perk}`,
       isShopRole
         ? `• **Nguồn sở hữu:** Mua tại \`/shop\` (**7d:** \`${r.prices['7d']}\` | **30d:** \`${r.prices['30d']}\` | **Vĩnh Viễn:** \`${r.prices.permanent.toLocaleString('vi-VN')}\` ${lt}) hoặc quay \`/roll loai:role\` (**60.5%**)`
         : `• **Nguồn sở hữu:** Độc quyền Gacha \`/roll loai:role\` (**${r.rarity === 'Linh Phẩm' ? '25%' : r.rarity === 'Tiên Phẩm' ? '14%' : '0.5%'}**) *(thời hạn 7d/30d/60d/90d/2% Vĩnh Viễn)*`,
@@ -271,9 +291,9 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     const m = matchedLvlRole;
     const lvlBuff = LEVEL_ROLE_BUFF_CONFIG.find((c) => c.level === m.level);
     const buffParts = [];
-    if (lvlBuff?.expPct) buffParts.push(`+${lvlBuff.expPct}% EXP`);
-    if (lvlBuff?.dailyLtPct) buffParts.push(`+${lvlBuff.dailyLtPct}% Daily LT`);
-    if (lvlBuff?.petPowerPct) buffParts.push(`+${lvlBuff.petPowerPct}% Chiến Lực Pet`);
+    if (lvlBuff?.expPct) buffParts.push(`+${lvlBuff.expPct}% EXP (Chat, Voice & /job)`);
+    if (lvlBuff?.dailyLtPct) buffParts.push(`+${lvlBuff.dailyLtPct}% Daily LT (+${lvlBuff.dailyLtPct}% /daily & +${Math.round(lvlBuff.dailyLtPct * 0.25)}% /job)`);
+    if (lvlBuff?.petPowerPct) buffParts.push(`+${lvlBuff.petPowerPct}% Chiến Lực Pet (ATK/DEF/SPD)`);
     return {
       success: true,
       category: 'level_role',
@@ -460,7 +480,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         ? [
             `• **Mã UID:** \`farm_essence\``,
             `• **Nguồn kiếm:** Thu hoạch từ nông trại thời gian thực \`/farm\`.`,
-            `• **Công dụng:** Đổi lấy Linh Thạch, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Tẩy Tủy Tháp hoặc mở ô ruộng thứ 5–6 tại \`/exchange\`.`,
+            `• **Công dụng:** Đổi lấy Linh Thạch, Đá Khắc Ấn, Tinh Thạch, Vé Gacha, Thẻ Tẩy Tủy Tháp, mở ô canh tác thứ 5–8 tại \`/exchange\` hoặc luyện Tinh Hoa Đan tại \`/luyendan\`.`,
           ].join('\n')
         : [
             `• **Mã UID:** \`${ex.exchange_id}\``,
@@ -486,7 +506,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: [
         `• **Mã UID:** \`${b.bg_id}\` • ${tierEmoji(b.rarity_key)} **${b.rarity}**`,
         b.price > 0
-          ? `• **Buff khi trang bị:** **+${bgBuff.expPct}% EXP & +${bgBuff.ltPct}% Linh Thạch** *(cộng dồn với Viền Avatar)*`
+          ? `• **Buff khi trang bị:** **+${bgBuff.expPct}% EXP & +${bgBuff.ltPct}% Linh Thạch** *(Áp dụng cho /daily, /job, /explorer & Tháp; cộng dồn với Viền Avatar)*`
           : '• **Buff khi trang bị:** Không có (Mặc định)',
         b.price > 0 ? `• **Giá bán (\`/shop\`):** **${b.price.toLocaleString('vi-VN')}** ${lt}` : '• **Nguồn:** Mở khóa mặc định.',
         `• **Cách dùng:** \`/equip loai:background ma_id:${b.bg_id}\``,
@@ -509,7 +529,7 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       description: [
         `• **Mã UID:** \`${f.frame_id}\` • ${tierEmoji(f.rarity_key)} **${f.rarity}**`,
         f.price > 0
-          ? `• **Buff khi trang bị:** **+${frBuff.expPct}% EXP & +${frBuff.ltPct}% Linh Thạch** *(cộng dồn với Ảnh Nền)*`
+          ? `• **Buff khi trang bị:** **+${frBuff.expPct}% EXP & +${frBuff.ltPct}% Linh Thạch** *(Áp dụng cho /daily, /job, /explorer & Tháp; cộng dồn với Ảnh Nền)*`
           : '• **Buff khi trang bị:** Không có (Mặc định)',
         f.price > 0 ? `• **Giá bán (\`/shop\`):** **${f.price.toLocaleString('vi-VN')}** ${lt}` : '• **Nguồn:** Mở khóa mặc định.',
         `• **Mô tả:** ${f.description}`,
@@ -517,6 +537,91 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       ].join('\n'),
       color: '#a855f7',
       image_url: f.price > 0 ? `${PUBLIC_BASE_URL}/api/shop/frame-preview/${f.frame_id}.png` : '',
+      footer: '',
+    };
+  }
+
+  if (matchedStone) {
+    const st = matchedStone;
+    const tier = STONE_TIER_BY_KEY[st.tier_key];
+    return {
+      success: true,
+      category: 'stone',
+      id: st.stone_id,
+      name: st.name,
+      title: `${tierEmoji(st.tier_key === 'supreme' ? 'mythic' : st.tier_key)} NGUYÊN THẠCH: ${st.name}`,
+      description: [
+        `• **Mã UID:** \`${st.stone_id}\` • **Phân khúc:** ${tier?.name || st.tier_key}`,
+        `• **Giá cắt (\`/dothach\`):** **${(tier?.price || 0).toLocaleString('vi-VN')}** ${lt} • **Phí đổi sạp:** **${(tier?.reroll_cost || 0).toLocaleString('vi-VN')}** ${lt}`,
+        `• **Tỉ lệ nổ Cực Phẩm:** \`${((tier?.supreme_rate || 0) * 100).toFixed(2)}%\``,
+        `• **Bí văn mô tả:** *${st.lore}*`,
+      ].join('\n'),
+      color: tier?.color || '#38bdf8',
+      image_url: '',
+      footer: '',
+    };
+  }
+
+  if (matchedRecipe) {
+    const rec = matchedRecipe;
+    const reqText = [
+      rec.costLt ? `**${rec.costLt.toLocaleString('vi-VN')}** ${lt}` : null,
+      rec.costEssence ? `**${rec.costEssence}** ${farmEmoji('farm_essence')} Linh Quả` : null,
+    ].filter(Boolean).join(' + ');
+    const unlockText = rec.altFurnaceLevel
+      ? `Lv.${rec.minLevel} hoặc Lò Lv.${rec.altFurnaceLevel}`
+      : `Lv.${rec.minLevel}`;
+    return {
+      success: true,
+      category: 'alchemy_recipe',
+      id: rec.id,
+      name: rec.name,
+      title: `${em(rec.iconKey || 'su_sparkle')} ĐAN PHƯƠNG (${rec.tierLabel}): ${rec.name}`,
+      description: [
+        `• **Mã UID:** \`${rec.id}\` • **Mở khóa:** \`${unlockText}\``,
+        `• **Nguyên liệu:** ${reqText} • **Thời gian ủ:** **${rec.durationMin} phút**`,
+        `• **Thu hoạch gốc:** **${rec.minLt.toLocaleString('vi-VN')}–${rec.maxLt.toLocaleString('vi-VN')}** ${lt} • **EXP Tu Tiên:** **+${rec.exp}**`,
+        `• *Dùng \`/luyendan\` để chọn đan phương và khai lò!*`,
+      ].join('\n'),
+      color: '#a855f7',
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`alchemy/${rec.image}`)}`,
+      footer: '',
+    };
+  }
+
+  if (matchedFurnace) {
+    const fn = matchedFurnace;
+    return {
+      success: true,
+      category: 'furnace',
+      id: `furnace_lv${fn.level}`,
+      name: fn.name,
+      title: `${em(fn.emojiKey || 'su_sparkle')} LÒ LUYỆN ĐAN LV.${fn.level}: ${fn.name}`,
+      description: [
+        `• **Điều kiện nâng cấp:** ${fn.upgradeCostLt > 0 ? `**${fn.upgradeCostLt.toLocaleString('vi-VN')}** ${lt} & tối thiểu **${fn.minBatches} mẻ** thành công` : 'Mặc định khi khai mở `/luyendan`'}`,
+        `• **Buff Lò:** **+${fn.ltBonusPct}% LT** • **Giảm ${fn.timeReducePct}% thời gian ủ** • **Ân hạn cháy:** \`+${fn.graceMin} phút\``,
+        `• **Tỉ lệ Đan Phẩm Cao:** Superior **${fn.superiorPct}%** • Đan Vân **${fn.cloudPct}%**`,
+      ].join('\n'),
+      color: '#f59e0b',
+      image_url: `${PUBLIC_BASE_URL}/assets/${resolvePublicAssetPath(`alchemy/${fn.image}`)}`,
+      footer: '',
+    };
+  }
+
+  if (matchedFortune) {
+    const ft = matchedFortune;
+    return {
+      success: true,
+      category: 'fortune',
+      id: ft.tier_key,
+      name: ft.label,
+      title: `${em('su_sparkle')} QUẺ KHÍ VẬN: ${ft.label}`,
+      description: [
+        `• **Mã Quẻ:** \`${ft.tier_key}\` • **Tỉ lệ rút (\`/gieoque\`):** **${ft.weight}%**`,
+        `• **Hiệu ứng:** **${ft.exp_pct >= 0 ? `+${ft.exp_pct}%` : `${ft.exp_pct}%`} EXP** • **${ft.lt_pct >= 0 ? `+${ft.lt_pct}%` : `${ft.lt_pct}%`} LT** • **${ft.luck_pct >= 0 ? `+${ft.luck_pct}%` : `${ft.luck_pct}%`} Luck** *(áp dụng cho \`/roll\` & \`/dothach\` trong ngày, cộng dồn với Luck Potion)*`,
+      ].join('\n'),
+      color: ft.color || '#38bdf8',
+      image_url: '',
       footer: '',
     };
   }

@@ -588,7 +588,7 @@ function patchShopV16(origTree) {
     d = d.replace(/\*\*Vật Phẩm \(8 món\)\*\*[^\n]*/g,
       `**Vật Phẩm Tiêu Hao & Luck Potion (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, **3 Lọ Luck Potion (+20%/+40%/+60% Luck)**, Đá Sao, Đá Khắc Ấn, Reset Tháp, Đan Dược.`);
     if (!d.includes('Luck Potion')) {
-      d += `\n${uidEm('su_sparkle')} **3 Lọ Luck Potion**: Mở bán ở Quầy Tiêu Hao *(+20%/+40%/+60% Luck theo lượt cho \`/roll\` & \`/dothach\`)*.\n${uidEm('su_realm_star')} **Phường Đổ Thạch**: Dùng \`/dothach\` để mua & cắt 20 Nguyên Thạch!`;
+      d += `\n${uidEm('su_sparkle')} **3 Lọ Luck Potion**: Mở bán ở Quầy Tiêu Hao *(+20%/+40%/+60% Luck theo lượt cho \`/roll\` & \`/dothach\`)*.\n${uidEm('su_realm_star')} **Phường Đổ Thạch**: Dùng \`/dothach\` để mua & cắt 40 Nguyên Thạch!`;
     }
     msgHome.data.data.message.embeds[0].description = d;
   }

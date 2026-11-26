@@ -91,7 +91,7 @@ export const EQUIPMENT_CATALOG = [
 
   { item_id: 'weapon_rare_1', item_name: 'Tử Điện Lôi Minh Thương', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Lôi', bonus_atk: 320, bonus_def: 0, bonus_spd: 0, bonus_hp: 0, bonus_crit: 8.0, hax_skill: null, hax_description: '15% tỉ lệ gây Tê Liệt khiến đối thủ mất lượt.', drop_rate: 25.0, is_unique: false },
   { item_id: 'weapon_rare_2', item_name: 'U Hỏa Nhiễm Huyết Kiếm', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Hỏa', bonus_atk: 350, bonus_def: 0, bonus_spd: 0, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Gây Thiêu Đốt rút 5% HP địch mỗi hiệp.', drop_rate: 25.0, is_unique: false },
-  { item_id: 'weapon_rare_3', item_name: 'Hàn Băng Thần Châm', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Thủy', bonus_atk: 280, bonus_def: 0, bonus_spd: 120, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Giảm 10% tốc độ ra đòn của đối thủ.', drop_rate: 25.0, is_unique: false },
+  { item_id: 'weapon_rare_3', item_name: 'Hàn Băng Thần Châm', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Thủy', bonus_atk: 280, bonus_def: 0, bonus_spd: 120, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Đầu trận giảm 10% SPD đối thủ trong 2 hiệp.', drop_rate: 25.0, is_unique: false },
   { item_id: 'weapon_rare_4', item_name: 'Bạch Hạc Vũ Phiến', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Quang', bonus_atk: 300, bonus_def: 150, bonus_spd: 0, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng 10% tỉ lệ né tránh sát thương.', drop_rate: 25.0, is_unique: false },
   { item_id: 'weapon_rare_5', item_name: 'Thanh Phong Ngọc Tiêu', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Mộc', bonus_atk: 310, bonus_def: 80, bonus_spd: 110, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Mỗi đòn đánh hồi phục 5% HP tối đa bản thân.', drop_rate: 25.0, is_unique: false },
   { item_id: 'weapon_rare_6', item_name: 'Huyền Thiết Trảm Mã Đao', item_type: 'weapon', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Thổ', bonus_atk: 360, bonus_def: 100, bonus_spd: 0, bonus_hp: 0, bonus_crit: 6.0, hax_skill: null, hax_description: 'Xuyên 18% DEF của đối thủ.', drop_rate: 25.0, is_unique: false },
@@ -136,13 +136,13 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'gem_mythic_5', item_name: '« Hỗn Nguyên Càn Khôn Ấn »', item_type: 'gem', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Thổ', bonus_atk: 180, bonus_def: 760, bonus_spd: 0, bonus_hp: 5000, bonus_crit: 0.0, hax_skill: 'Càn Khôn Hộ Thể', hax_description: 'Đầu trận nhận khiên 75% HP tối đa & chặn kết liễu tức thì 1 lần/trận.', drop_rate: 1.0, is_unique: false },
 
   // 21 Chiến Hồn (Souls)
-  { item_id: 'soul_common_1', item_name: 'Dã Lang Chiến Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Ám', bonus_atk: 50, bonus_def: 0, bonus_spd: 60, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng +6% sát thương khi đánh phủ đầu.', drop_rate: 60.0, is_unique: false },
+  { item_id: 'soul_common_1', item_name: 'Dã Lang Chiến Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Ám', bonus_atk: 50, bonus_def: 0, bonus_spd: 60, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng +6% sát thương khi SPD bằng hoặc cao hơn đối thủ.', drop_rate: 60.0, is_unique: false },
   { item_id: 'soul_common_2', item_name: 'Thanh Phong Linh Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Mộc', bonus_atk: 0, bonus_def: 30, bonus_spd: 80, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Thân pháp linh hoạt, tăng +5% tỉ lệ né tránh.', drop_rate: 60.0, is_unique: false },
   { item_id: 'soul_common_3', item_name: 'Linh Hồ Ấu Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Quang', bonus_atk: 40, bonus_def: 0, bonus_spd: 70, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng +4% tỉ lệ bạo kích.', drop_rate: 60.0, is_unique: false },
   { item_id: 'soul_common_4', item_name: 'Man Ngưu Thú Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Thổ', bonus_atk: 0, bonus_def: 100, bonus_spd: 40, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Giảm 5% sát thương nhận vào.', drop_rate: 60.0, is_unique: false },
   { item_id: 'soul_common_5', item_name: 'Xích Hồ Ấu Hồn', item_type: 'soul', rarity: 'Phàm Phẩm', rarity_key: 'common', element: 'Hỏa', bonus_atk: 55, bonus_def: 0, bonus_spd: 65, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng +5% tỉ lệ bạo kích.', drop_rate: 60.0, is_unique: false },
 
-  { item_id: 'soul_rare_1', item_name: 'Tấn Lôi Ưng Hồn', item_type: 'soul', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Lôi', bonus_atk: 100, bonus_def: 0, bonus_spd: 180, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng 15% ưu tiên tốc độ xuất chiêu đầu trận.', drop_rate: 25.0, is_unique: false },
+  { item_id: 'soul_rare_1', item_name: 'Tấn Lôi Ưng Hồn', item_type: 'soul', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Lôi', bonus_atk: 100, bonus_def: 0, bonus_spd: 180, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Tăng +15% SPD hiệu dụng & +15% sát thương đòn đầu trận.', drop_rate: 25.0, is_unique: false },
   { item_id: 'soul_rare_2', item_name: 'Minh Giới U Hồn', item_type: 'soul', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Ám', bonus_atk: 0, bonus_def: 120, bonus_spd: 150, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'Đòn đánh hút 10% máu theo sát thương gây ra.', drop_rate: 25.0, is_unique: false },
   { item_id: 'soul_rare_3', item_name: 'Cuồng Bạo Hùng Hồn', item_type: 'soul', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Thổ', bonus_atk: 200, bonus_def: 0, bonus_spd: 130, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: 'HP dưới 50% tăng +20% sát thương.', drop_rate: 25.0, is_unique: false },
   { item_id: 'soul_rare_4', item_name: 'Thải Điệp Mộng Hồn', item_type: 'soul', rarity: 'Linh Phẩm', rarity_key: 'rare', element: 'Mộc', bonus_atk: 0, bonus_def: 80, bonus_spd: 190, bonus_hp: 0, bonus_crit: 0.0, hax_skill: null, hax_description: '15% xác suất ru ngủ đối thủ 1 hiệp.', drop_rate: 25.0, is_unique: false },
@@ -389,7 +389,7 @@ export function getClanLevelConfig(level) {
  * đồng thời nằm ở nhóm Phàm Phẩm (60.5%) trong Gacha Role (/roll loai:role).
  */
 export const SHOP_ROLE_PACKAGES = [
-  { role_id: '1573186019858317422', name: '« Linh Âm Hồ Ca »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sparkle')} Triệu Hồi Hát Live & Tâm Sự`, prices: { '7d': 220, '30d': 700, permanent: 2200 } },
+  { role_id: '1573186019858317422', name: '« Linh Âm Hồ Ca »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sparkle')} Ưu Tiên Voice, Soundboard & Âm Ngoại`, prices: { '7d': 220, '30d': 700, permanent: 2200 } },
   { role_id: '1573186024048173076', name: '« Phong Thanh Hộ Pháp »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_arena')} Quyền Di Chuyển Voice`, prices: { '7d': 350, '30d': 1100, permanent: 3500 } },
   { role_id: '1573186028196462613', name: '« Lôi Âm Tôn Giả »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_thunder_hax')} Quyền Ưu Tiên Nói Voice`, prices: { '7d': 200, '30d': 650, permanent: 2000 } },
   { role_id: '1573186032289980416', name: '« Tịch Tĩnh Tán Nhân »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_shield_def')} Quyền Tắt Tiếng Voice`, prices: { '7d': 350, '30d': 1100, permanent: 3500 } },
@@ -405,8 +405,8 @@ export const SHOP_ROLE_PACKAGES = [
   { role_id: '1573186074153324608', name: '« Trấn Thư Pháp Vương »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_pin_sigil')} Quyền Ghim Tin Nhắn`, prices: { '7d': 220, '30d': 720, permanent: 2200 } },
   { role_id: '1573186078402158776', name: '« Huyễn Âm Tiên Cô »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_medal_role')} Dùng Bảng Âm Thanh`, prices: { '7d': 150, '30d': 500, permanent: 1500 } },
   { role_id: '1573186082768560198', name: '« Cửu Châu Diễn Âm »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_medal_role')} Dùng Âm Ngoại Server`, prices: { '7d': 180, '30d': 600, permanent: 1800 } },
-  { role_id: '1573186087088554085', name: '« Linh Hồn Tu Luyện »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_level_up')} Buff +15% EXP Solo`, prices: { '7d': 400, '30d': 1200, permanent: 4000 } },
-  { role_id: '1573186091094245416', name: '« Tài Vận Hanh Thông »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_linhthach')} Buff +20% Linh Thạch`, prices: { '7d': 450, '30d': 1400, permanent: 4500 } },
+  { role_id: '1573186087088554085', name: '« Linh Hồn Tu Luyện »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_level_up')} Buff +15% EXP`, prices: { '7d': 400, '30d': 1200, permanent: 4000 } },
+  { role_id: '1573186091094245416', name: '« Tài Vận Hanh Thông »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_linhthach')} Buff +20% Daily LT`, prices: { '7d': 450, '30d': 1400, permanent: 4500 } },
   { role_id: '1573186095120908329', name: '« Tiêu Dao Khách »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_sparkle')} Phát Trực Tiếp HD 1080p`, prices: { '7d': 160, '30d': 520, permanent: 1600 } },
   { role_id: '1573186099663343747', name: '« Trảm Phong Kiếm Khách »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_crossed_swords')} Gửi Tin Nhắn Giọng Nói TTS`, prices: { '7d': 150, '30d': 500, permanent: 1500 } },
   { role_id: '1573186103664574524', name: '« Thần Thông Thấu Thị »', rarity: 'Phàm Phẩm', rarity_key: 'common', perk: `${em('su_wiki_scroll')} Đọc Lịch Sử Kênh Lưu Trữ`, prices: { '7d': 180, '30d': 600, permanent: 1800 } },
@@ -432,7 +432,7 @@ export const MULTI_PERK_ROLES = [
   { role_id: '1573577805286080523', name: '« Thái Hư Chân Quân »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_pin_sigil')}${em('su_pin_sigil')} Quản Lý Nick, Ghim Tin, Thread Kín & +20% Daily LT`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577808867762186', name: '« Vạn Bảo Tài Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${uiEm('ui_coin_gold')}${em('su_sparkle')} +35% Daily LT, Giảm 10% Shop/Roll & Emoji/Sticker`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577811786993756', name: '« Bát Hoang Chiến Thần »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_el_hoa')}${em('su_crossed_swords')} +15% Chiến Lực Pet, +20% EXP, Ghim & Slowmode`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
-  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_sakura')} +25% EXP, +10% Chiến Lực, Stream HD & Sound/Emoji`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
+  { role_id: '1573577814437789797', name: '« Hồng Trần Tiên Lữ »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_sakura')} +25% EXP, +10% Chiến Lực Pet, Stream HD & Sound/Emoji/Sticker`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
   { role_id: '1573577816690401401', name: '« Tinh Hà Pháp Vương »', rarity: 'Tiên Phẩm', rarity_key: 'epic', perk: `${em('su_realm_star')}${em('su_shield_def')} Move/Mute/Deafen Voice, Ghim Tin & +25% EXP`, prices: { '7d': 1000, '30d': 3200, permanent: 10000 } },
 ];
 
@@ -440,11 +440,11 @@ export const MULTI_PERK_ROLES = [
  * 5 Role Tối Thượng Thần Thoại (0.5% — 5+ chức năng) trong Gacha Role
  */
 export const SUPREME_ROLES = [
-  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_shield_def')} Kháng Timeout, Full Voice/Chat, +70% EXP/LT & +25% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${uiEm('ui_crown_king')} Quản Trị Voice/Chat, +60% EXP/LT & +20% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_realm_star')} Bá Chủ Voice/Thread, +50% EXP/LT & +18% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sparkle')} Full Voice/Thread, Buff x2.5 Daily LT & Giảm 15% Shop`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
-  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sakura')} Huy Hiệu Độc Tôn, Buff +80% EXP & +15% Chiến Lực Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573185998857183253', name: '« Cửu Vĩ Tối Thượng Thần Hồ »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_shield_def')} Full Voice/Chat/Thread, +70% EXP & Daily LT, +25% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186003101941830', name: '« SuMi Đệ Nhất Khách Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${uiEm('ui_crown_king')} Full Voice/Chat/Thread, +60% EXP & Daily LT, +20% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186007262695644', name: '« Vạn Cổ Chí Tôn »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_realm_star')} Bá Chủ Voice/Thread, +50% EXP & Daily LT, +18% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186011478102096', name: '« Sáng Thế Thần Quân »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sparkle')} Full Voice/Thread, x2.5 Daily LT & -15% Shop`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
+  { role_id: '1573186015785521265', name: '« Cửu Vĩ Yêu Hậu »', rarity: 'Thần Thoại', rarity_key: 'mythic', perk: `${em('su_sakura')} Voice/Chat/Thread VIP, +80% EXP & +15% Pet`, prices: { '7d': 2500, '30d': 8000, permanent: 25000 } },
 ];
 
 /**
@@ -490,7 +490,7 @@ export const ROLE_DISCORD_PERMS_BY_ID = {
   '1573577814437789797': 'Stream Video HD, Soundboard & Âm Ngoại Server, Emoji & Sticker Ngoại Server',
   '1573577816690401401': 'Di Chuyển/Tắt Mic/Tắt Tai Nghe Voice (Move/Mute/Deafen), Ghim Tin Nhắn',
   // 5 Role Thần Thoại
-  '1573185998857183253': 'Full Voice (Move/Mute/Deafen/Ưu tiên/Stream HD/Soundboard & Âm ngoại), Full Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, TTS, Ảnh/Link, Emoji & Sticker ngoại, Đọc lịch sử) + Ưu tiên hộ thể',
+  '1573185998857183253': 'Full Voice (Move/Mute/Deafen/Ưu tiên/Stream HD/Soundboard & Âm ngoại), Full Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, TTS, Ảnh/Link, Emoji & Sticker ngoại, Đọc lịch sử)',
   '1573186003101941830': 'Full Voice (Move/Mute/Deafen/Ưu tiên/Stream HD/Soundboard & Âm ngoại), Full Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, TTS, Ảnh/Link, Emoji & Sticker ngoại, Đọc lịch sử)',
   '1573186007262695644': 'Voice (Move/Mute/Deafen/Ưu tiên/Stream HD), Chat/Thread (Ghim, Miễn Slowmode, Quản lý/Tạo Thread công khai & kín, Quản lý biệt danh, Ảnh/Link, Emoji & Sticker ngoại)',
   '1573186011478102096': 'Voice (Move/Ưu tiên/Stream HD), Chat/Thread (Ghim, Miễn Slowmode, Tạo Thread công khai & kín, Quản lý biệt danh, Ảnh/Link, Emoji & Sticker ngoại)',
@@ -585,6 +585,22 @@ export function formatRoleBuffText(roleId) {
   if (cfg.shopDiscountPct) parts.push(`Giảm ${cfg.shopDiscountPct}% Giá Shop`);
   if (cfg.gachaDiscountPct) parts.push(`Giảm ${cfg.gachaDiscountPct}% Giá Roll`);
   return parts.length ? parts.join(' • ') : 'Không có Buff chỉ số';
+}
+
+export function formatRoleBuffDetailedText(roleId) {
+  const cfg = ROLE_BUFF_CONFIG[String(roleId || '')];
+  if (!cfg) return 'Không có Buff Tu Tiên (thuần Quyền Discord)';
+  const parts = [];
+  if (cfg.expPct) parts.push(`+${cfg.expPct}% EXP (Chat, Voice & /job)`);
+  if (cfg.dailyLtPct) {
+    const jobLtPct = Math.round(cfg.dailyLtPct * 0.25);
+    const multTag = cfg.dailyLtPct >= 100 ? `x${(1 + cfg.dailyLtPct / 100).toFixed(1).replace(/\.0$/, '')} ` : '';
+    parts.push(`${multTag}+${cfg.dailyLtPct}% Daily LT (+${cfg.dailyLtPct}% /daily & +${jobLtPct}% /job)`);
+  }
+  if (cfg.petPowerPct) parts.push(`+${cfg.petPowerPct}% Chiến Lực Pet (ATK/DEF/SPD)`);
+  if (cfg.shopDiscountPct) parts.push(`Giảm ${cfg.shopDiscountPct}% Giá Shop (cộng dồn tối đa 25%)`);
+  if (cfg.gachaDiscountPct) parts.push(`Giảm ${cfg.gachaDiscountPct}% Giá /roll (cộng dồn tối đa 20%)`);
+  return parts.length ? parts.join(' • ') : 'Không có Buff Tu Tiên (thuần Quyền Discord)';
 }
 
 /**
@@ -927,15 +943,18 @@ const FARM_SEED_PRICING = {
 
 export const FARM_SEEDS = V13_FARM_ASSETS
   .filter((a) => FARM_SEED_PRICING[a.uid])
-  .map((a) => ({
-    seed_id: a.uid,
-    name: a.name,
-    ...FARM_SEED_PRICING[a.uid],
-    care_window: a.care_window,
-    reward_summary: a.reward_summary,
-    icon: farmEmoji(a.uid, FARM_SEED_PRICING[a.uid].plot_type === 'linh_dien' ? `${em('su_sprout')}` : `${em('su_pet_paw')}`),
-    file: `farm/${a.uid}.png`,
-  }));
+  .map((a) => {
+    const pricing = FARM_SEED_PRICING[a.uid];
+    return {
+      seed_id: a.uid,
+      name: a.name,
+      ...pricing,
+      care_window: a.care_window,
+      reward_summary: `Giá ${pricing.cost_lt.toLocaleString('vi-VN')} LT → Thu ${pricing.reward_lt.toLocaleString('vi-VN')} LT + ${pricing.reward_essence} Linh Quả`,
+      icon: farmEmoji(a.uid, pricing.plot_type === 'linh_dien' ? `${em('su_sprout')}` : `${em('su_pet_paw')}`),
+      file: `farm/${a.uid}.png`,
+    };
+  });
 
 export const FARM_SEED_BY_ID = Object.fromEntries(FARM_SEEDS.map((s) => [s.seed_id, s]));
 
@@ -943,7 +962,7 @@ export const EXCHANGE_ITEMS = [
   { exchange_id: 'exchange_lt_500', name: 'Túi 500 Linh Thạch', cost_essence: 120, reward_kind: 'linh_thach', reward_amount: 500, icon: em('su_linhthach'), description: 'Quy đổi 120 Linh Quả Tiên Giới lấy ngay 500 Linh Thạch.' },
   { exchange_id: 'enchant_stone', name: 'Đá Khắc Ấn', cost_essence: 35, reward_kind: 'inventory', item_id: 'enchant_stone', reward_amount: 1, max_stack: 99, icon: em('enchant_stone'), description: 'Cường hóa Khắc Ấn D→S cho Linh Thú & Pháp Bảo (túi tối đa 99).' },
   { exchange_id: 'pet_star_stone', name: 'Tinh Thạch Nâng Sao', cost_essence: 45, reward_kind: 'inventory', item_id: 'pet_star_stone', reward_amount: 1, icon: em('pet_star_stone'), description: 'Nguyên liệu đột phá cấp Sao cho Linh Thú.' },
-  { exchange_id: 'tower_reset_card', name: 'Thẻ Tẩy Tủy Tháp Thí Luyện', cost_essence: 90, reward_kind: 'inventory', item_id: 'tower_reset_card', reward_amount: 1, max_stack: 10, icon: em('tower_reset_card'), description: 'Hồi đầy 5/5 lượt khiêu chiến Tháp trong ngày (túi tối đa 10).' },
+  { exchange_id: 'tower_reset_card', name: 'Thẻ Tẩy Tủy Tháp Thí Luyện', cost_essence: 90, reward_kind: 'inventory', item_id: 'tower_reset_card', reward_amount: 1, max_stack: 15, icon: em('tower_reset_card'), description: 'Hồi đầy 5/5 lượt khiêu chiến Tháp trong ngày (túi tối đa 15).' },
   { exchange_id: 'gacha_ticket_equip', name: 'Vé Triệu Hồi Pháp Bảo', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_equip', reward_amount: 1, icon: em('gacha_ticket_equip'), description: 'Dùng miễn phí 1 lượt /roll loai:equipment.' },
   { exchange_id: 'gacha_ticket_pet', name: 'Vé Triệu Hồi Linh Thú', cost_essence: 50, reward_kind: 'inventory', item_id: 'gacha_ticket_pet', reward_amount: 1, icon: em('gacha_ticket_pet'), description: 'Dùng miễn phí 1 lượt /roll loai:pet.' },
   { exchange_id: 'gacha_ticket_domain', name: 'Vé Khai Mở Linh Vực', cost_essence: 65, reward_kind: 'inventory', item_id: 'gacha_ticket_domain', reward_amount: 1, icon: em('su_gacha_dice'), description: 'Dùng miễn phí 1 lượt /roll loai:domain.' },

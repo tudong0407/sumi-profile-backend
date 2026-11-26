@@ -28,6 +28,8 @@ import {
 import { ensureUserInitialized } from './profileService.js';
 import { normalizeEmojiAwareQuery, paginateFormattedLines, invalidateInventoryCache } from './inventoryService.js';
 import { syncActiveLoadoutFromCurrentGear } from './loadoutService.js';
+import { computeEffectiveDomainEnergy } from './battleEngine/domainEngine.js';
+import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
 import { trackQuestActivity } from './questService.js';
 
 export const DOMAIN_DISMANTLE_VALUES = {
@@ -119,11 +121,20 @@ export async function getDomainInventory(userId, options = {}) {
   });
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ tu sĩ.' };
 
-  const { data: rows, error } = await supabase
-    .from('user_domains')
-    .select('*')
-    .eq('user_id', cleanId);
+  const [{ data: rows, error }, { data: eqRows }] = await Promise.all([
+    supabase
+      .from('user_domains')
+      .select('*')
+      .eq('user_id', cleanId),
+    supabase
+      .from('v_user_equipped_items')
+      .select('item_id, item_type, rarity')
+      .eq('user_id', cleanId),
+  ]);
   if (error) throw new Error(`Failed loading domains: ${error.message}`);
+
+  const equippedGear = eqRows || [];
+  const setBonus = evaluateSetBonus(equippedGear);
 
   const list = (rows || []).map((row) => {
     const meta = getDomainEntityMeta(row.entity_kind, row.entity_id);
@@ -142,10 +153,20 @@ export async function getDomainInventory(userId, options = {}) {
   const eqSense = list.find((x) => x.entity_kind === 'sense' && x.is_equipped) || null;
   const eqRealm = list.find((x) => x.entity_kind === 'realm' && x.is_equipped) || null;
 
-  const isInf = Boolean(eqDomain && (eqDomain.is_exclusive_fuyumi || eqDomain.base_energy >= 999));
-  const totalLinhMach = eqDomain
-    ? (isInf ? '∞ (Bất Hoại)' : `${Number(eqDomain.base_energy || 3) + Number(eqSense?.bonus_energy || 0)} Linh Mạch`)
-    : 'Chưa khai mở';
+  const energyInfo = computeEffectiveDomainEnergy({
+    domain: eqDomain,
+    sense: eqSense,
+    equipment: equippedGear,
+    setBonus,
+  });
+  let totalLinhMach = energyInfo.label;
+  if (energyInfo.hasDomain && !energyInfo.isInfinite && (energyInfo.extraFromEquip > 0 || energyInfo.extraFromSet > 0)) {
+    const parts = [`Gốc ${energyInfo.baseEnergy}`];
+    if (energyInfo.senseBonus > 0) parts.push(`Thức +${energyInfo.senseBonus}`);
+    if (energyInfo.extraFromEquip > 0) parts.push(`Pháp Bảo +${energyInfo.extraFromEquip}`);
+    if (energyInfo.extraFromSet > 0) parts.push(`Bộ +${energyInfo.extraFromSet}`);
+    totalLinhMach = `${energyInfo.totalEnergy} Linh Mạch (${parts.join(' + ')})`;
+  }
 
   const domains = list.filter((x) => x.entity_kind === 'domain');
   const senses = list.filter((x) => x.entity_kind === 'sense');
@@ -154,11 +175,22 @@ export async function getDomainInventory(userId, options = {}) {
   const formatDomainItemLine = (item) => {
     const eqTag = item.is_equipped ? ' **[Đang Dùng]**' : '';
     const qtyTag = toSupCount(item.quantity);
-    const statNote = item.entity_kind === 'domain'
-      ? `${domainElementEmoji(item.element)} ${item.element} • ${item.base_energy >= 999 ? '∞' : item.base_energy} LM`
-      : item.entity_kind === 'sense'
-        ? `+${item.bonus_energy >= 999 ? '∞' : item.bonus_energy} LM`
-        : `+${Math.round((item.debuff_boost_pct || 0) * 100)}% Debuff`;
+    let statNote = '';
+    if (item.entity_kind === 'domain') {
+      const lm = item.base_energy >= 999 ? '∞' : item.base_energy;
+      const extras = [];
+      if (item.enemy_active_debuff_pierce > 0) extras.push(`Xuyên Vực ${Math.round(item.enemy_active_debuff_pierce * 100)}%`);
+      if (item.enemy_buff_suppression > 0) extras.push(`Áp Chế ${Math.round(item.enemy_buff_suppression * 100)}%`);
+      if (item.dao_ap) extras.push('Có Đạo Áp');
+      statNote = `${domainElementEmoji(item.element)} ${item.element} • ${lm} LM${extras.length ? ` • ${extras.join(' • ')}` : ''}`;
+    } else if (item.entity_kind === 'sense') {
+      const lm = item.bonus_energy >= 999 ? '∞' : item.bonus_energy;
+      const parts = [`+${lm} LM`, `+${Math.round((item.buff_boost_pct || 0) * 100)}% Buff Vực`];
+      if (item.clash_resist_chance > 0) parts.push(`${Math.round(item.clash_resist_chance * 100)}% Kháng Mạch`);
+      statNote = parts.join(' • ');
+    } else {
+      statNote = item.desc || `+${Math.round((item.debuff_boost_pct || 0) * 100)}% Debuff`;
+    }
     return `• ${item.icon} **${item.name}**${qtyTag} (\`${item.entity_id}\`) • ${item.tier_icon} ${item.rarity} — *${statNote}*${eqTag}`;
   };
 
@@ -218,11 +250,15 @@ export async function getDomainInventory(userId, options = {}) {
   const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
   const nextPage = paged.page < paged.totalPages ? paged.page + 1 : 1;
 
+  const eqSenseSummary = eqSense
+    ? `${eqSense.icon} **${eqSense.name}** (+${eqSense.bonus_energy >= 999 ? '∞' : eqSense.bonus_energy} LM • +${Math.round((eqSense.buff_boost_pct || 0) * 100)}% Buff Vực${eqSense.clash_resist_chance > 0 ? ` • ${Math.round(eqSense.clash_resist_chance * 100)}% Kháng Mạch` : ''})`
+    : '*Trống*';
+
   const sections = [
     `${em('su_realm_star')} **BỘ LINH VỰC ĐANG TRANG BỊ (HIỆP 2)**`,
-    `• **Linh Vực:** ${eqDomain ? eqDomain.icon : '*Trống*'}`,
-    `\u00A0\u00A0↳ **Thần Thức:** ${eqSense ? eqSense.icon : '*Trống*'}`,
-    `\u00A0\u00A0↳ **Thần Cảnh:** ${eqRealm ? eqRealm.icon : '*Trống*'}`,
+    `• **Linh Vực:** ${eqDomain ? `${eqDomain.icon} **${eqDomain.name}** (${domainElementEmoji(eqDomain.element)} ${eqDomain.element} • ${eqDomain.buff_desc})` : '*Trống*'}`,
+    `\u00A0\u00A0↳ **Thần Thức:** ${eqSenseSummary}`,
+    `\u00A0\u00A0↳ **Thần Cảnh:** ${eqRealm ? `${eqRealm.icon} **${eqRealm.name}** (${eqRealm.desc})` : '*Trống*'}`,
     `• **Tổng Linh Mạch:** \`${totalLinhMach}\`${paged.totalPages > 1 ? ` • **Trang:** \`${paged.page}/${paged.totalPages}\`` : ''} • **Tương Khắc:** ${domainCycleDisplay} → **Kiếm Vực**`,
     '',
     ...bodySections,

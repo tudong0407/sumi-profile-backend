@@ -14,14 +14,15 @@ import { V14_DAO_AP_CONFIG } from '../../data/v14ExpansionCatalog.js';
 import { em, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
 import { cleanseCombatantDebuffs } from './haxEngine.js';
 
-function getEquipDomainBonuses(combatant) {
+function getEquipDomainBonuses(combatantOrEquip) {
   let extraEnergy = 0;
   let buffBonusPct = 0;
   let debuffBonusPct = 0;
   let drainResistChance = 0;
 
-  const eq = combatant?.equipment || {};
-  for (const piece of [eq.weapon, eq.gem, eq.soul]) {
+  const eq = combatantOrEquip?.equipment || combatantOrEquip || {};
+  const pieces = Array.isArray(eq) ? eq : [eq.weapon, eq.gem, eq.soul];
+  for (const piece of pieces) {
     if (!piece) continue;
     const id = String(piece.item_id || '').toLowerCase();
     if (id === 'gem_mythic_22') extraEnergy += 1;
@@ -43,6 +44,53 @@ function getEquipDomainBonuses(combatant) {
     }
   }
   return { extraEnergy, buffBonusPct, debuffBonusPct, drainResistChance: Math.min(0.95, drainResistChance) };
+}
+
+export function computeEffectiveDomainEnergy({ domain, sense = null, equipment = null, setBonus = null } = {}) {
+  if (!domain) {
+    return {
+      hasDomain: false,
+      isInfinite: false,
+      baseEnergy: 0,
+      senseBonus: 0,
+      extraFromEquip: 0,
+      extraFromSet: 0,
+      totalEnergy: 0,
+      eqBonuses: { extraEnergy: 0, buffBonusPct: 0, debuffBonusPct: 0, drainResistChance: 0 },
+      label: 'Chưa khai mở',
+    };
+  }
+  const eqBonuses = getEquipDomainBonuses(equipment);
+  const isInfinite = Boolean(domain.is_exclusive_fuyumi) || Number(domain.base_energy) >= 999 || Number(sense?.bonus_energy) >= 999;
+  if (isInfinite) {
+    return {
+      hasDomain: true,
+      isInfinite: true,
+      baseEnergy: 999,
+      senseBonus: 0,
+      extraFromEquip: 0,
+      extraFromSet: 0,
+      totalEnergy: 999,
+      eqBonuses,
+      label: '∞ (Bất Hoại)',
+    };
+  }
+  const baseEnergy = Number(domain.base_energy || 3);
+  const senseBonus = Number(sense?.bonus_energy || 0);
+  const extraFromEquip = Number(eqBonuses.extraEnergy || 0);
+  const extraFromSet = Number(setBonus?.bonusStartingLinhMach || 0);
+  const totalEnergy = baseEnergy + senseBonus + extraFromEquip + extraFromSet;
+  return {
+    hasDomain: true,
+    isInfinite: false,
+    baseEnergy,
+    senseBonus,
+    extraFromEquip,
+    extraFromSet,
+    totalEnergy,
+    eqBonuses,
+    label: `${totalEnergy} Linh Mạch`,
+  };
 }
 
 function getDaoApConfigForDomain(domain) {
@@ -76,11 +124,12 @@ export function createDomainCombatSide(combatant) {
     };
   }
 
-  const indestructible = Boolean(domain.is_exclusive_fuyumi) || Number(domain.base_energy) >= 999;
-  const baseEnergy = indestructible ? 999 : Number(domain.base_energy || 3);
-  const senseBonus = indestructible ? 0 : Number(sense?.bonus_energy || 0);
-  const setEnergyBonus = indestructible ? 0 : Number(combatant?.setBonus?.bonusStartingLinhMach || 0);
-  const maxEnergy = indestructible ? 999 : (baseEnergy + senseBonus + eqBonuses.extraEnergy + setEnergyBonus);
+  const energyCalc = computeEffectiveDomainEnergy({
+    domain,
+    sense,
+    equipment: combatant?.equipment,
+    setBonus: combatant?.setBonus,
+  });
 
   return {
     hasDomain: true,
@@ -88,10 +137,10 @@ export function createDomainCombatSide(combatant) {
     sense,
     realm,
     activated: false,
-    indestructible,
-    maxEnergy,
-    energy: maxEnergy,
-    eqBonuses,
+    indestructible: energyCalc.isInfinite,
+    maxEnergy: energyCalc.totalEnergy,
+    energy: energyCalc.totalEnergy,
+    eqBonuses: energyCalc.eqBonuses,
     appliedMaxHpCutPct: 0,
     originalMaxHp: Number(combatant?.maxHp || 0),
     daoApArmed: false,

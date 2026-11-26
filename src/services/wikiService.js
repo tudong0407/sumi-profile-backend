@@ -89,7 +89,7 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.6.1 • 10 Chuyên Mục • 165 Pháp Bảo • 90 Linh Thú • 60 Linh Vực • Từ Điển Thuật Ngữ',
+  subtitle: 'Cẩm nang v1.6.1 • 10 Chuyên Mục • 165 Pháp Bảo • 91 Linh Thú • 63 Thực Thể Linh Vực • 40 Nguyên Thạch • Luyện Đan',
   version: '1.6.1',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
@@ -99,7 +99,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-24T00:00:00.000Z',
+  updated_at: '2026-11-26T00:00:00.000Z',
   total_categories: 10,
 };
 
@@ -108,7 +108,7 @@ export const WIKI_CATEGORIES = {
     id: 'overview',
     title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
     icon: em('su_wiki_scroll'),
-    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.5).',
+    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.6.1).',
     image_url: '',
     sections: [
       {
@@ -116,7 +116,7 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.6)',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.6.1)',
         content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
@@ -127,7 +127,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.6)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.6.1)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
           '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
@@ -143,7 +143,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Hệ thống Tu Tiên SuMi Family v1.5: Buff SET 2 tầng, Pity 350, 20 Viền Avatar, Top Chat/Voice ngày, Tháp 500 tầng, Nông Trại, Khám Phá 12 địa danh & tiện ích Server.',
+    content: 'Hệ thống Tu Tiên SuMi Family v1.6.1: Buff SET 2 tầng, Pity 350, 40 Nguyên Thạch Đổ Thạch, Lò Luyện Đan, Tháp 500 tầng, Nông Trại 8 ô, Khám Phá 12 địa danh & tiện ích Server.',
   },
 
   realms: {
@@ -159,7 +159,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Nguồn EXP & Mốc Level Role',
-        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 78 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.10 (+5%), Lv.20 (+8% EXP/+5% LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Trảm Quyết Tối Thượng (+50%/+50%/+20%).\n• Buff Viền Avatar & Ảnh Nền (/shop): Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10% EXP & LT mỗi món (cộng dồn tới +20% EXP & +20% LT).',
+        content: '• Chat: 23–35 EXP/tin (45s) • Voice: 85–135 EXP/5p (chấm công 12p) • Công thức: 78 × Level^1.45 (max 500.000 EXP). Dùng /exp xem chi tiết Boost.\n• Mốc Level: Lv.5 (+3% EXP), Lv.10 (+5%), Lv.20 (+8% EXP/+5% Daily LT), Lv.35 (+12%/+10%), Lv.45 (+15%/+10%/+5% Pet), Lv.60 (+20%/+15%/+8%), Lv.80 (+30%/+25%/+12%), Lv.100 Hỗn Độn Chúa Tể (+50% EXP/+50% Daily LT/+20% Pet).\n• Lưu ý: EXP từ Role/Cảnh Giới áp dụng cho Chat, Voice & /job; Daily LT áp dụng 100% cho /daily & 25% hiệu lực cho /job. Viền & Ảnh Nền (/shop) áp dụng cho /daily, /job, /explorer & Tháp.',
       },
     ],
     fields: [
@@ -170,16 +170,16 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${em('su_level_up')} Nguồn EXP & Công Thức`,
-        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `78 × Level^1.45` *(trần `500.000 EXP`)* • **Viền & Ảnh Nền (`/shop`):** `Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10%` EXP & LT mỗi món *(max +20%)* • Tra tổng boost bằng `/exp`.',
+        value: '• **Chat:** `23–35 EXP` / tin *(cooldown 45s)* • **Voice:** `85–135 EXP` / 5p *(chấm công 12p)*.\n• **Cần lên cấp:** `78 × Level^1.45` *(trần `500.000 EXP`)* • **Viền & Ảnh Nền (`/shop`):** `Phàm +2% • Linh +4% • Tiên +7% • Thần Thoại +10%` EXP & LT mỗi món *(max +20%, áp dụng cho /daily, /job, /explorer & Tháp)* • Tra tổng boost bằng `/exp`.',
         inline: false,
       },
       {
         name: `${em('su_medal_role')} Mốc Level Role & Quyền Cơ Bản Discord`,
         value: [
           `• ${levelMilestoneEmoji(5)} \`Lv.5\` (+3% EXP): Gửi ảnh/tệp • ${levelMilestoneEmoji(10)} \`Lv.10\` (+5% EXP): Phát trực tiếp (Stream)`,
-          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% LT): Emoji Nitro liên server & Lập Gia Tộc • ${levelMilestoneEmoji(35)} \`Lv.35\` (+12%/+10%): Nhúng liên kết`,
-          `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15%/+10%/+5% Pet): Sticker liên server • ${levelMilestoneEmoji(60)} \`Lv.60\` (+20%/+15%/+8%): Voice Message`,
-          `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30%/+25%/+12%): Soundboard • ${levelMilestoneEmoji(100)} \`Lv.100\` **Trảm Quyết Tối Thượng** (+50%/+50%/+20%): Âm thanh liên server`,
+          `• ${levelMilestoneEmoji(20)} \`Lv.20\` (+8% EXP, +5% Daily LT): Emoji Nitro liên server & Lập Gia Tộc • ${levelMilestoneEmoji(35)} \`Lv.35\` (+12% EXP, +10% Daily LT): Nhúng liên kết`,
+          `• ${levelMilestoneEmoji(45)} \`Lv.45\` (+15% EXP, +10% Daily LT, +5% Pet): Sticker liên server • ${levelMilestoneEmoji(60)} \`Lv.60\` (+20% EXP, +15% Daily LT, +8% Pet): Voice Message`,
+          `• ${levelMilestoneEmoji(80)} \`Lv.80\` (+30% EXP, +25% Daily LT, +12% Pet): Soundboard • ${levelMilestoneEmoji(100)} \`Lv.100\` **Hỗn Độn Chúa Tể** (+50% EXP, +50% Daily LT, +20% Pet): Âm thanh liên server`,
           `• *Đặc quyền nâng cao (Đổi nick, Thread, Ghim, Priority, Poll, Slowmode...) đến từ các Role Quyền Năng trong \`/roll loai:role\`!*`,
         ].join('\n'),
         inline: false,
@@ -222,7 +222,7 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_crossed_swords')} Luật /battle, Web Logs & /linhmach`,
         value: [
-          '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `5s`.',
+          '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `15s`.',
           '• **Sát Thương Trừ Thẳng Máu (Bỏ Qua Khiên):** **Phản Đòn** *(reflect)*, **Nổ Hộ Thuẫn** *(vỡ khiên)*, **Độc / Thiêu Đốt (DoT)**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** đều trừ **thẳng HP, bỏ qua Khiên**. Riêng **Phản Công khi né đòn** vẫn đánh vào Khiên trước.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
           `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** (**F→S+: \`8k → 135k\` Lực**, \`6–56 LT/phút\` +15% Kho Clan); Boss Hạng **A / S / S+** tung **Dư Chấn AoE 35%** quét cả hậu phương (nên đi Tổ Đội 3 người); thắng cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`, giảm \`-10%/giờ\`).`,
@@ -353,9 +353,9 @@ export const WIKI_CATEGORIES = {
       {
         name: `${tierEmoji('mythic')} 5 Role Thần Thoại (0.5% /roll — Full Quyền + Siêu Buff)`,
         value: [
-          '• **Cửu Vĩ Tối Thượng Thần Hồ:** Full Voice/Chat/Thread/Nick/TTS/Sound + Ưu tiên hộ thể (`+70% EXP/LT, +25% Pet`)',
-          '• **SuMi Đệ Nhất Khách Tôn:** Full Voice (Move/Mute/Deafen/Ưu tiên/HD/Sound), Full Chat/Thread/Nick/TTS (`+60% EXP/LT, +20% Pet`)',
-          '• **Vạn Cổ Chí Tôn:** Voice (Move/Mute/Deafen/Ưu tiên/HD), Chat/Thread/Nick/Emoji+Sticker ngoại (`+50% EXP/LT, +18% Pet`)',
+          '• **Cửu Vĩ Tối Thượng Thần Hồ:** Full Voice/Chat/Thread/Nick/TTS/Sound (`+70% EXP & Daily LT, +25% Pet`)',
+          '• **SuMi Đệ Nhất Khách Tôn:** Full Voice (Move/Mute/Deafen/Ưu tiên/HD/Sound), Full Chat/Thread/Nick/TTS (`+60% EXP & Daily LT, +20% Pet`)',
+          '• **Vạn Cổ Chí Tôn:** Voice (Move/Mute/Deafen/Ưu tiên/HD), Chat/Thread/Nick/Emoji+Sticker ngoại (`+50% EXP & Daily LT, +18% Pet`)',
           '• **Sáng Thế Thần Quân:** Voice (Move/Ưu tiên/HD), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`x2.5 Daily LT, -15% Shop`)',
           '• **Cửu Vĩ Yêu Hậu:** Voice (Move/Mute/HD/Sound ngoại), Ghim/Slowmode/Thread/Nick/Emoji+Sticker (`+80% EXP, +15% Pet`)',
         ].join('\n'),
@@ -364,8 +364,8 @@ export const WIKI_CATEGORIES = {
       {
         name: `${tierEmoji('epic')} 6 Role Tiên Phẩm (14% /roll — 3–4 Chức Năng)`,
         value: [
-          '• **Cửu Tiêu Phong Vương:** Move/Mute Voice, Miễn Slowmode (`+20% EXP`) • **Thái Hư Chân Quân:** Quản lý Nick, Ghim, Thread Kín (`+20% LT`)',
-          '• **Vạn Bảo Tài Thần:** Nhúng Link/Ảnh, Emoji & Sticker Ngoại (`+35% LT, -10% Shop/Roll`) • **Bát Hoang Chiến Thần:** Stream HD, Ghim, Miễn Slowmode (`+20% EXP, +15% Pet`)',
+          '• **Cửu Tiêu Phong Vương:** Move/Mute Voice, Miễn Slowmode (`+20% EXP`) • **Thái Hư Chân Quân:** Quản lý Nick, Ghim, Thread Kín (`+20% Daily LT`)',
+          '• **Vạn Bảo Tài Thần:** Nhúng Link/Ảnh, Emoji & Sticker Ngoại (`+35% Daily LT, -10% Shop/Roll`) • **Bát Hoang Chiến Thần:** Stream HD, Ghim, Miễn Slowmode (`+20% EXP, +15% Pet`)',
           '• **Hồng Trần Tiên Lữ:** Stream HD, Sound/Emoji/Sticker Ngoại (`+25% EXP, +10% Pet`) • **Tinh Hà Pháp Vương:** Move/Mute/Deafen Voice, Ghim (`+25% EXP`)',
         ].join('\n'),
         inline: false,
@@ -374,8 +374,8 @@ export const WIKI_CATEGORIES = {
         name: `${tierEmoji('rare')} 8 Role Linh Phẩm (25% /roll — 2–3 Chức Năng)`,
         value: [
           '• **Song Tuyệt Kiếm Khách:** Ghim Tin, Miễn Slowmode • **Huyễn Ảnh Linh Tôn:** Đổi Nick, Emoji/Sticker Ngoại (`+10% EXP`)',
-          '• **Lôi Vũ Hộ Pháp:** Move & Ưu Tiên Voice • **Hàn Ngọc Tiên Tử:** Stream HD, Sound/Âm Ngoại (`+10% LT`)',
-          '• **Mật Các Trưởng Lão:** Thread Mở/Kín, Đọc Kênh Ẩn (`+12% EXP`) • **Kim Tiền Đạo Nhân:** Biểu Cảm & Emoji Ngoại (`+25% LT, -5% Shop`)',
+          '• **Lôi Vũ Hộ Pháp:** Move & Ưu Tiên Voice • **Hàn Ngọc Tiên Tử:** Stream HD, Sound/Âm Ngoại (`+10% Daily LT`)',
+          '• **Mật Các Trưởng Lão:** Thread Mở/Kín, Đọc Kênh Ẩn (`+12% EXP`) • **Kim Tiền Đạo Nhân:** Biểu Cảm & Emoji Ngoại (`+25% Daily LT, -5% Shop`)',
           '• **Chiến Hồn Tiên Phong:** Link/Ảnh, Miễn Slowmode (`+8% Pet`) • **Thiên Âm Nhạc Sư:** Ưu Tiên Voice, Sound/Âm Ngoại (`+12% EXP`)',
         ].join('\n'),
         inline: false,
@@ -390,8 +390,8 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Quy Tắc Slot, Level Roles & Tra Cứu`,
-        value: '• Mở **1→5 Slot** theo Cảnh Giới (`/roles`, `/equip`, `/unequip`). Gacha Role: `40% 7d • 30% 30d • 18% 60d • 10% 90d • 2% Vĩnh Viễn`. Giảm giá cộng dồn tối đa `-25% Shop / -20% Roll`. **8 Level Roles** tự mở theo cấp (xem mục Cảnh Giới) & tra từng Role bằng **`/info <tên role>`**.',
+        name: `${em('su_pin_sigil')} Quy Tắc Slot, Phạm Vi Buff & Tra Cứu`,
+        value: '• Mở **1→5 Slot** theo Cảnh Giới (`/roles` xem full Quyền Discord + Buff, `/equip`, `/unequip`). Gacha Role: `40% 7d • 30% 30d • 18% 60d • 10% 90d • 2% Vĩnh Viễn`. Giảm giá cộng dồn tối đa `-25% Shop / -20% Roll`.\n• **Phạm vi Buff:** `EXP` *(Chat, Voice & /job)* • `Daily LT` *(+100% /daily & +25% hiệu lực /job)* • **8 Level Roles** tự mở theo cấp (tra từng Role bằng `/info <tên role>`).',
         inline: false,
       },
     ],
@@ -407,7 +407,7 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Kiếm LT, Gacha, Đổ Thạch & Cửa Hàng',
-        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +35–75 LT) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /dothach (Phường Đổ Thạch — tách biệt với /roll, không Pity 350): 4 phân khúc sạp đá thô (20 loài Nguyên Thạch) kèm manh mối mơ hồ, cắt đá săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Tối Thượng Cực Phẩm (chọn Thần Thoại không Độc Nhất).\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận (Đại Hung → Đại Cát) cộng/trừ nhẹ % EXP, % LT & % Luck (hỗ trợ Cầu An Giải Hạn 250 LT khi gặp Hung/Đại Hung).\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Mở bán thêm 3 Lọ Luck Potion (+20%/+40%/+60% Luck theo lượt cho cả /roll & /dothach, cộng dồn với /gieoque; uống qua /equip).',
+        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +42–90 LT + 22–38 EXP) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /dothach (Phường Đổ Thạch — tách biệt với /roll, không Pity 350): 4 phân khúc sạp đá thô (40 loài Nguyên Thạch) kèm 300 manh mối, cắt đá săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Tối Thượng Cực Phẩm (chọn Thần Thoại không Độc Nhất).\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận (Đại Hung → Đại Cát) cộng/trừ nhẹ % EXP, % LT & % Luck (hỗ trợ Cầu An Giải Hạn 250 LT khi gặp Hung/Đại Hung).\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Mở bán thêm 3 Lọ Luck Potion (+20%/+40%/+60% Luck theo lượt cho cả /roll & /dothach, cộng dồn với /gieoque; uống qua /equip).',
       },
       {
         heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại, Lò Luyện Đan & Cộng Đồng',
@@ -418,8 +418,8 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_linhthach')} Linh Thạch, /job, Gacha, Đổ Thạch & Gieo Quẻ`,
         value: [
-          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.6 nhận **+1.000 LT**.',
-          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • **`/dothach`** *(20 Nguyên Thạch, không Pity, săn Tối Thượng)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
+          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày, +42–90 LT + 22–38 EXP)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.6.1 nhận **+1.500 LT**.',
+          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • **`/dothach`** *(40 Nguyên Thạch, 300 manh mối, không Pity, săn Tối Thượng)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
           '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) & **3 Lọ Luck Potion** *(Tiểu Vận `+20%` • Thiên Cơ `+40%` • Hồng Mông `+60%` cho `/roll` & `/dothach`)*.',
         ].join('\n'),
         inline: false,
@@ -440,12 +440,12 @@ export const WIKI_CATEGORIES = {
           '• **`/luyendan` (Lò Luyện Đan):** Tối đa `6 mẻ/ngày` trên `2 Lò` song song *(Lò #2 mở tại Lv.45 hoặc 2.500 LT)*, nâng Lò `Lv.1–5` & kết hợp `28–56 Linh Quả` săn `Thượng Phẩm (×1.25)` / `Đan Vân (×1.50)` kèm DM nhắc chín & trước nổ 10p.',
           '• **`/inv` (3 Loadout Tự Lưu):** Chuyển nhanh `Bộ 1 / Bộ 2 / Bộ 3` (Linh Thú + Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh); mọi `/equip`, `/pet`, `/linhvuc` tự lưu vào bộ đang chọn.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
-          `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP/LT, Clan Wars 24H).`,
+          `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP & Daily LT, Clan Wars 24H).`,
         ].join('\n'),
         inline: false,
       },
     ],
-    content: 'Kinh tế v1.5: +2.000 LT /updates, Tháp 500 tầng (+15% LT), Top Chat/Voice ngày, Pity 350, /shop tự Equip 0 LT, /farm & Minigame.',
+    content: 'Kinh tế v1.6.1: +1.500 LT /updates, Tháp 500 tầng (+15% LT), Top Chat/Voice ngày, Pity 350, 40 Nguyên Thạch Đổ Thạch, Lò Luyện Đan, /farm 8 ô & Minigame.',
   },
 
   explorer: {
@@ -567,7 +567,7 @@ export const WIKI_CATEGORIES = {
             value: [
               '• **`Xuyên Kháng Vực`** *(`56% / 60% / 100%`)*: Khi 2 Linh Vực đang giằng co, bình thường Debuff Vực bị chặn; chỉ số này cho phép **ép một phần (`56%/60%`) hoặc toàn bộ (`100%`) Debuff Vực xuyên thẳng vào địch**.',
               '• **`Áp Chế Buff Vực Địch`** *(`5% / 100%`)*: Trừ trực tiếp hiệu lực Buff Vực phe địch đang nhận.',
-              '• **`Đạo Áp` (`1–3 hiệp`):** Hiệu ứng đặc quyền khi Linh Vực Thần Thoại phá vỡ Vực địch (hoặc địch không có Vực), áp thêm `-DEF`, `Bào Mòn Khiên`, `Giảm Hồi Máu`, `Cắt Trần HP`.',
+              '• **`Đạo Áp` (`1–3 hiệp`):** Hiệu ứng đặc quyền của Linh Vực Thần Thoại/Tối Thượng, **chỉ kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Linh Vực đang hoạt động của đối thủ** *(không kích nếu địch không mang Vực)*, áp thêm `-DEF`, `Bào Mòn Khiên`, `Giảm Hồi Máu`, `Cắt Trần HP`.',
             ].join('\n'),
             inline: false,
           },
@@ -961,7 +961,7 @@ export async function getWikiDomainDetail(entityId) {
     lines.push(`${em('su_sparkle')} **Buff Phe Ta:** ${item.buff_desc}`);
     lines.push(`${em('su_crossed_swords')} **Debuff Phe Địch:** ${item.debuff_desc}`);
     if (item.dao_ap) {
-      lines.push(`${em('dao_ap_crest')} **Đạo Áp (${item.dao_ap.tier === 'unique' ? 'Cấp 2+' : 'Cấp 2'} — ${item.dao_ap.duration_turns} hiệp):** ${item.dao_ap.summary}`);
+      lines.push(`${em('dao_ap_crest')} **Đạo Áp (${item.is_unique ? 'Cấp 2+' : 'Cấp 2'} — ${item.dao_ap.durationTurns} hiệp):** Kích hoạt ở hiệp kế tiếp sau khi đánh vỡ Vực địch — ${item.dao_ap.label}`);
     }
   } else if (entityKind === 'sense') {
     const boostPct = Math.round((item.buff_boost_pct || 0) * 100);

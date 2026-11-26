@@ -15,4 +15,4 @@
    - Deferred On-Hit Effects: Pass `{ deferOnHitEffects: true }` to `triggerAttackPhase()` and apply only when `!damageRecv.nullified`.
 3. **Zero Hidden/Truncated Battle Logs:** Never use `[0]` on `healSources` or `startTags`; always record `absorbedByShield` in 1v1 logs (`*(khiên chặn X)*`).
 4. **Zero Unicode Windows Emojis:** Keep `src/services/**` and `src/data/**` free of Unicode pictographs; use `emojiHelper.js` tags only.
-5. **Mandatory Verification Gate:** Run `node --test tests/tier1-features/hax-full-integrity.test.js` (must pass with 0 failures) before any commit or Render deploy.
+5. **Mandatory Verification Gate:** Run `node --test tests/tier1-features/hax-full-integrity.test.js tests/tier1-features/catalog-sync-integrity.test.js` (must pass with 0 failures) before any commit or Render deploy.

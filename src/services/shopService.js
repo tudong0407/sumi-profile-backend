@@ -17,6 +17,8 @@ import {
   SHOP_CONSUMABLE_BY_ID,
   SHOP_ROLE_PACKAGES,
   SHOP_ROLE_BY_ID,
+  ROLE_BY_ID,
+  formatRoleBuffDetailedText,
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   AVATAR_FRAMES,
@@ -297,7 +299,7 @@ export async function getShopCatalog(category = 'all', options = {}) {
         `• **Vật Phẩm Tiêu Hao (${SHOP_CONSUMABLES.length} món)**: Vé Gacha, **3 Lọ Luck Potion**, Tinh Thạch Nâng Sao, Đá Khắc Ấn, Thẻ Reset Tháp, Thẻ Đổi Danh Hiệu.`,
         `• **Background Hồ Sơ (${paidBgs.length} mẫu)**: Đổi ảnh nền thẻ \`/profile\` & \`/rank\`.`,
         `• **Viền Avatar (${paidFrames.length} mẫu)**: Đổi khung viền trên \`/profile\`, \`/rank\`, \`/battle\` & \`/linhmach\`.`,
-        `• **Phường Đổ Thạch (20 Nguyên Thạch)**: Mua & cắt Đá Thô săn Linh Thạch / Tối Thượng tại \`/dothach\`.`,
+        `• **Phường Đổ Thạch (40 Nguyên Thạch)**: Mua & cắt Đá Thô săn Linh Thạch / Tối Thượng tại \`/dothach\`.`,
       ].filter((x) => x !== undefined).join('\n')
     : buildCategorySummary(cat, safePage, ownershipCtx);
 
@@ -486,10 +488,14 @@ export async function previewShopItem(userId, category, itemId, opts = {}) {
     ].join('\n');
   } else if (resolved.category === 'roles') {
     price = disc(it.prices['7d']);
+    const fullRoleMeta = ROLE_BY_ID[it.role_id] || it;
     title = `${roleTierEmoji(it.rarity_key)} ${it.name}`;
     color = '#a855f7';
     description = [
-      `${roleTierEmoji(it.rarity_key)} **${it.rarity}** • **Đặc quyền**: ${it.perk} ${ownedNote}`.trim(),
+      `${roleTierEmoji(it.rarity_key)} **${it.rarity}** ${ownedNote}`.trim(),
+      `• **Quyền Discord:** ${fullRoleMeta.discord_perms || 'Theo cấu hình Role server'}`,
+      `• **Buff Tu Tiên:** ${formatRoleBuffDetailedText(it.role_id)}`,
+      `• **Hiển thị Profile:** ${it.perk}`,
       `${lt} **Bảng giá gói Role**${discTag} *(Số dư: ${balance.toLocaleString('vi-VN')})*:`,
       `• **7 Ngày**: \`${disc(it.prices['7d']).toLocaleString('vi-VN')}\` Linh Thạch`,
       `• **30 Ngày**: \`${disc(it.prices['30d']).toLocaleString('vi-VN')}\` Linh Thạch`,

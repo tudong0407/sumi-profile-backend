@@ -22,6 +22,7 @@ import {
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
 } from '../data/catalog.js';
+import { computeEffectiveDomainEnergy } from '../services/battleEngine/domainEngine.js';
 
 const RENDER_SCALE = 2;
 
@@ -1152,7 +1153,13 @@ export async function renderProfileCard(data, options = {}) {
   });
 
   if (dl.domain) {
-    const lmTotal = dl.domain.base_energy >= 999 ? '∞' : (dl.domain.base_energy + (dl.sense?.bonus_energy || 0));
+    const energyCalc = computeEffectiveDomainEnergy({
+      domain: dl.domain,
+      sense: dl.sense,
+      equipment: pet?.equipment || {},
+      setBonus: pet?.set_bonus || null,
+    });
+    const lmTotal = energyCalc.isInfinite ? '∞' : energyCalc.totalEnergy;
     const domTag = `${dl.domain.element} • ${lmTotal} Mạch`;
     ctx.font = `bold 9px ${FONT_FAMILY}`;
     const dw = ctx.measureText(domTag).width + 12;

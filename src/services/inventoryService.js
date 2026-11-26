@@ -13,6 +13,7 @@ import {
   SHOP_ROLE_BY_ID,
   ROLE_BY_ID,
   LEVEL_ROLE_MILESTONES,
+  formatRoleBuffDetailedText,
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   SHOP_CONSUMABLES,
@@ -37,6 +38,7 @@ import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
 import { dismantleDomainEntity } from './domainService.js';
 import { trackQuestActivity } from './questService.js';
+import { computeRoleBuffTotalsFromList } from './profileService.js';
 
 const RARITY_RANK = { supreme: 5, mythic: 4, epic: 3, rare: 2, common: 1 };
 
@@ -838,14 +840,20 @@ export async function getUserRoles(userId, options = {}) {
       const remMs = r.is_permanent ? Infinity : (r.expires_at ? Math.max(0, new Date(r.expires_at).getTime() - now.getTime()) : 0);
       return {
         ...r,
+        role_name: roleMeta?.name || r.role_name,
         rarity_key: rarityKey,
         rarity: roleMeta?.rarity || 'Phàm Phẩm',
         perk: roleMeta?.perk || r.role_perk || '',
+        discord_perms: roleMeta?.discord_perms || 'Quyền hạn Role theo cấu hình server',
+        detailed_buff: formatRoleBuffDetailedText(r.role_id),
         icon: roleTierEmoji(rarityKey),
         duration_label: formatRoleDurationLabel(r, now),
         remaining_ms: remMs,
       };
     });
+
+  const equippedRoleIds = roles.filter((r) => r.is_equipped).map((r) => r.role_id);
+  const activeBuffs = computeRoleBuffTotalsFromList(equippedRoleIds, user.level || 1);
 
   const filterMode = String(options.filter || 'all').trim().toLowerCase();
   const sortMode = String(options.sort || 'equipped_desc').trim().toLowerCase();
@@ -873,9 +881,13 @@ export async function getUserRoles(userId, options = {}) {
     roles,
     (r) => {
       const slotTag = r.is_equipped ? ` • **Slot #${r.equipped_slot}/${maxSlots}**` : '';
-      return `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${r.rarity} • ${r.duration_label}${slotTag}${r.perk ? `\n  *${r.perk}*` : ''}`;
+      return [
+        `• ${r.icon} **${r.role_name}** (\`${r.role_id}\`) • ${r.rarity} • ${r.duration_label}${slotTag}`,
+        `\u00A0\u00A0↳ **Quyền Discord:** ${r.discord_perms}`,
+        `\u00A0\u00A0↳ **Buff Tu Tiên:** ${r.detailed_buff}`,
+      ].join('\n');
     },
-    { page: options.page || 1, pageSize: 15, maxChars: 3350 },
+    { page: options.page || 1, pageSize: 8, maxChars: 3350 },
   );
 
   const prevPage = paged.page > 1 ? paged.page - 1 : paged.totalPages;
@@ -886,6 +898,14 @@ export async function getUserRoles(userId, options = {}) {
     lines.push(`• *Trang ${paged.page}/${paged.totalPages} — Bấm nút **Trang Trước / Trang Sau** bên dưới hoặc gõ \`/roles trang:${nextPage}\` để xem tiếp!*`);
   }
   if (!lines.length) lines.push('• Chưa có Role Quyền Năng nào khớp bộ lọc. Mua tại `/shop` hoặc quay `/roll loai:role`!');
+
+  const activeBuffParts = [];
+  if (activeBuffs.expBonusPct) activeBuffParts.push(`+${activeBuffs.expBonusPct}% EXP (Chat/Voice/Job)`);
+  if (activeBuffs.dailyLtBonusPct) activeBuffParts.push(`+${activeBuffs.dailyLtBonusPct}% Daily LT (+${Math.round(activeBuffs.dailyLtBonusPct * 0.25)}% /job)`);
+  if (activeBuffs.petPowerBonusPct) activeBuffParts.push(`+${activeBuffs.petPowerBonusPct}% Chiến Lực Pet`);
+  if (activeBuffs.shopDiscountPct) activeBuffParts.push(`-${activeBuffs.shopDiscountPct}% Shop`);
+  if (activeBuffs.gachaDiscountPct) activeBuffParts.push(`-${activeBuffs.gachaDiscountPct}% /roll`);
+  const activeBuffSummary = activeBuffParts.length ? activeBuffParts.join(' • ') : 'Chưa kích hoạt buff số';
 
   return {
     success: true,
@@ -901,12 +921,13 @@ export async function getUserRoles(userId, options = {}) {
     total_pages: paged.totalPages,
     prev_page: prevPage,
     next_page: nextPage,
-    page_size: 15,
+    page_size: 8,
     total_count: roles.length,
     equipped_count: equippedCount,
     max_role_slots: maxSlots,
+    active_buffs: activeBuffs,
     roles,
-    filter_summary: `Slot đang đeo: **${equippedCount}/${maxSlots}** • Bộ lọc: **${filterMode}** • Tổng: **${roles.length} Role** • Trang **${paged.page}/${paged.totalPages}**`,
+    filter_summary: `Slot đang đeo: **${equippedCount}/${maxSlots}** • Bộ lọc: **${filterMode}** • Tổng: **${roles.length} Role** • Trang **${paged.page}/${paged.totalPages}**\n• **Tổng Buff Role (gồm Cảnh Giới):** ${activeBuffSummary}`,
     summary: lines.join('\n'),
   };
 }
