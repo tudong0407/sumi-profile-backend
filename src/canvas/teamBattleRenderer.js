@@ -14,6 +14,7 @@ import {
   FONT_FAMILY,
   sanitizeText,
   resolveAssetPath,
+  resolvePetSplashAsset,
   loadImageSafe,
   drawAntiAliasedAvatarWithBorder,
   preloadAvatarFrameOverlay,
@@ -153,9 +154,12 @@ function getNormalizedUnitDisplay(unit) {
 
 async function loadPetSprite(petType, isEvolved = false) {
   if (!petType) return null;
-  if (isEvolved) {
-    const evoImg = await safeLoadImage(`pets/${petType}_evo.webp`);
-    if (evoImg) return evoImg;
+  if (petType === 'cuu_vi_hong_ho' || isEvolved) {
+    const preferred = resolvePetSplashAsset(petType, isEvolved, '');
+    if (preferred) {
+      const img = await safeLoadImage(preferred);
+      if (img) return img;
+    }
   }
   const mappedPetFile = PET_IMAGE_MAP[petType];
   return (mappedPetFile ? await safeLoadImage(mappedPetFile) : null)

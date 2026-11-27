@@ -7,6 +7,8 @@ import {
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_EVOLUTION,
+  NHIEM_NHIEM_BOT_ID,
   resolveEntityDisplayRarityKey,
   normalizeEnchantGrade,
   getEnchantMultiplier,
@@ -64,14 +66,18 @@ function enrichEquipItem(rawItem, slot) {
 export async function compileCombatant(userOrId, role = 'attacker') {
   if (userOrId?.currentHp !== undefined && userOrId?.maxHp !== undefined && userOrId?.petName !== undefined) {
     const isEv = Boolean(userOrId.isEvolved || userOrId.pet?.is_evolved);
-    const evoMeta = isEv && userOrId.petType ? V17_PET_EVOLUTIONS[userOrId.petType] : null;
+    const isFuyumiFox = userOrId.petType === 'cuu_vi_hong_ho' || userOrId.pet?.pet_type === 'cuu_vi_hong_ho';
+    const evoMeta = isFuyumiFox
+      ? FUYUMI_SUPREME_EVOLUTION
+      : (isEv && userOrId.petType ? V17_PET_EVOLUTIONS[userOrId.petType] : null);
     const ultDef = userOrId.ultimateDef || evoMeta?.ultimate || null;
+    const ultActive = Boolean(ultDef && (isEv || isFuyumiFox || userOrId.ultimateActive));
     userOrId.isEvolved = isEv;
     userOrId.ultimateDef = ultDef;
     userOrId.state = {
-      ...createInitialCombatState(ultDef, isEv),
+      ...createInitialCombatState(ultDef, ultActive),
       ...(userOrId.state || {}),
-      ultimate: userOrId.state?.ultimate || createUltimateState(ultDef, isEv),
+      ultimate: userOrId.state?.ultimate || createUltimateState(ultDef, ultActive),
     };
     if (userOrId.baseAtk === undefined) userOrId.baseAtk = userOrId.atk;
     if (userOrId.baseDef === undefined) userOrId.baseDef = userOrId.def;
@@ -100,10 +106,18 @@ export async function compileCombatant(userOrId, role = 'attacker') {
 
   const petType = pet.type || pet.pet_type || 'hoa_thach_nham_nham';
   const catalogPet = PET_BY_TYPE[petType] || null;
+  const isFuyumiFox = petType === 'cuu_vi_hong_ho';
   const isEvolved = Boolean(pet.is_evolved || pet.isEvolved);
-  const evoEntry = isEvolved ? V17_PET_EVOLUTIONS[petType] || null : null;
+  const evoEntry = isEvolved
+    ? (isFuyumiFox ? FUYUMI_SUPREME_EVOLUTION : (V17_PET_EVOLUTIONS[petType] || null))
+    : null;
+  const effectiveUltDef = evoEntry?.ultimate
+    || (isFuyumiFox ? FUYUMI_SUPREME_EVOLUTION.ultimate : null)
+    || (id === NHIEM_NHIEM_BOT_ID ? V17_PET_EVOLUTIONS.thoi_khong_than_tinh_ho?.ultimate : null)
+    || null;
+  const ultActive = Boolean(effectiveUltDef && (isEvolved || isFuyumiFox || id === NHIEM_NHIEM_BOT_ID));
   const petName = isEvolved && evoEntry ? evoEntry.evolved_name : (pet.name || pet.pet_name || catalogPet?.pet_name || 'Hóa Thạch Nham Nham Thú');
-  const petRarity = isEvolved && evoEntry ? 'Tối Thượng Chân Thần' : (pet.rarity || pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm');
+  const petRarity = isEvolved && evoEntry && !isFuyumiFox ? 'Tối Thượng Chân Thần' : (pet.rarity || pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm');
   const petRarityKey = resolveEntityDisplayRarityKey(catalogPet || pet, isEvolved);
   const petIcon = pet.icon || petEmoji(petType, em('su_pet_paw'));
   const element = pet.element || catalogPet?.element || 'Thổ';
@@ -220,6 +234,14 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     finalMaxHp = Math.round(finalMaxHp * setMult);
   }
 
+  // Bảo vệ chống cày win lên Bot Nhiễm Nhiễm (/battle @Nhiễm Nhiễm): áp ngưỡng Hộ Pháp Thần Giới
+  if (id === NHIEM_NHIEM_BOT_ID) {
+    finalAtk = Math.max(finalAtk, 14500);
+    finalDef = Math.max(finalDef, 12500);
+    finalSpd = Math.max(finalSpd, 13000);
+    finalMaxHp = Math.max(finalMaxHp, 120000);
+  }
+
   const computedPower = finalAtk * 3 + finalDef * 2 + finalSpd * 2 + level * 50;
   const rawReportedPower = Number(
     pet.set_bonus_applied && pet.power_before_set_bonus !== undefined
@@ -246,7 +268,7 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     isEvolved,
     petRarity,
     petRarityKey,
-    ultimateDef: evoEntry?.ultimate || null,
+    ultimateDef: effectiveUltDef,
     petIcon,
     petHaxName,
     petHaxDesc,
@@ -291,7 +313,7 @@ export async function compileCombatant(userOrId, role = 'attacker') {
       gem: gem?.hax_skill || gem?.hax_description || null,
       soul: soul?.hax_skill || soul?.hax_description || null,
     },
-    state: createInitialCombatState(evoEntry?.ultimate || null, isEvolved),
+    state: createInitialCombatState(effectiveUltDef, ultActive),
   };
 }
 

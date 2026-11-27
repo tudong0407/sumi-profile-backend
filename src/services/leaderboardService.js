@@ -7,7 +7,8 @@
  */
 
 import { supabase } from '../config/supabase.js';
-import { MARRY_RING_RANK, FUYUMI_USER_ID } from '../data/catalog.js';
+import { MARRY_RING_RANK, FUYUMI_USER_ID, NHIEM_NHIEM_BOT_ID } from '../data/catalog.js';
+const EXCLUDED_LEADERBOARD_IDS = new Set([FUYUMI_USER_ID, NHIEM_NHIEM_BOT_ID]);
 import { em, uiEm, ringEmoji, realmEmoji, petEmoji } from '../config/emojiHelper.js';
 import { getRealmByLevel } from './profileService.js';
 import { computeMarriageBuffs } from './marryService.js';
@@ -173,13 +174,14 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
       .from('users')
       .select('user_id, username, level, exp')
       .neq('user_id', FUYUMI_USER_ID)
+      .neq('user_id', NHIEM_NHIEM_BOT_ID)
       .order('level', { ascending: false })
       .order('exp', { ascending: false })
       .limit(limit);
     if (error) throw new Error(`Leaderboard level query failed: ${error.message}`);
 
     entries = (data || [])
-      .filter((u) => String(u.user_id) !== FUYUMI_USER_ID)
+      .filter((u) => !EXCLUDED_LEADERBOARD_IDS.has(String(u.user_id)))
       .slice(0, limit)
       .map((u, idx) => ({
         rank: idx + 1,
@@ -196,13 +198,14 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
       .from('users')
       .select('user_id, username, level, linh_thach')
       .neq('user_id', FUYUMI_USER_ID)
+      .neq('user_id', NHIEM_NHIEM_BOT_ID)
       .order('linh_thach', { ascending: false })
       .order('level', { ascending: false })
       .limit(limit);
     if (error) throw new Error(`Leaderboard wealth query failed: ${error.message}`);
 
     entries = (data || [])
-      .filter((u) => String(u.user_id) !== FUYUMI_USER_ID)
+      .filter((u) => !EXCLUDED_LEADERBOARD_IDS.has(String(u.user_id)))
       .slice(0, limit)
       .map((u, idx) => ({
         rank: idx + 1,
@@ -219,16 +222,17 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
       .select('user_id, pet_name, pet_type, level, star, power_score')
       .eq('is_active', true)
       .neq('user_id', FUYUMI_USER_ID)
+      .neq('user_id', NHIEM_NHIEM_BOT_ID)
       .order('power_score', { ascending: false })
       .limit(limit * 2);
     if (error) throw new Error(`Leaderboard power query failed: ${error.message}`);
 
-    // Deduplicate by user_id (keep highest active pet power) & strictly exclude Fuyumi
+    // Deduplicate by user_id (keep highest active pet power) & strictly exclude Fuyumi + Bot Nhiễm Nhiễm
     const seenUsers = new Set();
     const filteredPets = [];
     for (const p of pets || []) {
       const uid = String(p.user_id || '');
-      if (!uid || uid === FUYUMI_USER_ID || seenUsers.has(uid)) continue;
+      if (!uid || EXCLUDED_LEADERBOARD_IDS.has(uid) || seenUsers.has(uid)) continue;
       seenUsers.add(uid);
       filteredPets.push(p);
       if (filteredPets.length >= limit) break;
@@ -270,6 +274,7 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
         .select('user_id, chat_exp, chat_count, voice_exp, voice_minutes')
         .eq('date_key', dateKey)
         .neq('user_id', FUYUMI_USER_ID)
+        .neq('user_id', NHIEM_NHIEM_BOT_ID)
         .gt(orderCol, 0)
         .order(orderCol, { ascending: false })
         .limit(limit);
@@ -288,13 +293,13 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
       const dayMap = memoryDailyActivityStats.get(dateKey);
       const all = dayMap ? [...dayMap.values()] : [];
       rows = all
-        .filter((r) => String(r.user_id) !== FUYUMI_USER_ID && (isChat ? r.chat_exp > 0 : r.voice_exp > 0))
+        .filter((r) => !EXCLUDED_LEADERBOARD_IDS.has(String(r.user_id)) && (isChat ? r.chat_exp > 0 : r.voice_exp > 0))
         .sort((a, b) => (isChat ? b.chat_exp - a.chat_exp : b.voice_exp - a.voice_exp))
         .slice(0, limit);
     }
 
     entries = rows
-      .filter((r) => String(r.user_id) !== FUYUMI_USER_ID)
+      .filter((r) => !EXCLUDED_LEADERBOARD_IDS.has(String(r.user_id)))
       .slice(0, limit)
       .map((r, idx) => {
         const expVal = Number(isChat ? r.chat_exp : r.voice_exp) || 0;
@@ -322,7 +327,7 @@ export async function getServerLeaderboard(rawType = 'level', limitRaw = 10, opt
     const pairs = [];
     const now = new Date();
     for (const u of marriedUsers || []) {
-      if (String(u.user_id) === FUYUMI_USER_ID || String(u.marry_user_id) === FUYUMI_USER_ID) continue;
+      if (EXCLUDED_LEADERBOARD_IDS.has(String(u.user_id)) || EXCLUDED_LEADERBOARD_IDS.has(String(u.marry_user_id))) continue;
       const pairKey = [String(u.user_id), String(u.marry_user_id)].sort().join(':');
       if (seenPairs.has(pairKey)) continue;
       seenPairs.add(pairKey);
@@ -417,7 +422,7 @@ export async function settleWeeklyPowerLeaderboard(opts = {}) {
   const lb = await getServerLeaderboard('power', 10);
   if (!lb.success) return lb;
 
-  const topEntries = (lb.entries || []).filter((e) => String(e.user_id) !== FUYUMI_USER_ID);
+  const topEntries = (lb.entries || []).filter((e) => !EXCLUDED_LEADERBOARD_IDS.has(String(e.user_id)));
   const rewardLines = [];
   const distributedRecords = [];
 
@@ -568,8 +573,8 @@ export async function settleDailyActivityLeaderboard(now = new Date(), { force =
     getServerLeaderboard('voice', 3, { dateKey }),
   ]);
 
-  const chatTop = (chatLb.entries || []).slice(0, 3).filter((e) => String(e.user_id) !== FUYUMI_USER_ID);
-  const voiceTop = (voiceLb.entries || []).slice(0, 3).filter((e) => String(e.user_id) !== FUYUMI_USER_ID);
+  const chatTop = (chatLb.entries || []).slice(0, 3).filter((e) => !EXCLUDED_LEADERBOARD_IDS.has(String(e.user_id)));
+  const voiceTop = (voiceLb.entries || []).slice(0, 3).filter((e) => !EXCLUDED_LEADERBOARD_IDS.has(String(e.user_id)));
 
   const rewardUser = async (uid, amount) => {
     if (!supabase || !uid || amount <= 0) return;

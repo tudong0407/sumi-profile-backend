@@ -151,21 +151,50 @@ function getTargetDodgeForUltimate(target) {
   return Math.min(0.35, dodge * 0.5);
 }
 
-/**
- * Thử kích hoạt Skill Ultimate nếu đủ điều kiện & hết cooldown.
- * @returns {{ triggered: boolean, ultimateName?: string, damage?: number, shieldAbsorbed?: number, healAmt?: number, logs?: string[], ko?: boolean }}
- */
-export function tryTriggerUltimate(actor, target, options = {}) {
-  if (!isUltimateReadyToFire(actor, target)) {
-    return { triggered: false };
-  }
+function amplifyStolenEffect(rawEffect = {}, amp = 1.25) {
+  if (!rawEffect || typeof rawEffect !== 'object') return {};
+  const ef = { ...rawEffect };
+  delete ef.stealAndNullifyEnemyUlt;
+  delete ef.stolenAmpMult;
 
-  const rng = typeof options.rng === 'function' ? options.rng : Math.random;
-  const turnNumber = Number(options.turnNumber || 1);
-  const fastMode = Boolean(options.fastMode);
-  const u = actor.state.ultimate;
-  const def = u.ultDef;
-  const ef = def.effect || {};
+  const mult = Number(amp) || 1.25;
+  const round4 = (v) => Math.round(Number(v) * mult * 10000) / 10000;
+  for (const key of ['trueMaxHpDmgPct', 'atkDmgPct', 'drainEnemyCurrHpPct', 'healMaxHpPct', 'restoreMissingHpPct', 'shieldMaxHpPct']) {
+    if (ef[key] > 0) ef[key] = round4(ef[key]);
+  }
+  if (ef.defDebuffPct > 0) ef.defDebuffPct = Math.min(0.75, round4(ef.defDebuffPct));
+  if (ef.burnPct > 0) ef.burnPct = Math.min(0.25, round4(ef.burnPct));
+  if (ef.poisonPct > 0) ef.poisonPct = Math.min(0.25, round4(ef.poisonPct));
+  if (ef.spdStealPct > 0) ef.spdStealPct = Math.min(0.50, round4(ef.spdStealPct));
+  if (ef.healReductionPct > 0) ef.healReductionPct = Math.min(0.90, round4(ef.healReductionPct));
+  if (ef.dmgRedPct > 0) ef.dmgRedPct = Math.min(0.75, round4(ef.dmgRedPct));
+  if (ef.stunChance > 0) ef.stunChance = Math.min(1, round4(ef.stunChance));
+  if (ef.addLinhMach > 0) ef.addLinhMach = Math.max(1, Math.round(Number(ef.addLinhMach) * mult));
+  return ef;
+}
+
+function mergeSovereignAndStolenEffect(baseEffect = {}, enemyUltDef = null) {
+  const cleanBase = { ...baseEffect };
+  delete cleanBase.stealAndNullifyEnemyUlt;
+  delete cleanBase.stolenAmpMult;
+
+  if (!enemyUltDef?.effect || enemyUltDef.effect.stealAndNullifyEnemyUlt) {
+    return cleanBase;
+  }
+  const stolen = amplifyStolenEffect(enemyUltDef.effect, baseEffect.stolenAmpMult || 1.25);
+  const merged = { ...stolen, ...cleanBase };
+  for (const [k, v] of Object.entries(stolen)) {
+    if (typeof v === 'number' && v > 0) {
+      merged[k] = Math.max(Number(cleanBase[k] || 0), v);
+    } else if (typeof v === 'boolean' && v) {
+      merged[k] = true;
+    }
+  }
+  return merged;
+}
+
+function applyUltimateEffects(actor, target, def, { rng, turnNumber = 1, fastMode = false } = {}) {
+  const ef = def?.effect || {};
   const logs = fastMode ? null : [];
   const pushLog = (s) => { if (logs) logs.push(s); };
   let totalDamage = 0;
@@ -290,18 +319,22 @@ export function tryTriggerUltimate(actor, target, options = {}) {
     if (!fastMode) pushLog('Xóa Sạch Buff Địch');
   }
 
-  // 9. Tích tầng Linh Mạch (FIX: cộng trực tiếp vào domainSide.energy đang hoạt động!)
+  // 9. Tích tầng Linh Mạch (cộng trực tiếp vào domainSide.energy nếu không Bất Hoại)
   if (ef.addLinhMach > 0) {
     const domSide = actor.domainRuntime?.side;
-    if (domSide && domSide.hasDomain && !domSide.indestructible && domSide.energy > 0) {
-      const addAmt = Number(ef.addLinhMach);
-      domSide.energy += addAmt;
-      domSide.maxEnergy = Math.max(domSide.maxEnergy || 0, domSide.energy);
-      if (actor.domainRuntime?.own) {
-        actor.domainRuntime.own.energy = domSide.energy;
-        actor.domainRuntime.own.maxEnergy = domSide.maxEnergy;
+    if (domSide && domSide.hasDomain) {
+      if (domSide.indestructible) {
+        if (!fastMode) pushLog('Linh Mạch ∞ Bất Hoại');
+      } else if (domSide.energy > 0) {
+        const addAmt = Number(ef.addLinhMach);
+        domSide.energy += addAmt;
+        domSide.maxEnergy = Math.max(domSide.maxEnergy || 0, domSide.energy);
+        if (actor.domainRuntime?.own) {
+          actor.domainRuntime.own.energy = domSide.energy;
+          actor.domainRuntime.own.maxEnergy = domSide.maxEnergy;
+        }
+        if (!fastMode) pushLog(`+${addAmt} Linh Mạch`);
       }
-      if (!fastMode) pushLog(`+${addAmt} Linh Mạch`);
     }
   }
 
@@ -375,20 +408,115 @@ export function tryTriggerUltimate(actor, target, options = {}) {
     }
   }
 
-  u.triggerCount += 1;
-  u.cooldown = Math.max(1, Number(def.cooldownTurns || 4));
-  resetAccumulators(u);
-
   return {
-    triggered: true,
-    ultimateId: def.id,
-    ultimateName: def.name,
-    triggerCount: u.triggerCount,
-    cooldownTurns: u.cooldown,
     damage: totalDamage,
     shieldAbsorbed: totalShieldAbsorbed,
     healAmt: totalHeal,
     logs: logs || [],
+  };
+}
+
+/**
+ * Thử kích hoạt Skill Ultimate nếu đủ điều kiện & hết cooldown.
+ * Hỗ trợ cơ chế Vô Hiệu Hóa & Cướp Ultimate đối phương của Cửu Vĩ Hồng Hồ (Fuyumi) không lặp vô hạn.
+ */
+export function tryTriggerUltimate(actor, target, options = {}) {
+  if (!isUltimateReadyToFire(actor, target)) {
+    return { triggered: false };
+  }
+
+  const rng = typeof options.rng === 'function' ? options.rng : Math.random;
+  const turnNumber = Number(options.turnNumber || 1);
+  const fastMode = Boolean(options.fastMode);
+  const u = actor.state.ultimate;
+  const def = u.ultDef;
+  const ef = def.effect || {};
+  const targetUlt = target?.state?.ultimate;
+
+  const canTargetIntercept = Boolean(
+    targetUlt?.active
+    && targetUlt?.ultDef?.effect?.stealAndNullifyEnemyUlt
+    && actor.id !== target.id
+    && !ef.stealAndNullifyEnemyUlt
+    && !options._skipInterception
+  );
+
+  if (canTargetIntercept) {
+    const stolenDef = {
+      ...def,
+      id: `stolen_${def.id}`,
+      name: `Cướp Đạo • ${def.name}`,
+      effect: amplifyStolenEffect(ef, targetUlt.ultDef.effect.stolenAmpMult || 1.25),
+    };
+    u.cooldown = Math.max(1, Number(def.cooldownTurns || 4));
+    u.nullifiedCount = Number(u.nullifiedCount || 0) + 1;
+    resetAccumulators(u);
+
+    const res = applyUltimateEffects(target, actor, stolenDef, { rng, turnNumber, fastMode });
+    targetUlt.triggerCount += 1;
+
+    return {
+      triggered: true,
+      nullifiedAndStolen: true,
+      interceptorId: target.id,
+      interceptorName: target.name,
+      interceptorPetName: target.petName,
+      stolenFromId: actor.id,
+      stolenFromName: actor.name,
+      ultimateId: stolenDef.id,
+      ultimateName: `VÔ HIỆU & CƯỚP ULTIMATE (${def.name})`,
+      triggerCount: targetUlt.triggerCount,
+      cooldownTurns: u.cooldown,
+      damage: res.damage,
+      shieldAbsorbed: res.shieldAbsorbed,
+      healAmt: res.healAmt,
+      logs: fastMode ? [] : [`Vô Hiệu Hóa [${def.name}] của ${actor.petName}`, ...res.logs],
+      ko: actor.currentHp === 0,
+    };
+  }
+
+  let activeDef = def;
+  const prefixLogs = [];
+  if (ef.stealAndNullifyEnemyUlt) {
+    if (targetUlt?.active && targetUlt?.ultDef?.effect?.stealAndNullifyEnemyUlt) {
+      const mirrorClean = { ...ef };
+      delete mirrorClean.stealAndNullifyEnemyUlt;
+      delete mirrorClean.stolenAmpMult;
+      activeDef = { ...def, name: `${def.name} (Hồng Mông Tương Ánh)`, effect: mirrorClean };
+      if (!fastMode) prefixLogs.push('Hồng Mông Tương Ánh (Chống Cướp Lặp)');
+    } else if (targetUlt?.active && targetUlt?.ultDef) {
+      activeDef = {
+        ...def,
+        name: `${def.name} × Cướp [${targetUlt.ultDef.name}]`,
+        effect: mergeSovereignAndStolenEffect(ef, targetUlt.ultDef),
+      };
+      targetUlt.cooldown = Math.max(Number(targetUlt.cooldown || 0), Number(targetUlt.ultDef.cooldownTurns || 4));
+      targetUlt.nullifiedCount = Number(targetUlt.nullifiedCount || 0) + 1;
+      resetAccumulators(targetUlt);
+      if (!fastMode) prefixLogs.push(`Đoạt Ấn [${targetUlt.ultDef.name}] (Khóa ${targetUlt.cooldown}h)`);
+    } else {
+      const cleanEf = { ...ef };
+      delete cleanEf.stealAndNullifyEnemyUlt;
+      delete cleanEf.stolenAmpMult;
+      activeDef = { ...def, effect: cleanEf };
+    }
+  }
+
+  const res = applyUltimateEffects(actor, target, activeDef, { rng, turnNumber, fastMode });
+  u.triggerCount += 1;
+  u.cooldown = Math.max(1, Number(activeDef.cooldownTurns || 4));
+  resetAccumulators(u);
+
+  return {
+    triggered: true,
+    ultimateId: activeDef.id,
+    ultimateName: activeDef.name,
+    triggerCount: u.triggerCount,
+    cooldownTurns: u.cooldown,
+    damage: res.damage,
+    shieldAbsorbed: res.shieldAbsorbed,
+    healAmt: res.healAmt,
+    logs: fastMode ? [] : [...prefixLogs, ...res.logs],
     ko: target.currentHp === 0,
   };
 }

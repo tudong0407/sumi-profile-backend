@@ -19,6 +19,7 @@ import {
   drawCenteredAutoFitIconText,
   sanitizeText,
   resolveAssetPath,
+  resolvePetSplashAsset,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -119,15 +120,7 @@ const RARITY_ACCENTS = {
 };
 
 function resolvePetAsset(petType, isEvolved = false) {
-  if (!petType) return 'pets/hoa_thach_nham_nham.png';
-  if (petType === 'cuu_vi_hong_ho') return 'pets/cuu_vi_hong_ho_transparent.png';
-  if (isEvolved && resolveAssetPath(`pets/${petType}_evo.webp`)) {
-    return `pets/${petType}_evo.webp`;
-  }
-  const pngCandidate = `pets/${petType}.png`;
-  if (resolveAssetPath(pngCandidate)) return pngCandidate;
-  const webpCandidate = `pets/${petType}.webp`;
-  return resolveAssetPath(webpCandidate) ? webpCandidate : 'pets/hoa_thach_nham_nham.png';
+  return resolvePetSplashAsset(petType, isEvolved, 'pets/hoa_thach_nham_nham.png');
 }
 
 function resolvePetMiniIconAsset(petType) {

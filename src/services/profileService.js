@@ -4,6 +4,7 @@ import {
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_EVOLUTION,
   resolveEntityDisplayRarityKey,
   normalizeRarityKey,
   STARTER_PET,
@@ -719,14 +720,19 @@ export async function getProfileData(userId, overrides = {}) {
           const couplePowerBonus = couplePowerPct > 0 ? Math.round(rawTotalPower * (couplePowerPct / 100)) : 0;
 
           const petIsEvolved = Boolean(pet.is_evolved);
-          const evoMeta = petIsEvolved ? (V17_PET_EVOLUTIONS[pet.pet_type] || null) : null;
+          const evoMeta = pet.pet_type === 'cuu_vi_hong_ho'
+            ? FUYUMI_SUPREME_EVOLUTION
+            : (petIsEvolved ? (V17_PET_EVOLUTIONS[pet.pet_type] || null) : null);
           petData = {
             name: pet.pet_name,
             type: pet.pet_type,
             pet_type: pet.pet_type,
             is_evolved: petIsEvolved,
             evolved_at: pet.evolved_at || null,
-            pet_image_file: evoMeta?.evo_image_file || catalogPet?.image_file || null,
+            pet_image_file: pet.pet_type === 'cuu_vi_hong_ho'
+              ? (catalogPet?.image_file || 'pets/cuu_vi_hong_ho_transparent.png')
+              : (evoMeta?.evo_image_file || catalogPet?.image_file || null),
+            ultimate: evoMeta?.ultimate || null,
             display_rarity_key: resolveEntityDisplayRarityKey(catalogPet || pet, petIsEvolved),
             rarity: formatRarityLabel(pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm'),
             element: pet.element || catalogPet?.element || 'Thổ',

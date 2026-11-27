@@ -19,6 +19,8 @@ import {
   drawIconText,
   drawAutoFitSingleLineText,
   drawElementalPetBorderFX,
+  resolveAssetPath,
+  resolvePetSplashAsset,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -911,9 +913,9 @@ export async function renderWikiPetCard(petData, options = {}) {
   const dispRarity = petData.display_rarity_key || (petData.is_exclusive_fuyumi ? 'supreme' : petIsEvolved ? 'evolved_supreme' : petData.is_unique ? 'unique_supreme' : petData.rarity_key);
   const rarityStyle = RARITY_STYLES[dispRarity] || RARITY_STYLES.common;
   const elemMeta = ELEMENT_COLORS[petData.element] || { color: '#94a3b8', icon: '✨' };
-  const petImgPath = petIsEvolved && petData.evo_data?.evo_image_file
+  const petImgPath = petIsEvolved && petData.evo_data?.evo_image_file && resolveAssetPath(petData.evo_data.evo_image_file)
     ? petData.evo_data.evo_image_file
-    : (petData.image_file || `pets/${petData.pet_type}.png`);
+    : resolvePetSplashAsset(petData.pet_type, petIsEvolved, petData.image_file || `pets/${petData.pet_type}.png`);
   const petImg = await loadImageSafe(petImgPath, 2500, 'pets/hoa_thach_nham_nham.png');
 
   drawCelestialBackground(ctx, rarityStyle.bgTint);

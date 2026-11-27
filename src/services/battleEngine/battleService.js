@@ -1569,19 +1569,25 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         }
       }
 
-      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần)
+      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần & Cửu Vĩ Hồng Hồ)
       if (!isSelfHit && actor.currentHp > 0 && actualTarget.currentHp > 0) {
         const ultRes = tryTriggerUltimate(actor, actualTarget, { rng, turnNumber });
         if (ultRes.triggered) {
+          const ultActorRole = ultRes.nullifiedAndStolen
+            ? (ultRes.interceptorId === attacker.id ? 'attacker' : 'defender')
+            : role;
+          const ultPrefix = ultRes.nullifiedAndStolen
+            ? `[VÔ HIỆU & CƯỚP ULTIMATE #${ultRes.triggerCount}]`
+            : `[ULTIMATE #${ultRes.triggerCount}]`;
           turns.push({
             turn: turnNumber,
-            actor: role,
+            actor: ultActorRole,
             action: 'ultimate',
             damage: ultRes.damage || 0,
             shieldAbsorbed: ultRes.shieldAbsorbed || 0,
             isCrit: false,
             elementAdvantage: null,
-            haxTriggered: `[ULTIMATE #${ultRes.triggerCount}] ${ultRes.ultimateName} • ${ultRes.logs.join(' • ')}`,
+            haxTriggered: `${ultPrefix} ${ultRes.ultimateName} • ${ultRes.logs.join(' • ')}`,
             attackerHp: attacker.currentHp,
             defenderHp: defender.currentHp,
           });

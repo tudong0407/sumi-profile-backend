@@ -18,6 +18,8 @@ import {
 import {
   V17_NEW_PETS,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_ULTIMATE,
+  FUYUMI_SUPREME_EVOLUTION,
   V17_NEW_EQUIPMENT,
   V17_DOMAINS,
   V17_DIVINE_SENSES,
@@ -27,9 +29,10 @@ import {
   buildV17SpecialConsumables,
 } from './v17ExpansionCatalog.js';
 
-export { V17_PET_EVOLUTIONS };
+export { V17_PET_EVOLUTIONS, FUYUMI_SUPREME_ULTIMATE, FUYUMI_SUPREME_EVOLUTION };
 
 export const FUYUMI_USER_ID = '757091869183311872';
+export const NHIEM_NHIEM_BOT_ID = '916469360401453067';
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://sumi-profile-backend.onrender.com').replace(/\/$/, '');
 
 export const RARITY_TIERS = {

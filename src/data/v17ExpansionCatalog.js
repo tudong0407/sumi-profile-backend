@@ -7431,3 +7431,40 @@ export function buildV17SpecialConsumables() {
     },
   ];
 }
+
+export const FUYUMI_SUPREME_ULTIMATE = {
+  id: 'ult_hong_mong_doat_dao',
+  name: 'Hồng Mông Cửu Vĩ — Đoạt Đạo Vô Song',
+  difficulty: 'supreme',
+  cooldownTurns: 4,
+  trigger: {
+    kind: 'dmgDealtAndTaken',
+    pctMaxHp: 1.5,
+  },
+  effect: {
+    stealAndNullifyEnemyUlt: true,
+    stolenAmpMult: 1.25,
+    trueMaxHpDmgPct: 0.42,
+    atkDmgPct: 2.2,
+    shieldPierce: 1,
+    ignoreDmgRed: true,
+    ignoreDodge: true,
+    stripAllBuffs: true,
+    cleanseAll: true,
+    healMaxHpPct: 0.25,
+    shieldMaxHpPct: 0.45,
+    addLinhMach: 2,
+  },
+  desc: 'Tự động VÔ HIỆU HÓA 100% Ultimate đối phương ngay khi sắp thi triển & CƯỚP NGUYÊN VẸN (+25% uy lực) đánh ngược lại! Khi tự kích hoạt: sao chép + cường hóa Ult địch (hoặc giáng Hồng Mông Phá Đạo nếu địch chưa có Ult: 42% MaxHP ST chuẩn + 220% ATK xuyên Giáp/Khiên/Né + Xóa buff địch + Hồi 25% & Khiên 45% + +2 Linh Mạch, CD 4).',
+};
+
+export const FUYUMI_SUPREME_EVOLUTION = {
+  base_pet_type: 'cuu_vi_hong_ho',
+  evolved_name: 'Cửu Vĩ Hồng Hồ — Tối Thượng Thú Nhân',
+  element: 'Hỗn Độn',
+  evo_image_file: 'pets/cuu_vi_hong_ho_evo.webp',
+  evo_emoji_key: 'cuu_vi_hong_ho',
+  is_exclusive_fuyumi: true,
+  stat_mult: { atk: 1, def: 1, spd: 1, hp: 1 },
+  ultimate: FUYUMI_SUPREME_ULTIMATE,
+};

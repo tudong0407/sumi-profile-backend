@@ -8,6 +8,7 @@ import {
   drawElementalPetBorderFX,
   sanitizeText,
   resolveAssetPath,
+  resolvePetSplashAsset,
   loadBadgeImage,
   stripLeadingEmojis,
   drawIconText,
@@ -171,16 +172,9 @@ export async function renderProfileCard(data, options = {}) {
   const petIsEvolved = Boolean(profile.pet?.is_evolved);
   let petAsset = null;
   if (petType) {
-    if (petType === 'cuu_vi_hong_ho') {
-      petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
-    } else if (petIsEvolved && resolveAssetPath(`pets/${petType}_evo.webp`)) {
-      petAsset = `pets/${petType}_evo.webp`;
-    } else {
-      const candidate = `pets/${petType}.png`;
-      petAsset = resolveAssetPath(candidate) ? candidate : (resolveAssetPath(`pets/${petType}.webp`) ? `pets/${petType}.webp` : 'pets/cuu_vi_hong_ho_transparent.png');
-    }
+    petAsset = resolvePetSplashAsset(petType, petIsEvolved, 'pets/cuu_vi_hong_ho_transparent.png');
   } else if (isOwner) {
-    petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
+    petAsset = resolvePetSplashAsset('cuu_vi_hong_ho', true, 'pets/cuu_vi_hong_ho_transparent.png');
   }
   const equipWeapon = profile.pet?.equipment?.weapon;
   const equipGem = profile.pet?.equipment?.gem;

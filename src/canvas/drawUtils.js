@@ -133,6 +133,34 @@ export function resolveAssetPath(filePathOrName, exts = ASSET_EXT_PRIORITY) {
 }
 
 /**
+ * Chuẩn hóa đường dẫn Splash Art Linh Thú (Ưu tiên Form Tối Thượng / Chân Thần nếu đã có file ảnh, giữ fallback an toàn).
+ * Riêng `cuu_vi_hong_ho` ưu tiên `pets/cuu_vi_hong_ho_evo.{webp,png}` (Nữ Cáo Thú Nhân) -> `pets/cuu_vi_hong_ho_transparent.png`,
+ * tách biệt hoàn toàn với Discord Emoji Hồng Hồ.
+ */
+export function resolvePetSplashAsset(petType, isEvolved = false, fallback = 'pets/hoa_thach_nham_nham.png') {
+  if (!petType) return fallback;
+  const clean = String(petType).trim();
+  if (clean === 'cuu_vi_hong_ho') {
+    for (const ext of ['.webp', '.png']) {
+      const evoPath = `pets/cuu_vi_hong_ho_evo${ext}`;
+      if (resolveAssetPath(evoPath)) return evoPath;
+    }
+    return 'pets/cuu_vi_hong_ho_transparent.png';
+  }
+  if (isEvolved) {
+    for (const ext of ['.webp', '.png']) {
+      const evoPath = `pets/${clean}_evo${ext}`;
+      if (resolveAssetPath(evoPath)) return evoPath;
+    }
+  }
+  const pngCandidate = `pets/${clean}.png`;
+  if (resolveAssetPath(pngCandidate)) return pngCandidate;
+  const webpCandidate = `pets/${clean}.webp`;
+  if (resolveAssetPath(webpCandidate)) return webpCandidate;
+  return fallback;
+}
+
+/**
  * Chuẩn hóa đường dẫn public `/assets/...` (ưu tiên `.gif` động -> `.webp` -> `.png` -> `.jpg`)
  */
 export function resolvePublicAssetPath(relPath) {

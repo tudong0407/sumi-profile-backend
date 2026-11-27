@@ -389,7 +389,7 @@ export async function getInventory(userId, options = {}) {
   }
 
   const [userRes, petsRes, itemsRes, invRes, domainsRes, luckInfo] = await Promise.all([
-    supabase.from('users').select('user_id, username, level, linh_thach, farm_essence, active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
+    supabase.from('users').select('user_id, username, level, linh_thach, farm_essence, red_gold_crystals, active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
     supabase.from('user_pets').select('pet_id, pet_type, pet_name, pet_rarity, element, level, star, power_score, enchant_grade, is_active, status, quantity').eq('user_id', cleanId).order('is_active', { ascending: false }).order('power_score', { ascending: false }),
     supabase.from('v_user_equipped_items').select('item_id, item_type, enchant_grade, equipped_to_pet, slot, quantity').eq('user_id', cleanId),
     supabase.from('user_inventory').select('item_id, item_category, quantity').eq('user_id', cleanId).gt('quantity', 0),
@@ -500,6 +500,7 @@ export async function getInventory(userId, options = {}) {
 
   const activeSlot = [1, 2, 3].includes(Number(user.active_loadout_slot)) ? Number(user.active_loadout_slot) : 1;
   const farmEssence = Math.max(0, Number(user.farm_essence || 0));
+  const redGoldCrystals = Math.max(0, Number(user.red_gold_crystals || 0));
   const mainPet = activePets[0] || null;
 
   const equippedDomain = equippedDomainsRaw.find((d) => d.entity_kind === 'domain');
@@ -550,7 +551,7 @@ export async function getInventory(userId, options = {}) {
     : null;
   const descLines = [
     ...(bannerText ? [`${em('su_sparkle')} ${bannerText}`, ''] : []),
-    `${em('su_linhthach')} \`${balFmt}\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')}\``,
+    `${em('su_linhthach')} \`${balFmt}\` • ${farmEmoji('farm_essence')} \`${farmEssence.toLocaleString('vi-VN')}\` • ${em('red_gold_crystal')} \`${redGoldCrystals.toLocaleString('vi-VN')}\``,
     ...(explorerLockLine ? [explorerLockLine] : []),
     ...(activePotionLine ? [activePotionLine] : []),
   ];
@@ -581,6 +582,7 @@ export async function getInventory(userId, options = {}) {
       linh_thach: Number(user.linh_thach || 0),
       linh_thach_fmt: balFmt,
       farm_essence: farmEssence,
+      red_gold_crystals: redGoldCrystals,
     },
   };
 

@@ -158,6 +158,8 @@ export function itemEmoji(itemId, fallback = '') {
 export function petEmojiKey(petType, isEvolved = false) {
   if (!petType) return '';
   const clean = String(petType).trim();
+  // Cửu Vĩ Hồng Hồ luôn giữ icon emoji Hồng Hồ bất kể trạng thái Thú Nhân tối thượng trên Splash Art
+  if (clean === 'cuu_vi_hong_ho') return 'cuu_vi_hong_ho';
   if (isEvolved && clean && getEmojiEntry(`${clean}_evo`)) {
     return `${clean}_evo`;
   }

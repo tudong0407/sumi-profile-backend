@@ -40,9 +40,12 @@ import {
 } from '../../src/services/evolutionService.js';
 import { createUltimateState, tickUltimateTurn, isUltimateReadyToFire, tryTriggerUltimate } from '../../src/services/battleEngine/ultimateEngine.js';
 import { compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
-import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
-import { simulateTeamBattle } from '../../src/services/battleEngine/teamBattleService.js';
+import { simulateBattle, simulateBattleFast, renderBattleLogHtml } from '../../src/services/battleEngine/battleService.js';
+import { simulateTeamBattle, renderTeamBattleLogHtml } from '../../src/services/battleEngine/teamBattleService.js';
 import { getWikiData, getWikiPetDetail } from '../../src/services/wikiService.js';
+import { petEmojiKey } from '../../src/config/emojiHelper.js';
+import { resolvePetSplashAsset } from '../../src/canvas/drawUtils.js';
+import { getServerLeaderboard } from '../../src/services/leaderboardService.js';
 import { lookupInfo } from '../../src/services/infoService.js';
 import { renderProfileCard } from '../../src/canvas/profileRenderer.js';
 import { renderBattleCard } from '../../src/canvas/battleRenderer.js';
@@ -533,4 +536,178 @@ test('Ver 1.7 Wiki Sub-Hubs, Canvas Renderers, Fuyumi Pill, 9 Frames & Migration
     assert.ok(resolvedIcon && resolvedIcon.trim().length > 0, `Consumable ${item.item_id} missing icon`);
     assert.notEqual(resolvedIcon, pinTag, `Consumable ${item.item_id} unexpectedly uses su_pin_sigil`);
   }
+});
+
+test('Ver 1.7 Fuyumi Supreme Ultimate: 100% Nullify & Steal Compatibility Across All 40 Ultimates, Emoji/Splash Separation & Nhiễm Nhiễm Anti-Farm', async () => {
+  // Helper to fill any ultimate trigger condition
+  const fillUltGauge = (unit) => {
+    const u = unit.state.ultimate;
+    u.cooldown = 0;
+    u.dmgDealt = unit.maxHp * 10;
+    u.dmgTaken = unit.maxHp * 10;
+    u.crits = 10;
+    u.dodges = 10;
+    u.burnTicksApplied = 10;
+    u.healsPctAccum = 5.0;
+    u.healEvents = 10;
+    u.cleanses = 10;
+    u.turnsLived = 10;
+    u.shieldTurns = 10;
+    u.firstStrikes = 10;
+    u.stunsApplied = 10;
+    u.reviveTriggered = true;
+  };
+
+  // 1. Intercept, Nullify & Steal ALL 40/40 V17_PET_EVOLUTIONS Ultimates
+  for (const [petType, evo] of Object.entries(cat.V17_PET_EVOLUTIONS)) {
+    const enemy = await compileCombatant({
+      user_id: `enemy_${petType}`,
+      username: `Enemy_${petType}`,
+      pet: { pet_type: petType, level: 40, star: 8, is_evolved: true },
+      domain_loadout: { domain: 'domain_mythic_1' },
+    });
+    const fuyumi = await compileCombatant({
+      user_id: cat.FUYUMI_USER_ID,
+      username: 'Fuyumi',
+      level: 100,
+      pet: { pet_type: 'cuu_vi_hong_ho', rarity: 'Tối Thượng Thần Thoại', level: 100, star: 10 },
+      domain_loadout: { domain: 'domain_fuyumi_cuu_vi_hong_mong' },
+    });
+    assert.equal(fuyumi.state.ultimate.active, true, 'Fuyumi Supreme Ultimate must be active even when is_evolved=false in DB');
+    assert.equal(fuyumi.ultimateDef?.id, cat.FUYUMI_SUPREME_ULTIMATE.id);
+
+    enemy.maxHp = 500000;
+    enemy.currentHp = 500000;
+    fuyumi.domainRuntime = { side: { hasDomain: true, indestructible: true, energy: 999, maxEnergy: 999 }, own: { energy: 999 } };
+    enemy.domainRuntime = { side: { hasDomain: true, indestructible: false, energy: 4, maxEnergy: 4 }, own: { energy: 4 } };
+
+    fillUltGauge(enemy);
+    const fuyumiHpBefore = fuyumi.currentHp;
+    const enemyHpBefore = enemy.currentHp;
+    const res = tryTriggerUltimate(enemy, fuyumi, { rng: () => 0.1, turnNumber: 3 });
+
+    assert.equal(res.triggered, true, `${petType}: interception failed to trigger`);
+    assert.equal(res.nullifiedAndStolen, true, `${petType}: must be marked nullifiedAndStolen`);
+    assert.equal(res.interceptorId, cat.FUYUMI_USER_ID);
+    assert.equal(enemy.state.ultimate.triggerCount, 0, `${petType}: enemy Ultimate must remain unexecuted (triggerCount=0)`);
+    assert.equal(enemy.state.ultimate.nullifiedCount, 1, `${petType}: enemy nullifiedCount must increment`);
+    assert.ok(enemy.state.ultimate.cooldown >= 1, `${petType}: enemy Ult must enter cooldown after nullify`);
+    assert.equal(fuyumi.currentHp, fuyumiHpBefore, `${petType}: Fuyumi must take zero damage from nullified enemy Ult`);
+    assert.equal(fuyumi.state.ultimate.triggerCount, 1, `${petType}: Fuyumi steal counter must increment`);
+    assert.ok(Number.isFinite(enemy.currentHp) && enemy.currentHp >= 0, `${petType}: enemy HP must remain valid finite`);
+    assert.ok(Number.isFinite(fuyumi.currentHp) && Number.isFinite(fuyumi.shield), `${petType}: Fuyumi stats must stay finite`);
+    if (evo.ultimate.effect.trueMaxHpDmgPct || evo.ultimate.effect.atkDmgPct || evo.ultimate.effect.drainEnemyCurrHpPct) {
+      assert.ok(enemy.currentHp < enemyHpBefore, `${petType}: stolen offensive Ultimate must damage enemy`);
+    }
+  }
+
+  // 2. Mirror match safety (`cuu_vi_hong_ho` vs `cuu_vi_hong_ho`) — zero infinite recursion!
+  const foxA = await compileCombatant({
+    user_id: 'fox_a',
+    username: 'FoxA',
+    pet: { pet_type: 'cuu_vi_hong_ho', level: 100, star: 10 },
+  });
+  const foxB = await compileCombatant({
+    user_id: 'fox_b',
+    username: 'FoxB',
+    pet: { pet_type: 'cuu_vi_hong_ho', level: 100, star: 10 },
+  });
+  foxB.maxHp = 2000000;
+  foxB.currentHp = 2000000;
+  fillUltGauge(foxA);
+  const mirrorRes = tryTriggerUltimate(foxA, foxB, { rng: () => 0.1, turnNumber: 2 });
+  assert.equal(mirrorRes.triggered, true);
+  assert.notEqual(mirrorRes.nullifiedAndStolen, true, 'Mirror cuu_vi_hong_ho must not infinitely intercept');
+  assert.ok(foxB.currentHp < 2000000);
+
+  // 3. Full 1v1, Fast, and Team 3v3 integration with Fuyumi Steal Ult
+  const pFuyumi = {
+    user_id: cat.FUYUMI_USER_ID,
+    username: 'Fuyumi',
+    level: 100,
+    pet: { pet_type: 'cuu_vi_hong_ho', rarity: 'Tối Thượng Thần Thoại', level: 100, star: 10 },
+    weapon: 'weapon_mythic_1',
+    gem: 'gem_mythic_3',
+    soul: 'soul_mythic_1',
+    domain_loadout: { domain: 'domain_fuyumi_cuu_vi_hong_mong', sense: 'sense_fuyumi_thai_thuong_hong_ho', realm: 'realm_fuyumi_van_co_tuyet_diet' },
+  };
+  const pBoss = {
+    user_id: 'boss_40_ult',
+    username: 'Chân Thần Địch',
+    level: 100,
+    pet: { pet_type: 'hon_don_chi_to_long', rarity: 'Tối Thượng Chân Thần', level: 40, star: 8, is_evolved: true },
+    weapon: 'weapon_unique_10',
+    gem: 'gem_unique_10',
+    soul: 'soul_unique_10',
+    domain_loadout: { domain: 'domain_unique_1' },
+  };
+  const sim1 = await simulateBattle(pFuyumi, pBoss, { seed: 777, isTest: true, skipQuestTracking: true, preRender: false });
+  assert.equal(sim1.success, true);
+  assert.equal(sim1.winnerRole, 'attacker');
+  const html1 = await renderBattleLogHtml(sim1.battleId);
+  assert.equal(html1.found, true);
+  assert.ok(!html1.html.split('<script>')[0].includes('NaN'));
+
+  const fastRes = simulateBattleFast(
+    await compileCombatant(pFuyumi, 'attacker'),
+    await compileCombatant(pBoss, 'defender'),
+    { seed: 777 },
+  );
+  assert.equal(fastRes.attackerWon, true);
+
+  const teamRes = simulateTeamBattle(
+    [await compileCombatant(pFuyumi, 'attacker')],
+    [await compileCombatant(pBoss, 'defender')],
+    { mode: '3v3', seed: 777 },
+  );
+  assert.ok(teamRes?.battleId);
+  const tHtml = await renderTeamBattleLogHtml(teamRes.battleId);
+  assert.equal(tHtml.found, true);
+
+  // 4. Emoji Hồng Hồ separation vs Splash Art Thú Nhân resolution
+  assert.equal(petEmojiKey('cuu_vi_hong_ho', false), 'cuu_vi_hong_ho');
+  assert.equal(petEmojiKey('cuu_vi_hong_ho', true), 'cuu_vi_hong_ho');
+  const foxSplash = resolvePetSplashAsset('cuu_vi_hong_ho', true);
+  assert.ok(
+    foxSplash === 'pets/cuu_vi_hong_ho_evo.webp'
+    || foxSplash === 'pets/cuu_vi_hong_ho_evo.png'
+    || foxSplash === 'pets/cuu_vi_hong_ho_transparent.png',
+  );
+
+  // 5. Nhiễm Nhiễm Bot Guardian Anti-Farm & Leaderboard Exclusion
+  const botUnit = await compileCombatant({
+    user_id: cat.NHIEM_NHIEM_BOT_ID,
+    username: 'Nhiễm Nhiễm',
+    level: 100,
+    pet: { pet_type: 'minh_diep_huyen_ho', level: 100, star: 10, enchant_grade: 'S' },
+    weapon: 'weapon_mythic_45',
+    gem: 'gem_mythic_45',
+    soul: 'soul_mythic_45',
+    domain_loadout: { domain: 'domain_mythic_8', sense: 'sense_mythic_32', realm: 'realm_mythic_32' },
+  });
+  assert.ok(botUnit.atk >= 14500 && botUnit.def >= 12500 && botUnit.spd >= 13000 && botUnit.maxHp >= 120000);
+  assert.ok(botUnit.powerScore >= 95000);
+  assert.equal(botUnit.state.ultimate.active, true);
+
+  const farmer = await compileCombatant({
+    user_id: '887916221239025695',
+    username: 'Top1Challenger',
+    level: 15,
+    pet: { pet_type: 'hoa_thach_nham_nham', level: 15, star: 7, enchant_grade: 'A' },
+  });
+  const farmBattle = await simulateBattle(farmer, botUnit, { seed: 99, isTest: true, skipQuestTracking: true, preRender: false });
+  assert.equal(farmBattle.winnerRole, 'defender', 'Challenger trying to farm Nhiễm Nhiễm must lose cleanly');
+
+  const fuyumiVsBot = await simulateBattle(pFuyumi, botUnit, { seed: 99, isTest: true, skipQuestTracking: true, preRender: false });
+  assert.equal(fuyumiVsBot.winnerRole, 'attacker', 'Master Fuyumi must still beat Guardian Nhiễm Nhiễm');
+
+  const lbMem = await getServerLeaderboard('chat', 5);
+  assert.ok(!(lbMem.entries || []).some((e) => e.user_id === cat.NHIEM_NHIEM_BOT_ID || e.user_id === cat.FUYUMI_USER_ID));
+
+  // 6. /inv header currency order includes Xích Kim Tinh Thạch (TT) right beside Linh Quả
+  const { getInventory } = await import('../../src/services/inventoryService.js');
+  const invBao = await getInventory('1010756221600546946');
+  assert.equal(invBao.success, true);
+  assert.ok(invBao.view_description.includes('red_gold_crystal'), '/inv header must show red_gold_crystal emoji');
+  assert.ok(invBao.user.red_gold_crystals >= 100, '/inv user payload must include red_gold_crystals');
 });

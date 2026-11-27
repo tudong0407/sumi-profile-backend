@@ -741,21 +741,24 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         }
       }
 
-      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần)
+      // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần & Cửu Vĩ Hồng Hồ)
       if (!turnStartRes?.attackSelf && actor.currentHp > 0 && actualTarget.currentHp > 0) {
         const ultRes = tryTriggerUltimate(actor, actualTarget, { rng, turnNumber: turn });
         if (ultRes.triggered) {
+          const ultSource = ultRes.nullifiedAndStolen ? actualTarget : actor;
+          const ultVictim = ultRes.nullifiedAndStolen ? actor : actualTarget;
+          const prefixTag = ultRes.nullifiedAndStolen ? 'VÔ HIỆU & CƯỚP ULTIMATE' : 'ULTIMATE';
           turnEvents.push({
-            actor: actor.id,
-            actorName: actor.name,
-            target: actualTarget.id,
-            targetName: actualTarget.name,
+            actor: ultSource.id,
+            actorName: ultSource.name,
+            target: ultVictim.id,
+            targetName: ultVictim.name,
             action: 'ultimate',
             dmg: ultRes.damage || 0,
             ko: ultRes.ko,
           });
-          thisTurnLines.push(`  • ${tierEmoji('evolved_supreme')} **[ULTIMATE #${ultRes.triggerCount}] ${actor.name} — ${ultRes.ultimateName}:** ${ultRes.logs.join(' • ')}${actualTarget.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ''}`);
-          highlights.push(`**Hiệp ${turn}:** ${actor.name} kích hoạt **${ultRes.ultimateName}** (${ultRes.logs.join(' • ')})!`);
+          thisTurnLines.push(`  • ${tierEmoji('evolved_supreme')} **[${prefixTag} #${ultRes.triggerCount}] ${ultSource.name} — ${ultRes.ultimateName}:** ${ultRes.logs.join(' • ')}${ultVictim.currentHp === 0 ? ` — ${uiEm('ui_skull_ko')} **HẠ GỤC!**` : ''}`);
+          highlights.push(`**Hiệp ${turn}:** ${ultSource.name} tung **${ultRes.ultimateName}** (${ultRes.logs.join(' • ')})!`);
         }
       }
 
