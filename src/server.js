@@ -86,7 +86,7 @@ import { getJobStatus, doJob } from './services/jobService.js';
 import { checkUpdateGate, acknowledgeUpdate } from './services/updateGateService.js';
 import { lookupInfo } from './services/infoService.js';
 import { getChangelogPayload, LATEST_VERSION } from './data/changelogs.js';
-import { PET_BY_TYPE } from './data/catalog.js';
+import { PET_BY_TYPE, V17_PET_EVOLUTIONS, FUYUMI_SUPREME_EVOLUTION } from './data/catalog.js';
 import {
   getStaticElementChartBuffer,
   getStaticPetCardBuffer,
@@ -505,6 +505,34 @@ app.post('/api/update/ack', requireBackendApiKey, async (req, res) => {
   }
 });
 
+function buildPetFormRenderData(pet, form = 'base') {
+  const cleanForm = String(form || 'base').toLowerCase() === 'evo' ? 'evo' : 'base';
+  const evoMeta = pet?.pet_type === 'cuu_vi_hong_ho'
+    ? FUYUMI_SUPREME_EVOLUTION
+    : (V17_PET_EVOLUTIONS?.[pet?.pet_type] || null);
+  if (cleanForm === 'evo' && evoMeta) {
+    const baseAtk = Math.round(Number(pet.base_atk || 0) * Number(evoMeta.stat_mult?.atk || 1));
+    const baseDef = Math.round(Number(pet.base_def || 0) * Number(evoMeta.stat_mult?.def || 1));
+    const baseSpd = Math.round(Number(pet.base_spd || 0) * Number(evoMeta.stat_mult?.spd || 1));
+    const baseHp = Math.round(Number(pet.base_hp || 0) * Number(evoMeta.stat_mult?.hp || 1));
+    return {
+      ...pet,
+      is_evolved: true,
+      pet_name: evoMeta.evolved_name,
+      rarity: pet.is_exclusive_fuyumi ? pet.rarity : 'Tối Thượng Chân Thần',
+      display_rarity_key: pet.is_exclusive_fuyumi ? 'supreme' : 'evolved_supreme',
+      evo_data: evoMeta,
+      image_file: evoMeta.evo_image_file || pet.image_file,
+      base_atk: baseAtk,
+      base_def: baseDef,
+      base_spd: baseSpd,
+      base_hp: baseHp,
+      base_power: baseAtk * 3 + baseDef * 2 + baseSpd * 2 + 50,
+    };
+  }
+  return { ...pet, is_evolved: false, force_base_image: true };
+}
+
 app.get('/api/info/pet/:petType', async (req, res) => {
   try {
     const rawParam = String(req.params.petType || '').trim();
@@ -521,18 +549,23 @@ app.get('/api/info/pet/:petType', async (req, res) => {
       });
     }
 
+    const form = String(req.query.form || 'base').toLowerCase() === 'evo' ? 'evo' : 'base';
     const pet = PET_BY_TYPE[cleanType];
     if (wantJson) {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=300');
-      return res.status(200).json({ success: true, data: pet });
+      return res.status(200).json({ success: true, form, data: buildPetFormRenderData(pet, form) });
     }
 
     const fmt = wantPng ? 'png' : 'webp';
-    const imgBuffer = await getStaticPetCardBuffer(pet, fmt);
+    const renderPet = buildPetFormRenderData(pet, form);
+    const useDynamicCache = form === 'evo' || Boolean(pet.is_exclusive_fuyumi);
+    const imgBuffer = useDynamicCache
+      ? await getCachedUniquePetCard(renderPet, fmt)
+      : await getStaticPetCardBuffer(renderPet, fmt);
     res.setHeader('Content-Type', fmt === 'png' ? 'image/png' : 'image/webp');
     res.setHeader('Content-Length', imgBuffer.length);
-    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    res.setHeader('Cache-Control', useDynamicCache ? 'public, max-age=300' : 'public, max-age=604800, immutable');
     return res.end(imgBuffer);
   } catch (err) {
     console.error('[Server] Lỗi tra cứu /api/info/pet:', err);
@@ -544,7 +577,8 @@ app.get('/api/info/:query', (req, res) => {
   try {
     const q = getCleanParam(req.params.query, '');
     const requesterId = sanitizeUserId(req.query.requesterId || req.query.userId || '');
-    const result = lookupInfo(q || '', { requesterId });
+    const form = getCleanParam(req.query.form, '');
+    const result = lookupInfo(q || '', { requesterId, form });
     return res.status(result.status || (result.success ? 200 : 400)).json(result);
   } catch (err) {
     console.error('[Server] /api/info error:', err);
@@ -660,10 +694,16 @@ app.get('/api/wiki/pet/:petType', async (req, res) => {
 
     if (wantImg) {
       const fmt = wantWebp ? 'webp' : 'png';
-      const isUniquePet = Boolean(detail.data?.is_unique || detail.data?.is_exclusive_fuyumi);
+      const reqForm = String(req.query.form || '').toLowerCase();
+      const petRenderData = reqForm === 'evo'
+        ? buildPetFormRenderData(detail.data, 'evo')
+        : reqForm === 'base'
+          ? buildPetFormRenderData(detail.data, 'base')
+          : detail.data;
+      const isUniquePet = Boolean(petRenderData?.is_unique || petRenderData?.is_exclusive_fuyumi || reqForm === 'evo');
       const imgBuffer = isUniquePet
-        ? await getCachedUniquePetCard(detail.data, fmt)
-        : await getStaticPetCardBuffer(detail.data, fmt);
+        ? await getCachedUniquePetCard(petRenderData, fmt)
+        : await getStaticPetCardBuffer(petRenderData, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
       res.setHeader('Cache-Control', isUniquePet ? 'public, max-age=30' : 'public, max-age=604800, immutable');

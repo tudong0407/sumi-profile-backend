@@ -232,38 +232,38 @@ export async function playSlots(userId, rawBet, options = {}) {
     let multiplier = 0;
     let tierLabel = 'Chưa Trúng Thưởng';
 
-    if (roll < 0.002) {
-      // 0.2%: 4x Jackpot Cửu Vĩ Kim Hồ = 1:5
+    if (roll < 0.0015) {
+      // 0.15%: 4x Jackpot Cửu Vĩ Kim Hồ = 1:5
       const fox = SLOT_SYMBOLS[0];
       reels = [fox, fox, fox, fox];
       multiplier = 5.0;
       tierLabel = 'ĐẠI JACKPOT TỨ QUÝ CỬU VĨ (1:5)';
-    } else if (roll < 0.006) {
-      // 0.4%: 4x Cực Phẩm Linh Thạch = 1:4
+    } else if (roll < 0.004) {
+      // 0.25%: 4x Cực Phẩm Linh Thạch = 1:4
       const jade = SLOT_SYMBOLS[1];
       reels = [jade, jade, jade, jade];
       multiplier = 4.0;
       tierLabel = 'TỨ QUÝ LINH THẠCH (1:4)';
-    } else if (roll < 0.012) {
-      // 0.6%: 4x Tiên Kiếm / Kim Đan = 1:3
+    } else if (roll < 0.008) {
+      // 0.4%: 4x Tiên Kiếm / Kim Đan = 1:3
       const midSym = rng() < 0.5 ? SLOT_SYMBOLS[2] : SLOT_SYMBOLS[3];
       reels = [midSym, midSym, midSym, midSym];
       multiplier = 3.0;
       tierLabel = `TỨ QUÝ ${midSym.label.toUpperCase()} (1:3)`;
-    } else if (roll < 0.02) {
+    } else if (roll < 0.016) {
       // 0.8%: 3-of-a-kind = 1:2.5
       const [mainSym, filler] = pickDistinctSymbols(2, rng);
       reels = shuffleArr([mainSym, mainSym, mainSym, filler], rng);
       multiplier = 2.5;
       tierLabel = 'TAM LIÊN HỢP BẢO (1:2.5)';
-    } else if (roll < 0.50) {
-      // 48%: Two pairs = 1:2
+    } else if (roll < 0.35) {
+      // 33.4%: Two pairs = 1:2 (Tổng winrate 35%)
       const [symA, symB] = pickDistinctSymbols(2, rng);
       reels = shuffleArr([symA, symA, symB, symB], rng);
       multiplier = 2.0;
       tierLabel = 'SONG ĐÔI CÁT TƯỜNG (1:2)';
     } else {
-      // 50% Lose: 4 distinct or single pair (AABC / ABCD) - guaranteed zero winning pattern
+      // 65% Lose: 4 distinct or single pair (AABC / ABCD) - guaranteed zero winning pattern
       const [s1, s2, s3, s4] = pickDistinctSymbols(4, rng);
       reels = rng() < 0.45 ? shuffleArr([s1, s1, s2, s3], rng) : [s1, s2, s3, s4];
       multiplier = 0;

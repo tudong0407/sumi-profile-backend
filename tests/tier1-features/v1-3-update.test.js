@@ -585,11 +585,13 @@ describe('Tier 1 - Update v1.3 Comprehensive Suite', () => {
     assert.ok(invPets.summary_pets_detailed.includes(invPets.pets[0].rarity_label));
     assert.ok(invPets.summary_pets_detailed.includes(invPets.pets[0].element_icon));
 
-    // Boundary check rng=0.42 (< 0.45) now wins on Coinflip, Slots, and Crash Step 3 (2.00x)
+    // Boundary check rng=0.30 (< 0.35) wins on Slots & rng=0.42 (>= 0.35) loses; Coinflip & Crash win at 0.42
     const cf42 = await playCoinflip(USER_V13_A, 100, 'heads', { bypassCooldown: true, rng: () => 0.42 });
     assert.equal(cf42.won, true);
-    const sl42 = await playSlots(USER_V13_A, 100, { bypassCooldown: true, rng: () => 0.42 });
-    assert.equal(sl42.won, true);
+    const sl30 = await playSlots(USER_V13_A, 100, { bypassCooldown: true, rng: () => 0.30 });
+    assert.equal(sl30.won, true);
+    const sl42Lose = await playSlots(USER_V13_A, 100, { bypassCooldown: true, rng: () => 0.42 });
+    assert.equal(sl42Lose.won, false);
     const cr42 = await crashGame(USER_V13_A, 100, null, { bypassCooldown: true, autoCashout: 2.0, rng: () => 0.42 });
     assert.equal(cr42.crashed, false);
     assert.equal(cr42.payout, 200);

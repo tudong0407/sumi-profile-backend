@@ -62,7 +62,7 @@ function normText(s) {
     .trim();
 }
 
-export function lookupInfo(rawQuery, { requesterId } = {}) {
+export function lookupInfo(rawQuery, { requesterId, form } = {}) {
   const raw = String(rawQuery || '').trim();
   if (!raw) {
     return {
@@ -113,10 +113,23 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
     || matchedStone || matchedRecipe || matchedFurnace || matchedFortune,
   );
 
-  // 2. Partial name fallback
+  // 2. Partial name fallback (kể cả tên dạng Tiến Hóa Chân Thần)
+  let matchedByEvolvedName = false;
   if (!hasExactMatch()) {
     matchedPet = visiblePets.find((p) => normText(p.pet_name) === qNorm)
       || visiblePets.find((p) => normText(p.pet_name).includes(qNorm) || p.pet_type.toLowerCase().includes(qLower));
+    if (!matchedPet) {
+      const evoEntries = [
+        ...(isFuyumi ? [[FUYUMI_SUPREME_EVOLUTION.base_pet_type, FUYUMI_SUPREME_EVOLUTION]] : []),
+        ...Object.entries(V17_PET_EVOLUTIONS),
+      ];
+      const hitEvo = evoEntries.find(([, ev]) => normText(ev.evolved_name) === qNorm)
+        || evoEntries.find(([, ev]) => normText(ev.evolved_name).includes(qNorm));
+      if (hitEvo) {
+        matchedPet = visiblePets.find((p) => p.pet_type === hitEvo[0]) || null;
+        if (matchedPet) matchedByEvolvedName = true;
+      }
+    }
   }
   if (!hasExactMatch()) {
     matchedItem = EQUIPMENT_CATALOG.find((i) => normText(i.item_name) === qNorm)
@@ -175,6 +188,26 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
 
   if (matchedPet) {
     const p = matchedPet;
+    const evoMeta = p.pet_type === 'cuu_vi_hong_ho'
+      ? FUYUMI_SUPREME_EVOLUTION
+      : (V17_PET_EVOLUTIONS?.[p.pet_type] || null);
+    const canToggleForm = Boolean(evoMeta);
+    const reqForm = String(form || '').trim().toLowerCase();
+    const activeForm = canToggleForm && (reqForm === 'evo' || (!reqForm && matchedByEvolvedName)) ? 'evo' : 'base';
+    const isEvoForm = activeForm === 'evo' && Boolean(evoMeta);
+    const mAtk = isEvoForm ? Number(evoMeta.stat_mult?.atk || 1) : 1;
+    const mDef = isEvoForm ? Number(evoMeta.stat_mult?.def || 1) : 1;
+    const mSpd = isEvoForm ? Number(evoMeta.stat_mult?.spd || 1) : 1;
+    const mHp = isEvoForm ? Number(evoMeta.stat_mult?.hp || 1) : 1;
+    const dispAtk = Math.round(Number(p.base_atk || 0) * mAtk);
+    const dispDef = Math.round(Number(p.base_def || 0) * mDef);
+    const dispSpd = Math.round(Number(p.base_spd || 0) * mSpd);
+    const dispHp = Math.round(Number(p.base_hp || 0) * mHp);
+    const dispPower = isEvoForm ? (dispAtk * 3 + dispDef * 2 + dispSpd * 2 + 50) : Number(p.base_power || 0);
+    const dispRarity = isEvoForm && !p.is_exclusive_fuyumi ? 'Tối Thượng Chân Thần' : p.rarity;
+    const dispRarityKey = isEvoForm ? (p.is_exclusive_fuyumi ? 'supreme' : 'evolved_supreme') : (p.display_rarity_key || p.rarity_key);
+    const dispName = isEvoForm ? evoMeta.evolved_name : p.pet_name;
+
     const isShopSold = !p.is_exclusive_fuyumi && (p.rarity_key === 'common' || p.rarity_key === 'rare');
     const shopPrice = isShopSold ? (SHOP_PET_PRICES[p.rarity_key] || 300) : null;
     const shopDismantle = shopPrice ? Math.floor(shopPrice * 0.25) : null;
@@ -185,18 +218,20 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
         ? `Cửa Hàng \`/shop\` (**${shopPrice.toLocaleString('vi-VN')} LT**) & Gacha \`/roll loai:pet\` (**${p.drop_rate}%** bậc ${p.rarity})`
         : `Độc quyền Gacha \`/roll loai:pet\` (**${p.drop_rate}%** bậc ${p.rarity})`;
 
+    const evoBoostSummary = evoMeta
+      ? `+${Math.round((Number(evoMeta.stat_mult?.atk || 1) - 1) * 100)}% ATK • +${Math.round((Number(evoMeta.stat_mult?.def || 1) - 1) * 100)}% DEF • +${Math.round((Number(evoMeta.stat_mult?.spd || 1) - 1) * 100)}% SPD • +${Math.round((Number(evoMeta.stat_mult?.hp || 1) - 1) * 100)}% HP`
+      : '';
+
     const lines = [
-      `• **Mã UID:** \`${p.pet_type}\``,
-      `• **Phẩm chất:** ${tierEmoji(p.display_rarity_key || p.rarity_key)} **${p.rarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
-      `• **Chỉ số gốc (Lv.1 • 1★):** \`ATK ${p.base_atk.toLocaleString('vi-VN')} | DEF ${p.base_def.toLocaleString('vi-VN')} | SPD ${p.base_spd.toLocaleString('vi-VN')} | HP ${p.base_hp.toLocaleString('vi-VN')} | Lực ${p.base_power.toLocaleString('vi-VN')}\``,
+      `• **Mã UID:** \`${p.pet_type}\` • **Dạng Hiển Thị:** ${isEvoForm ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần**` : '**Bản Gốc (Thường)**'}`,
+      `• **Phẩm chất:** ${tierEmoji(dispRarityKey)} **${dispRarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
+      `• **Chỉ số gốc (Lv.1 • 1★${isEvoForm ? ` • ${evoBoostSummary}` : ''}):** \`ATK ${dispAtk.toLocaleString('vi-VN')} | DEF ${dispDef.toLocaleString('vi-VN')} | SPD ${dispSpd.toLocaleString('vi-VN')} | HP ${dispHp.toLocaleString('vi-VN')} | Lực ${dispPower.toLocaleString('vi-VN')}\``,
       `• ${em('su_thunder_hax')} **Kỹ năng HAX (${p.hax_skill}):** ${p.hax_description}`,
-      ...((p.pet_type === 'cuu_vi_hong_ho' ? FUYUMI_SUPREME_EVOLUTION.ultimate : V17_PET_EVOLUTIONS?.[p.pet_type]?.ultimate)
-        ? (() => {
-            const ult = p.pet_type === 'cuu_vi_hong_ho'
-              ? FUYUMI_SUPREME_EVOLUTION.ultimate
-              : V17_PET_EVOLUTIONS[p.pet_type].ultimate;
-            return [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${ult.name}):** ${ult.desc}`];
-          })()
+      ...(evoMeta?.ultimate
+        ? [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${evoMeta.ultimate.name}):** ${evoMeta.ultimate.desc}`]
+        : []),
+      ...(canToggleForm && !isEvoForm
+        ? [`• ${tierEmoji('evolved_supreme')} **Dạng Tiến Hóa Chân Thần:** **${evoMeta.evolved_name}** *(${evoBoostSummary} — bấm nút bên dưới để xem Splash Art Tiến Hóa!)*`]
         : []),
       `• **Nguồn sở hữu:** ${sourceText}`,
       p.is_exclusive_fuyumi
@@ -205,18 +240,25 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• *Dùng \`/linhthu hanh_dong:active linh_thu:${p.pet_type}\` để xuất trận hoặc \`/enchant loai:pet muc_tieu:${p.pet_type}\` để khắc ấn.*`,
     ];
 
+    const imgEndpoint = p.is_exclusive_fuyumi
+      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s3&form=${activeForm}`
+      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s3&form=${activeForm}`;
+
     return {
       success: true,
       category: 'pet',
       id: p.pet_type,
-      name: p.pet_name,
-      title: `${petEmoji(p.pet_type, em('su_pet_paw'))} LINH THÚ: ${p.pet_name}`,
+      entity_id: p.pet_type,
+      name: dispName,
+      current_form: activeForm,
+      can_toggle_form: canToggleForm ? 'true' : 'false',
+      toggle_target_form: activeForm === 'evo' ? 'base' : 'evo',
+      toggle_button_label: activeForm === 'evo' ? 'Xem Splash Bản Thường' : 'Xem Splash Tiến Hóa',
+      title: `${petEmoji(p.pet_type, em('su_pet_paw'), isEvoForm)} ${isEvoForm ? 'TIẾN HÓA CHÂN THẦN' : 'LINH THÚ'}: ${dispName}`,
       description: lines.join('\n'),
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: p.is_exclusive_fuyumi
-        ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}`
-        : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=1.4.7`,
-      footer: '',
+      image_url: imgEndpoint,
+      footer: canToggleForm ? 'Bấm nút bên dưới để chuyển đổi qua lại giữa Splash Art Bản Thường & Bản Tiến Hóa Chân Thần!' : '',
     };
   }
 

@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s2`;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s3`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 
@@ -240,8 +240,8 @@ export async function getCachedUniqueItemCard(itemData, format = 'webp') {
 export async function getCachedUniquePetCard(petData, format = 'webp') {
   const fmt = format === 'png' ? 'png' : 'webp';
   const petType = String(petData?.pet_type || '').trim();
-  const cacheKey = `pet:${petType}:${fmt}`;
   const isEv = Boolean(petData?.is_evolved || petData?.current_owner?.is_evolved) ? 'evo' : 'base';
+  const cacheKey = `pet:${petType}:${isEv}:${fmt}`;
   const ownerKey = petData?.current_owner?.user_id
     ? `${petData.current_owner.user_id}:${petData.current_owner.username || ''}:${isEv}`
     : `unowned:${isEv}`;

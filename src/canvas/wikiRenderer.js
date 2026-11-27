@@ -24,8 +24,9 @@ import {
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
+import { V17_PET_EVOLUTIONS, FUYUMI_SUPREME_EVOLUTION } from '../data/catalog.js';
 
-const RENDER_SCALE = 1.2; // 1200x600 sắc nét cho Discord Embed & giảm 64% thời gian render
+const RENDER_SCALE = 1.44; // 1440x720 (+20% độ nét HD+ cho Discord Embed)
 const LOGICAL_W = 1000;
 const LOGICAL_H = 500;
 
@@ -635,7 +636,7 @@ export async function renderElementalChart(options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, 'SuMi Family • Sơ Đồ Ngũ Hành Linh Thú & Ngũ Đại Linh Vực');
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
 }
 
 /**
@@ -896,7 +897,7 @@ export async function renderWikiItemCard(itemData, options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
 }
 
 /**
@@ -913,9 +914,11 @@ export async function renderWikiPetCard(petData, options = {}) {
   const dispRarity = petData.display_rarity_key || (petData.is_exclusive_fuyumi ? 'supreme' : petIsEvolved ? 'evolved_supreme' : petData.is_unique ? 'unique_supreme' : petData.rarity_key);
   const rarityStyle = RARITY_STYLES[dispRarity] || RARITY_STYLES.common;
   const elemMeta = ELEMENT_COLORS[petData.element] || { color: '#94a3b8', icon: '✨' };
-  const petImgPath = petIsEvolved && petData.evo_data?.evo_image_file && resolveAssetPath(petData.evo_data.evo_image_file)
-    ? petData.evo_data.evo_image_file
-    : resolvePetSplashAsset(petData.pet_type, petIsEvolved, petData.image_file || `pets/${petData.pet_type}.png`);
+  const petImgPath = petData.force_base_image && petData.image_file
+    ? petData.image_file
+    : (petIsEvolved && petData.evo_data?.evo_image_file && resolveAssetPath(petData.evo_data.evo_image_file)
+      ? petData.evo_data.evo_image_file
+      : resolvePetSplashAsset(petData.pet_type, petIsEvolved, petData.image_file || `pets/${petData.pet_type}.png`));
   const petImg = await loadImageSafe(petImgPath, 2500, 'pets/hoa_thach_nham_nham.png');
 
   drawCelestialBackground(ctx, rarityStyle.bgTint);
@@ -1019,13 +1022,18 @@ export async function renderWikiPetCard(petData, options = {}) {
   const rightW = 540;
 
   ctx.save();
-  ctx.font = `bold 27px ${FONT_FAMILY}`;
+  let titleSz = 27;
+  for (; titleSz >= 17.5; titleSz -= 0.5) {
+    ctx.font = `bold ${titleSz}px ${FONT_FAMILY}`;
+    if (ctx.measureText(String(petData.pet_name || '')).width <= rightW) break;
+  }
+  ctx.font = `bold ${titleSz}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.shadowColor = rarityStyle.glow;
   ctx.shadowBlur = 10;
-  ctx.fillText(truncateText(ctx, petData.pet_name, rightW), rightX, 46);
+  ctx.fillText(truncateText(ctx, petData.pet_name, rightW), rightX, 46 + (27 - titleSz) * 0.35);
   ctx.shadowBlur = 0;
 
   // Pills Phẩm cấp • Hệ • Chiến lực gốc Lv.1
@@ -1068,13 +1076,20 @@ export async function renderWikiPetCard(petData, options = {}) {
     { label: 'HP', icon: '❤️', val: petData.base_hp || 1000, max: hpMax, color: '#4ade80' },
   ];
 
+  const evoMeta = petData.evo_data
+    || (petData.pet_type === 'cuu_vi_hong_ho' ? FUYUMI_SUPREME_EVOLUTION : V17_PET_EVOLUTIONS?.[petData.pet_type])
+    || null;
+  const cardUlt = (petIsEvolved || petData.show_ultimate) && evoMeta?.ultimate ? evoMeta.ultimate : null;
+
   const colW = Math.floor((rightW - 14) / 2);
-  const rowH = 56;
+  const rowH = cardUlt ? 49 : 56;
+  const rowGap = cardUlt ? 9 : 12;
+  const statStartY = cardUlt ? 150 : 156;
   statList.forEach((st, idx) => {
     const col = idx % 2;
     const row = Math.floor(idx / 2);
     const sx = rightX + col * (colW + 14);
-    const sy = 156 + row * (rowH + 12);
+    const sy = statStartY + row * (rowH + rowGap);
 
     drawRoundRect(ctx, sx, sy, colW, rowH, 10);
     ctx.fillStyle = 'rgba(20, 15, 38, 0.85)';
@@ -1087,16 +1102,16 @@ export async function renderWikiPetCard(petData, options = {}) {
     ctx.textBaseline = 'middle';
     ctx.font = `bold 12.5px ${FONT_FAMILY}`;
     ctx.fillStyle = st.color;
-    ctx.fillText(st.label, sx + 14, sy + 20);
+    ctx.fillText(st.label, sx + 14, sy + (cardUlt ? 17 : 20));
 
     ctx.textAlign = 'right';
     ctx.font = `bold 15px ${FONT_FAMILY}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(st.val.toLocaleString('vi-VN'), sx + colW - 14, sy + 20);
+    ctx.fillText(st.val.toLocaleString('vi-VN'), sx + colW - 14, sy + (cardUlt ? 17 : 20));
 
     // Thanh tiến độ trực quan
     const barX = sx + 14;
-    const barY = sy + 38;
+    const barY = sy + (cardUlt ? 33 : 38);
     const barW = colW - 28;
     const barH = 8;
     drawRoundRect(ctx, barX, barY, barW, barH, 4);
@@ -1109,36 +1124,70 @@ export async function renderWikiPetCard(petData, options = {}) {
     ctx.fill();
   });
 
-  // Hộp Kỹ Năng / Nội Tại (HAX) + Khung Chủ Sở Hữu (nếu là Tối Thượng Độc Nhất)
-  const haxY = 298;
-  const haxH = petData.is_unique ? 112 : 156;
-  drawRoundRect(ctx, rightX, haxY, rightW, haxH, 14);
+  // Hộp Kỹ Năng / Nội Tại (HAX) + Ultimate Chân Thần (nếu có) + Chủ Sở Hữu
+  const haxY = cardUlt ? 270 : 298;
+  const haxH = cardUlt
+    ? (petData.is_unique ? 62 : 76)
+    : (petData.is_unique ? 112 : 156);
+  drawRoundRect(ctx, rightX, haxY, rightW, haxH, 12);
   ctx.fillStyle = 'rgba(20, 15, 38, 0.86)';
   ctx.fill();
   ctx.strokeStyle = rarityStyle.primary;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.4;
   ctx.stroke();
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  ctx.font = `bold 12px ${FONT_FAMILY}`;
+  ctx.font = `bold 11px ${FONT_FAMILY}`;
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('KỸ NĂNG / NỘI TẠI ĐẶC BIỆT (HAX)', rightX + 18, haxY + 12);
+  ctx.fillText('KỸ NĂNG / NỘI TẠI ĐẶC BIỆT (HAX)', rightX + 16, haxY + 8);
 
-  ctx.font = `bold 16.5px ${FONT_FAMILY}`;
+  ctx.font = `bold ${cardUlt ? 14.5 : 16.5}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fde047';
-  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 36), rightX + 18, haxY + 34);
+  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 32), rightX + 16, haxY + (cardUlt ? 24 : 34));
 
-  ctx.font = `13px ${FONT_FAMILY}`;
+  ctx.font = `${cardUlt ? 11.5 : 13}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#e2e8f0';
-  const haxLines = wrapTextLines(ctx, petData.hax_description, rightW - 36, petData.is_unique ? 2 : 4);
+  const haxMaxLines = cardUlt ? (petData.is_unique ? 1 : 2) : (petData.is_unique ? 2 : 4);
+  const haxLines = wrapTextLines(ctx, petData.hax_description, rightW - 32, haxMaxLines);
   haxLines.forEach((line, li) => {
-    ctx.fillText(line, rightX + 18, haxY + 62 + li * 20);
+    ctx.fillText(line, rightX + 16, haxY + (cardUlt ? 42 : 62) + li * (cardUlt ? 15 : 20));
   });
 
+  if (cardUlt) {
+    const ultY = haxY + haxH + 7;
+    const ultH = petData.is_unique ? 78 : 112;
+    drawRoundRect(ctx, rightX, ultY, rightW, ultH, 12);
+    const ultBg = ctx.createLinearGradient(rightX, ultY, rightX + rightW, ultY + ultH);
+    ultBg.addColorStop(0, 'rgba(131, 24, 67, 0.42)');
+    ultBg.addColorStop(1, 'rgba(59, 7, 100, 0.46)');
+    ctx.fillStyle = ultBg;
+    ctx.fill();
+    ctx.strokeStyle = '#f472b6';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.font = `bold 11px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#f9a8d4';
+    ctx.fillText('CHÂN THẦN ULTIMATE (CHIÊU CUỐI TỐI THƯỢNG)', rightX + 16, ultY + 8);
+
+    ctx.font = `bold ${petData.is_unique ? 14 : 15}px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#fef08a';
+    ctx.fillText(truncateText(ctx, cardUlt.name || 'Ultimate Chân Thần', rightW - 32), rightX + 16, ultY + 24);
+
+    ctx.font = `${petData.is_unique ? 11.0 : 10.6}px ${FONT_FAMILY}`;
+    ctx.fillStyle = '#f8fafc';
+    const ultMaxLines = petData.is_unique ? 2 : 5;
+    const ultLineStep = petData.is_unique ? 14.5 : 13.5;
+    const ultLines = wrapTextLines(ctx, cardUlt.desc || '', rightW - 32, ultMaxLines);
+    ultLines.forEach((line, li) => {
+      ctx.fillText(line, rightX + 16, ultY + 41 + li * ultLineStep);
+    });
+  }
+
   if (petData.is_unique) {
-    const ownY = haxY + haxH + 10;
-    const ownH = 44;
+    const ownY = cardUlt ? (haxY + haxH + 7 + 78 + 7) : (haxY + haxH + 10);
+    const ownH = cardUlt ? 42 : 44;
     const hasOwner = !!petData.current_owner;
     drawRoundRect(ctx, rightX, ownY, rightW, ownH, 12);
     ctx.fillStyle = hasOwner ? 'rgba(245, 158, 11, 0.16)' : 'rgba(30, 41, 59, 0.72)';
@@ -1148,16 +1197,16 @@ export async function renderWikiPetCard(petData, options = {}) {
     ctx.stroke();
     ctx.font = `bold 11px ${FONT_FAMILY}`;
     ctx.fillStyle = hasOwner ? '#fde047' : '#94a3b8';
-    ctx.fillText('CHỦ SỞ HỮU HIỆN TẠI (ĐỘC NHẤT TOÀN SERVER)', rightX + 18, ownY + 7);
+    ctx.fillText('CHỦ SỞ HỮU HIỆN TẠI (ĐỘC NHẤT TOÀN SERVER)', rightX + 18, ownY + 6);
     ctx.font = `bold 13.5px ${FONT_FAMILY}`;
     ctx.fillStyle = hasOwner ? '#ffffff' : '#cbd5e1';
     const ownDisplay = hasOwner
       ? `${petData.current_owner.username}  (ID: ${petData.current_owner.user_id})`
       : 'Chưa có chủ sở hữu — Có thể quay trúng từ /roll loai:pet';
-    ctx.fillText(truncateText(ctx, ownDisplay, rightW - 36), rightX + 18, ownY + 23);
+    ctx.fillText(truncateText(ctx, ownDisplay, rightW - 36), rightX + 18, ownY + 22);
   }
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
 }
