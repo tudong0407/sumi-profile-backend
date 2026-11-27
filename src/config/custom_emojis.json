@@ -4233,5 +4233,65 @@
     "name": "pill_ess_2",
     "animated": false,
     "tag": "<:pill_ess_2:1575068949819953252>"
+  },
+  "red_gold_crystal": {
+    "id": "1575771292932513883",
+    "name": "red_gold_crystal",
+    "animated": false,
+    "tag": "<:red_gold_crystal:1575771292932513883>"
+  },
+  "evo_crystal": {
+    "id": "1575771303389036625",
+    "name": "evo_crystal",
+    "animated": false,
+    "tag": "<:evo_crystal:1575771303389036625>"
+  },
+  "chaos_essence_shard": {
+    "id": "1575771315586072627",
+    "name": "chaos_essence_shard",
+    "animated": false,
+    "tag": "<:chaos_essence_shard:1575771315586072627>"
+  },
+  "mythic_selector_card": {
+    "id": "1575771348586725448",
+    "name": "mythic_selector_card",
+    "animated": false,
+    "tag": "<:mythic_selector_card:1575771348586725448>"
+  },
+  "abs_enchant_charm": {
+    "id": "1575771371001352212",
+    "name": "abs_enchant_charm",
+    "animated": false,
+    "tag": "<:abs_enchant_charm:1575771371001352212>"
+  },
+  "farm_auto_card": {
+    "id": "1575771379452874874",
+    "name": "farm_auto_card",
+    "animated": false,
+    "tag": "<:farm_auto_card:1575771379452874874>"
+  },
+  "farm_growth_med": {
+    "id": "1575771391754633306",
+    "name": "farm_growth_med",
+    "animated": false,
+    "tag": "<:farm_growth_med:1575771391754633306>"
+  },
+  "farm_protect_card": {
+    "id": "1575771403633041408",
+    "name": "farm_protect_card",
+    "animated": false,
+    "tag": "<:farm_protect_card:1575771403633041408>"
+  },
+  "farm_yield_starch": {
+    "id": "1575771416870129815",
+    "name": "farm_yield_starch",
+    "animated": false,
+    "tag": "<:farm_yield_starch:1575771416870129815>"
+  },
+  "alchemy_protect_card": {
+    "id": "1575771430791159941",
+    "name": "alchemy_protect_card",
+    "animated": false,
+    "tag": "<:alchemy_protect_card:1575771430791159941>"
   }
 }

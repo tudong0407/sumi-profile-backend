@@ -592,6 +592,7 @@ export async function startBrew(userId, recipeId, opts = {}) {
       repair_until: null,
       dm_ready_sent: false,
       dm_warn10_sent: false,
+      protected_this_cycle: false,
     };
 
     // Khóa atomic ô lò trước để tránh trừ lượt ảo hoặc double-click
@@ -1073,6 +1074,114 @@ function formatAlchemyDmPayload(userId, alerts, remainingUsers) {
   };
 }
 
+export const ALCHEMY_PROTECT_EXTENSION_MS = 2 * 3600000;
+export const ALCHEMY_PROTECT_TRIGGER_WINDOW_MS = 5 * 60000;
+
+export function evaluateAlchemyAutoProtect(slot, protectQty, now = new Date()) {
+  if (!slot || slot.status !== 'brewing' || !slot.burn_at || slot.protected_this_cycle) {
+    return { shouldProtect: false };
+  }
+  if (Number(protectQty || 0) <= 0) return { shouldProtect: false };
+  const burnMs = new Date(slot.burn_at).getTime();
+  const nowMs = now.getTime();
+  if (burnMs - nowMs > ALCHEMY_PROTECT_TRIGGER_WINDOW_MS) {
+    return { shouldProtect: false };
+  }
+  const recipe = ALCHEMY_RECIPE_BY_ID[slot.recipe_id] || { name: slot.recipe_id };
+  const nextBurnIso = new Date(burnMs + ALCHEMY_PROTECT_EXTENSION_MS).toISOString();
+  return {
+    shouldProtect: true,
+    recipeName: recipe.name,
+    nextBurnIso,
+  };
+}
+
+export async function runAlchemyAutoProtect({ now = new Date(), userIds = null } = {}) {
+  const nowIso = now.toISOString();
+  const scopedSet = Array.isArray(userIds) && userIds.length > 0 ? new Set(userIds.map(String)) : null;
+
+  let rows = [];
+  if (!supabase) {
+    for (const list of memFurnaces.values()) {
+      for (const s of list) {
+        if (s.status === 'brewing' && !s.protected_this_cycle && (!scopedSet || scopedSet.has(String(s.user_id)))) {
+          rows.push(s);
+        }
+      }
+    }
+  } else {
+    let q = supabase.from('user_alchemy_furnaces').select('*').eq('status', 'brewing').eq('protected_this_cycle', false);
+    if (scopedSet) q = q.in('user_id', [...scopedSet]);
+    const { data } = await q;
+    rows = data || [];
+  }
+
+  const candidateUsers = [...new Set(rows.filter((r) => evaluateAlchemyAutoProtect(r, 1, now).shouldProtect).map((r) => r.user_id))];
+  for (const uid of candidateUsers) {
+    const dmRes = await withAlchemyLock(uid, async () => {
+      let qty = 0;
+      if (supabase) {
+        const { data: invRow } = await supabase
+          .from('user_inventory')
+          .select('quantity')
+          .eq('user_id', uid)
+          .eq('item_id', 'alchemy_protect_card')
+          .maybeSingle();
+        qty = Number(invRow?.quantity || 0);
+      } else {
+        qty = Number(memUsers.get(uid)?.alchemy_protect_card_qty || 0);
+      }
+      if (qty <= 0) return null;
+
+      const slots = supabase
+        ? ((await supabase.from('user_alchemy_furnaces').select('*').eq('user_id', uid).eq('status', 'brewing').eq('protected_this_cycle', false)).data || [])
+        : (memFurnaces.get(uid) || []).filter((s) => s.status === 'brewing' && !s.protected_this_cycle);
+
+      const rescued = [];
+      for (const s of slots) {
+        const ev = evaluateAlchemyAutoProtect(s, qty, now);
+        if (!ev.shouldProtect) continue;
+        qty -= 1;
+        rescued.push({ slot_index: s.slot_index, recipeName: ev.recipeName });
+        await saveFurnaceSlot(uid, s.slot_index, {
+          burn_at: ev.nextBurnIso,
+          protected_this_cycle: true,
+          dm_warn10_sent: false,
+          updated_at: nowIso,
+        });
+      }
+      if (rescued.length === 0) return null;
+
+      if (supabase) {
+        await supabase
+          .from('user_inventory')
+          .update({ quantity: Math.max(0, qty), updated_at: nowIso })
+          .eq('user_id', uid)
+          .eq('item_id', 'alchemy_protect_card');
+      } else if (memUsers.get(uid)) {
+        memUsers.get(uid).alchemy_protect_card_qty = Math.max(0, qty);
+      }
+
+      return {
+        success: true,
+        has_notification: true,
+        source: 'alchemy_protect',
+        user_id: uid,
+        dm_title: `${em('alchemy_protect_card')} BÙA BẢO VỆ LÒ ĐAN ĐÃ CỨU ${rescued.length} LÒ!`,
+        dm_description: [
+          ...rescued.map((r) => `• **Lò #${r.slot_index} — ${r.recipeName}:** Đã **gia hạn +2 giờ** trước khi cháy nổ!`),
+          '',
+          `${uiEm('ui_bulb_tip')} *Số Bùa Bảo Vệ Lò còn lại: **${qty}** (Tối đa 1 lần cứu / mẻ).*`,
+        ].join('\n'),
+        dm_color: '#10b981',
+        remaining_users: Math.max(0, candidateUsers.length - 1),
+      };
+    });
+    if (dmRes) return dmRes;
+  }
+  return null;
+}
+
 /**
  * Lấy & đánh dấu lô DM nhắc Lò Luyện Đan kế tiếp (chín đan / cảnh báo khẩn <=10p).
  */
@@ -1088,6 +1197,9 @@ export async function claimNextAlchemyDmNotification(options = {}) {
     if (supabase && now.getTime() - Date.now() > 5 * 60000 && !scopedSet) {
       throw new Error('REFUSED_FUTURE_CLOCK_WITHOUT_USER_SCOPE');
     }
+
+    const rescueDm = await runAlchemyAutoProtect({ now, userIds: scopedUserIds });
+    if (rescueDm?.has_notification) return rescueDm;
 
     let rows = [];
     if (!supabase) {

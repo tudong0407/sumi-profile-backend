@@ -15,26 +15,56 @@ import {
   V13_NEW_EQUIPMENT,
   V13_FARM_ASSETS,
 } from './v13ExpansionCatalog.js';
+import {
+  V17_NEW_PETS,
+  V17_PET_EVOLUTIONS,
+  V17_NEW_EQUIPMENT,
+  V17_DOMAINS,
+  V17_DIVINE_SENSES,
+  V17_DIVINE_REALMS,
+  V17_AVATAR_FRAMES,
+  buildV17ShopConsumables,
+  buildV17SpecialConsumables,
+} from './v17ExpansionCatalog.js';
+
+export { V17_PET_EVOLUTIONS };
 
 export const FUYUMI_USER_ID = '757091869183311872';
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://sumi-profile-backend.onrender.com').replace(/\/$/, '');
 
 export const RARITY_TIERS = {
-  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.5, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
+  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.35, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
   rare: { key: 'rare', label: 'Linh Phẩm', dbKey: 'Linh Pham', dropRate: 25.0, color: '#3b82f6', colorDec: 3900150, emoji: tierEmoji('rare'), emoji_key: tierEmojiKey('rare') },
   epic: { key: 'epic', label: 'Tiên Phẩm', dbKey: 'Tien Pham', dropRate: 14.0, color: '#a855f7', colorDec: 11032055, emoji: tierEmoji('epic'), emoji_key: tierEmojiKey('epic') },
-  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 0.5, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
+  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 0.65, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
+  unique_supreme: { key: 'unique_supreme', label: 'Tối Thượng', dbKey: 'Tối Thượng', dropRate: 0.0325, color: '#f43f5e', colorDec: 16007006, emoji: tierEmoji('unique_supreme'), emoji_key: tierEmojiKey('unique_supreme') },
+  evolved_supreme: { key: 'evolved_supreme', label: 'Tối Thượng Chân Thần', dbKey: 'Tối Thượng Chân Thần', dropRate: 0.0, color: '#fb7185', colorDec: 16478597, emoji: tierEmoji('evolved_supreme'), emoji_key: tierEmojiKey('evolved_supreme') },
   supreme: { key: 'supreme', label: 'Tối Thượng Thần Thoại', dbKey: 'Tối Thượng Thần Thoại', dropRate: 0.0, color: '#ec4899', colorDec: 15485081, emoji: tierEmoji('supreme'), emoji_key: tierEmojiKey('supreme') },
 };
 
 export function normalizeRarityKey(raw) {
   if (!raw) return 'common';
-  const s = String(raw).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (s.includes('toi thuong') || s.includes('supreme')) return 'supreme';
+  const s = String(raw).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim();
+  if (s === 'evolved_supreme' || s.includes('chan than') || s.includes('evolved')) return 'evolved_supreme';
+  if (s === 'unique_supreme') return 'unique_supreme';
+  if (s === 'supreme' || (s.includes('toi thuong') && s.includes('than thoai'))) return 'supreme';
+  if (s.includes('toi thuong')) return 'unique_supreme';
   if (s.includes('than thoai') || s.includes('mythic')) return 'mythic';
   if (s.includes('tien pham') || s.includes('cuc pham') || s.includes('epic')) return 'epic';
   if (s.includes('linh pham') || s.includes('hiem') || s.includes('rare')) return 'rare';
   return 'common';
+}
+
+export function isMythicBandRarity(raw) {
+  const rk = normalizeRarityKey(raw);
+  return rk === 'mythic' || rk === 'unique_supreme' || rk === 'evolved_supreme' || rk === 'supreme';
+}
+
+export function resolveEntityDisplayRarityKey(entity = {}, isEvolved = false) {
+  if (entity?.is_exclusive_fuyumi || entity?.rarity_key === 'supreme') return 'supreme';
+  if (isEvolved || entity?.is_evolved) return 'evolved_supreme';
+  if (entity?.is_unique) return 'unique_supreme';
+  return normalizeRarityKey(entity?.rarity_key || entity?.rarity || 'common');
 }
 
 export function formatRarityLabel(raw) {
@@ -58,23 +88,28 @@ export const MYTHIC_UNIQUE_ITEM_IDS = new Set([
   'gem_mythic_1', 'gem_mythic_2', 'gem_mythic_3',
   'soul_mythic_1', 'soul_mythic_2', 'soul_mythic_3',
   ...V13_NEW_EQUIPMENT.filter((it) => it.is_unique).map((it) => it.item_id),
+  ...V17_NEW_EQUIPMENT.filter((it) => it.is_unique).map((it) => it.item_id),
 ]);
 
-export const MYTHIC_UNIQUE_PET_TYPES = new Set(
-  V13_NEW_PETS.filter((p) => p.is_unique).map((p) => p.pet_type),
-);
+export const MYTHIC_UNIQUE_PET_TYPES = new Set([
+  ...V13_NEW_PETS.filter((p) => p.is_unique).map((p) => p.pet_type),
+  ...V17_NEW_PETS.filter((p) => p.is_unique).map((p) => p.pet_type),
+]);
 
-export const MYTHIC_UNIQUE_DOMAIN_IDS = new Set(
-  V13_DOMAINS.filter((d) => d.is_unique && !d.is_exclusive_fuyumi).map((d) => d.domain_id),
-);
+export const MYTHIC_UNIQUE_DOMAIN_IDS = new Set([
+  ...V13_DOMAINS.filter((d) => d.is_unique && !d.is_exclusive_fuyumi).map((d) => d.domain_id),
+  ...V17_DOMAINS.filter((d) => d.is_unique && !d.is_exclusive_fuyumi).map((d) => d.domain_id),
+]);
 
-export const MYTHIC_UNIQUE_SENSE_IDS = new Set(
-  V13_DIVINE_SENSES.filter((s) => s.is_unique && !s.is_exclusive_fuyumi).map((s) => s.sense_id),
-);
+export const MYTHIC_UNIQUE_SENSE_IDS = new Set([
+  ...V13_DIVINE_SENSES.filter((s) => s.is_unique && !s.is_exclusive_fuyumi).map((s) => s.sense_id),
+  ...V17_DIVINE_SENSES.filter((s) => s.is_unique && !s.is_exclusive_fuyumi).map((s) => s.sense_id),
+]);
 
-export const MYTHIC_UNIQUE_REALM_IDS = new Set(
-  V13_DIVINE_REALMS.filter((r) => r.is_unique && !r.is_exclusive_fuyumi).map((r) => r.realm_id),
-);
+export const MYTHIC_UNIQUE_REALM_IDS = new Set([
+  ...V13_DIVINE_REALMS.filter((r) => r.is_unique && !r.is_exclusive_fuyumi).map((r) => r.realm_id),
+  ...V17_DIVINE_REALMS.filter((r) => r.is_unique && !r.is_exclusive_fuyumi).map((r) => r.realm_id),
+]);
 
 /**
  * Toàn bộ 165 Pháp Bảo Loadout (57 Vũ Khí, 54 Bảo Ngọc, 54 Chiến Hồn)
@@ -161,14 +196,16 @@ export const EQUIPMENT_CATALOG = [
   { item_id: 'soul_mythic_4', item_name: '« Thái Bạch Kiếm Tiên Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Kim', bonus_atk: 390, bonus_def: 220, bonus_spd: 450, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Vạn Kiếm Quy Tông', hax_description: 'Mỗi 2 hiệp tung thêm kiếm khí 70% ATK xuyên 50% DEF.', drop_rate: 1.0, is_unique: false },
   { item_id: 'soul_mythic_5', item_name: '« Tinh Tú Huyền Nữ Hồn »', item_type: 'soul', rarity: 'Thần Thoại', rarity_key: 'mythic', element: 'Quang', bonus_atk: 310, bonus_def: 360, bonus_spd: 460, bonus_hp: 0, bonus_crit: 0.0, hax_skill: 'Tinh Quang Chúc Phúc', hax_description: 'Miễn nhiễm Choáng/Đóng Băng/Mị Hoặc & hồi 10% HP tối đa/hiệp.', drop_rate: 1.0, is_unique: false },
   ...V13_NEW_EQUIPMENT,
+  ...V17_NEW_EQUIPMENT,
 ].map((item) => ({
   ...item,
   is_unique: Boolean(item.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(item.item_id)),
+  display_rarity_key: (item.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(item.item_id)) ? 'unique_supreme' : item.rarity_key,
   drop_rate: RARITY_TIERS[item.rarity_key]?.dropRate ?? item.drop_rate,
   icon: itemEmoji(item.item_id),
   emoji_key: itemEmojiKey(item.item_id),
   element_icon: elementEmoji(item.element),
-  file: `items/${item.item_id}.png`,
+  file: item.file || `items/${item.item_id}.png`,
 }));
 
 export const EQUIPMENT_BY_ID = Object.fromEntries(EQUIPMENT_CATALOG.map((item) => [item.item_id, item]));
@@ -225,18 +262,20 @@ export const PET_CATALOG = [
   { pet_type: 'thai_duong_kim_o', pet_name: 'Thái Dương Kim Ô', element: 'Hỏa', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 570, base_def: 430, base_spd: 540, hax_skill: 'Chân Hỏa Phần Thiên', hax_description: 'Xuyên 65% DEF + thiêu đốt 10% HP tối đa địch mỗi hiệp (thẳng máu, bỏ qua khiên).', image_file: 'pets/thai_duong_kim_o.png', is_starter: false, is_exclusive_fuyumi: false },
   { pet_type: 'nguyet_than_cuu_vy_bach', pet_name: 'Nguyệt Thần Bạch Vĩ Hồ', element: 'Hư Không', rarity: 'Thần Thoại', rarity_key: 'mythic', base_atk: 530, base_def: 470, base_spd: 560, hax_skill: 'Thời Không Hoán Ảnh', hax_description: '1 lần/trận khi HP < 35%, giải hiệu ứng xấu, hồi 30% HP & thêm 1 lượt.', image_file: 'pets/nguyet_than_cuu_vy_bach.png', is_starter: false, is_exclusive_fuyumi: false },
   ...V13_NEW_PETS,
+  ...V17_NEW_PETS,
 
   // Bộ Tối Thượng Thần Thoại Độc Nhất
   { pet_type: 'cuu_vi_hong_ho', pet_name: 'Cửu Vĩ Hồng Hồ', element: 'Hỗn Độn', rarity: 'Tối Thượng Thần Thoại', rarity_key: 'supreme', base_atk: 99999, base_def: 99999, base_spd: 99999, hax_skill: 'Cửu Vĩ Hộ Thể (HAX Bất Tử)', hax_description: 'Bất tử trước 3 đòn đầu và phản lại 100% sát thương gốc (thẳng máu, bỏ qua khiên).', image_file: 'pets/cuu_vi_hong_ho_transparent.png', is_starter: false, is_exclusive_fuyumi: true },
 ].map((p) => ({
   ...p,
   is_unique: Boolean(p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)),
-  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.5 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.5,
+  display_rarity_key: p.is_exclusive_fuyumi ? 'supreme' : (p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)) ? 'unique_supreme' : p.rarity_key,
+  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.65 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.35,
   icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
   emoji_key: petEmojiKey(p.pet_type),
   element_icon: elementEmoji(p.element),
-  base_hp: Math.max(500, 1000 + p.base_def * 5),
-  base_power: p.base_atk * 3 + p.base_def * 2 + p.base_spd * 2 + 50,
+  base_hp: p.base_hp || Math.max(500, 1000 + p.base_def * 5),
+  base_power: p.base_power || (p.base_atk * 3 + p.base_def * 2 + p.base_spd * 2 + 50),
 }));
 
 export const PET_BY_TYPE = Object.fromEntries(PET_CATALOG.map((p) => [p.pet_type, p]));
@@ -333,12 +372,14 @@ export const SHOP_CONSUMABLES = [
   { item_id: 'explorer_revive_elixir', name: 'Cửu Chuyển Hoàn Hồn Lộ', category: 'consumable', price: 2500, daily_limit: 3, max_stack: 10, icon: em('explorer_revive_elixir'), description: 'Linh dược hồi sinh chuyên dụng: Hồi phục hoàn toàn Linh Thú Độc Nhất bị trọng thương khi khám phá (/explorer).' },
   { item_id: 'potion_luck_minor', name: 'Tiểu Vận Linh Lộ', category: 'consumable', price: 1200, max_stack: 50, icon: em('su_sparkle'), is_luck_potion: true, luck_bonus_pct: 20, charges: 40, description: 'Tăng +20% Luck cho 40 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.6%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_minor để uống.' },
   { item_id: 'potion_luck_major', name: 'Thiên Cơ Thụy Lộ', category: 'consumable', price: 3200, max_stack: 50, icon: em('su_realm_star'), is_luck_potion: true, luck_bonus_pct: 40, charges: 60, description: 'Tăng +40% Luck cho 60 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.7%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_major để uống.' },
-  { item_id: 'potion_luck_supreme', name: 'Hồng Mông Khí Vận Dịch', category: 'consumable', price: 6800, max_stack: 50, icon: em('dao_ap_crest'), is_luck_potion: true, luck_bonus_pct: 60, charges: 80, description: 'Tăng +60% Luck cho 80 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.8%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_supreme để uống.' },
+  { item_id: 'potion_luck_supreme', name: 'Hồng Mông Khí Vận Dịch', category: 'consumable', price: 6800, max_stack: 50, icon: em('dao_ap_crest'), is_luck_potion: true, luck_bonus_pct: 60, charges: 80, description: 'Tăng +60% Luck cho 80 lượt /roll hoặc Đổ Thạch (VD: 0.65% -> 1.04%, cộng dồn với /gieoque). Dùng /equip ma_id:potion_luck_supreme để uống.' },
+  ...buildV17ShopConsumables(),
 ];
 
 export const SPECIAL_CONSUMABLES = [
-  { item_id: 'enchant_stone_absolute', name: 'Thiên Đạo Tuyệt Ấn Thạch', category: 'consumable', price: 0, max_stack: 50, icon: em('enchant_stone_absolute'), description: 'Đá Khắc Ấn Tuyệt Đối (rơi 0.5% từ /explorer): Đảm bảo nâng bậc Khắc Ấn thành công 100% ở mọi bậc D→S (khuyến cáo giữ dùng cho bậc A → S).' },
+  { item_id: 'enchant_stone_absolute', name: 'Thiên Đạo Tuyệt Ấn Thạch', category: 'consumable', price: 0, price_tt: 40, max_stack: 50, icon: em('enchant_stone_absolute'), description: 'Đá Khắc Ấn Tuyệt Đối (rơi 5% từ /explorer, 25% khi bật Bùa Tuyệt Ấn, hoặc 40 TT Shop Đặc Biệt): Đảm bảo nâng bậc Khắc Ấn thành công 100% ở mọi bậc D→S.' },
   { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản (Cũ)', category: 'consumable', price: 0, max_stack: 10, icon: em('frame_unlock_token'), description: 'Đã nâng cấp thành Khung Viền Độc Bản Hoàng Kim trong Quầy Viền Avatar (/shop).' },
+  ...buildV17SpecialConsumables(),
 ];
 
 export const SHOP_CONSUMABLE_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
@@ -346,11 +387,15 @@ export const ALL_CONSUMABLES = [...SHOP_CONSUMABLES, ...SPECIAL_CONSUMABLES];
 export const ALL_CONSUMABLE_BY_ID = Object.fromEntries(ALL_CONSUMABLES.map((c) => [c.item_id, c]));
 
 /**
- * Danh mục 20 Khung Viền Avatar (/shop Quầy Viền Avatar + /equip)
+ * Danh mục 29 Khung Viền Avatar (/shop Quầy Viền Avatar + Shop Đặc Biệt + /equip)
  */
 export const AVATAR_FRAMES = [
   { frame_id: 'default', name: 'Khung Mặc Định (Theo Cảnh Giới)', rarity: 'Mặc Định', rarity_key: 'common', price: 0, token_required: false, description: 'Tự động nâng cấp khung theo cảnh giới tu luyện (hoặc Hồ Hoàng Kim cho Tiểu thư).' },
   ...V15_AVATAR_FRAME_SPECS.map((f) => ({
+    ...f,
+    token_required: true,
+  })),
+  ...V17_AVATAR_FRAMES.map((f) => ({
     ...f,
     token_required: true,
   })),
@@ -788,9 +833,9 @@ export const JOBS_CATALOG = [
     job_id: 'quet_san',
     name: 'Quét Dọn Sân Tiên Điện',
     icon: `${uiEm('ui_refresh')}`,
-    ltMin: 42,
-    ltMax: 60,
-    exp: 22,
+    ltMin: 55,
+    ltMax: 80,
+    exp: 30,
     summary: 'Nhẹ nhàng, sạch sẽ, không bỏ sót góc khuất.',
     stories: [
       'Cầm chổi trúc quét sạch lá hoa anh đào rụng đầy sân Tiên Điện.',
@@ -801,9 +846,9 @@ export const JOBS_CATALOG = [
     job_id: 'rua_bat',
     name: 'Rửa Bát Yến Tiệc',
     icon: `${em('su_sprout')}`,
-    ltMin: 46,
-    ltMax: 62,
-    exp: 24,
+    ltMin: 60,
+    ltMax: 80,
+    exp: 30,
     summary: 'Phụ bếp Tiên Điện dọn dẹp sau đại tiệc.',
     stories: [
       'Rửa sạch hàng trăm chén ngọc Lưu Ly sau buổi tiệc linh tửu.',
@@ -814,9 +859,9 @@ export const JOBS_CATALOG = [
     job_id: 'tuoi_cay',
     name: 'Tưới Cây Thảo Dược',
     icon: `${em('su_sprout')}`,
-    ltMin: 50,
-    ltMax: 70,
-    exp: 26,
+    ltMin: 65,
+    ltMax: 90,
+    exp: 35,
     summary: 'Chăm sóc vườn Linh Dược quý của Tiểu thư Fuyumi.',
     stories: [
       'Múc nước suối Thanh Tuyền tưới đều vườn Tuyết Liên nghìn năm.',
@@ -827,9 +872,9 @@ export const JOBS_CATALOG = [
     job_id: 'giao_trasua',
     name: 'Giao Trà Sữa SuMi',
     icon: `${em('su_el_thuy')}`,
-    ltMin: 54,
-    ltMax: 74,
-    exp: 30,
+    ltMin: 70,
+    ltMax: 95,
+    exp: 40,
     summary: 'Shipper tốc độ cao khắp các sảnh SuMi.',
     stories: [
       'Cưỡi gió giao 10 ly Trà Sữa Trân Châu Đường Đen tới sảnh Voice trước khi đá tan!',
@@ -840,9 +885,9 @@ export const JOBS_CATALOG = [
     job_id: 'cau_ca',
     name: 'Câu Cá Linh Trì',
     icon: `${em('su_sprout')}`,
-    ltMin: 58,
-    ltMax: 82,
-    exp: 34,
+    ltMin: 75,
+    ltMax: 105,
+    exp: 45,
     summary: 'Thả cần bên hồ Nguyệt Ảnh săn Cá Chép Vàng.',
     stories: [
       'Giật lên một chú Cá Chép Vàng vảy óng ánh giữa làn sương sớm.',
@@ -853,9 +898,9 @@ export const JOBS_CATALOG = [
     job_id: 'tuan_tra',
     name: 'Tuần Tra Đêm Sơn Môn',
     icon: `${em('daily_shop_emblem')}`,
-    ltMin: 66,
-    ltMax: 90,
-    exp: 38,
+    ltMin: 85,
+    ltMax: 120,
+    exp: 50,
     summary: 'Canh giữ kết giới Sơn Môn suốt đêm thanh vắng.',
     stories: [
       'Thắp sáng lồng đèn đi tuần dọc trường lang bảo vệ kết giới Hồ Tộc.',
@@ -867,52 +912,55 @@ export const JOBS_CATALOG = [
 export const JOB_BY_ID = Object.fromEntries(JOBS_CATALOG.map((j) => [j.job_id, j]));
 
 export const WEEKLY_CONTRACTS_CONFIG = {
-  jobs: { target: 15, rewardLt: 400, rewardStones: 2, label: 'Hoàn thành 15 ca Làm Việc (/job)' },
-  wins: { target: 25, rewardLt: 500, rewardStones: 3, label: 'Thắng 25 trận Battle / Tháp' },
-  exp: { target: 10000, rewardLt: 450, rewardStones: 2, label: 'Tích lũy 10.000 EXP trong tuần' },
-  bonus: { rewardLt: 600, rewardStones: 5, label: 'Thưởng Hoàn Tất 3/3 Hợp Đồng Tuần' },
+  jobs: { target: 15, rewardLt: 450, rewardStones: 2, label: 'Hoàn thành 15 ca Làm Việc (/job)' },
+  wins: { target: 25, rewardLt: 550, rewardStones: 3, label: 'Thắng 25 trận Battle / Tháp' },
+  exp: { target: 10000, rewardLt: 500, rewardStones: 2, label: 'Tích lũy 10.000 EXP trong tuần' },
+  bonus: { rewardLt: 700, rewardStones: 5, label: 'Thưởng Hoàn Tất 3/3 Hợp Đồng Tuần' },
 };
 
 // =========================================================================
-// HỆ THỐNG LINH VỰC • THẦN THỨC • THẦN CẢNH (v1.3)
+// HỆ THỐNG LINH VỰC • THẦN THỨC • THẦN CẢNH (v1.3 + v1.7)
 // =========================================================================
 export const DOMAIN_ELEMENTS = V13_DOMAIN_ELEMENTS;
 
-export const DOMAIN_CATALOG = V13_DOMAINS.map((d) => ({
+export const DOMAIN_CATALOG = [...V13_DOMAINS, ...V17_DOMAINS].map((d) => ({
   ...d,
   entity_kind: 'domain',
   id: d.domain_id,
   is_unique: Boolean(d.is_unique || MYTHIC_UNIQUE_DOMAIN_IDS.has(d.domain_id)),
+  display_rarity_key: d.is_exclusive_fuyumi ? 'supreme' : (d.is_unique || MYTHIC_UNIQUE_DOMAIN_IDS.has(d.domain_id)) ? 'unique_supreme' : d.rarity_key,
   drop_rate: d.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[d.rarity_key]?.dropRate ?? 0),
   icon: domainEmoji(d.domain_id, em('su_realm_star')),
   emoji_key: domainEmojiKey(d.domain_id),
-  file: `domains/${d.domain_id}.png`,
+  file: d.file || `domains/${d.domain_id}.png`,
 }));
 
 export const DOMAIN_BY_ID = Object.fromEntries(DOMAIN_CATALOG.map((d) => [d.domain_id, d]));
 
-export const DIVINE_SENSE_CATALOG = V13_DIVINE_SENSES.map((s) => ({
+export const DIVINE_SENSE_CATALOG = [...V13_DIVINE_SENSES, ...V17_DIVINE_SENSES].map((s) => ({
   ...s,
   entity_kind: 'sense',
   id: s.sense_id,
   is_unique: Boolean(s.is_unique || MYTHIC_UNIQUE_SENSE_IDS.has(s.sense_id)),
+  display_rarity_key: s.is_exclusive_fuyumi ? 'supreme' : (s.is_unique || MYTHIC_UNIQUE_SENSE_IDS.has(s.sense_id)) ? 'unique_supreme' : s.rarity_key,
   drop_rate: s.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[s.rarity_key]?.dropRate ?? 0),
   icon: senseEmoji(s.sense_id, em('su_sparkle')),
   emoji_key: senseEmojiKey(s.sense_id),
-  file: `domains/${s.sense_id}.png`,
+  file: s.file || `domains/${s.sense_id}.png`,
 }));
 
 export const DIVINE_SENSE_BY_ID = Object.fromEntries(DIVINE_SENSE_CATALOG.map((s) => [s.sense_id, s]));
 
-export const DIVINE_REALM_CATALOG = V13_DIVINE_REALMS.map((r) => ({
+export const DIVINE_REALM_CATALOG = [...V13_DIVINE_REALMS, ...V17_DIVINE_REALMS].map((r) => ({
   ...r,
   entity_kind: 'realm',
   id: r.realm_id,
   is_unique: Boolean(r.is_unique || MYTHIC_UNIQUE_REALM_IDS.has(r.realm_id)),
+  display_rarity_key: r.is_exclusive_fuyumi ? 'supreme' : (r.is_unique || MYTHIC_UNIQUE_REALM_IDS.has(r.realm_id)) ? 'unique_supreme' : r.rarity_key,
   drop_rate: r.is_exclusive_fuyumi ? 0 : (RARITY_TIERS[r.rarity_key]?.dropRate ?? 0),
   icon: realmEmojiById(r.realm_id, em('su_arena')),
   emoji_key: realmEmojiKeyById(r.realm_id),
-  file: `domains/${r.realm_id}.png`,
+  file: r.file || `domains/${r.realm_id}.png`,
 }));
 
 export const DIVINE_REALM_BY_ID = Object.fromEntries(DIVINE_REALM_CATALOG.map((r) => [r.realm_id, r]));

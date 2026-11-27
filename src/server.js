@@ -473,7 +473,8 @@ app.get('/health', (req, res) => {
 
 app.get(['/api/update', '/api/update/:version'], (req, res) => {
   const ver = getCleanParam(req.params.version || req.query.version, '');
-  const result = getChangelogPayload(ver || LATEST_VERSION);
+  const page = getCleanParam(req.query.page, '1');
+  const result = getChangelogPayload(ver || LATEST_VERSION, page);
   return res.status(result.status || 200).json(result);
 });
 
@@ -539,7 +540,8 @@ app.get('/api/wiki', (req, res) => {
   try {
     const rawCategory = req.query.category || req.query.cat || null;
     const rawPage = req.query.page || 1;
-    const wikiResult = getWikiData(rawCategory, rawPage);
+    const rawSubhub = req.query.subhub || null;
+    const wikiResult = getWikiData(rawCategory, rawPage, rawSubhub);
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=300');
@@ -2771,6 +2773,121 @@ app.post('/api/alchemy/notifications/next', requireBackendApiKey, async (req, re
   } catch (err) {
     console.error('[Server] /api/alchemy/notifications/next error:', err);
     return res.status(500).json({ success: false, has_notification: false, error: err.message });
+  }
+});
+
+// ==================== TIẾN HÓA CHÂN THẦN (/tienhoa — Ver 1.7) ====================
+app.get('/api/tienhoa/hub/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getEvolutionHub(req.params.userId);
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/tienhoa/hub error:', err);
+    return res.status(500).json({ success: false, error: 'EVO_HUB_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/tienhoa/evolve', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await evolveUniquePet(body.userId, {
+      petId: body.petId,
+      petType: getCleanParam(body.petType),
+      ltTier: body.ltTier,
+      ltAmount: body.ltAmount,
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/tienhoa/evolve error:', err);
+    return res.status(500).json({ success: false, error: 'EVO_EVOLVE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/tienhoa/craft-crystal', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await craftEvoCrystal(body.userId, {
+      targetPetId: body.targetPetId,
+      targetPetType: getCleanParam(body.targetPetType),
+      confirmed: Boolean(body.confirmed),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/tienhoa/craft-crystal error:', err);
+    return res.status(500).json({ success: false, error: 'EVO_CRAFT_FAILED', message: err.message });
+  }
+});
+
+// ==================== SHOP ĐẶC BIỆT CHỦ NHẬT (/shop_dacbiet — Ver 1.7) ====================
+app.get('/api/special-shop/:userId', requireUpdateAck, async (req, res) => {
+  try {
+    const result = await getSpecialShopCatalog(req.params.userId);
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/special-shop error:', err);
+    return res.status(500).json({ success: false, error: 'SPECIAL_SHOP_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/special-shop/convert', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await convertLtToCrystals(body.userId, body.ttAmount ?? body.amount);
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/special-shop/convert error:', err);
+    return res.status(500).json({ success: false, error: 'SPECIAL_SHOP_CONVERT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/special-shop/buy', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await buySpecialShopItem(body.userId, getCleanParam(body.itemId), body.qty ?? 1);
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/special-shop/buy error:', err);
+    return res.status(500).json({ success: false, error: 'SPECIAL_SHOP_BUY_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/special-shop/open-selector', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await openMythicSelectorCard(body.userId, getCleanParam(body.category || body.group));
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/special-shop/open-selector error:', err);
+    return res.status(500).json({ success: false, error: 'SELECTOR_OPEN_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/explorer/switch-loadout', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await switchExplorerLoadoutSlot(body.userId, body.slotIndex ?? body.slot ?? 1);
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/explorer/switch-loadout error:', err);
+    return res.status(500).json({ success: false, error: 'EXPLORER_SWITCH_LOADOUT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/farm/use-item', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const itemId = String(getCleanParam(body.itemId) || '').toLowerCase();
+    const result = itemId === 'farm_auto_card'
+      ? await activateFarmAutoCard(body.userId)
+      : itemId === 'farm_growth_med'
+        ? await useFarmGrowthMed(body.userId)
+        : itemId === 'farm_yield_starch'
+          ? await useFarmYieldStarch(body.userId)
+          : { success: false, status: 400, error: 'UNKNOWN_FARM_ITEM', message: 'Vật phẩm nông trại không hợp lệ.' };
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/farm/use-item error:', err);
+    return res.status(500).json({ success: false, error: 'FARM_USE_ITEM_FAILED', message: err.message });
   }
 });
 

@@ -100,6 +100,8 @@ export function emId(name) {
 
 export function tierEmojiKey(rarityKey) {
   switch (String(rarityKey || '').toLowerCase()) {
+    case 'evolved_supreme':
+    case 'unique_supreme':
     case 'supreme': return 'su_tier_toithuong';
     case 'mythic': return 'su_tier_thanthoai';
     case 'epic': return 'su_tier_tien';
@@ -114,6 +116,8 @@ export function tierEmoji(rarityKey, fallback = '') {
 
 export function roleTierEmojiKey(rarityKey) {
   switch (String(rarityKey || '').toLowerCase()) {
+    case 'evolved_supreme':
+    case 'unique_supreme':
     case 'mythic':
     case 'supreme': return 'su_role_tier_mythic';
     case 'epic': return 'su_role_tier_epic';

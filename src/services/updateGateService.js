@@ -6,9 +6,10 @@
  */
 
 import { supabase } from '../config/supabase.js';
-import { LATEST_VERSION, getChangelogPayload, getUpdateAckReward } from '../data/changelogs.js';
-import { em } from '../config/emojiHelper.js';
+import { LATEST_VERSION, getChangelogPayload, getUpdateAckReward, getUpdateAckBundle } from '../data/changelogs.js';
+import { em, farmEmoji } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
+import { invalidateInventoryCache } from './inventoryService.js';
 
 const ackVersionCache = new Map();
 const MAX_ACK_CACHE = 2000;
@@ -90,13 +91,15 @@ export async function checkUpdateGate(userId) {
       return { blocked: false, version: userVer };
     }
 
-    const logPayload = getChangelogPayload(LATEST_VERSION);
+    const logPayload = getChangelogPayload(LATEST_VERSION, 1);
     const rewardLt = getUpdateAckReward(LATEST_VERSION);
+    const bundle = getUpdateAckBundle(LATEST_VERSION);
     return {
       blocked: true,
       user_version: userVer,
       latest_version: LATEST_VERSION,
       ack_reward_lt: rewardLt,
+      ack_reward_summary: bundle.summary,
       payload: {
         success: false,
         status: 200,
@@ -104,19 +107,49 @@ export async function checkUpdateGate(userId) {
         needs_update_ack: 'true',
         update_version: LATEST_VERSION,
         ack_reward_lt: rewardLt,
-        update_title: `${em('su_sparkle')} CẬP NHẬT MỚI v${LATEST_VERSION} — ĐỌC & NHẬN +${rewardLt.toLocaleString('vi-VN')} LT`,
+        ack_reward_summary: bundle.summary,
+        update_title: `${em('su_sparkle')} CẬP NHẬT MỚI v${LATEST_VERSION} — ĐỌC & NHẬN GÓI QUÀ LỚN!`,
         update_description: [
-          `Tiên Giới SuMi vừa nâng cấp lên **v${LATEST_VERSION}**! Hãy đọc tóm tắt bên dưới rồi bấm nút **Xác Nhận Cập Nhật** để nhận ngay **+${rewardLt.toLocaleString('vi-VN')} Linh Thạch** và mở khóa tiếp tục tu luyện.`,
+          `Tiên Giới SuMi vừa nâng cấp lên **v${LATEST_VERSION}**! Hãy đọc tóm tắt bên dưới rồi bấm nút **Xác Nhận Cập Nhật** để nhận ngay **${bundle.summary}** và mở khóa tiếp tục tu luyện.`,
+          `*(Dùng \`/updates\` để xem đủ ${logPayload.total_pages} trang chi tiết)*`,
           '',
           logPayload.description,
         ].join('\n').slice(0, 3950),
-        message: `Tiên Giới đã cập nhật lên **v${LATEST_VERSION}**! Hãy bấm nút **Tôi Đã Đọc & Xác Nhận Cập Nhật** để nhận **+${rewardLt.toLocaleString('vi-VN')} Linh Thạch** và tiếp tục chơi.`,
+        message: `Tiên Giới đã cập nhật lên **v${LATEST_VERSION}**! Hãy bấm nút **Tôi Đã Đọc & Xác Nhận Cập Nhật** để nhận **${bundle.summary}** và tiếp tục chơi.`,
         footer: '',
       },
     };
   } catch {
     return { blocked: false, version: LATEST_VERSION };
   }
+}
+
+async function grantInventoryItemIgnoreCap(userId, itemId, itemCategory, deltaQty, nowIso) {
+  const addQty = Math.max(0, Math.floor(Number(deltaQty || 0)));
+  if (!supabase || addQty <= 0) return addQty;
+  const { data: ex } = await supabase
+    .from('user_inventory')
+    .select('quantity')
+    .eq('user_id', userId)
+    .eq('item_id', itemId)
+    .maybeSingle();
+  const nextQty = Number(ex?.quantity || 0) + addQty;
+  if (ex) {
+    await supabase
+      .from('user_inventory')
+      .update({ quantity: nextQty, item_category: itemCategory || 'consumable', updated_at: nowIso })
+      .eq('user_id', userId)
+      .eq('item_id', itemId);
+  } else {
+    await supabase.from('user_inventory').insert({
+      user_id: userId,
+      item_id: itemId,
+      item_category: itemCategory || 'consumable',
+      quantity: nextQty,
+      updated_at: nowIso,
+    });
+  }
+  return nextQty;
 }
 
 export async function acknowledgeUpdate(userId) {
@@ -126,7 +159,11 @@ export async function acknowledgeUpdate(userId) {
   }
 
   return withAckLock(cleanId, async () => {
-    const rewardLt = getUpdateAckReward(LATEST_VERSION);
+    const bundle = getUpdateAckBundle(LATEST_VERSION);
+    const rewardLt = bundle.linh_thach;
+    const rewardTt = bundle.red_gold_crystals;
+    const rewardEssence = bundle.farm_essence;
+    const rewardItems = bundle.items || [];
     const lt = em('su_linhthach');
 
     if (!supabase) {
@@ -136,15 +173,18 @@ export async function acknowledgeUpdate(userId) {
         acknowledged_version: LATEST_VERSION,
         needs_update_ack: 'false',
         granted_lt: rewardLt,
+        granted_tt: rewardTt,
+        granted_farm_essence: rewardEssence,
+        granted_items: rewardItems.map((i) => ({ item_id: i.item_id, quantity: i.quantity, ignore_cap: Boolean(i.ignore_cap) })),
         already_acknowledged: false,
-        message: `${em('su_sparkle')} Đã xác nhận cập nhật **v${LATEST_VERSION}** & nhận thưởng **+${rewardLt.toLocaleString('vi-VN')}** ${lt}!`,
+        message: `${em('su_sparkle')} Đã xác nhận cập nhật **v${LATEST_VERSION}** & nhận thưởng **${bundle.summary}**!`,
       };
     }
 
     await ensureUserInitialized(cleanId);
     const { data: user } = await supabase
       .from('users')
-      .select('linh_thach, last_seen_update_version')
+      .select('linh_thach, red_gold_crystals, farm_essence, last_seen_update_version')
       .eq('user_id', cleanId)
       .maybeSingle();
 
@@ -157,6 +197,9 @@ export async function acknowledgeUpdate(userId) {
         acknowledged_version: LATEST_VERSION,
         needs_update_ack: 'false',
         granted_lt: 0,
+        granted_tt: 0,
+        granted_farm_essence: 0,
+        granted_items: [],
         already_acknowledged: true,
         linh_thach: currentBal,
         message: `${em('su_sparkle')} Bạn đã xác nhận bản cập nhật **v${LATEST_VERSION}** trước đó rồi! *(Số dư: **${currentBal.toLocaleString('vi-VN')}** ${lt})*`,
@@ -164,17 +207,21 @@ export async function acknowledgeUpdate(userId) {
     }
 
     const nextBal = currentBal + rewardLt;
+    const nextTt = Number(user?.red_gold_crystals || 0) + rewardTt;
+    const nextEssence = Number(user?.farm_essence || 0) + rewardEssence;
     const nowIso = new Date().toISOString();
     const { data: updatedRows, error: updErr } = await supabase
       .from('users')
       .update({
         last_seen_update_version: LATEST_VERSION,
         linh_thach: nextBal,
+        red_gold_crystals: nextTt,
+        farm_essence: nextEssence,
         updated_at: nowIso,
       })
       .eq('user_id', cleanId)
       .or(`last_seen_update_version.is.null,last_seen_update_version.neq.${LATEST_VERSION}`)
-      .select('linh_thach, last_seen_update_version');
+      .select('linh_thach, red_gold_crystals, farm_essence, last_seen_update_version');
 
     setAckCache(cleanId, LATEST_VERSION);
 
@@ -189,21 +236,46 @@ export async function acknowledgeUpdate(userId) {
         acknowledged_version: LATEST_VERSION,
         needs_update_ack: 'false',
         granted_lt: 0,
+        granted_tt: 0,
+        granted_farm_essence: 0,
+        granted_items: [],
         already_acknowledged: true,
         linh_thach: currentBal,
         message: `${em('su_sparkle')} Bạn đã xác nhận bản cập nhật **v${LATEST_VERSION}** trước đó rồi!`,
       };
     }
 
+    // Cấp vật phẩm quà tặng — BỎ QUA GIỚI HẠN TRẦN (ví dụ +5 Thẻ Reset Tháp đẩy thẳng lên bất kể túi đang có 15/15!)
+    const grantedItems = [];
+    for (const it of rewardItems) {
+      const nextQty = await grantInventoryItemIgnoreCap(cleanId, it.item_id, it.item_category || 'consumable', it.quantity, nowIso);
+      grantedItems.push({ item_id: it.item_id, quantity: it.quantity, total_now: nextQty, label: it.label });
+    }
+    invalidateInventoryCache(cleanId);
+
     const finalBal = Number(updatedRow.linh_thach ?? nextBal);
+    const finalTt = Number(updatedRow.red_gold_crystals ?? nextTt);
+    const finalEss = Number(updatedRow.farm_essence ?? nextEssence);
+    const rewardLines = [
+      `• **+${rewardLt.toLocaleString('vi-VN')}** ${lt} Linh Thạch *(Ví: **${finalBal.toLocaleString('vi-VN')} LT**)*`,
+      ...(rewardTt > 0 ? [`• **+${rewardTt}** ${em('red_gold_crystal', em('su_sparkle'))} Tinh Thể Đỏ Vàng (TT) *(Hiện có: **${finalTt} TT**)*`] : []),
+      ...(rewardEssence > 0 ? [`• **+${rewardEssence.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence') || em('su_sprout')} Linh Quả *(Hiện có: **${finalEss.toLocaleString('vi-VN')}**)*`] : []),
+      ...grantedItems.map((gi) => `• **+${gi.quantity}** ${em(gi.item_id, em('su_sparkle'))} **${gi.label || gi.item_id}** *(Hiện có trong túi: **${gi.total_now}** — quà không giới hạn trần)*`),
+    ];
+
     return {
       success: true,
       acknowledged_version: LATEST_VERSION,
       needs_update_ack: 'false',
       granted_lt: rewardLt,
+      granted_tt: rewardTt,
+      granted_farm_essence: rewardEssence,
+      granted_items: grantedItems,
       already_acknowledged: false,
       linh_thach: finalBal,
-      message: `${em('su_sparkle')} **Xác nhận cập nhật v${LATEST_VERSION} thành công & nhận thưởng +${rewardLt.toLocaleString('vi-VN')}** ${lt}!\n• Số dư hiện tại: **${finalBal.toLocaleString('vi-VN')} LT**. Toàn bộ lệnh tu luyện đã sẵn sàng — chúc đạo hữu tu luyện vui vẻ!`,
+      red_gold_crystals: finalTt,
+      farm_essence: finalEss,
+      message: `${em('su_sparkle')} **Xác nhận cập nhật v${LATEST_VERSION} thành công & nhận trọn gói quà mở bản!**\n${rewardLines.join('\n')}\nToàn bộ lệnh tu luyện đã sẵn sàng — chúc đạo hữu tu luyện vui vẻ!`,
     };
   });
 }

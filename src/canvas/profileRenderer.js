@@ -5,6 +5,7 @@ import {
   drawPetal,
   drawAntiAliasedAvatarWithBorder,
   preloadAvatarFrameOverlay,
+  drawElementalPetBorderFX,
   sanitizeText,
   resolveAssetPath,
   loadBadgeImage,
@@ -167,13 +168,16 @@ export async function renderProfileCard(data, options = {}) {
   // Tải hình nền, avatar & ảnh Linh Thú an toàn (với fallback mock asset tương ứng)
   // Ưu tiên file assets/pets/<pet_type>.png và fallback sang cuu_vi_hong_ho_transparent.png
   const petType = profile.pet?.pet_type || profile.pet?.type;
+  const petIsEvolved = Boolean(profile.pet?.is_evolved);
   let petAsset = null;
   if (petType) {
     if (petType === 'cuu_vi_hong_ho') {
       petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
+    } else if (petIsEvolved && resolveAssetPath(`pets/${petType}_evo.webp`)) {
+      petAsset = `pets/${petType}_evo.webp`;
     } else {
       const candidate = `pets/${petType}.png`;
-      petAsset = resolveAssetPath(candidate) ? candidate : 'pets/cuu_vi_hong_ho_transparent.png';
+      petAsset = resolveAssetPath(candidate) ? candidate : (resolveAssetPath(`pets/${petType}.webp`) ? `pets/${petType}.webp` : 'pets/cuu_vi_hong_ho_transparent.png');
     }
   } else if (isOwner) {
     petAsset = 'pets/cuu_vi_hong_ho_transparent.png';
@@ -698,6 +702,13 @@ export async function renderProfileCard(data, options = {}) {
     ctx.shadowBlur = 6;
     ctx.stroke();
     ctx.shadowBlur = 0;
+
+    if (profile.pet.is_evolved || petType === 'cuu_vi_hong_ho') {
+      drawElementalPetBorderFX(ctx, petFrameX, petFrameY, petFrameW, petFrameH, 10, profile.pet.element, {
+        allowShadowBlur: true,
+        lineWidth: 2.0,
+      });
+    }
 
     // Vẽ Bé Pet Chibi tách nền ngay CHÍNH GIỮA khung
     if (hasPetImg) {

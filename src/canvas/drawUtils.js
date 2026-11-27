@@ -727,6 +727,15 @@ export const AVATAR_FRAME_METRICS = {
   frame_chaos_primordial: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
   frame_emperor_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
   frame_eternal_aurora: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
+  frame_v17_01_moon_fox: { cx: 256, cy: 256, rTuck: 170, rUnder: 186 },
+  frame_v17_02_azure_dragon: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
+  frame_v17_03_rainbow_ribbon: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
+  frame_v17_04_lotus_feather: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
+  frame_v17_05_night_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_v17_06_crimson_raven: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_v17_07_jade_leaf: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_v17_08_frost_vine: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_v17_09_sapphire_butterfly: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
 };
 
 /**
@@ -1358,4 +1367,90 @@ export async function renderFramePreviewBuffer(frameId) {
   ctx.fillText(`/equip ma_id:${fid}`, w / 2, 296, 280);
 
   return canvas.toBuffer('image/png');
+}
+
+const ELEMENT_BORDER_PALETTES = {
+  hoa: ['#fb7185', '#f97316', '#fde047'],
+  thuy: ['#38bdf8', '#2563eb', '#a5f3fc'],
+  moc: ['#34d399', '#10b981', '#fef08a'],
+  kim: ['#fde047', '#f59e0b', '#f8fafc'],
+  tho: ['#d97706', '#fbbf24', '#78350f'],
+  loi: ['#c084fc', '#6366f1', '#fef08a'],
+  quang: ['#fef9c3', '#fde047', '#38bdf8'],
+  am: ['#a855f7', '#dc2626', '#1e1b4b'],
+  hukhong: ['#818cf8', '#c084fc', '#38bdf8'],
+  hondon: ['#f472b6', '#fbbf24', '#c084fc'],
+  luanhoi: ['#f43f5e', '#a855f7', '#fbbf24'],
+};
+
+function resolveElementBorderPalette(element) {
+  const s = String(element || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/\s+/g, '');
+  if (s.includes('hoa')) return ELEMENT_BORDER_PALETTES.hoa;
+  if (s.includes('thuy')) return ELEMENT_BORDER_PALETTES.thuy;
+  if (s.includes('moc')) return ELEMENT_BORDER_PALETTES.moc;
+  if (s.includes('kim')) return ELEMENT_BORDER_PALETTES.kim;
+  if (s.includes('tho')) return ELEMENT_BORDER_PALETTES.tho;
+  if (s.includes('loi')) return ELEMENT_BORDER_PALETTES.loi;
+  if (s.includes('quang')) return ELEMENT_BORDER_PALETTES.quang;
+  if (s.includes('am')) return ELEMENT_BORDER_PALETTES.am;
+  if (s.includes('hukhong')) return ELEMENT_BORDER_PALETTES.hukhong;
+  if (s.includes('luanhoi')) return ELEMENT_BORDER_PALETTES.luanhoi;
+  return ELEMENT_BORDER_PALETTES.hondon;
+}
+
+/**
+ * Vẽ viền Chân Thần tĩnh theo Hệ Nguyên Tố (40 Pet Tiến Hóa + Cửu Vĩ Hồng Hồ).
+ * Luôn ép shadowBlur = 0 khi allowShadowBlur === false (1v1 / 3v3).
+ */
+export function drawElementalPetBorderFX(ctx, x, y, w, h, radius = 12, element = 'Hỗn Độn', options = {}) {
+  const { allowShadowBlur = true, lineWidth = 2.2 } = options;
+  const [c1, c2, c3] = resolveElementBorderPalette(element);
+  const rad = Math.min(radius, w / 2, h / 2);
+
+  const traceRect = (rx, ry, rw, rh, rr) => {
+    const r2 = Math.min(rr, rw / 2, rh / 2);
+    ctx.beginPath();
+    ctx.moveTo(rx + r2, ry);
+    ctx.arcTo(rx + rw, ry, rx + rw, ry + rh, r2);
+    ctx.arcTo(rx + rw, ry + rh, rx, ry + rh, r2);
+    ctx.arcTo(rx, ry + rh, rx, ry, r2);
+    ctx.arcTo(rx, ry, rx + rw, ry, r2);
+    ctx.closePath();
+  };
+
+  ctx.save();
+  traceRect(x, y, w, h, rad);
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, c1);
+  grad.addColorStop(0.5, c2);
+  grad.addColorStop(1, c3);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = lineWidth;
+  if (allowShadowBlur) {
+    ctx.shadowColor = c2;
+    ctx.shadowBlur = 8;
+  } else {
+    ctx.shadowBlur = 0;
+  }
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  traceRect(x + 2.5, y + 2.5, w - 5, h - 5, Math.max(2, rad - 2));
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  const corners = [
+    [x + 4, y + 4],
+    [x + w - 4, y + 4],
+    [x + 4, y + h - 4],
+    [x + w - 4, y + h - 4],
+  ];
+  ctx.fillStyle = c3;
+  for (const [cx, cy] of corners) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 }

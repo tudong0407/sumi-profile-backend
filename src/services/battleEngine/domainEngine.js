@@ -12,7 +12,7 @@
 import { V13_DOMAIN_ELEMENTS } from '../../data/v13ExpansionCatalog.js';
 import { V14_DAO_AP_CONFIG } from '../../data/v14ExpansionCatalog.js';
 import { em, domainElementEmoji, senseEmoji, realmEmojiById } from '../../config/emojiHelper.js';
-import { cleanseCombatantDebuffs } from './haxEngine.js';
+import { cleanseCombatantDebuffs, getDotResistance, isCombatantImmortal } from './haxEngine.js';
 
 function getEquipDomainBonuses(combatantOrEquip) {
   let extraEnergy = 0;
@@ -155,8 +155,8 @@ export function initDomainBattleState(attacker, defender) {
     defender: createDomainCombatSide(defender),
     activatedAtTurn2: false,
   };
-  if (attacker) attacker.domainRuntime = { modifiers: null };
-  if (defender) defender.domainRuntime = { modifiers: null };
+  if (attacker) attacker.domainRuntime = { modifiers: null, side: state.attacker };
+  if (defender) defender.domainRuntime = { modifiers: null, side: state.defender };
   return state;
 }
 
@@ -334,10 +334,12 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
   attacker.domainRuntime = {
     own: atkMod,
     incomingDebuffs: defMod.debuffsOnEnemy || {},
+    side: domainState.attacker,
   };
   defender.domainRuntime = {
     own: defMod,
     incomingDebuffs: atkMod.debuffsOnEnemy || {},
+    side: domainState.defender,
   };
 
   for (const [victim, enemyMod, victimSide, casterName] of [
@@ -367,7 +369,8 @@ function syncDomainModifiersAndMaxHp(attacker, defender, domainState, events) {
 /**
  * Chạy pha Linh Vực đầu mỗi hiệp >= 2 trước khi các Linh Thú ra đòn.
  */
-export function processTurnDomainPhase(turnNumber, attacker, defender, domainState, rng = Math.random) {
+export function processTurnDomainPhase(turnNumber, attacker, defender, domainState, rng = Math.random, opts = {}) {
+  const fastMode = Boolean(opts?.fastMode);
   const events = [];
   if (!domainState || turnNumber < 2) return events;
 
@@ -417,6 +420,7 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
     for (const [side, owner] of [[sideA, attacker], [sideB, defender]]) {
       if (!side.hasDomain) continue;
       side.activated = true;
+      if (fastMode) continue;
       const eLabel = side.indestructible ? '∞' : side.maxEnergy;
       const domElIcon = domainElementEmoji(side.domain.element, em('su_realm_star'));
       const senseTxt = side.sense ? `${senseEmoji(side.sense.sense_id, em('su_sparkle'))} ${side.sense.name}`.trim() : null;
@@ -469,7 +473,7 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
     if (!sideA.indestructible) sideA.energy = Math.max(0, sideA.energy - drainA);
     if (!sideB.indestructible) sideB.energy = Math.max(0, sideB.energy - drainB);
 
-    if (counter.aCountersB) {
+    if (!fastMode && counter.aCountersB) {
       const eA = domainElementEmoji(sideA.domain.element, em('su_realm_star'));
       const eB = domainElementEmoji(sideB.domain.element, em('su_realm_star'));
       events.push({
@@ -478,7 +482,7 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
         skill: `Khắc Chế Hệ Vực (${eA} ${sideA.domain.element} ▸ ${eB} ${sideB.domain.element})`,
         desc: `${eA} ${sideA.domain.name} áp chế ${eB} ${sideB.domain.name} (${sideA.indestructible ? '∞' : `${sideA.energy}/${sideA.maxEnergy}`} vs ${sideB.energy}/${sideB.maxEnergy} Linh Mạch)!`,
       });
-    } else if (counter.bCountersA) {
+    } else if (!fastMode && counter.bCountersA) {
       const eB = domainElementEmoji(sideB.domain.element, em('su_realm_star'));
       const eA = domainElementEmoji(sideA.domain.element, em('su_realm_star'));
       events.push({
@@ -556,15 +560,35 @@ export function processTurnDomainPhase(turnNumber, attacker, defender, domainSta
 
     const dotPct = Number(mods.debuffsOnEnemy?.dotMaxHpPct || 0);
     if (dotPct > 0 && enemyOwner.currentHp > 1) {
-      const dotDmg = Math.max(1, Math.floor(enemyOwner.maxHp * dotPct));
-      enemyOwner.currentHp = Math.max(1, enemyOwner.currentHp - dotDmg);
-      events.push({
-        actor: owner.id,
-        action: 'domain_dot',
-        skill: mods.daoApActive
-          ? `${em('dao_ap_crest')} Đạo Áp Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`
-          : `Linh Vực Phệ Hồn (-${dotDmg.toLocaleString('vi-VN')} HP)`,
-      });
+      if (isCombatantImmortal(enemyOwner)) {
+        if (!fastMode) {
+          events.push({
+            actor: enemyOwner.id,
+            action: 'immune',
+            skill: 'Kim Thân Miễn Nhiễm ST Vực',
+          });
+        }
+      } else {
+        const dotRes = getDotResistance(enemyOwner);
+        if (dotRes < 1) {
+          const dotDmg = Math.max(1, Math.floor(enemyOwner.maxHp * dotPct * (1 - dotRes)));
+          enemyOwner.currentHp = Math.max(1, enemyOwner.currentHp - dotDmg);
+          if (enemyOwner.state?.ultimate?.active) enemyOwner.state.ultimate.dmgTaken += dotDmg;
+          if (owner.state?.ultimate?.active) owner.state.ultimate.dmgDealt += dotDmg;
+          if (!fastMode) {
+            const hasBaseDomainDot = Number(mySide.domain?.debuffs?.dotMaxHpPct || 0) > 0;
+            const dotTitle = (mods.daoApActive && hasBaseDomainDot)
+              ? `${em('dao_ap_crest')} Đạo Áp Phệ Hồn`
+              : (hasBaseDomainDot ? 'Linh Vực Phệ Hồn' : 'Thần Cảnh Phệ Hồn');
+            const resNote = dotRes > 0 ? `, đã kháng ${Math.round(dotRes * 100)}%` : '';
+            events.push({
+              actor: owner.id,
+              action: 'domain_dot',
+              skill: `${dotTitle} → ${enemyOwner.petName || enemyOwner.name} (-${dotDmg.toLocaleString('vi-VN')} HP${resNote})`,
+            });
+          }
+        }
+      }
     }
   }
 

@@ -21,7 +21,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_minor'),
     image_file: 'shop/potion_luck_minor.webp',
-    description: 'Tăng +20% Luck cho 40 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.6%, cộng dồn với /gieoque; không stack cùng lọ khác loại). Dùng /equip ma_id:potion_luck_minor để uống.',
+    description: 'Tăng +20% Luck cho 40 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.741%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_minor để uống.',
   },
   {
     item_id: 'potion_luck_major',
@@ -34,7 +34,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_major'),
     image_file: 'shop/potion_luck_major.webp',
-    description: 'Tăng +40% Luck cho 60 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.7%, cộng dồn với /gieoque; không stack cùng lọ khác loại). Dùng /equip ma_id:potion_luck_major để uống.',
+    description: 'Tăng +40% Luck cho 60 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.8645%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_major để uống.',
   },
   {
     item_id: 'potion_luck_supreme',
@@ -47,7 +47,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_supreme'),
     image_file: 'shop/potion_luck_supreme.webp',
-    description: 'Tăng +60% Luck cho 80 lượt /roll hoặc Đổ Thạch (VD: 0.5% -> 0.8%, cộng dồn với /gieoque; không stack cùng lọ khác loại). Dùng /equip ma_id:potion_luck_supreme để uống.',
+    description: 'Tăng +60% Luck cho 80 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.988%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_supreme để uống.',
   },
 ];
 
@@ -63,9 +63,9 @@ export const STONE_TIERS = [
     price: 150,
     reroll_cost: 30,
     supreme_rate: 0.0001, // 0.01%
-    empty_rate: 0.48,
-    low_rate: 0.28,
-    mid_rate: 0.16,
+    empty_rate: 0.38,
+    low_rate: 0.33,
+    mid_rate: 0.21,
     high_rate: 0.065,
     epic_rate: 0.0149,
     payouts: {
@@ -84,9 +84,9 @@ export const STONE_TIERS = [
     price: 450,
     reroll_cost: 80,
     supreme_rate: 0.0002, // 0.02%
-    empty_rate: 0.44,
-    low_rate: 0.29,
-    mid_rate: 0.18,
+    empty_rate: 0.34,
+    low_rate: 0.34,
+    mid_rate: 0.23,
     high_rate: 0.072,
     epic_rate: 0.0178,
     payouts: {
@@ -105,9 +105,9 @@ export const STONE_TIERS = [
     price: 1200,
     reroll_cost: 200,
     supreme_rate: 0.0004, // 0.04%
-    empty_rate: 0.42,
-    low_rate: 0.29,
-    mid_rate: 0.19,
+    empty_rate: 0.32,
+    low_rate: 0.34,
+    mid_rate: 0.24,
     high_rate: 0.078,
     epic_rate: 0.0216,
     payouts: {
@@ -126,9 +126,9 @@ export const STONE_TIERS = [
     price: 3000,
     reroll_cost: 500,
     supreme_rate: 0.0005, // 0.05%
-    empty_rate: 0.40,
-    low_rate: 0.29,
-    mid_rate: 0.20,
+    empty_rate: 0.30,
+    low_rate: 0.34,
+    mid_rate: 0.25,
     high_rate: 0.084,
     epic_rate: 0.0255,
     payouts: {

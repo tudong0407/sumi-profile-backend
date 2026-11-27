@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v163-s12`;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s1`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 
@@ -31,8 +31,8 @@ const uniqueRamCache = new Map();
 const inFlightUnique = new Map();
 const dynamicRamCache = new Map();
 
-const STATIC_RAM_CACHE_MAX = 260;
-const UNIQUE_RAM_CACHE_MAX = 20;
+const STATIC_RAM_CACHE_MAX = 450;
+const UNIQUE_RAM_CACHE_MAX = 100;
 const DYNAMIC_CACHE_MAX = 15;
 const DYNAMIC_CACHE_TTL_MS = 15000;
 

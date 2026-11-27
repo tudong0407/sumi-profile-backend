@@ -11,16 +11,16 @@ import {
   EQUIPMENT_BY_ID,
   PET_CATALOG,
   PET_BY_TYPE,
+  DOMAIN_CATALOG,
+  DIVINE_SENSE_CATALOG,
+  DIVINE_REALM_CATALOG,
+  V17_PET_EVOLUTIONS,
   RARITY_TIERS,
+  resolveEntityDisplayRarityKey,
   PUBLIC_BASE_URL,
   FUYUMI_USER_ID,
 } from '../data/catalog.js';
 import { V14_EXPLORER_MAPS } from '../data/v14ExpansionCatalog.js';
-import {
-  V13_DOMAINS,
-  V13_DIVINE_SENSES,
-  V13_DIVINE_REALMS,
-} from '../data/v13ExpansionCatalog.js';
 import {
   em,
   tierEmoji,
@@ -92,8 +92,8 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.6.1 • 10 Chuyên Mục • 165 Pháp Bảo • 91 Linh Thú • 63 Thực Thể Linh Vực • 40 Nguyên Thạch • Luyện Đan',
-  version: '1.6.1',
+  subtitle: 'Cẩm nang v1.7 • 10 Chuyên Mục • 150 Linh Thú (40 Tiến Hóa Ultimate) • 264 Pháp Bảo • 161 Lãnh Địa • Shop Đặc Biệt • Luyện Đan',
+  version: '1.7',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -102,7 +102,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-26T00:00:00.000Z',
+  updated_at: '2026-11-27T00:00:00.000Z',
   total_categories: 10,
 };
 
@@ -111,7 +111,7 @@ export const WIKI_CATEGORIES = {
     id: 'overview',
     title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
     icon: em('su_wiki_scroll'),
-    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.6.1).',
+    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.7).',
     image_url: '',
     sections: [
       {
@@ -119,8 +119,8 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.6.1)',
-        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu: /battle, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.7)',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu & Tiến Hóa: /battle, /tienhoa, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /shop_dacbiet, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
@@ -130,11 +130,11 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.6.1)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.7)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
-          '• **Chiến đấu:** `/battle` • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
-          '• **Kho & Gacha:** `/roll` • `/dothach` • `/gieoque` • `/autosell` • `/shop` • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
+          '• **Chiến đấu & Tiến Hóa:** `/battle` • `/tienhoa` *(Tiến Hóa Chân Thần)* • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
+          '• **Kho & Gacha:** `/roll` • `/dothach` • `/gieoque` • `/autosell` • `/shop` • `/shop_dacbiet` *(Chủ Nhật)* • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
           '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/luyendan` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
           '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
         ].join('\n'),
@@ -146,7 +146,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Hệ thống Tu Tiên SuMi Family v1.6.1: Buff SET 2 tầng, Pity 350, 40 Nguyên Thạch Đổ Thạch, Lò Luyện Đan, Tháp 500 tầng, Nông Trại 8 ô, Khám Phá 12 địa danh & tiện ích Server.',
+    content: 'Hệ thống Tu Tiên SuMi Family v1.7: Tiến Hóa Chân Thần (/tienhoa) & 40 Ultimate, +260 món mới, Shop Đặc Biệt Chủ Nhật (/shop_dacbiet), Gacha 0.65%, Buff SET 2 tầng, Pity 350, Đổ Thạch, Lò Luyện Đan, Tháp 500 tầng, Nông Trại 8 ô & Khám Phá 12 địa danh.',
   },
 
   realms: {
@@ -238,93 +238,93 @@ export const WIKI_CATEGORIES = {
 
   equipment: {
     id: 'equipment',
-    title: `${em('su_crossed_swords')} Trang Bị Loadout (165 Pháp Bảo)`,
+    title: `${em('su_crossed_swords')} Trang Bị Loadout (264 Pháp Bảo)`,
     icon: em('su_crossed_swords'),
-    description: '57 Vũ Khí • 54 Bảo Ngọc • 54 Chiến Hồn, tỉ lệ rớt, Độc Nhất & Khắc Ấn D→S.',
+    description: '90 Vũ Khí • 87 Bảo Ngọc • 87 Chiến Hồn, tỉ lệ rớt 0.65%, 59 Độc Nhất & Khắc Ấn D→S.',
     image_url: '',
     sections: [
       {
-        heading: '1. 3 Slot Pháp Bảo (165 Món)',
-        content: '• Vũ Khí (57): ATK, SPD, CRIT & HAX công • Bảo Ngọc (54): DEF, HP, Khiên & kháng • Chiến Hồn (54): Chỉ số tổng & HAX đa tầng.',
+        heading: '1. 3 Slot Pháp Bảo (264 Món)',
+        content: '• Vũ Khí (90): ATK, SPD, CRIT & HAX công • Bảo Ngọc (87): DEF, HP, Khiên & kháng • Chiến Hồn (87): Chỉ số tổng & HAX đa tầng.',
       },
       {
-        heading: '2. Tỉ Lệ Rớt & Quy Tắc Sở Hữu',
-        content: '• Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5% (39 Độc Nhất toàn server + 56 Thần Thoại Tự Do, cân bằng <= 15%).\n• Quay trùng cộng dồn & giữ tư chất Khắc Ấn cao nhất; hỗ trợ tự bán qua /autosell, xem kho /phapbao, tháo /unequip & nâng D→S qua /enchant.',
+        heading: '2. Tỉ Lệ Rớt (v1.7) & Quy Tắc Sở Hữu',
+        content: '• Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck + 0.6175% × Luck Thần Thoại thường; 59 Độc Nhất toàn server).\n• Quay trùng cộng dồn & giữ tư chất Khắc Ấn cao nhất; hỗ trợ tự bán qua /autosell, xem kho /phapbao, tháo /unequip & nâng D→S qua /enchant.',
       },
     ],
     fields: [
       {
-        name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo (165 Món)`,
-        value: `• ${em('su_crossed_swords')} **Vũ Khí** (57): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (54): \`DEF • HP • Khiên\`\n• ${em('su_thunder_hax')} **Chiến Hồn** (54): \`ATK • DEF • SPD • HAX\``,
+        name: `${em('su_shield_def')} 3 Nhóm Pháp Bảo (264 Món)`,
+        value: `• ${em('su_crossed_swords')} **Vũ Khí** (90): \`ATK • SPD • CRIT\`\n• ${em('su_linhthach')} **Bảo Ngọc** (87): \`DEF • HP • Khiên\`\n• ${em('su_thunder_hax')} **Chiến Hồn** (87): \`ATK • DEF • SPD • HAX\``,
         inline: true,
       },
       {
-        name: `${em('su_gacha_dice')} Tỉ Lệ Rớt`,
-        value: `• ${tierEmoji('common')} Phàm: **60.5%**\n• ${tierEmoji('rare')} Linh: **25%**\n• ${tierEmoji('epic')} Tiên: **14%**\n• ${tierEmoji('mythic')} Thần Thoại: **0.5%** *(39 Độc Nhất + 56 Tự Do)*`,
+        name: `${em('su_gacha_dice')} Tỉ Lệ Rớt (v1.7)`,
+        value: `• ${tierEmoji('common')} Phàm: **60.35%**\n• ${tierEmoji('rare')} Linh: **25%**\n• ${tierEmoji('epic')} Tiên: **14%**\n• ${tierEmoji('mythic')} Thần Thoại+: **0.65%** *(59 Độc Nhất + 135 Tự Do)*`,
         inline: true,
       },
       {
         name: `${tierEmoji('supreme')} Quy Tắc, Khắc Ấn Mới & Pity 350`,
-        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại *(98% Thường / 2% Độc Nhất)*.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
+        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại+ *(95% Thường / 5% Độc Nhất)*.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
         inline: false,
       },
     ],
-    content: '165 Pháp Bảo chia 3 Slot (57 Vũ Khí / 54 Bảo Ngọc / 54 Chiến Hồn), hỗ trợ /phapbao, /equip, /unequip, /enchant & /autosell.',
+    content: '264 Pháp Bảo chia 3 Slot (90 Vũ Khí / 87 Bảo Ngọc / 87 Chiến Hồn), Gacha 0.65%, hỗ trợ /phapbao, /equip, /unequip, /enchant & /autosell.',
   },
 
   pets: {
     id: 'pets',
-    title: `${em('su_pet_paw')} Linh Thú Tiên Giới (90 Chiến Pet)`,
+    title: `${em('su_pet_paw')} Linh Thú Tiên Giới (150 Chiến Pet • 40 Tiến Hóa Chân Thần)`,
     icon: em('su_pet_paw'),
-    description: '90 Linh Thú tiêu chuẩn (13 Phàm / 13 Linh / 14 Tiên / 50 Thần Thoại), công thức Lực Chiến & lệnh quản lý.',
+    description: '150 Linh Thú công khai (13 Phàm / 13 Linh / 14 Tiên / 70 Thần Thoại / 40 Tối Thượng Độc Nhất gồm 10 Thú Nhân), Tiến Hóa /tienhoa & 40 Ultimate.',
     image_url: '',
     sections: [
       {
-        heading: '1. Tổng Quan Linh Thú',
-        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.\n• Quản lý & nâng sao qua /linhthu, /pet, /enchant; quay trùng tự giữ Khắc Ấn cao nhất hoặc tự bán bằng /autosell.',
+        heading: '1. Tổng Quan Linh Thú & Tiến Hóa Chân Thần (/tienhoa)',
+        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Tiến Hóa Chân Thần (/tienhoa): Toàn bộ 40 Pet Tối Thượng Độc Nhất đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh (chế từ 3 Mảnh Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT) có thể tiến hóa tăng chỉ số, đổi ảnh & mở khóa 40 Skill Ultimate tái kích hoạt!\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.',
       },
     ],
     fields: [
       {
-        name: `${em('su_wiki_scroll')} Công Thức & Lệnh Quản Lý`,
-        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Chiến Lực:** `(ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị` • Nâng nhanh qua `/linhthu muc_dich:<cấp|sao>`.',
+        name: `${em('su_wiki_scroll')} Công Thức, Tiến Hóa (/tienhoa) & 40 Ultimate`,
+        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Tiến Hóa Chân Thần (`/tienhoa`):** 40 Pet Độc Nhất (`Lv.40 & 8★` + `1 Hồng Mông Tiến Hóa Tinh`, trượt không mất Hồng Mông) mở khóa **Skill Ultimate tái kích hoạt** trong 1v1 & Tổ Đội.',
         inline: false,
       },
       {
-        name: `${em('su_gacha_dice')} 4 Bậc Phẩm Cấp (90 Linh Thú)`,
+        name: `${em('su_gacha_dice')} Phân Bậc Phẩm Cấp (150 Linh Thú Công Khai)`,
         value: [
-          `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.5%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
-          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(50 loài: 10 Độc Nhất + 40 Tự Do)*: **0.5%** *(\`/roll\`)*`,
+          `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.35%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
+          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(70 loài)* & ${tierEmoji('unique_supreme')} **Tối Thượng Độc Nhất** *(40 loài: 30 Linh Thú + 10 Thú Nhân)*: **0.65%** *(\`/roll\`)*`,
         ].join('\n'),
         inline: false,
       },
     ],
-    content: '90 Linh Thú tiêu chuẩn chia 4 bậc (13 Phàm • 13 Linh • 14 Tiên • 50 Thần Thoại), quản lý qua /linhthu, /pet & /autosell.',
+    content: '150 Linh Thú công khai (13 Phàm • 13 Linh • 14 Tiên • 70 Thần Thoại • 40 Tối Thượng Độc Nhất hỗ trợ Tiến Hóa /tienhoa & 40 Ultimate).',
   },
 
   domains: {
     id: 'domains',
-    title: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (60 Món Công Khai)`,
+    title: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (161 Món Công Khai)`,
     icon: em('su_realm_star'),
-    description: '30 Linh Vực • 15 Thần Thức • 15 Thần Cảnh công khai, cơ chế Linh Mạch, Khắc Vực & Gacha /roll loai:domain.',
+    description: '65 Linh Vực • 48 Thần Thức • 48 Thần Cảnh công khai, cơ chế Linh Mạch, Khắc Vực & Gacha 0.65% /roll loai:domain.',
     image_url: '',
     sections: [
       {
-        heading: '1. Hệ Thống 3 Slot Vực (Hiệp 2+)',
-        content: '• Linh Vực (30 món: 15 Phàm/Linh/Tiên + 10 Thần Thoại Thường + 5 Độc Nhất): cung cấp Linh Mạch (3→7), Buff phe ta, Debuff phe địch, Xuyên Kháng Vực (56%/60%) & Áp Chế Buff Vực Địch (5%).\n• Thần Thức (15 món): cộng +1→+6 Linh Mạch tối đa, +5%→+19% Cường Hóa Buff Vực & 0%→70% Kháng Trừ Linh Mạch Khắc Vực.\n• Thần Cảnh (15 món): tăng +8%→+28% Cường Hóa Debuff Vực (khuếch đại toàn bộ debuff Vực) + kèm Debuff phụ riêng.',
+        heading: '1. Hệ Thống 3 Slot Vực (161 Món Công Khai — Hiệp 2+)',
+        content: '• Linh Vực (65 món: 15 Phàm/Linh/Tiên + 35 Thần Thoại Thường + 15 Tối Thượng Độc Nhất): cung cấp Linh Mạch (3→7), Buff phe ta, Debuff phe địch, Xuyên Kháng Vực (56%/60%) & Áp Chế Buff Vực Địch (5%).\n• Thần Thức (48 món): cộng +1→+6 Linh Mạch tối đa, Cường Hóa Buff Vực & Kháng Trừ Linh Mạch Khắc Vực.\n• Thần Cảnh (48 món): tăng Cường Hóa Debuff Vực + kèm Debuff phụ riêng (DoT Thần Cảnh chịu Kháng Độc/Đốt & Bất Tử).',
       },
       {
         heading: '2. Ngũ Hành Khắc Vực & Lệnh Quản Lý',
-        content: '• Vòng Khắc Vực 5 hệ: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực (bên khắc chỉ mất 1 Mạch/hiệp, bên bị khắc mất 2 Mạch/hiệp).\n• Sở hữu qua /roll loai:domain (50 LT/lượt, Pity 350 riêng cho Vực), trang bị qua /linhvuc hanh_dong:equip hoặc thu hồi /linhvuc hanh_dong:dismantle.',
+        content: '• Vòng Khắc Vực 5 hệ: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực (bên khắc chỉ mất 1 Mạch/hiệp, bên bị khắc mất 2 Mạch/hiệp).\n• Sở hữu qua /roll loai:domain (50 LT/lượt, 0.65% Thần Thoại+, Pity 350 riêng), trang bị qua /linhvuc.',
       },
     ],
     fields: [
       {
-        name: `${em('su_realm_star')} 3 Thành Phần Bộ Vực (60 Món Công Khai)`,
+        name: `${em('su_realm_star')} 3 Thành Phần Bộ Vực (161 Món Công Khai)`,
         value: [
-          '• **Linh Vực (30):** `5 Phàm (3 Mạch)` • `5 Linh (4 Mạch)` • `5 Tiên (5 Mạch)` • `10 Thần Thoại (6 Mạch, Xuyên Kháng Vực 56%)` • `5 Độc Nhất (7 Mạch, Xuyên Kháng Vực 60%, Áp Chế 5% Buff Vực Địch)`.',
-          '• **Thần Thức (15):** `3 Phàm (+1)` • `3 Linh (+2)` • `3 Tiên (+3)` • `4 Thần Thoại (+4)` • `2 Độc Nhất (+5/+6 Mạch)` • Cộng **Cường Hóa Buff Vực** (`+5%→+19%`) & **Kháng Trừ Linh Mạch Khắc Vực** (`0%→70%`).',
-          '• **Thần Cảnh (15):** `3 Phàm (+8%)` • `3 Linh (+12%)` • `3 Tiên (+18%)` • `4 Thần Thoại (+25%)` • `2 Độc Nhất (+28%)` **Cường Hóa Debuff Vực** + Debuff phụ.',
+          '• **Linh Vực (65):** `15 Phàm/Linh/Tiên` • `35 Thần Thoại (6 Mạch, Xuyên Kháng Vực 56%)` • `15 Tối Thượng Độc Nhất (7 Mạch, Xuyên Kháng Vực 60%, Áp Chế 5% Buff Vực Địch)`.',
+          '• **Thần Thức (48):** `9 Phàm/Linh/Tiên` • `32 Thần Thoại` • `7 Tối Thượng Độc Nhất` • Cộng **Linh Mạch**, **Cường Hóa Buff Vực** & **Kháng Trừ Linh Mạch Khắc Vực**.',
+          '• **Thần Cảnh (48):** `9 Phàm/Linh/Tiên` • `32 Thần Thoại` • `7 Tối Thượng Độc Nhất` • Cộng **Cường Hóa Debuff Vực** + Debuff phụ riêng.',
         ].join('\n'),
         inline: false,
       },
@@ -332,12 +332,12 @@ export const WIKI_CATEGORIES = {
         name: `${em('dao_ap_crest')} Khắc Vực, Đạo Áp & Gacha /roll loai:domain`,
         value: [
           `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
-          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.5% • Linh 25% • Tiên 14% • Thần Thoại 0.5%, Pity 350)* • Trang bị & xem kho qua `/linhvuc` • Dùng menu chọn từng món để xem ảnh & chủ sở hữu Độc Nhất.',
+          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65%, Pity 350)* • Trang bị & xem kho qua `/linhvuc` • Dùng nút chọn nhóm bên dưới để tra cứu chi tiết & chủ sở hữu Độc Nhất.',
         ].join('\n'),
         inline: false,
       },
     ],
-    content: '60 món công khai (30 Linh Vực, 15 Thần Thức, 15 Thần Cảnh), kích hoạt từ Hiệp 2 trong /battle.',
+    content: '161 món Lãnh Địa công khai (65 Linh Vực, 48 Thần Thức, 48 Thần Cảnh), kích hoạt từ Hiệp 2 trong /battle.',
   },
 
   roles: {
@@ -492,59 +492,59 @@ export const WIKI_CATEGORIES = {
 
   economy: {
     id: 'economy',
-    title: `${em('su_linhthach')} Kinh Tế, Nhiệm Vụ, Tháp 500 & Nông Trại`,
+    title: `${em('su_linhthach')} Kinh Tế, Shop Đặc Biệt, Tháp 500 & Nông Trại (v1.7)`,
     icon: em('su_linhthach'),
-    description: '/daily, /job, /roll, /autosell, /shop, /nhiemvu (Tháp 500 tầng +15% LT), /farm, Minigame, /marry & /giatoc.',
+    description: '/daily (55–80 LT), /job (+30%), /roll (0.65%), /shop_dacbiet Chủ Nhật, /nhiemvu (+30% & Tháp Mảnh Hỗn Độn), /farm (-30p), /luyendan & Minigame.',
     image_url: '',
     sections: [
       {
-        heading: '1. Kiếm LT, Gacha, Đổ Thạch & Cửa Hàng',
-        content: '• /daily (40–60 LT + Streak 7d) • /job (6 nghề, 8 ca/ngày, +42–90 LT + 22–38 EXP) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, Pity Thần Thoại 350) hỗ trợ /autosell.\n• /dothach (Phường Đổ Thạch — tách biệt với /roll, không Pity 350): 4 phân khúc sạp đá thô (40 loài Nguyên Thạch) kèm 300 manh mối, cắt đá săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Tối Thượng Cực Phẩm (chọn Thần Thoại không Độc Nhất).\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận (Đại Hung → Đại Cát) cộng/trừ nhẹ % EXP, % LT & % Luck (hỗ trợ Cầu An Giải Hạn 250 LT khi gặp Hung/Đại Hung).\n• /shop (7 quầy + Shop Ngày giảm 15–40%): Mở bán thêm 3 Lọ Luck Potion (+20%/+40%/+60% Luck theo lượt cho cả /roll & /dothach, cộng dồn với /gieoque; uống qua /equip).',
+        heading: '1. Kiếm LT, Gacha 0.65%, Đổ Thạch & Shop Đặc Biệt',
+        content: '• /daily (55–80 LT + Streak 7d) • /job (+30%, 6 nghề, 8 ca/ngày) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, 0.65% Thần Thoại+, Pity 350 với 5% Độc Nhất) hỗ trợ /autosell.\n• /shop_dacbiet (Chủ Nhật 08:00–24:00 UTC+7): Đổi 750 LT = 1 Tinh Thể Đỏ Vàng (TT, min 5 TT, max 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh, Thẻ Chọn Thần Thoại (7 nhóm), Mảnh Hỗn Độn, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.\n• /dothach (40 Nguyên Thạch, 300 manh mối, giảm -10% xịt): Săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Hộp Thần Thoại Cực Phẩm.\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận + Cầu An Giải Hạn 250 LT • /shop (7 quầy, phân trang 30 Khung Avatar + 3 Lọ Luck Potion).',
       },
       {
-        heading: '2. Nhiệm Vụ & Hợp Đồng Tuần, Tháp 500 Tầng, Nông Trại, Lò Luyện Đan & Cộng Đồng',
-        content: '• /nhiemvu: Giao diện tinh gọn gộp Nhiệm Vụ Hàng Ngày + Hợp Đồng Tuần kèm bảng Tháp 500 Tầng (cooldown 6s/lượt).\n• /luyendan (Lò Luyện Đan): Tối đa 6 mẻ/ngày trên tối đa 2 Lò song song (Lò #2 tự mở ở Lv.45 hoặc 2.500 LT), nâng cấp Lò Lv.1–5 (+LT%, giảm giờ, ân hạn 20–60p, tăng tỉ lệ Thượng Phẩm ×1.25 / Đan Vân ×1.50). Hỗ trợ công thức Tinh Hoa dùng 28–56 Linh Quả từ /farm. Quá ân hạn bị cháy (30 LT) + nổ khóa lò 4h (Sửa nhanh 300 LT) & bot tự DM nhắc chín + trước nổ 10p.\n• /farm 8 ô (4 Linh Điền + 4 Linh Các, giá hạt/trứng 88–825 LT) & /exchange • /inv hỗ trợ 3 Loadout tự động lưu (Bộ 1 / Bộ 2 / Bộ 3) • /top loai:chat|voice trao 500/400/300 LT mỗi ngày lúc 00:00 UTC+7 • Minigame (10–10.000 LT) • /marry & /giatoc.',
+        heading: '2. Nhiệm Vụ (+30%), Tháp 500 Tầng, Nông Trại (-30p) & Lò Luyện Đan',
+        content: '• /nhiemvu (+30%): Ngày 5/5 (+170 LT), Hợp Đồng Tuần (450/550/500/700 LT), Tháp 500 tầng mốc T100/200/300/400/500 tặng thêm +1 Mảnh Hỗn Độn.\n• /farm 8 ô (4 Linh Điền + 4 Linh Các): Tưới/cho ăn rút ngắn -30 phút chín; có Thẻ Tự Động Chăm Farm 24h, Bùa Bảo Vệ +2h, Thuốc Tốc Độ (-25%) & Bột Sản Lượng (+30%).\n• /luyendan: 6 mẻ/ngày trên 2 Lò song song (Lv.1–5), hỗ trợ Bùa Bảo Vệ Lò (+2h) & DM nhắc tự động • /inv 3 Loadout (Bộ 1/2/3) đồng bộ với /explorer.',
       },
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha, Đổ Thạch & Gieo Quẻ`,
+        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha 0.65% & Shop Đặc Biệt`,
         value: [
-          '• `/daily` • `/job` *(6 nghề, 8 ca/ngày, +42–90 LT + 22–38 EXP)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.6.1 nhận **+1.500 LT**.',
-          '• `/roll` (`50 LT/lượt`, `450/10`, Pity **350**) kèm **`/autosell`** • **`/dothach`** *(40 Nguyên Thạch, 300 manh mối, không Pity, săn Tối Thượng)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
-          '• `/shop` *(7 quầy + Shop Ngày)*: Đá Khắc Ấn (`150 LT`, 5/ngày), Thẻ Reset Tháp (`200 LT`, 5/ngày, max 15) & **3 Lọ Luck Potion** *(Tiểu Vận `+20%` • Thiên Cơ `+40%` • Hồng Mông `+60%` cho `/roll` & `/dothach`)*.',
+          '• `/daily` *(55–80 LT)* • `/job` *(+30%, 6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.7 nhận **+3.000 LT + 5 TT + 5 Thẻ Reset Tháp + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối**.',
+          '• `/roll` (`50 LT/lượt`, `450/10`, **0.65% Thần Thoại+**, Pity **350**) • **`/dothach`** *(40 Nguyên Thạch, giảm `-10%` xịt, săn Hộp Thần Thoại Cực Phẩm)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
+          '• **`/shop_dacbiet` (Chủ Nhật `08:00–24:00`):** Đổi `750 LT = 1 TT` *(tối thiểu 5 TT, trần `200 TT/tuần`)* mua Hồng Mông, Thẻ Chọn Thần Thoại, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('su_tower_boss')} Nhiệm Vụ Ngày, Tháp 500 Tầng (+15% LT) & Top Ngày`,
+        name: `${em('su_tower_boss')} Nhiệm Vụ (+30%), Tháp 500 Tầng & Top Ngày`,
         value: [
-          '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** 2 cố định + 3 xoay vòng *(5/5: **+130 LT** + quà)* & 3 Hợp Đồng Tuần.',
-          '• **Tháp 500 Tầng (`1k → 125k` Lực):** Thưởng Linh Thạch mỗi tầng & mốc Milestone **tăng +15%**, NPC dùng **Linh Vực từ F70+**.',
+          '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** Tăng **`+30%`** *(5/5: **+170 LT** + quà)* & 4 Hợp Đồng Tuần *(450 / 550 / 500 / 700 LT)*.',
+          '• **Tháp 500 Tầng (`1k → 125k` Lực):** Mốc **T100 / T200 / T300 / T400 / T500** thưởng thêm **`+1 Mảnh Tinh Hoa Hỗn Độn`**; NPC dùng Linh Vực từ F70+.',
           '• **Top Chat & Voice Ngày (`00:00`):** `/top loai:chat` & `/top loai:voice` thưởng **500 / 400 / 300 LT** mỗi ngày.',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('su_sprout')} Nông Trại, Giải Trí, Tiên Lữ & Gia Tộc`,
+        name: `${em('su_sprout')} Nông Trại (-30p), Luyện Đan, Giải Trí & Gia Tộc`,
         value: [
-          '• **`/farm` & `/exchange`:** Tối đa **8 ô** (`4 Linh Điền + 4 Linh Các`, `6/12/24h`, mở ô #5–#8 tại `/exchange`), Bot **tự nhắn DM nhắc tới giờ tưới & cảnh báo sắp héo (1h / 30p / 15p)**.',
-          '• **`/luyendan` (Lò Luyện Đan):** Tối đa `6 mẻ/ngày` trên `2 Lò` song song *(Lò #2 mở tại Lv.45 hoặc 2.500 LT)*, nâng Lò `Lv.1–5` & kết hợp `28–56 Linh Quả` săn `Thượng Phẩm (×1.25)` / `Đan Vân (×1.50)` kèm DM nhắc chín & trước nổ 10p.',
-          '• **`/inv` (3 Loadout Tự Lưu):** Chuyển nhanh `Bộ 1 / Bộ 2 / Bộ 3` (Linh Thú + Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh); mọi `/equip`, `/pet`, `/linhvuc` tự lưu vào bộ đang chọn.',
+          '• **`/farm` & `/exchange`:** 8 ô (`4 Linh Điền + 4 Linh Các`), tưới/cho ăn giảm **`-30 phút`** chín; hỗ trợ **Thẻ Auto Farm 24h**, **Bùa Bảo Vệ +2h**, **Thuốc Tốc Độ (-25%)** & **Bột Sản Lượng (+30%)**.',
+          '• **`/luyendan` (Lò Luyện Đan):** `6 mẻ/ngày` trên `2 Lò` song song (`Lv.1–5`), hỗ trợ **Bùa Bảo Vệ Lò (+2h)** & DM nhắc chín/trước nổ 10p.',
+          '• **`/inv` (3 Loadout Tự Lưu):** Chuyển nhanh `Bộ 1 / Bộ 2 / Bộ 3` đồng bộ trực tiếp với `/explorer`.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
           `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP & Daily LT, Clan Wars 24H).`,
         ].join('\n'),
         inline: false,
       },
     ],
-    content: 'Kinh tế v1.6.1: +1.500 LT /updates, Tháp 500 tầng (+15% LT), Top Chat/Voice ngày, Pity 350, 40 Nguyên Thạch Đổ Thạch, Lò Luyện Đan, /farm 8 ô & Minigame.',
+    content: 'Kinh tế v1.7: Gói quà mở bản +3.000 LT + 5 TT + 5 Thẻ Reset Tháp + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối, /shop_dacbiet Chủ Nhật, Gacha 0.65%, +30% /job & /nhiemvu, Tháp mốc 100..500 +Mảnh Hỗn Độn & /farm -30p.',
   },
 
   explorer: {
     id: 'explorer',
     title: `${em('explorer_world_map_v14')} Khám Phá Đại Lục & Thuận Hệ Địa Hình (/explorer)`,
     icon: em('explorer_world_map_v14'),
-    description: '12 địa danh cân bằng mới (3.5k → 112k Lực), +5% LT cơ bản (210–315 LT/h), Thuận Hệ Địa Hình (+6% Sống / +10% LT) & nhặt 60% đồ rơi.',
+    description: '12 địa danh (3.5k → 112k Lực), đồng bộ Bộ 1/2/3, Thuận Hệ Địa Hình (+6% Sống / +10% LT), Bùa Tuyệt Ấn 25% & Mảnh Hỗn Độn 0.5%.',
     image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
     sections: [
       {
@@ -554,8 +554,8 @@ export const WIKI_CATEGORIES = {
         ).join('\n'),
       },
       {
-        heading: '2. Thuận Hệ Địa Hình, Cơ Chế Sinh Tử & Phần Thưởng',
-        content: '• Chọn 1 Pet + 3 Pháp Bảo + 1 Linh Vực đi mốc 2/3/6/12h; thưởng cơ bản 210–315 LT/giờ × hệ số (+5% mới) + 0.5% Đá Tuyệt Ấn Thạch + 0.01% Vũ Khí Thần Thoại.\n• Thuận Hệ Địa Hình: Nếu Linh Thú hoặc Linh Vực mang đi có Hệ trùng với Hệ thuận lợi của Map, tự động nhận thêm +6% Tỉ Lệ Sống Sót và +10% Linh Thạch thu hoạch!\n• Lực >= Map sống 90%–100%; yếu hơn map rủi ro tăng dần về 100% (thua từ 2× lực = 0% sống sót). Pet Độc Nhất trọng thương hồi sinh bằng Cửu Chuyển Hoàn Hồn Lộ, Pháp Bảo thường rơi tại map chờ người sau nhặt (60%).',
+        heading: '2. Bộ 1/2/3, Thuận Hệ Địa Hình & Bảng Rơi Đồ v1.7',
+        content: '• Đồng bộ trực tiếp 3 Loadout (Bộ 1 / 2 / 3) từ /inv; khóa riêng bộ đang xuất hành để bạn chuyển bộ khác đi /battle bình thường.\n• Thưởng mốc 2/3/6/12h: 210–315 LT/giờ × hệ số + 5% Đá Khắc Ấn Tuyệt Đối (tăng lên 25% khi có Bùa Tuyệt Ấn — 3 lượt) + 0.5% Mảnh Tinh Hoa Hỗn Độn cố định + 5% Thẻ Auto Farm + 55% 1–2 gói nông trại.\n• Thuận Hệ Địa Hình: Pet hoặc Linh Vực khớp Hệ Map nhận +6% Sống Sót & +10% LT.',
       },
     ],
     fields: [
@@ -567,11 +567,11 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_sparkle')} Thuận Hệ Địa Hình (+6% Sống • +10% LT) & Quà (+5% LT)`,
+        name: `${em('su_sparkle')} Đồng Bộ Bộ 1/2/3, Thuận Hệ & Rơi Đồ v1.7`,
         value: [
-          '• **Thuận Hệ Địa Hình:** Khi **Pet** hoặc **Linh Vực** xuất hành khớp với **Hệ của Map** *(ví dụ Map #1 Hệ Mộc/Thổ)*, đội hình được cộng ngay **+6% Tỉ Lệ Sống Sót** và **+10% Linh Thạch**!',
-          '• **Thưởng (`2/3/6/12h`):** **`210–315 LT/giờ × hệ số`** *(+5%)* + **0.5%** Đá Khắc Ấn Tuyệt Đối *(100% D→S)* + **0.01%** Vũ Khí Thần Thoại.',
-          '• **Sinh tử & Nhặt đồ:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần *(thua từ 2× lực = **0%**, Đan không cứu được)*. Pháp Bảo thường rơi tại map chờ người đi sau nhặt **60%**.',
+          '• **Thuận Hệ Địa Hình:** Khi **Pet** hoặc **Linh Vực** xuất hành khớp **Hệ của Map**, nhận ngay **+6% Tỉ Lệ Sống Sót** & **+10% Linh Thạch**!',
+          '• **Bảng Rơi Đồ v1.7 (`2/3/6/12h`):** **`210–315 LT/giờ × hệ số`** + **`5%` (`25%` với Bùa Tuyệt Ấn)** Đá Khắc Ấn Tuyệt Đối + **`0.5%`** Mảnh Tinh Hoa Hỗn Độn + **`5%`** Thẻ Auto Farm + **`55%`** `1–2` gói nông trại.',
+          '• **Sinh tử & Nhặt đồ:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần *(thua từ 2× lực = **0%**)*. Pháp Bảo thường rơi chờ người sau nhặt **60%**.',
         ].join('\n'),
         inline: false,
       },
@@ -581,7 +581,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Khám Phá /explorer v1.5 qua 12 địa danh (3.5k → 112k Lực), +5% LT (210–315 LT/h), Thuận Hệ Địa Hình (+6% sống / +10% LT) & nhặt 60% bảo vật rơi.',
+    content: 'Khám Phá /explorer v1.7 qua 12 địa danh (3.5k → 112k Lực), đồng bộ Bộ 1/2/3, Thuận Hệ Địa Hình, 5%/25% Đá Tuyệt Ấn & 0.5% Mảnh Hỗn Độn.',
   },
 
   glossary: {
@@ -670,11 +670,12 @@ export const WIKI_CATEGORIES = {
         subtitle: 'Trang 4/4 — Khống Chế (CC), HAX, Kháng & Buff SET',
         fields: [
           {
-            name: `${em('su_sparkle')} Khống Chế (CC), Miễn Nhiễm & Giảm Tỉ Lệ HAX`,
+            name: `${em('su_sparkle')} Khống Chế (CC), Miễn Nhiễm, Stack DoT & Ultimate (v1.7)`,
             value: [
               '• **`Kháng X% Khống Chế`** *(`ccResistPct`, trần `92%`)*: Xác suất kháng các hiệu ứng mất lượt *(Choáng, Đóng Băng, Ngủ, Mị Hoặc, Tê Liệt)*.',
-              '• **`Miễn Nhiễm 100%`** *(`ccImmuneAll`)*: Miễn nhiễm tuyệt đối mọi trạng thái Khống Chế *(hoặc nhóm cụ thể như Độc/Đốt)*.',
-              '• **`Giảm X% Tỉ Lệ HAX`** *(`haxFailPct`, trần `42%`)*: Làm giảm xác suất kích hoạt nội tại HAX chủ động của đối thủ.',
+              '• **`Miễn Nhiễm 100% Khống Chế`** *(`ccImmuneAll`)*: Miễn nhiễm tuyệt đối trạng thái Khống Chế *(không chặn giảm hồi máu/giảm giáp, trừ Pet miễn toàn diện như Quang Minh Thánh Thú)*.',
+              '• **Cộng Dồn Đa Nguồn & Bất Tử Trọn Hiệp (v1.7):** Độc / Thiêu Đốt từ **các nguồn khác nhau** *(Pet + Vũ Khí + Chiến Hồn + Ultimate)* cộng dồn đến trần **`28%` MaxHP/hiệp** *(và đều chịu Kháng Độc/Đốt, kể cả Thần Cảnh)*. **Bất Tử theo hiệp** miễn nhiễm toàn bộ đòn đánh, DoT, Phản Đòn, Nổ Khiên & Ultimate xuyên suốt hiệp đó.',
+              '• **Skill Ultimate Tái Kích Hoạt:** Riêng **40 Pet Tối Thượng Chân Thần** (`/tienhoa`), tự tích nạp theo điều kiện và tung lặp lại nhiều lần trong trận sau mỗi Cooldown (`4–6 hiệp`).',
             ].join('\n'),
             inline: false,
           },
@@ -702,7 +703,105 @@ export const WIKI_CATEGORIES = {
 /**
  * Tra cứu danh mục Wiki (tất cả 10 chuyên mục hoặc lọc 1 chuyên mục duy nhất, hỗ trợ phân trang)
  */
-export function getWikiData(categoryId = null, page = 1) {
+export function getWikiSubHubList(categoryId, rawSubhub = 'all', page = 1) {
+  const cat = String(categoryId || '').trim().toLowerCase();
+  const sub = String(rawSubhub || 'all').trim().toLowerCase();
+  const pageSize = 15;
+  const lt = em('su_linhthach');
+
+  if (cat === 'pets') {
+    const publicPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+    let filtered = publicPets;
+    let heading = 'TẤT CẢ LINH THÚ CÔNG KHAI';
+    if (sub === 'unique') {
+      filtered = publicPets.filter((p) => p.is_unique);
+      heading = '40 TỐI THƯỢNG ĐỘC NHẤT TOÀN SERVER (TIẾN HÓA CHÂN THẦN)';
+    } else if (sub === 'kemonomimi') {
+      filtered = publicPets.filter((p) => p.is_kemonomimi);
+      heading = '10 TỐI THƯỢNG THÚ NHÂN (KEMONOMIMI)';
+    } else if (['mythic', 'epic', 'rare', 'common'].includes(sub)) {
+      filtered = publicPets.filter((p) => p.rarity_key === sub && (sub !== 'mythic' || !p.is_unique));
+      heading = `PHẨM CHẤT ${(RARITY_TIERS[sub]?.label || sub).toUpperCase()}`;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const safePage = Math.min(Math.max(1, Math.floor(Number(page) || 1)), totalPages);
+    const slice = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const lines = slice.map((p) => {
+      const rKey = resolveEntityDisplayRarityKey(p, false);
+      return `• ${petEmoji(p.pet_type, p.icon)} \`${p.pet_type}\` **${p.pet_name}** — ${tierEmoji(rKey)} *${p.rarity}* (${elementEmoji(p.element)} ${p.element})`;
+    });
+    return {
+      success: true,
+      category: 'pets',
+      subhub: sub,
+      heading,
+      total_items: filtered.length,
+      page: safePage,
+      total_pages: totalPages,
+      prev_page: safePage > 1 ? safePage - 1 : totalPages,
+      next_page: safePage < totalPages ? safePage + 1 : 1,
+      items: slice,
+      embed_flat: {
+        title: `${em('su_pet_paw')} CẨM NANG LINH THÚ — ${heading} (${safePage}/${totalPages})`,
+        description: [
+          `Tổng cộng **${filtered.length}** Linh Thú *(dùng \`/info\` hoặc menu chọn bên dưới để xem chi tiết & chỉ số)*:`,
+          '',
+          ...lines,
+        ].join('\n'),
+        color: '#ec4899',
+        image_url: '',
+      },
+    };
+  }
+
+  if (cat === 'domains') {
+    const pubs = [
+      ...DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi),
+      ...DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi),
+      ...DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi),
+    ];
+    let filtered = pubs;
+    let heading = 'LINH VỰC • THẦN THỨC • THẦN CẢNH';
+    if (['domain', 'sense', 'realm'].includes(sub)) {
+      filtered = pubs.filter((x) => x.entity_kind === sub);
+      heading = sub === 'domain' ? 'LINH VỰC CHIẾN TRƯỜNG' : sub === 'sense' ? 'THẦN THỨC CẢNH GIỚI' : 'THẦN CẢNH ĐẠO VỰC';
+    }
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const safePage = Math.min(Math.max(1, Math.floor(Number(page) || 1)), totalPages);
+    const slice = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const lines = slice.map((d) => {
+      const rKey = resolveEntityDisplayRarityKey(d, false);
+      const kindTag = d.entity_kind === 'domain' ? 'Vực' : d.entity_kind === 'sense' ? 'Thức' : 'Cảnh';
+      return `• ${d.icon} \`${d.id}\` **${d.name}** — ${tierEmoji(rKey)} *${d.rarity}* [${kindTag}]`;
+    });
+    return {
+      success: true,
+      category: 'domains',
+      subhub: sub,
+      heading,
+      total_items: filtered.length,
+      page: safePage,
+      total_pages: totalPages,
+      prev_page: safePage > 1 ? safePage - 1 : totalPages,
+      next_page: safePage < totalPages ? safePage + 1 : 1,
+      items: slice,
+      embed_flat: {
+        title: `${em('su_realm_star')} CẨM NANG LÃNH ĐỊA — ${heading} (${safePage}/${totalPages})`,
+        description: [
+          `Tổng cộng **${filtered.length}** món *(tỉ lệ \`/roll loai:domain\`: 34% Vực • 33% Thức • 33% Cảnh)* • Đọc giá ${lt}:`,
+          '',
+          ...lines,
+        ].join('\n'),
+        color: '#a855f7',
+        image_url: '',
+      },
+    };
+  }
+  return null;
+}
+
+export function getWikiData(categoryId = null, page = 1, subhub = null) {
   if (!categoryId || typeof categoryId !== 'string') {
     return {
       success: true,
@@ -723,6 +822,17 @@ export function getWikiData(categoryId = null, page = 1) {
   const resolvedId = Object.prototype.hasOwnProperty.call(CATEGORY_ALIASES, raw)
     ? CATEGORY_ALIASES[raw]
     : raw;
+
+  if ((resolvedId === 'pets' || resolvedId === 'domains') && subhub) {
+    const subRes = getWikiSubHubList(resolvedId, subhub, page);
+    if (subRes) {
+      return {
+        ...subRes,
+        ...WIKI_METADATA,
+        data: WIKI_CATEGORIES[resolvedId],
+      };
+    }
+  }
 
   if (!VALID_CATEGORIES.includes(resolvedId) || !Object.prototype.hasOwnProperty.call(WIKI_CATEGORIES, resolvedId)) {
     return {
@@ -800,9 +910,9 @@ export function getWikiData(categoryId = null, page = 1) {
  */
 export function getWikiCatalogSummary() {
   const standardPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
-  const publicDomains = V13_DOMAINS.filter((d) => !d.is_exclusive_fuyumi);
-  const publicSenses = V13_DIVINE_SENSES.filter((s) => !s.is_exclusive_fuyumi);
-  const publicRealms = V13_DIVINE_REALMS.filter((r) => !r.is_exclusive_fuyumi);
+  const publicDomains = DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi);
+  const publicSenses = DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi);
+  const publicRealms = DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi);
   return {
     success: true,
     equipment: {
@@ -815,6 +925,8 @@ export function getWikiCatalogSummary() {
       rare: standardPets.filter((p) => p.rarity_key === 'rare'),
       epic: standardPets.filter((p) => p.rarity_key === 'epic'),
       mythic: standardPets.filter((p) => p.rarity_key === 'mythic'),
+      unique: standardPets.filter((p) => p.is_unique),
+      kemonomimi: standardPets.filter((p) => p.is_kemonomimi),
     },
     domains: {
       domain: publicDomains.map((d) => ({ id: d.domain_id, name: d.name, rarity: d.rarity, rarity_key: d.rarity_key, element: d.element, is_unique: d.is_unique })),
@@ -933,8 +1045,37 @@ export async function getWikiItemDetail(itemId) {
   };
 }
 
+async function resolveMythicPetOwner(petType) {
+  if (!supabase) return null;
+  try {
+    const { data: ownership } = await supabase
+      .from('user_pets')
+      .select('user_id, is_evolved')
+      .eq('pet_type', petType)
+      .limit(1)
+      .maybeSingle();
+
+    if (!ownership?.user_id) return null;
+
+    const { data: user } = await supabase
+      .from('users')
+      .select('user_id, username')
+      .eq('user_id', ownership.user_id)
+      .maybeSingle();
+
+    return {
+      user_id: ownership.user_id,
+      username: user?.username || `Tu Sĩ #${String(ownership.user_id).slice(-4)}`,
+      is_evolved: Boolean(ownership.is_evolved),
+    };
+  } catch (err) {
+    console.warn(`[WikiService] Failed to query mythic pet owner for ${petType}:`, err.message);
+    return null;
+  }
+}
+
 /**
- * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (chỉ trả 90 Linh Thú tiêu chuẩn, ẩn pet độc quyền Fuyumi khỏi /wiki)
+ * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (ẩn pet độc quyền Fuyumi khỏi /wiki)
  */
 export async function getWikiPetDetail(petType) {
   if (!petType || typeof petType !== 'string') {
@@ -951,23 +1092,42 @@ export async function getWikiPetDetail(petType) {
   }
 
   const pet = PET_BY_TYPE[cleanType];
-  const tier = RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+  const dispKey = resolveEntityDisplayRarityKey(pet, false);
+  const tier = RARITY_TIERS[dispKey] || RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+  const currentOwner = pet.is_unique ? await resolveMythicPetOwner(pet.pet_type) : null;
+  const evoData = V17_PET_EVOLUTIONS[pet.pet_type] || null;
 
   const tagNotes = [];
   if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
+  if (pet.is_kemonomimi) tagNotes.push(`${em('su_sparkle')} Thú Nhân (Kemonomimi)`);
+
+  const ownerLine = pet.is_unique
+    ? (currentOwner
+      ? `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)${currentOwner.is_evolved ? ' • *Đã Tiến Hóa Chân Thần*' : ''}`
+      : `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu *(Có thể quay trúng từ \`/roll loai:pet\`)*`)
+    : null;
+
+  const evoLine = evoData?.ultimate
+    ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần (\`/tienhoa\`):** **${evoData.evolved_name}** • **Ultimate:** **${evoData.ultimate.name}** — *${evoData.ultimate.desc}*`
+    : null;
 
   const descriptionLines = [
     `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
     `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
     `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];
+  if (evoLine) descriptionLines.push(evoLine);
+  if (ownerLine) descriptionLines.push(ownerLine);
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.4.7`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7`;
 
   return {
     success: true,
     data: {
       ...pet,
+      current_owner: currentOwner,
+      owner_label: pet.is_unique ? (currentOwner ? currentOwner.username : 'Chưa có chủ sở hữu') : null,
+      evo_data: evoData,
       image_url: imageUrl,
     },
     embed: {
@@ -1023,15 +1183,15 @@ export async function getWikiDomainDetail(entityId) {
 
   const cleanId = entityId.trim().toLowerCase().replace(/\.(png|webp)$/i, '');
   let entityKind = null;
-  let item = V13_DOMAINS.find((d) => d.domain_id === cleanId);
+  let item = DOMAIN_CATALOG.find((d) => d.domain_id === cleanId);
   if (item) {
     entityKind = 'domain';
   } else {
-    item = V13_DIVINE_SENSES.find((s) => s.sense_id === cleanId);
+    item = DIVINE_SENSE_CATALOG.find((s) => s.sense_id === cleanId);
     if (item) {
       entityKind = 'sense';
     } else {
-      item = V13_DIVINE_REALMS.find((r) => r.realm_id === cleanId);
+      item = DIVINE_REALM_CATALOG.find((r) => r.realm_id === cleanId);
       if (item) entityKind = 'realm';
     }
   }
@@ -1052,8 +1212,8 @@ export async function getWikiDomainDetail(entityId) {
       : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
     : null;
 
-  const dropRateMap = { common: '60.5%', rare: '25%', epic: '14%', mythic: '0.5%' };
-  const dropRate = dropRateMap[item.rarity_key] || '0.5%';
+  const dropRateMap = { common: '60.35%', rare: '25%', epic: '14%', mythic: '0.65%' };
+  const dropRate = dropRateMap[item.rarity_key] || '0.65%';
   const kindLabel = entityKind === 'domain' ? 'Linh Vực' : entityKind === 'sense' ? 'Thần Thức' : 'Thần Cảnh';
 
   const lines = [];

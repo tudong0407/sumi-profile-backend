@@ -8,6 +8,7 @@ import { supabase } from '../config/supabase.js';
 import {
   EQUIPMENT_BY_ID,
   PET_BY_TYPE,
+  V17_PET_EVOLUTIONS,
   SHOP_EQUIPMENT,
   SHOP_PETS,
   SHOP_ROLE_BY_ID,
@@ -1063,6 +1064,22 @@ export async function equipTarget(userId, payload = {}) {
       const potRes = await activateLuckPotion(cleanId, matchedPotion.item_id);
       return { ...potRes, category: 'consumable' };
     }
+    if (emojiNormalized === 'abs_enchant_charm' || normEmoji.includes('buatuyetan')) {
+      const { activateAbsEnchantCharm } = await import('./luckAndFortuneService.js');
+      return { ...(await activateAbsEnchantCharm(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_auto_card' || normEmoji.includes('thetudongchamfarm')) {
+      const { activateFarmAutoCard } = await import('./farmService.js');
+      return { ...(await activateFarmAutoCard(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_growth_med' || normEmoji.includes('thuockichthichtangtruong')) {
+      const { useFarmGrowthMed } = await import('./farmService.js');
+      return { ...(await useFarmGrowthMed(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_yield_starch' || normEmoji.includes('bottangsanluong')) {
+      const { useFarmYieldStarch } = await import('./farmService.js');
+      return { ...(await useFarmYieldStarch(cleanId)), category: 'consumable' };
+    }
   }
 
   if (!category) {
@@ -1075,6 +1092,22 @@ export async function equipTarget(userId, payload = {}) {
       const { activateLuckPotion } = await import('./luckAndFortuneService.js');
       const potRes = await activateLuckPotion(cleanId, matchedPotion.item_id);
       return { ...potRes, category: 'consumable' };
+    }
+    if (emojiNormalized === 'abs_enchant_charm') {
+      const { activateAbsEnchantCharm } = await import('./luckAndFortuneService.js');
+      return { ...(await activateAbsEnchantCharm(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_auto_card') {
+      const { activateFarmAutoCard } = await import('./farmService.js');
+      return { ...(await activateFarmAutoCard(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_growth_med') {
+      const { useFarmGrowthMed } = await import('./farmService.js');
+      return { ...(await useFarmGrowthMed(cleanId)), category: 'consumable' };
+    }
+    if (emojiNormalized === 'farm_yield_starch') {
+      const { useFarmYieldStarch } = await import('./farmService.js');
+      return { ...(await useFarmYieldStarch(cleanId)), category: 'consumable' };
     }
     const titleMatch = rawTargetId.match(/^title\s*:\s*(.+)$/i);
     if (titleMatch) {
@@ -2294,18 +2327,22 @@ export const PET_LEVEL_MAX_BONUS_PCT = 5.50; // Lv.1 -> Lv.100 = +550%
 export const PET_LEVEL_GROWTH_STEP = PET_LEVEL_MAX_BONUS_PCT / 99; // ~+5.5556%/cấp
 export const PET_STAR_GROWTH_STEP = 0.15; // 1★ -> 10★ = +135%
 
-export function computeScaledPetBaseStats(baseMeta = {}, level = 1, star = 1) {
+export function computeScaledPetBaseStats(baseMeta = {}, level = 1, star = 1, isEvolved = false) {
   const lvl = Math.min(100, Math.max(1, Number(level) || 1));
   const st = Math.min(10, Math.max(1, Number(star) || 1));
   const baseAtk = Math.max(10, Number(baseMeta.base_atk ?? baseMeta.atk ?? 100));
   const baseDef = Math.max(10, Number(baseMeta.base_def ?? baseMeta.def ?? 100));
   const baseSpd = Math.max(10, Number(baseMeta.base_spd ?? baseMeta.spd ?? 100));
   const mult = 1 + (lvl - 1) * PET_LEVEL_GROWTH_STEP + (st - 1) * PET_STAR_GROWTH_STEP;
-  const atk = Math.max(baseAtk + (lvl - 1) * 5, Math.round(baseAtk * mult));
-  const def = Math.max(baseDef + (lvl - 1) * 5, Math.round(baseDef * mult));
-  const spd = Math.max(baseSpd + (lvl - 1) * 4, Math.round(baseSpd * mult));
+  const evo = isEvolved && baseMeta?.pet_type ? V17_PET_EVOLUTIONS[baseMeta.pet_type] : null;
+  const evoAtkMult = evo ? Number(evo.stat_mult?.atk || 1) : 1;
+  const evoDefMult = evo ? Number(evo.stat_mult?.def || 1) : 1;
+  const evoSpdMult = evo ? Number(evo.stat_mult?.spd || 1) : 1;
+  const atk = Math.round(Math.max(baseAtk + (lvl - 1) * 5, Math.round(baseAtk * mult)) * evoAtkMult);
+  const def = Math.round(Math.max(baseDef + (lvl - 1) * 5, Math.round(baseDef * mult)) * evoDefMult);
+  const spd = Math.round(Math.max(baseSpd + (lvl - 1) * 4, Math.round(baseSpd * mult)) * evoSpdMult);
   const power_score = atk * 3 + def * 2 + spd * 2 + lvl * 50;
-  return { atk, def, spd, power_score, multiplier: mult };
+  return { atk, def, spd, power_score, multiplier: mult, is_evolved: Boolean(evo) };
 }
 
 export async function upgradePet(userId, petIdentifier, mode = 'level', targetGoal = null) {
@@ -2351,8 +2388,8 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
       stoneCost += s;
       ltCost += s * 200;
     }
-    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar);
-    const nextScaled = computeScaledPetBaseStats(baseMeta, currentLvl, nextStar);
+    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+    const nextScaled = computeScaledPetBaseStats(baseMeta, currentLvl, nextStar, Boolean(target.is_evolved));
     const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
     const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
     const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
@@ -2420,8 +2457,8 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
   for (let lvl = currentLvl; lvl < nextLvl; lvl += 1) {
     ltCost += lvl * 50;
   }
-  const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar);
-  const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar);
+  const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+  const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar, Boolean(target.is_evolved));
   const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
   const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
   const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));

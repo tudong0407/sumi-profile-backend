@@ -6,12 +6,15 @@ import {
   DOMAIN_BY_ID,
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
+  V17_PET_EVOLUTIONS,
+  resolveEntityDisplayRarityKey,
   normalizeEnchantGrade,
   getEnchantMultiplier,
 } from '../../data/catalog.js';
 import { em, petEmoji } from '../../config/emojiHelper.js';
 import { V13_PET_HAX, V13_EQUIP_HAX } from './v13HaxRegistry.js';
 import { evaluateSetBonus } from './setBonusEngine.js';
+import { createUltimateState } from './ultimateEngine.js';
 
 function resolveDomainLoadout(profile) {
   const raw = profile?.domain_loadout || profile?.domainLoadout || {};
@@ -60,7 +63,16 @@ function enrichEquipItem(rawItem, slot) {
  */
 export async function compileCombatant(userOrId, role = 'attacker') {
   if (userOrId?.currentHp !== undefined && userOrId?.maxHp !== undefined && userOrId?.petName !== undefined) {
-    userOrId.state = { ...createInitialCombatState(), ...(userOrId.state || {}) };
+    const isEv = Boolean(userOrId.isEvolved || userOrId.pet?.is_evolved);
+    const evoMeta = isEv && userOrId.petType ? V17_PET_EVOLUTIONS[userOrId.petType] : null;
+    const ultDef = userOrId.ultimateDef || evoMeta?.ultimate || null;
+    userOrId.isEvolved = isEv;
+    userOrId.ultimateDef = ultDef;
+    userOrId.state = {
+      ...createInitialCombatState(ultDef, isEv),
+      ...(userOrId.state || {}),
+      ultimate: userOrId.state?.ultimate || createUltimateState(ultDef, isEv),
+    };
     if (userOrId.baseAtk === undefined) userOrId.baseAtk = userOrId.atk;
     if (userOrId.baseDef === undefined) userOrId.baseDef = userOrId.def;
     if (userOrId.baseSpd === undefined) userOrId.baseSpd = userOrId.spd;
@@ -88,9 +100,11 @@ export async function compileCombatant(userOrId, role = 'attacker') {
 
   const petType = pet.type || pet.pet_type || 'hoa_thach_nham_nham';
   const catalogPet = PET_BY_TYPE[petType] || null;
-  const petName = pet.name || pet.pet_name || catalogPet?.pet_name || 'Hóa Thạch Nham Nham Thú';
-  const petRarity = pet.rarity || pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm';
-  const petRarityKey = catalogPet?.rarity_key || pet.rarity_key || 'common';
+  const isEvolved = Boolean(pet.is_evolved || pet.isEvolved);
+  const evoEntry = isEvolved ? V17_PET_EVOLUTIONS[petType] || null : null;
+  const petName = isEvolved && evoEntry ? evoEntry.evolved_name : (pet.name || pet.pet_name || catalogPet?.pet_name || 'Hóa Thạch Nham Nham Thú');
+  const petRarity = isEvolved && evoEntry ? 'Tối Thượng Chân Thần' : (pet.rarity || pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm');
+  const petRarityKey = resolveEntityDisplayRarityKey(catalogPet || pet, isEvolved);
   const petIcon = pet.icon || petEmoji(petType, em('su_pet_paw'));
   const element = pet.element || catalogPet?.element || 'Thổ';
   const level = Math.max(1, Number(pet.level) || 1);
@@ -139,9 +153,14 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     bonusCrit += Number(piece.bonus_crit) || 0;
   }
 
-  const rawBaseAtk = pet.base_atk !== undefined ? Number(pet.base_atk) : (Number(pet.atk) || (catalogPet ? catalogPet.base_atk : 200));
-  const rawBaseDef = pet.base_def !== undefined ? Number(pet.base_def) : (Number(pet.def) || (catalogPet ? catalogPet.base_def : 100));
-  const rawBaseSpd = pet.base_spd !== undefined ? Number(pet.base_spd) : (Number(pet.spd) || (catalogPet ? catalogPet.base_spd : 150));
+  const needEvoScale = Boolean(isEvolved && evoEntry && !pet.evolved_at && !pet.evo_stats_applied && (pet.base_atk !== undefined || pet.atk === undefined));
+  const evoAtkMult = needEvoScale ? Number(evoEntry.stat_mult?.atk || 1) : 1;
+  const evoDefMult = needEvoScale ? Number(evoEntry.stat_mult?.def || 1) : 1;
+  const evoSpdMult = needEvoScale ? Number(evoEntry.stat_mult?.spd || 1) : 1;
+
+  const rawBaseAtk = Math.round((pet.base_atk !== undefined ? Number(pet.base_atk) : (Number(pet.atk) || (catalogPet ? catalogPet.base_atk : 200))) * evoAtkMult);
+  const rawBaseDef = Math.round((pet.base_def !== undefined ? Number(pet.base_def) : (Number(pet.def) || (catalogPet ? catalogPet.base_def : 100))) * evoDefMult);
+  const rawBaseSpd = Math.round((pet.base_spd !== undefined ? Number(pet.base_spd) : (Number(pet.spd) || (catalogPet ? catalogPet.base_spd : 150))) * evoSpdMult);
 
   let finalAtk = Math.round(rawBaseAtk * petMult) + bonusAtk;
   let finalDef = Math.round(rawBaseDef * petMult) + bonusDef;
@@ -167,8 +186,11 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const legacyPetCrit = petType === 'loi_dinh_kim_ho' ? 0.15 : petType === 'nguyet_anh_thao_tho' ? 0.08 : petType === 'tu_kim_bach_trach' ? 0.20 : 0;
   const v13PetCrit = V13_PET_HAX[petType]?.flatCritPct || 0;
   const petCritBonus = legacyPetCrit + v13PetCrit;
-  const v13SoulCrit = V13_EQUIP_HAX[soul?.item_id]?.flatCritPct || 0;
-  const itemCritBonus = (bonusCrit / 100) + v13SoulCrit + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
+  const v13EquipCrit = [weapon, gem, soul].reduce(
+    (sum, p) => sum + (p?.item_id ? (V13_EQUIP_HAX[p.item_id]?.flatCritPct || 0) : 0),
+    0,
+  );
+  const itemCritBonus = (bonusCrit / 100) + v13EquipCrit + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
   const critRate = Math.min(1.0, Math.max(0.05, 0.05 + itemCritBonus + petCritBonus));
 
   const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
@@ -221,8 +243,10 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     avatarFrame,
     petName,
     petType,
+    isEvolved,
     petRarity,
     petRarityKey,
+    ultimateDef: evoEntry?.ultimate || null,
     petIcon,
     petHaxName,
     petHaxDesc,
@@ -235,6 +259,7 @@ export async function compileCombatant(userOrId, role = 'attacker') {
     pet: {
       pet_type: petType,
       pet_name: petName,
+      is_evolved: isEvolved,
       element,
       rarity: petRarity,
       rarity_key: petRarityKey,
@@ -266,14 +291,17 @@ export async function compileCombatant(userOrId, role = 'attacker') {
       gem: gem?.hax_skill || gem?.hax_description || null,
       soul: soul?.hax_skill || soul?.hax_description || null,
     },
-    state: createInitialCombatState(),
+    state: createInitialCombatState(evoEntry?.ultimate || null, isEvolved),
   };
 }
 
-export function createInitialCombatState() {
+export function createInitialCombatState(ultimateDef = null, isEvolved = false) {
   return {
+    ultimate: createUltimateState(ultimateDef, isEvolved),
     turnCount: 0,
     isImmortalTurns: 0,
+    immortalHits: 0,
+    immortalGrantedTurn: -1,
     antiImmortalityTurns: 0,
     antiShieldTurns: 0,
     haxLockedTurns: 0,
@@ -296,28 +324,43 @@ export function createInitialCombatState() {
     executeBlockUsed: false,
     phoenixGemHealUsed: false,
     emergencyHealUsed: false,
+    emergencyHealUsedBySource: {},
     firstStrikeDone: false,
     pierceDefNext: false,
     enrageActive: false,
     defStacks: 0,
+    defBonusApplied: 0,
     atkStacks: 0,
+    atkStacksBySource: {},
+    atkBonusApplied: 0,
     atkDebuffTurns: 0,
     atkDebuffPct: 0,
     defDebuffTurns: 0,
     defDebuffPct: 0,
     defDebuffTotalPct: 0,
     atkStealStacks: 0,
+    atkStealStacksBySource: {},
     spdDebuffTurns: 0,
     spdDebuffPct: 0,
     healReductionTurns: 0,
     healReductionPct: 0,
+    debuffSources: {
+      atk: {},
+      def: {},
+      spd: {},
+      healRed: {},
+      enemyDmg: {},
+      enemyAcc: {},
+    },
     burnTurns: 0,
     burnPct: 0,
     burnMode: null,
     burnIgnoresShield: false,
+    burnSources: {},
     poisonActive: false,
     poisonPct: 0,
     poisonTurns: 0,
+    poisonSources: {},
     nextHitBonusPct: 0,
     damageReductionTurns: 0,
     damageReductionPct: 0,

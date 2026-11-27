@@ -1,7 +1,8 @@
 /**
  * src/services/battleEngine/v13HaxRegistry.js
- * Bảng khai báo chuẩn hóa toàn bộ hiệu ứng HAX cho 50 Linh Thú mới & 100 Pháp Bảo mới (v1.3).
+ * Bảng khai báo chuẩn hóa toàn bộ hiệu ứng HAX cho Linh Thú & Pháp Bảo (v1.3 + v1.7).
  */
+import { V17_PET_HAX, V17_EQUIP_HAX } from '../../data/v17ExpansionCatalog.js';
 
 export const V13_PET_HAX = {
   // 3 Phàm Phẩm
@@ -63,6 +64,7 @@ export const V13_PET_HAX = {
   thanh_de_van_co_long: { turnHealPct: 0.09, dotImmune: true, startShieldPct: 0.35, label: 'Thần Mộc Bất Diệt' },
   cuu_thien_loi_de_ho: { firstStrike: true, startSpdStealPct: 0.28, ccProc: { chance: 0.26, kind: 'stun', skill: 'Lôi Đế Thần Tốc' } },
   hoang_thien_ban_co_lan: { startShieldPct: 0.72, shieldExplodePct: 0.20, label: 'Bàn Cổ Trấn Thiên' },
+  ...V17_PET_HAX,
 };
 
 export const V13_EQUIP_HAX = {
@@ -171,21 +173,48 @@ export const V13_EQUIP_HAX = {
   soul_unique_8: { lifestealPct: 0.32, enemyHealRedPct: 0.55, executeHpPct: 0.22, executeChance: 0.35 },
   soul_unique_9: { turnHealPct: 0.14, turnCleanse: 1, dotImmune: true },
   soul_unique_10: { startShieldPct: 0.72 },
+  ...V17_EQUIP_HAX,
 };
 
 /**
  * Thu thập tất cả entry HAX v1.3 đang hoạt động trên một Combatant (Pet + Weapon + Gem + Soul).
  */
 export function getCombatantV13HaxList(combatant) {
-  const list = [];
-  const petEff = combatant?.petType ? V13_PET_HAX[combatant.petType] : null;
-  if (petEff) list.push({ id: combatant.petType, source: combatant.petName || combatant.petType, ...petEff });
-
-  const eq = combatant?.equipment || {};
-  for (const piece of [eq.weapon, eq.gem, eq.soul]) {
-    if (!piece?.item_id) continue;
-    const eqEff = V13_EQUIP_HAX[piece.item_id];
-    if (eqEff) list.push({ id: piece.item_id, source: piece.item_name || piece.item_id, ...eqEff });
+  if (!combatant) return [];
+  const pt = combatant.petType || '';
+  const eq = combatant.equipment;
+  const wId = eq?.weapon?.item_id || '';
+  const gId = eq?.gem?.item_id || '';
+  const sId = eq?.soul?.item_id || '';
+  if (
+    combatant._v13CacheList
+    && combatant._v13Pet === pt
+    && combatant._v13W === wId
+    && combatant._v13G === gId
+    && combatant._v13S === sId
+  ) {
+    return combatant._v13CacheList;
   }
+  const list = [];
+  const petEff = pt ? V13_PET_HAX[pt] : null;
+  if (petEff) list.push({ id: pt, source: combatant.petName || pt, ...petEff });
+
+  if (wId) {
+    const e = V13_EQUIP_HAX[wId];
+    if (e) list.push({ id: wId, source: eq.weapon.item_name || wId, ...e });
+  }
+  if (gId) {
+    const e = V13_EQUIP_HAX[gId];
+    if (e) list.push({ id: gId, source: eq.gem.item_name || gId, ...e });
+  }
+  if (sId) {
+    const e = V13_EQUIP_HAX[sId];
+    if (e) list.push({ id: sId, source: eq.soul.item_name || sId, ...e });
+  }
+  combatant._v13Pet = pt;
+  combatant._v13W = wId;
+  combatant._v13G = gId;
+  combatant._v13S = sId;
+  combatant._v13CacheList = list;
   return list;
 }

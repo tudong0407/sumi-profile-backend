@@ -12,6 +12,7 @@ import {
   drawRoundRect,
   drawAntiAliasedAvatarWithBorder,
   preloadAvatarFrameOverlay,
+  drawElementalPetBorderFX,
   drawStarSparkle,
   drawHexBadge,
   drawAutoFitSingleLineText,
@@ -91,6 +92,22 @@ const RARITY_ACCENTS = {
     slotGlow: 'rgba(255, 0, 85, 0.65)',
     text: '#ffd700',
   },
+  unique_supreme: {
+    color: '#fb7185',
+    bg: 'rgba(225, 29, 72, 0.80)',
+    slotBorder: ['#f43f5e', '#fbbf24'],
+    slotBg: ['rgba(225, 29, 72, 0.24)', 'rgba(251, 191, 36, 0.16)'],
+    slotGlow: 'rgba(225, 29, 72, 0.65)',
+    text: '#ffe4e6',
+  },
+  evolved_supreme: {
+    color: '#fda4af',
+    bg: 'rgba(190, 18, 60, 0.88)',
+    slotBorder: ['#fb7185', '#fde047'],
+    slotBg: ['rgba(244, 63, 94, 0.28)', 'rgba(253, 224, 71, 0.20)'],
+    slotGlow: 'rgba(251, 113, 133, 0.72)',
+    text: '#fef08a',
+  },
   supreme: {
     color: '#fde047',
     bg: 'rgba(219, 39, 119, 0.85)',
@@ -101,11 +118,16 @@ const RARITY_ACCENTS = {
   },
 };
 
-function resolvePetAsset(petType) {
+function resolvePetAsset(petType, isEvolved = false) {
   if (!petType) return 'pets/hoa_thach_nham_nham.png';
   if (petType === 'cuu_vi_hong_ho') return 'pets/cuu_vi_hong_ho_transparent.png';
-  const candidate = `pets/${petType}.png`;
-  return resolveAssetPath(candidate) ? candidate : 'pets/hoa_thach_nham_nham.png';
+  if (isEvolved && resolveAssetPath(`pets/${petType}_evo.webp`)) {
+    return `pets/${petType}_evo.webp`;
+  }
+  const pngCandidate = `pets/${petType}.png`;
+  if (resolveAssetPath(pngCandidate)) return pngCandidate;
+  const webpCandidate = `pets/${petType}.webp`;
+  return resolveAssetPath(webpCandidate) ? webpCandidate : 'pets/hoa_thach_nham_nham.png';
 }
 
 function resolvePetMiniIconAsset(petType) {
@@ -445,8 +467,8 @@ export async function renderBattleCard(battleResult, options = {}) {
     loadImageSafe(def.avatarUrl, 1200, def.id === FUYUMI_USER_ID ? 'fuyumi_avatar.png' : 'default_avatar.png'),
     preloadAvatarFrameOverlay(atk.avatarFrame),
     preloadAvatarFrameOverlay(def.avatarFrame),
-    loadImageSafe(resolvePetAsset(atk.petType), 1500, 'pets/hoa_thach_nham_nham.png'),
-    loadImageSafe(resolvePetAsset(def.petType), 1500, 'pets/hoa_thach_nham_nham.png'),
+    loadImageSafe(resolvePetAsset(atk.petType, atk.isEvolved), 1500, 'pets/hoa_thach_nham_nham.png'),
+    loadImageSafe(resolvePetAsset(def.petType, def.isEvolved), 1500, 'pets/hoa_thach_nham_nham.png'),
     loadEquipIcons(atk.equipment),
     loadEquipIcons(def.equipment),
     loadDomainIcons(atkDomainLoadout),
@@ -593,6 +615,13 @@ export async function renderBattleCard(battleResult, options = {}) {
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
+    if (fighter.isEvolved || fighter.petType === 'cuu_vi_hong_ho') {
+      drawElementalPetBorderFX(ctx, petBoxX, petBoxY, petBoxW, petBoxH, 12, fighter.element, {
+        allowShadowBlur: false,
+        lineWidth: 2.2,
+      });
+    }
+
     if (petImg) {
       const maxW = 152;
       const maxH = 136;
@@ -607,15 +636,18 @@ export async function renderBattleCard(battleResult, options = {}) {
       ctx.restore();
     }
 
-    // Tag Hệ + Lv & Rarity trên khung Pet
-    ctx.font = `bold 9.0px ${FONT_FAMILY}`;
+    // Tag Hệ + Lv & Rarity trên khung Pet (giữ nguyên toàn văn 'Tối Thượng Thần Thoại' / 'Tối Thượng Chân Thần', tự co cỡ chữ nếu cần)
+    let pillFont = 9.0;
+    ctx.font = `bold ${pillFont}px ${FONT_FAMILY}`;
     const elTag = `Hệ ${fighter.element} • Lv.${fighter.level} • ${fighter.star || 1}★`;
-    const elW = ctx.measureText(elTag).width + 12;
-    let rarTag = sanitizeText(fighter.petRarity || 'Phàm Phẩm');
+    const rarTag = sanitizeText(fighter.petRarity || 'Phàm Phẩm');
+    let elW = ctx.measureText(elTag).width + 12;
     let rarW = ctx.measureText(rarTag).width + 12;
-    if (elW + rarW > petBoxW - 18 && rarTag.length > 14) {
-      rarTag = rarTag.replace(/Thần Thoại/i, '').trim() || rarTag;
-      rarW = ctx.measureText(rarTag).width + 12;
+    while (elW + rarW > petBoxW - 18 && pillFont > 7.4) {
+      pillFont = Number((pillFont - 0.4).toFixed(1));
+      ctx.font = `bold ${pillFont}px ${FONT_FAMILY}`;
+      elW = ctx.measureText(elTag).width + 10;
+      rarW = ctx.measureText(rarTag).width + 10;
     }
 
     drawRoundRect(ctx, petBoxX + 8, petBoxY + 8, elW, 20, 5);

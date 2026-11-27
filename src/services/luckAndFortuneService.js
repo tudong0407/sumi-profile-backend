@@ -23,6 +23,115 @@ import {
 const luckLocks = new Map();
 const memLuckBuffs = new Map();
 const memDailyFortunes = new Map();
+const memAbsCharmRuns = new Map();
+let absCharmTestMode = false;
+
+export function __setAbsCharmTestMode(enabled = true) {
+  absCharmTestMode = Boolean(enabled);
+  if (!enabled) memAbsCharmRuns.clear();
+}
+
+export const ABS_ENCHANT_CHARM_MAX_RUNS = 50;
+export const ABS_ENCHANT_CHARM_RUNS_PER_ITEM = 5;
+
+export async function getAbsEnchantCharmRuns(userId) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return 0;
+  const db = absCharmTestMode ? null : supabase;
+  if (db) {
+    try {
+      const { data } = await db
+        .from('users')
+        .select('abs_enchant_charm_runs')
+        .eq('user_id', cleanId)
+        .maybeSingle();
+      if (data && data.abs_enchant_charm_runs !== undefined && data.abs_enchant_charm_runs !== null) {
+        return Math.max(0, Number(data.abs_enchant_charm_runs || 0));
+      }
+    } catch { /* fallback */ }
+  }
+  return Math.max(0, Number(memAbsCharmRuns.get(cleanId) || 0));
+}
+
+export async function activateAbsEnchantCharm(userId, options = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
+  const db = absCharmTestMode ? null : supabase;
+
+  return withLuckLock(cleanId, async () => {
+    const curRuns = await getAbsEnchantCharmRuns(cleanId);
+    if (curRuns >= ABS_ENCHANT_CHARM_MAX_RUNS && !options.force) {
+      return {
+        success: false,
+        status: 409,
+        error: 'CHARM_CAP_REACHED',
+        message: `${em('abs_enchant_charm')} **Bùa Đá Tuyệt Ấn** đã đạt trần tối đa **${ABS_ENCHANT_CHARM_MAX_RUNS} lượt** (/explorer)! Hãy đi Khám Phá tiêu bớt trước khi bật thêm.`,
+      };
+    }
+
+    if (db && !options.skipInventoryCheck) {
+      const { data: invRow } = await db
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', 'abs_enchant_charm')
+        .maybeSingle();
+      const qty = Number(invRow?.quantity || 0);
+      if (qty <= 0) {
+        return {
+          success: false,
+          status: 400,
+          error: 'NO_CHARM_IN_INVENTORY',
+          message: `Bạn không có ${em('abs_enchant_charm')} **Bùa Đá Tuyệt Ấn** trong túi đồ! Hãy ghé \`/shop_dacbiet\` *(Chủ Nhật)* để mua.`,
+        };
+      }
+      await db
+        .from('user_inventory')
+        .update({ quantity: Math.max(0, qty - 1), updated_at: new Date().toISOString() })
+        .eq('user_id', cleanId)
+        .eq('item_id', 'abs_enchant_charm');
+    }
+
+    const nextRuns = Math.min(ABS_ENCHANT_CHARM_MAX_RUNS, curRuns + ABS_ENCHANT_CHARM_RUNS_PER_ITEM);
+    if (db) {
+      await db
+        .from('users')
+        .update({ abs_enchant_charm_runs: nextRuns, updated_at: new Date().toISOString() })
+        .eq('user_id', cleanId);
+    } else {
+      memAbsCharmRuns.set(cleanId, nextRuns);
+    }
+
+    return {
+      success: true,
+      item_id: 'abs_enchant_charm',
+      remaining_runs: nextRuns,
+      message: `${em('abs_enchant_charm')} Đã kích hoạt **Bùa Đá Tuyệt Ấn**! Tăng tỷ lệ rơi **Thiên Đạo Tuyệt Ấn Thạch** trong \`/explorer\` từ \`5%\` -> **\`25%\`** cho **${nextRuns} chuyến** *(Còn ${nextRuns} lượt)*!`,
+    };
+  });
+}
+
+export async function consumeAbsEnchantCharmRun(userId) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) return { used: false, remaining: 0 };
+  const db = absCharmTestMode ? null : supabase;
+
+  return withLuckLock(cleanId, async () => {
+    const curRuns = await getAbsEnchantCharmRuns(cleanId);
+    if (curRuns <= 0) return { used: false, remaining: 0 };
+
+    const remaining = Math.max(0, curRuns - 1);
+    if (db) {
+      await db
+        .from('users')
+        .update({ abs_enchant_charm_runs: remaining, updated_at: new Date().toISOString() })
+        .eq('user_id', cleanId);
+    } else {
+      memAbsCharmRuns.set(cleanId, remaining);
+    }
+    return { used: true, remaining };
+  });
+}
 
 async function withLuckLock(userId, fn) {
   const prev = luckLocks.get(userId) || Promise.resolve();

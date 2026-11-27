@@ -314,6 +314,8 @@ export async function getShopCatalog(category = 'all', options = {}) {
           items: fullCatItems,
           page: safePage,
           total_pages: totalPages,
+          prev_page: safePage > 1 ? safePage - 1 : totalPages,
+          next_page: safePage < totalPages ? safePage + 1 : 1,
           page_items: pageItems,
           dropdown_options: pageItems.slice(0, 25).map((it) => ({
             label: String(it.name || it.item_name || it.pet_name || it.item_id || it.pet_type || '').slice(0, 100),

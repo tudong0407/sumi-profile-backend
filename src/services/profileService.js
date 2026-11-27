@@ -3,6 +3,8 @@ import {
   FUYUMI_USER_ID,
   PET_BY_TYPE,
   EQUIPMENT_BY_ID,
+  V17_PET_EVOLUTIONS,
+  resolveEntityDisplayRarityKey,
   normalizeRarityKey,
   STARTER_PET,
   createStarterPetObject,
@@ -716,10 +718,16 @@ export async function getProfileData(userId, overrides = {}) {
           const couplePowerPct = marriedData?.power_bonus_pct || 0;
           const couplePowerBonus = couplePowerPct > 0 ? Math.round(rawTotalPower * (couplePowerPct / 100)) : 0;
 
+          const petIsEvolved = Boolean(pet.is_evolved);
+          const evoMeta = petIsEvolved ? (V17_PET_EVOLUTIONS[pet.pet_type] || null) : null;
           petData = {
             name: pet.pet_name,
             type: pet.pet_type,
             pet_type: pet.pet_type,
+            is_evolved: petIsEvolved,
+            evolved_at: pet.evolved_at || null,
+            pet_image_file: evoMeta?.evo_image_file || catalogPet?.image_file || null,
+            display_rarity_key: resolveEntityDisplayRarityKey(catalogPet || pet, petIsEvolved),
             rarity: formatRarityLabel(pet.pet_rarity || catalogPet?.rarity || 'Phàm Phẩm'),
             element: pet.element || catalogPet?.element || 'Thổ',
             enchant_grade: petGrade,
@@ -803,6 +811,7 @@ export async function getProfileData(userId, overrides = {}) {
           exp: Number(user.exp) || 0,
           next_level_exp: getExpForNextLevel(userLvlNum),
           linh_thach: Number(user.linh_thach) || 0,
+          red_gold_crystals: Number(user.red_gold_crystals) || 0,
           farm_slots_unlocked: Number(user.farm_slots_unlocked) || 4,
           farm_essence: Number(user.farm_essence) || 0,
           max_role_slots: Number(user.max_role_slots) || 1,
