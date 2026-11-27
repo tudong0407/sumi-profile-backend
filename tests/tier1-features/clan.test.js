@@ -169,4 +169,38 @@ describe('Tier 1 - Phase 3 Gia Tộc (/giatoc) & Clan Wars 24H', () => {
     assert.equal(lbRes.status, 200);
     assert.ok((await lbRes.json()).clans.length >= 2);
   });
+
+  it('4. Overview panel renders cleanly at Lv.9 (80,000 cost to Lv.10) and Lv.10 max level', async () => {
+    if (!supabase) return;
+
+    const { data: u1 } = await supabase.from('users').select('clan_id').eq('user_id', LEADER_1).single();
+    await supabase
+      .from('clans')
+      .update({ clan_level: 9, clan_treasury: 100000, max_members: 46 })
+      .eq('clan_id', u1.clan_id);
+
+    const lv9Res = await testServer.fetch(`/api/clan/panel/${LEADER_1}?view=overview`);
+    assert.equal(lv9Res.status, 200);
+    const lv9Json = await lv9Res.json();
+    assert.equal(lv9Json.success, true);
+    assert.match(lv9Json.description, /Lv\.9\/10/);
+    assert.match(lv9Json.description, /Nâng Lv\.10 cần 80\.000 Ngân Khố/);
+
+    const up10Res = await testServer.fetch('/api/clan/upgrade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: LEADER_1 }),
+    });
+    assert.equal(up10Res.status, 200);
+    const up10Json = await up10Res.json();
+    assert.equal(up10Json.new_level, 10);
+    assert.equal(up10Json.clan_treasury, 20000);
+
+    const lv10Res = await testServer.fetch(`/api/clan/panel/${LEADER_1}?view=overview`);
+    assert.equal(lv10Res.status, 200);
+    const lv10Json = await lv10Res.json();
+    assert.equal(lv10Json.success, true);
+    assert.match(lv10Json.description, /Lv\.10\/10/);
+    assert.match(lv10Json.description, /Cấp Tối Đa/);
+  });
 });

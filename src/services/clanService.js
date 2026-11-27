@@ -220,8 +220,10 @@ export async function getClanInfo(userId, clanQuery = null, opts = {}) {
   ]);
 
   const memberList = members || [];
-  const cfg = getClanLevelConfig(clan.clan_level);
-  const nextCfg = clan.clan_level < 10 ? getClanLevelConfig(clan.clan_level + 1) : null;
+  const curLevel = Math.min(10, Math.max(1, Number(clan.clan_level) || 1));
+  const cfg = getClanLevelConfig(curLevel);
+  const nextCfg = curLevel < 10 ? getClanLevelConfig(curLevel + 1) : null;
+  const upgradeCost = nextCfg && cfg.upgradeCost != null ? Number(cfg.upgradeCost) : null;
   const maxMembers = Math.max(Number(clan.max_members || 10), cfg.maxMembers);
   const isLeader = Boolean(cleanId && clan.leader_id === cleanId);
 
@@ -239,9 +241,9 @@ export async function getClanInfo(userId, clanQuery = null, opts = {}) {
   const message = [
     `${em('su_clan_castle')} **GIA TỘC ${clan.clan_name.toUpperCase()}** ${clan.clan_tag ? `\`[${clan.clan_tag}]\`` : ''}`,
     `• **Mã Tộc**: \`${clan.clan_id}\` • **Tộc Trưởng**: <@${clan.leader_id}>`,
-    `• **Cấp Độ**: **Lv.${clan.clan_level}/10** • **Thành Viên**: **${memberList.length}/${maxMembers}**${isLeader ? ` *(Đơn chờ duyệt: **${(pendingReqs || []).length}**)*` : ''}`,
+    `• **Cấp Độ**: **Lv.${curLevel}/10** • **Thành Viên**: **${memberList.length}/${maxMembers}**${isLeader ? ` *(Đơn chờ duyệt: **${(pendingReqs || []).length}**)*` : ''}`,
     `• **Ngân Khố**: **${Number(clan.clan_treasury || 0).toLocaleString('vi-VN')}** ${em('su_linhthach')} • **Tổng EXP Tộc**: **${Number(clan.total_exp || 0).toLocaleString('vi-VN')}**`,
-    `• **Buff Thành Viên**: **+${cfg.expBonusPct}% EXP** & **+${cfg.ltBonusPct}% Linh Thạch Daily**${nextCfg ? ` *(Nâng Lv.${nextCfg.level} cần ${nextCfg.upgradeCost.toLocaleString('vi-VN')} Ngân Khố)*` : ' *(Cấp Tối Đa)*'}`,
+    `• **Buff Thành Viên**: **+${cfg.expBonusPct}% EXP** & **+${cfg.ltBonusPct}% Linh Thạch Daily**${nextCfg && upgradeCost != null ? ` *(Nâng Lv.${nextCfg.level} cần ${upgradeCost.toLocaleString('vi-VN')} Ngân Khố)*` : ' *(Cấp Tối Đa)*'}`,
     ``,
     `**Top Thành Viên:**\n${summaryMembers}`,
     ``,
@@ -258,7 +260,7 @@ export async function getClanInfo(userId, clanQuery = null, opts = {}) {
       member_count: memberList.length,
       exp_bonus_pct: cfg.expBonusPct,
       lt_bonus_pct: cfg.ltBonusPct,
-      next_upgrade_cost: nextCfg?.upgradeCost || null,
+      next_upgrade_cost: upgradeCost,
     },
     members: memberList,
     pending_requests_count: (pendingReqs || []).length,
