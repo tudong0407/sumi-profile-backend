@@ -1024,18 +1024,14 @@ export async function getWikiItemDetail(itemId) {
       : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
     : null;
 
-  const effectLine = item.hax_skill
-    ? `${em('su_thunder_hax')} **${item.hax_skill}**: ${item.hax_description}`
-    : (item.hax_description ? `${em('su_sparkle')} ${item.hax_description}` : 'Tăng trực tiếp chỉ số chiến đấu cho Linh Thú.');
-
   const descriptionLines = [
-    `${tier.emoji} **${item.rarity}** • ${slotLabel} • ${elementEmoji(item.element)} Hệ **${item.element}** • Tỉ lệ rớt **${item.drop_rate}%**`,
-    `${em('su_stats_chart')} **Chỉ số**: \`${statParts.join(' | ') || 'Không có'}\``,
-    effectLine,
+    `• **Mã ID:** \`${item.item_id}\` • **Trang bị:** \`/equip loai:item ma_id:${item.item_id}\``,
   ];
-  if (ownerLine) descriptionLines.push(ownerLine);
+  if (item.is_unique && currentOwner) {
+    descriptionLines.push(`${tierEmoji('supreme')} **Chủ sở hữu:** **${currentOwner.username}** (<@${currentOwner.user_id}>)`);
+  }
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.4.7`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.7-s7`;
 
   return {
     success: true,
@@ -1124,30 +1120,23 @@ export async function getWikiPetDetail(petType, options = {}) {
   const dispName = isEvoForm && evoData ? evoData.evolved_name : pet.pet_name;
   const dispRarity = isEvoForm ? 'Tối Thượng Chân Thần' : pet.rarity;
 
-  const tagNotes = [];
-  if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
-
-  const ownerLine = pet.is_unique
-    ? (currentOwner
-      ? `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chủ sở hữu: **${currentOwner.username}** (<@${currentOwner.user_id}>)${currentOwner.is_evolved ? ' • *Đã Tiến Hóa Chân Thần*' : ''}`
-      : `${tierEmoji('unique_supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu *(Có thể quay trúng từ \`/roll loai:pet\`)*`)
+  const evoHint = canToggleForm && !isEvoForm && evoData
+    ? `${tierEmoji('evolved_supreme')} **Tiến Hóa (\`/tienhoa\`):** **${evoData.evolved_name}** *(Bấm nút bên dưới để xem Splash & Ultimate)*`
     : null;
 
-  const evoLine = evoData?.ultimate
-    ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần (\`/tienhoa\`):** **${evoData.evolved_name}** • **Ultimate:** **${evoData.ultimate.name}** — *${evoData.ultimate.desc}*`
+  const ownerMentionLine = pet.is_unique && currentOwner
+    ? `${tierEmoji('unique_supreme')} **Chủ sở hữu:** **${currentOwner.username}** (<@${currentOwner.user_id}>)${currentOwner.is_evolved ? ' • *Đã Tiến Hóa Chân Thần*' : ''}`
     : null;
 
   const descriptionLines = [
-    `${tier.emoji} **${dispRarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
-    `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${dispAtk.toLocaleString('vi-VN')} | DEF ${dispDef.toLocaleString('vi-VN')} | SPD ${dispSpd.toLocaleString('vi-VN')} | HP ${dispHp.toLocaleString('vi-VN')}\``,
-    `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
+    `• **Mã ID:** \`${pet.pet_type}\` • **Xuất trận:** \`/linhthu hanh_dong:active linh_thu:${pet.pet_type}\``,
   ];
-  if (evoLine) descriptionLines.push(evoLine);
-  if (ownerLine) descriptionLines.push(ownerLine);
+  if (evoHint) descriptionLines.push(evoHint);
+  if (ownerMentionLine) descriptionLines.push(ownerMentionLine);
 
   const imageUrl = canToggleForm
-    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s6&form=${activeForm}`
-    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s6`;
+    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s7&form=${activeForm}`
+    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s7`;
   const formFooter = canToggleForm
     ? (isEvoForm
       ? 'Đang xem: Tiến Hóa Chân Thần • Bấm nút bên dưới để chuyển Bản Thường'

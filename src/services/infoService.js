@@ -223,26 +223,22 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
       : '';
 
     const lines = [
-      `• **Mã UID:** \`${p.pet_type}\` • **Dạng Hiển Thị:** ${isEvoForm ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần**` : '**Bản Gốc (Thường)**'}`,
-      `• **Phẩm chất:** ${tierEmoji(dispRarityKey)} **${dispRarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
-      `• **Chỉ số gốc (Lv.1 • 1★${isEvoForm ? ` • ${evoBoostSummary}` : ''}):** \`ATK ${dispAtk.toLocaleString('vi-VN')} | DEF ${dispDef.toLocaleString('vi-VN')} | SPD ${dispSpd.toLocaleString('vi-VN')} | HP ${dispHp.toLocaleString('vi-VN')} | Lực ${dispPower.toLocaleString('vi-VN')}\``,
-      `• ${em('su_thunder_hax')} **Kỹ năng HAX (${p.hax_skill}):** ${p.hax_description}`,
-      ...(evoMeta?.ultimate
-        ? [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${evoMeta.ultimate.name}):** ${evoMeta.ultimate.desc}`]
-        : []),
+      `• **Mã UID:** \`${p.pet_type}\`${canToggleForm ? ` • **Dạng:** ${isEvoForm ? `${tierEmoji('evolved_supreme')} **Tiến Hóa Chân Thần**` : '**Bản Gốc**'}` : ''}`,
       ...(canToggleForm && !isEvoForm
-        ? [`• ${tierEmoji('evolved_supreme')} **Dạng Tiến Hóa Chân Thần:** **${evoMeta.evolved_name}** *(${evoBoostSummary} — bấm nút bên dưới để xem Splash Art Tiến Hóa!)*`]
-        : []),
+        ? [`• ${tierEmoji('evolved_supreme')} **Tiến Hóa (\`/tienhoa\`):** **${evoMeta.evolved_name}** *(${evoBoostSummary} — bấm nút dưới để xem Ultimate & Splash)*`]
+        : isEvoForm && evoBoostSummary
+          ? [`• ${tierEmoji('evolved_supreme')} **Bổ Trợ Chân Thần:** *(${evoBoostSummary})*`]
+          : []),
       `• **Nguồn sở hữu:** ${sourceText}`,
       p.is_exclusive_fuyumi
         ? '• **Phân rã (`/dismantle`):** Không thể phân rã'
         : '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (25%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
-      `• *Dùng \`/linhthu hanh_dong:active linh_thu:${p.pet_type}\` để xuất trận hoặc \`/enchant loai:pet muc_tieu:${p.pet_type}\` để khắc ấn.*`,
+      `• *Lệnh nhanh: \`/linhthu hanh_dong:active linh_thu:${p.pet_type}\` • \`/enchant loai:pet muc_tieu:${p.pet_type}\`*`,
     ];
 
     const imgEndpoint = p.is_exclusive_fuyumi
-      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s6&form=${activeForm}`
-      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s6&form=${activeForm}`;
+      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s7&form=${activeForm}`
+      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s7&form=${activeForm}`;
 
     return {
       success: true,
@@ -283,12 +279,9 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
 
     const lines = [
       `• **Mã UID:** \`${it.item_id}\` • **Ô trang bị:** **${slotLabel}**`,
-      `• **Phẩm chất:** ${tierEmoji(it.rarity_key)} **${it.rarity}** • **Hệ:** ${elementEmoji(it.element)} **${it.element}**`,
-      `• ${em('su_stats_chart')} **Chỉ số cộng:** \`${statParts || 'Cơ bản'}\``,
-      `• ${em('su_thunder_hax')} **HAX / Nội tại${it.hax_skill ? ` (${it.hax_skill})` : ''}:** ${it.hax_description || 'Gia tăng chỉ số cơ bản.'}`,
       `• **Nguồn sở hữu:** ${sourceText}`,
       '• **Giá thu hồi (`/dismantle`):** ' + (shopDismantle ? `Mua Shop: **${shopDismantle.toLocaleString('vi-VN')}** ${lt} (20%) • ` : '') + `Quay Gacha: **${gachaDismantle.toLocaleString('vi-VN')}** ${lt}`,
-      `• *Dùng \`/equip loai:item ma_id:${it.item_id}\` để trang bị hoặc \`/enchant loai:item muc_tieu:${it.item_id}\` để khắc ấn.*`,
+      `• *Lệnh nhanh: \`/equip loai:item ma_id:${it.item_id}\` • \`/enchant loai:item muc_tieu:${it.item_id}\`*`,
     ];
 
     return {
@@ -299,7 +292,7 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
       title: `${itemEmoji(it.item_id, em('su_crossed_swords'))} PHÁP BẢO: ${it.item_name}`,
       description: lines.join('\n'),
       color: it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=1.4.7`,
+      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=${LATEST_VERSION}-s7`,
       footer: '',
     };
   }

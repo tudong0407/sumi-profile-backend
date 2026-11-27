@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s6`;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s7`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 
@@ -289,6 +289,10 @@ export function invalidateUniqueItemCard(itemId) {
 export function invalidateUniquePetCard(petType) {
   const clean = String(petType || '').trim();
   if (!clean) return false;
+  for (const form of ['base', 'evo']) {
+    uniqueRamCache.delete(`pet:${clean}:${form}:webp`);
+    uniqueRamCache.delete(`pet:${clean}:${form}:png`);
+  }
   uniqueRamCache.delete(`pet:${clean}:webp`);
   uniqueRamCache.delete(`pet:${clean}:png`);
   return true;

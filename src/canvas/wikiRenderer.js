@@ -159,12 +159,12 @@ function drawCelestialBackground(ctx, accentColor = 'rgba(236, 72, 153, 0.20)') 
 async function drawFooter(ctx, label = 'SuMi Family • Cẩm Nang Tu Tiên Toàn Thư') {
   const cleanLabel = String(label || '').replace(/🦊\s*/g, '').trim();
   const icoFox = await loadBadgeImage('badges/su_fox_mascot.png');
-  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 22, {
+  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 27, {
     iconSize: 14,
     gap: 5,
     align: 'right',
-    font: `11px ${FONT_FAMILY}`,
-    fillStyle: 'rgba(226, 232, 240, 0.64)',
+    font: `bold 11.5px ${FONT_FAMILY}`,
+    fillStyle: 'rgba(241, 245, 249, 0.88)',
   });
 }
 
@@ -637,7 +637,8 @@ export async function renderElementalChart(options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, 'SuMi Family • Sơ Đồ Ngũ Hành Linh Thú & Ngũ Đại Linh Vực');
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
+  sharpenCanvas(canvas, 0.2);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }
 
 /**
@@ -839,7 +840,7 @@ export async function renderWikiItemCard(itemData, options = {}) {
 
   // Hộp Kỹ Năng / Hiệu Ứng Đặc Biệt (HAX)
   const haxY = 248;
-  const haxH = itemData.is_unique ? 116 : 158;
+  const haxH = itemData.is_unique ? 112 : 158;
   drawRoundRect(ctx, rightX, haxY, rightW, haxH, 14);
   ctx.fillStyle = 'rgba(20, 15, 38, 0.85)';
   ctx.fill();
@@ -866,8 +867,8 @@ export async function renderWikiItemCard(itemData, options = {}) {
 
   // Banner Chủ Sở Hữu Hiện Tại (bắt buộc cho 9 món Thần Thoại Độc Nhất)
   if (itemData.is_unique) {
-    const ownY = 380;
-    const ownH = 74;
+    const ownY = 374;
+    const ownH = 72;
     const hasOwner = !!itemData.current_owner;
     drawRoundRect(ctx, rightX, ownY, rightW, ownH, 14);
     const ownGrad = ctx.createLinearGradient(rightX, ownY, rightX + rightW, ownY + ownH);
@@ -898,7 +899,8 @@ export async function renderWikiItemCard(itemData, options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
+  sharpenCanvas(canvas, 0.22);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }
 
 /**
@@ -985,8 +987,8 @@ export async function renderWikiPetCard(petData, options = {}) {
 
   // Vẽ Ảnh Linh Thú tách nền giữ nguyên tỷ lệ khung hình
   if (petImg) {
-    const maxW = 266;
-    const maxH = 266;
+    const maxW = 274;
+    const maxH = 274;
     const aspect = petImg.width / petImg.height;
     let drawW = maxW;
     let drawH = maxH;
@@ -1130,7 +1132,7 @@ export async function renderWikiPetCard(petData, options = {}) {
   const haxY = cardUlt ? 221 : 298;
   const haxH = cardUlt
     ? (petData.is_unique ? 70 : 86)
-    : (petData.is_unique ? 112 : 156);
+    : (petData.is_unique ? 104 : 150);
   drawRoundRect(ctx, rightX, haxY, rightW, haxH, 12);
   ctx.fillStyle = 'rgba(20, 15, 38, 0.86)';
   ctx.fill();
@@ -1146,19 +1148,19 @@ export async function renderWikiPetCard(petData, options = {}) {
 
   ctx.font = `bold ${cardUlt ? 14.5 : 16.5}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fde047';
-  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 32), rightX + 16, haxY + (cardUlt ? 23 : 34));
+  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 32), rightX + 16, haxY + (cardUlt ? 23 : 32));
 
   ctx.font = `${cardUlt ? 12 : 13}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#e2e8f0';
   const haxMaxLines = cardUlt ? (petData.is_unique ? 2 : 3) : (petData.is_unique ? 2 : 4);
   const haxLines = wrapTextLines(ctx, petData.hax_description, rightW - 32, haxMaxLines);
   haxLines.forEach((line, li) => {
-    ctx.fillText(line, rightX + 16, haxY + (cardUlt ? 42 : 62) + li * (cardUlt ? 14 : 20));
+    ctx.fillText(line, rightX + 16, haxY + (cardUlt ? 42 : 58) + li * (cardUlt ? 14 : 20));
   });
 
   if (cardUlt) {
     const ultY = haxY + haxH + 8;
-    const ultH = petData.is_unique ? 104 : 138;
+    const ultH = petData.is_unique ? 98 : 132;
     drawRoundRect(ctx, rightX, ultY, rightW, ultH, 12);
     const ultBg = ctx.createLinearGradient(rightX, ultY, rightX + rightW, ultY + ultH);
     ultBg.addColorStop(0, 'rgba(131, 24, 67, 0.42)');
@@ -1171,25 +1173,25 @@ export async function renderWikiPetCard(petData, options = {}) {
 
     ctx.font = `bold 11px ${FONT_FAMILY}`;
     ctx.fillStyle = '#f9a8d4';
-    ctx.fillText('ULTIMATE', rightX + 16, ultY + 8);
+    ctx.fillText('ULTIMATE', rightX + 16, ultY + 7);
 
-    ctx.font = `bold ${petData.is_unique ? 15 : 15.5}px ${FONT_FAMILY}`;
+    ctx.font = `bold ${petData.is_unique ? 14.5 : 15.5}px ${FONT_FAMILY}`;
     ctx.fillStyle = '#fef08a';
-    ctx.fillText(truncateText(ctx, cardUlt.name || 'Ultimate', rightW - 32), rightX + 16, ultY + 24);
+    ctx.fillText(truncateText(ctx, cardUlt.name || 'Ultimate', rightW - 32), rightX + 16, ultY + 22);
 
-    ctx.font = `${petData.is_unique ? 11.8 : 11.5}px ${FONT_FAMILY}`;
+    ctx.font = `${petData.is_unique ? 11.5 : 11.5}px ${FONT_FAMILY}`;
     ctx.fillStyle = '#f8fafc';
     const ultMaxLines = petData.is_unique ? 4 : 6;
-    const ultLineStep = 14.5;
+    const ultLineStep = petData.is_unique ? 13.5 : 14.2;
     const ultLines = wrapTextLines(ctx, cardUlt.desc || '', rightW - 32, ultMaxLines);
     ultLines.forEach((line, li) => {
-      ctx.fillText(line, rightX + 16, ultY + 44 + li * ultLineStep);
+      ctx.fillText(line, rightX + 16, ultY + 41 + li * ultLineStep);
     });
   }
 
   if (petData.is_unique) {
-    const ownY = cardUlt ? (haxY + haxH + 8 + 104 + 8) : (haxY + haxH + 10);
-    const ownH = 42;
+    const ownY = cardUlt ? (haxY + haxH + 8 + 98 + 8) : (haxY + haxH + 8);
+    const ownH = 40;
     const hasOwner = !!petData.current_owner;
     drawRoundRect(ctx, rightX, ownY, rightW, ownH, 12);
     ctx.fillStyle = hasOwner ? 'rgba(245, 158, 11, 0.16)' : 'rgba(30, 41, 59, 0.72)';
