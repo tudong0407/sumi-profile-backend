@@ -730,7 +730,9 @@ export async function getProfileData(userId, overrides = {}) {
             is_evolved: petIsEvolved,
             evolved_at: pet.evolved_at || null,
             pet_image_file: pet.pet_type === 'cuu_vi_hong_ho'
-              ? (catalogPet?.image_file || 'pets/cuu_vi_hong_ho_transparent.png')
+              ? (petIsEvolved && evoMeta?.evo_image_file
+                ? evoMeta.evo_image_file
+                : (catalogPet?.image_file || 'pets/cuu_vi_hong_ho_transparent.png'))
               : (evoMeta?.evo_image_file || catalogPet?.image_file || null),
             ultimate: evoMeta?.ultimate || null,
             display_rarity_key: resolveEntityDisplayRarityKey(catalogPet || pet, petIsEvolved),

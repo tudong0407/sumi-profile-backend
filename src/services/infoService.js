@@ -29,6 +29,7 @@ import {
   FUYUMI_USER_ID,
   getCosmeticBuffByRarity,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_EVOLUTION,
 } from '../data/catalog.js';
 import { STONE_SPECIES, STONE_TIER_BY_KEY, FORTUNE_TIERS } from '../data/v16ExpansionCatalog.js';
 import { ALCHEMY_RECIPES, FURNACE_TIERS } from '../data/v161AlchemyCatalog.js';
@@ -189,8 +190,13 @@ export function lookupInfo(rawQuery, { requesterId } = {}) {
       `• **Phẩm chất:** ${tierEmoji(p.display_rarity_key || p.rarity_key)} **${p.rarity}** • **Ngũ Hành:** ${elementEmoji(p.element)} **${p.element}**`,
       `• **Chỉ số gốc (Lv.1 • 1★):** \`ATK ${p.base_atk.toLocaleString('vi-VN')} | DEF ${p.base_def.toLocaleString('vi-VN')} | SPD ${p.base_spd.toLocaleString('vi-VN')} | HP ${p.base_hp.toLocaleString('vi-VN')} | Lực ${p.base_power.toLocaleString('vi-VN')}\``,
       `• ${em('su_thunder_hax')} **Kỹ năng HAX (${p.hax_skill}):** ${p.hax_description}`,
-      ...(V17_PET_EVOLUTIONS?.[p.pet_type]?.ultimate
-        ? [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${V17_PET_EVOLUTIONS[p.pet_type].ultimate.name}):** ${V17_PET_EVOLUTIONS[p.pet_type].ultimate.desc}`]
+      ...((p.pet_type === 'cuu_vi_hong_ho' ? FUYUMI_SUPREME_EVOLUTION.ultimate : V17_PET_EVOLUTIONS?.[p.pet_type]?.ultimate)
+        ? (() => {
+            const ult = p.pet_type === 'cuu_vi_hong_ho'
+              ? FUYUMI_SUPREME_EVOLUTION.ultimate
+              : V17_PET_EVOLUTIONS[p.pet_type].ultimate;
+            return [`• ${tierEmoji('evolved_supreme')} **Chân Thần Ultimate (${ult.name}):** ${ult.desc}`];
+          })()
         : []),
       `• **Nguồn sở hữu:** ${sourceText}`,
       p.is_exclusive_fuyumi

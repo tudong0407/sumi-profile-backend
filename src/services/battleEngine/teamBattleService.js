@@ -44,6 +44,7 @@ import {
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_EVOLUTION,
 } from '../../data/catalog.js';
 import { renderTeamBattleCard } from '../../canvas/teamBattleRenderer.js';
 import { withCanvasRenderSlot } from './battleService.js';
@@ -1121,13 +1122,18 @@ function buildTeamStructuredUnits(units = [], leaderDomObj = null) {
       stats: { atk: u.atk || 0, def: u.def || 0, spd: u.spd || 0, hp: u.maxHp || 0 },
       fatiguePct: Number(u.fatiguePenaltyPct || 0),
       petHax: catPet?.hax_skill ? { name: catPet.hax_skill, desc: catPet.hax_description || '' } : null,
-      ultimate: p.is_evolved && V17_PET_EVOLUTIONS[p.pet_type]?.ultimate
-        ? {
-            name: V17_PET_EVOLUTIONS[p.pet_type].ultimate.name,
-            desc: V17_PET_EVOLUTIONS[p.pet_type].ultimate.desc || '',
-            triggerCount: Number(u.ultCount || 0),
-          }
-        : null,
+      ultimate: (() => {
+        const uDef = u.ultimateDef
+          || (p.pet_type === 'cuu_vi_hong_ho' ? FUYUMI_SUPREME_EVOLUTION.ultimate : null)
+          || (p.is_evolved ? V17_PET_EVOLUTIONS[p.pet_type]?.ultimate : null);
+        return uDef && (p.is_evolved || p.pet_type === 'cuu_vi_hong_ho' || u.state?.ultimate?.enabled)
+          ? {
+              name: uDef.name,
+              desc: uDef.desc || '',
+              triggerCount: Number(u.ultCount || 0),
+            }
+          : null;
+      })(),
       showDomain: idx === 0,
       domain: idx === 0 ? leaderDomain : null,
       equipment: u.isBoss

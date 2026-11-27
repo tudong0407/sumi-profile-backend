@@ -11,6 +11,7 @@ import {
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
   V17_PET_EVOLUTIONS,
+  FUYUMI_SUPREME_EVOLUTION,
 } from '../../data/catalog.js';
 import { em, tierEmoji, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById, uiEm } from '../../config/emojiHelper.js';
 import { initDomainBattleState, processTurnDomainPhase, computeEffectiveDomainEnergy } from './domainEngine.js';
@@ -404,13 +405,18 @@ function buildStructuredUnitForWeb(c, initHp, domSummarySide = null) {
       hp: initHp || c.maxHp || 0,
     },
     petHax: petHaxName ? { name: petHaxName, desc: petHaxDesc } : null,
-    ultimate: c.isEvolved && V17_PET_EVOLUTIONS[c.petType]?.ultimate
-      ? {
-          name: V17_PET_EVOLUTIONS[c.petType].ultimate.name,
-          desc: V17_PET_EVOLUTIONS[c.petType].ultimate.desc || '',
-          triggerCount: Number(c.ultCount || 0),
-        }
-      : null,
+    ultimate: (() => {
+      const uDef = c.ultimateDef
+        || (c.petType === 'cuu_vi_hong_ho' ? FUYUMI_SUPREME_EVOLUTION.ultimate : null)
+        || (c.isEvolved ? V17_PET_EVOLUTIONS[c.petType]?.ultimate : null);
+      return uDef && (c.isEvolved || c.petType === 'cuu_vi_hong_ho' || c.state?.ultimate?.enabled)
+        ? {
+            name: uDef.name,
+            desc: uDef.desc || '',
+            triggerCount: Number(c.ultCount || 0),
+          }
+        : null;
+    })(),
     domain: resolveCombatantDomainMeta(c, domSummarySide),
     equipment: [
       mapEquip(c.equipment?.weapon, 'Vũ Khí', em('su_crossed_swords')),

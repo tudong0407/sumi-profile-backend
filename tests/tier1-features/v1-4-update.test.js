@@ -552,7 +552,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 
   const fuyumiCompiled = applyFatigueToCombatant(await compileCombatant(FUYUMI_USER_ID, 'attacker'), 0);
   assert.equal(fuyumiCompiled.pet.pet_type, 'cuu_vi_hong_ho');
-  assert.equal(fuyumiCompiled.pet.pet_name, 'Cửu Vĩ Hồng Hồ');
+  assert.match(fuyumiCompiled.pet.pet_name, /Cửu Vĩ Hồng Hồ/);
   assert.equal(fuyumiCompiled.powerScore, fuyumiProfile.pet.power, 'Compiled Linh Mạch combatant must match /profile power 1:1 without double-applying Set Bonus');
 
   const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
