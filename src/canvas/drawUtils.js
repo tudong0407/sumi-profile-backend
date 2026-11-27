@@ -385,6 +385,39 @@ export async function loadImageSafe(urlOrPath, timeoutMs = 1200, fallbackAssetNa
 }
 
 /**
+ * Tăng độ sắc nét cạnh mảnh (Fast 5-tap Unsharp Mask) giữ nguyên kênh alpha.
+ */
+export function sharpenCanvas(canvas, amount = 0.22) {
+  const amt = Number(amount) || 0;
+  if (!canvas || amt <= 0) return canvas;
+  const w = canvas.width;
+  const h = canvas.height;
+  if (w < 3 || h < 3) return canvas;
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const src = new Uint8ClampedArray(imgData.data);
+  const dst = imgData.data;
+  const centerW = 1 + 4 * amt;
+
+  for (let y = 1; y < h - 1; y++) {
+    const rowOff = y * w;
+    for (let x = 1; x < w - 1; x++) {
+      const i = (rowOff + x) * 4;
+      const top = i - w * 4;
+      const bot = i + w * 4;
+      const lft = i - 4;
+      const rgt = i + 4;
+      for (let c = 0; c < 3; c++) {
+        const v = src[i + c] * centerW - (src[top + c] + src[bot + c] + src[lft + c] + src[rgt + c]) * amt;
+        dst[i + c] = v < 0 ? 0 : v > 255 ? 255 : (v + 0.5) | 0;
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+/**
  * Kết xuất Canvas ra Buffer chuẩn PNG hoặc WebP tốc độ cao
  */
 export function encodeCanvas(canvas, format = 'png', webpQuality = 85) {

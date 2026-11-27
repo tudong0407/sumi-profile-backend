@@ -21,6 +21,7 @@ import {
   drawElementalPetBorderFX,
   resolveAssetPath,
   resolvePetSplashAsset,
+  sharpenCanvas,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -1208,5 +1209,6 @@ export async function renderWikiPetCard(petData, options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
+  sharpenCanvas(canvas, 0.22);
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
 }

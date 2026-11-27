@@ -1089,11 +1089,15 @@ app.get('/api/profile/:userId', async (req, res) => {
 
     const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
     const fmt = isWebp ? 'webp' : 'png';
-    const cardHash = computeDynamicDataHash({ fmt, v: '1.2', ...profileData });
+    const cardHash = computeDynamicDataHash({ fmt, v: '1.3', ...profileData });
     const imgBuffer = await getOrRenderDynamicCard(
       `profile:${cleanUserId}:${fmt}`,
       cardHash,
-      () => renderProfileCard(profileData, { format: fmt }),
+      () => renderProfileCard(profileData, {
+        format: fmt,
+        dpiScale: isWebp ? 2.5 : 2,
+        webpQuality: 96,
+      }),
     );
 
     res.setHeader('Content-Type', isWebp ? 'image/webp' : 'image/png');

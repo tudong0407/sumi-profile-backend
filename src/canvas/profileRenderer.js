@@ -14,6 +14,7 @@ import {
   drawIconText,
   drawAutoFitSingleLineText,
   drawAutoFitIconText,
+  sharpenCanvas,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -135,9 +136,10 @@ function getProfileSlotColors(rarity) {
 export async function renderProfileCard(data, options = {}) {
   const width = 1000;
   const height = 500;
-  const canvas = createCanvas(width * RENDER_SCALE, height * RENDER_SCALE);
+  const scale = Math.max(1, Number(options.dpiScale) || RENDER_SCALE);
+  const canvas = createCanvas(Math.round(width * scale), Math.round(height * scale));
   const ctx = canvas.getContext('2d');
-  ctx.scale(RENDER_SCALE, RENDER_SCALE);
+  ctx.scale(scale, scale);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
@@ -657,11 +659,11 @@ export async function renderProfileCard(data, options = {}) {
 
   if (profile.pet) {
     const hasPetImg = !!petImg;
-    // Khung Linh Thú Chuyên Biệt mở rộng thoáng bên phải, không chạm thanh Chiến Lực
-    const petFrameW = 132;
-    const petFrameH = 114;
+    // Khung Linh Thú Chuyên Biệt rộng rãi, cân đối & không chạm thanh Chiến Lực
+    const petFrameW = 138;
+    const petFrameH = 118;
     const petFrameX = petX + petW - 18 - petFrameW;
-    const petFrameY = bottomY + 30;
+    const petFrameY = bottomY + 28;
     const leftTextW = petFrameX - petX - 36;
 
     // 1. Huy hiệu Độ hiếm (Rarity Badge) căn giữa ngay trên nóc Khung Pet
@@ -706,9 +708,9 @@ export async function renderProfileCard(data, options = {}) {
 
     // Vẽ Bé Pet Chibi tách nền ngay CHÍNH GIỮA khung
     if (hasPetImg) {
-      // Giữ tỉ lệ khung hình (Aspect Ratio) chuẩn xác để pet không bị méo mó, co giãn
-      const maxW = 74;
-      const maxH = 64;
+      // Giữ tỉ lệ khung hình (Aspect Ratio) & phóng to cân đối lấp đầy Khung Linh Thú
+      const maxW = petFrameW - 14;
+      const maxH = petFrameH - 12;
       const imgAspect = petImg.width / petImg.height;
       let drawW, drawH;
       if (imgAspect > (maxW / maxH)) {
@@ -719,8 +721,7 @@ export async function renderProfileCard(data, options = {}) {
         drawW = maxH * imgAspect;
       }
       const petDrawX = petFrameX + (petFrameW - drawW) / 2;
-      // Căn giữa theo trục Y trong khoảng không gian khả dụng dưới huy hiệu độ hiếm
-      const petDrawY = (petFrameY + 8) + (petFrameH - 8 - drawH) / 2;
+      const petDrawY = petFrameY + (petFrameH - drawH) / 2 + 2;
 
       ctx.save();
       // Đổ bóng hào quang nhẹ dưới chân Pet
@@ -1324,8 +1325,9 @@ export async function renderProfileCard(data, options = {}) {
     fillStyle: 'rgba(226, 232, 240, 0.55)',
   });
 
-  // Xuất ra PNG hoặc WebP Buffer
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 86);
+  // Xuất ra PNG hoặc WebP Buffer (tăng độ sắc nét + chất lượng WebP 96)
+  sharpenCanvas(canvas, 0.22);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 96);
 }
 
 export default renderProfileCard;
