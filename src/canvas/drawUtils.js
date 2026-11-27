@@ -1438,12 +1438,17 @@ function resolveElementBorderPalette(element) {
 
 /**
  * Vẽ viền Chân Thần tĩnh theo Hệ Nguyên Tố (40 Pet Tiến Hóa + Cửu Vĩ Hồng Hồ).
- * Luôn ép shadowBlur = 0 khi allowShadowBlur === false (1v1 / 3v3).
+ * Kết hợp hào quang đa lớp, vòng pháp trận ẩn dưới nền sprite, viền kép kim loại
+ * và hoa văn góc + kim cương 4 cánh. Luôn ép shadowBlur = 0 khi allowShadowBlur === false.
  */
 export function drawElementalPetBorderFX(ctx, x, y, w, h, radius = 12, element = 'Hỗn Độn', options = {}) {
-  const { allowShadowBlur = true, lineWidth = 2.2 } = options;
+  const { allowShadowBlur = true, lineWidth = 2.4 } = options;
   const [c1, c2, c3] = resolveElementBorderPalette(element);
   const rad = Math.min(radius, w / 2, h / 2);
+  const minSide = Math.min(w, h);
+  const sc = Math.max(0.65, Math.min(1.65, minSide / 135));
+  const cx = x + w / 2;
+  const cy = y + h / 2;
 
   const traceRect = (rx, ry, rw, rh, rr) => {
     const r2 = Math.min(rr, rw / 2, rh / 2);
@@ -1456,39 +1461,177 @@ export function drawElementalPetBorderFX(ctx, x, y, w, h, radius = 12, element =
     ctx.closePath();
   };
 
+  const drawFourPointStar = (sx, sy, outerR, innerR, fill) => {
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const a = (i * Math.PI) / 4 - Math.PI / 2;
+      const px = sx + Math.cos(a) * r;
+      const py = sy + Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.restore();
+  };
+
+  const drawGemDiamond = (gx, gy, rx, ry, fillColor, strokeColor = '#ffffff') => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(gx, gy - ry);
+    ctx.lineTo(gx + rx, gy);
+    ctx.lineTo(gx, gy + ry);
+    ctx.lineTo(gx - rx, gy);
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = Math.max(0.7, 0.9 * sc);
+    ctx.stroke();
+    ctx.restore();
+  };
+
   ctx.save();
+
+  // 1. Hào quang & Pháp trận ẩn dịu phía sau Linh Thú (vẽ trước drawImage)
+  const bgHalo = ctx.createRadialGradient(cx, cy, minSide * 0.05, cx, cy, minSide * 0.56);
+  bgHalo.addColorStop(0, `${c1}38`);
+  bgHalo.addColorStop(0.55, `${c2}1a`);
+  bgHalo.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = bgHalo;
+  traceRect(x + 2, y + 2, w - 4, h - 4, Math.max(2, rad - 2));
+  ctx.fill();
+
+  const ringR = minSide * 0.42;
+  ctx.save();
+  ctx.strokeStyle = `${c3}3d`;
+  ctx.lineWidth = Math.max(0.9, 1.1 * sc);
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.setLineDash([Math.max(4, 6 * sc), Math.max(3, 4.5 * sc)]);
+  ctx.strokeStyle = `${c1}45`;
+  ctx.lineWidth = Math.max(0.8, 0.9 * sc);
+  ctx.beginPath();
+  ctx.arc(cx, cy, ringR * 0.84, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // 2. Lớp phát sáng viền ngoài giả lập bloom sắc nét (kể cả khi allowShadowBlur = false)
+  const auraGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+  auraGrad.addColorStop(0, `${c1}30`);
+  auraGrad.addColorStop(0.5, `${c2}38`);
+  auraGrad.addColorStop(1, `${c3}30`);
+  traceRect(x - 1.5, y - 1.5, w + 3, h + 3, rad + 1.5);
+  ctx.strokeStyle = auraGrad;
+  ctx.lineWidth = lineWidth + 5.0;
+  ctx.shadowBlur = 0;
+  ctx.stroke();
+
+  traceRect(x - 0.5, y - 0.5, w + 1, h + 1, rad + 0.5);
+  ctx.strokeStyle = `${c2}52`;
+  ctx.lineWidth = lineWidth + 2.2;
+  ctx.stroke();
+
+  // 3. Viền kim loại chính 4 điểm chuyển sắc rực rỡ
   traceRect(x, y, w, h, rad);
   const grad = ctx.createLinearGradient(x, y, x + w, y + h);
   grad.addColorStop(0, c1);
-  grad.addColorStop(0.5, c2);
-  grad.addColorStop(1, c3);
+  grad.addColorStop(0.35, c3);
+  grad.addColorStop(0.7, c2);
+  grad.addColorStop(1, c1);
   ctx.strokeStyle = grad;
-  ctx.lineWidth = lineWidth;
+  ctx.lineWidth = lineWidth + 0.5;
   if (allowShadowBlur) {
     ctx.shadowColor = c2;
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 11;
   } else {
     ctx.shadowBlur = 0;
   }
   ctx.stroke();
 
+  // 4. Đường viền nội tuyến kép & ray ánh sáng đứt khúc tinh xảo
   ctx.shadowBlur = 0;
-  traceRect(x + 2.5, y + 2.5, w - 5, h - 5, Math.max(2, rad - 2));
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-  ctx.lineWidth = 0.8;
+  const bevelGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+  bevelGrad.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
+  bevelGrad.addColorStop(0.5, `${c3}aa`);
+  bevelGrad.addColorStop(1, 'rgba(255, 255, 255, 0.55)');
+  traceRect(x + 3.5, y + 3.5, w - 7, h - 7, Math.max(2, rad - 3));
+  ctx.strokeStyle = bevelGrad;
+  ctx.lineWidth = 1.05;
   ctx.stroke();
 
-  const corners = [
-    [x + 4, y + 4],
-    [x + w - 4, y + 4],
-    [x + 4, y + h - 4],
-    [x + w - 4, y + h - 4],
+  ctx.setLineDash([Math.max(6, 9 * sc), Math.max(4, 6 * sc)]);
+  traceRect(x + 6.5, y + 6.5, w - 13, h - 13, Math.max(2, rad - 5));
+  ctx.strokeStyle = `${c1}66`;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 5. Cánh giáp L-Bracket 4 góc + Bảo thạch + Tinh tú 4 cánh
+  const arm = Math.min(20 * sc, w * 0.2, h * 0.22);
+  const cornerDefs = [
+    { px: x - 1, py: y - 1, dx: 1, dy: 1 },
+    { px: x + w + 1, py: y - 1, dx: -1, dy: 1 },
+    { px: x - 1, py: y + h + 1, dx: 1, dy: -1 },
+    { px: x + w + 1, py: y + h + 1, dx: -1, dy: -1 },
   ];
-  ctx.fillStyle = c3;
-  for (const [cx, cy] of corners) {
+  ctx.strokeStyle = c3;
+  ctx.lineWidth = Math.max(1.8, 2.2 * sc);
+  ctx.lineCap = 'round';
+  for (const { px, py, dx, dy } of cornerDefs) {
     ctx.beginPath();
-    ctx.arc(cx, cy, 2.1, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(px + dx * arm, py);
+    ctx.lineTo(px + dx * 2, py);
+    ctx.lineTo(px, py + dy * 2);
+    ctx.lineTo(px, py + dy * arm);
+    ctx.stroke();
+
+    // Đuôi chỉ mảnh bên trong mỗi góc
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(px + dx * (arm * 0.65), py + dy * 3.5);
+    ctx.lineTo(px + dx * 3.5, py + dy * 3.5);
+    ctx.lineTo(px + dx * 3.5, py + dy * (arm * 0.65));
+    ctx.stroke();
+    ctx.restore();
+
+    const gx = px + dx * (3.8 * sc);
+    const gy = py + dy * (3.8 * sc);
+    drawFourPointStar(gx, gy, 5.2 * sc, 1.7 * sc, '#ffffff');
+    drawGemDiamond(gx, gy, 2.5 * sc, 2.5 * sc, c1, c3);
   }
+
+  // 6. Khảm Trung Tâm (Trên • Dưới • Trái • Phải) tạo dáng Thần Khí Chí Tôn
+  const wing = Math.min(18 * sc, w * 0.14);
+  for (const ty of [y, y + h]) {
+    ctx.beginPath();
+    ctx.moveTo(cx - wing, ty);
+    ctx.lineTo(cx + wing, ty);
+    ctx.strokeStyle = c3;
+    ctx.lineWidth = Math.max(1.8, 2.1 * sc);
+    ctx.stroke();
+    drawFourPointStar(cx, ty, 6.2 * sc, 2.0 * sc, '#fff7ed');
+    drawGemDiamond(cx, ty, 3.6 * sc, 3.0 * sc, c1, c3);
+  }
+
+  const sideWing = Math.min(14 * sc, h * 0.14);
+  for (const sx of [x, x + w]) {
+    ctx.beginPath();
+    ctx.moveTo(sx, cy - sideWing);
+    ctx.lineTo(sx, cy + sideWing);
+    ctx.strokeStyle = c2;
+    ctx.lineWidth = Math.max(1.6, 1.9 * sc);
+    ctx.stroke();
+    drawGemDiamond(sx, cy, 2.8 * sc, 4.0 * sc, c3, '#ffffff');
+  }
+
   ctx.restore();
 }
