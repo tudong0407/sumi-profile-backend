@@ -204,7 +204,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Đấu Trường 1v1, Web Logs 48h & Linh Vực',
-        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Sát thương trừ thẳng máu (bỏ qua khiên): Phản Đòn (reflect), Nổ Hộ Thuẫn, Độc/Thiêu Đốt (DoT), Hút Sinh Lực định kỳ và Mị Hoặc Phản Phệ trừ thẳng HP, bỏ qua Khiên. Phản Công khi né đòn vẫn đánh vào Khiên trước.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
+        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Sát thương thường đánh vào Khiên trước; Bạo kích ×1.75; Sát thương kỹ năng trừ DEF × 0.4 và đánh vào Khiên trước. Sát thương chuẩn trừ thẳng HP, bỏ qua DEF & Khiên (Phản Đòn trần tổng 85%, Nổ Hộ Thuẫn, DoT 28%, Hút Sinh Lực, Mị Hoặc Phản Phệ). Phản Công khi né đòn vẫn đánh vào Khiên trước.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
       },
     ],
     fields: [
@@ -226,7 +226,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_crossed_swords')} Luật /battle, Web Logs & /linhmach`,
         value: [
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `15s`.',
-          '• **Sát Thương Trừ Thẳng Máu (Bỏ Qua Khiên):** **Phản Đòn** *(reflect)*, **Nổ Hộ Thuẫn** *(vỡ khiên)*, **Độc / Thiêu Đốt (DoT)**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** đều trừ **thẳng HP, bỏ qua Khiên**. Riêng **Phản Công khi né đòn** vẫn đánh vào Khiên trước.',
+          '• **Sát Thương Trừ Thẳng Máu (Bỏ Qua Khiên):** **Phản Đòn** *(reflect, tổng tối đa `85%`)*, **Nổ Hộ Thuẫn**, **Độc / Thiêu Đốt (DoT 28%)**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** trừ **thẳng HP, bỏ qua Khiên & DEF**. Riêng **Sát Thương Thường / Kỹ Năng / Phản Công khi né** đều vào Khiên trước.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
           `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** (**F→S+: \`8k → 135k\` Lực**, \`6–56 LT/phút\` +15% Kho Clan); Boss Hạng **A / S / S+** tung **Dư Chấn AoE 35%** quét cả hậu phương (nên đi Tổ Đội 3 người); thắng cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`, giảm \`-10%/giờ\`).`,
         ].join('\n'),
@@ -520,7 +520,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_tower_boss')} Nhiệm Vụ (+30%), Tháp 500 Tầng & Top Ngày`,
         value: [
           '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** Tăng **`+30%`** *(5/5: **+170 LT** + quà)* & 4 Hợp Đồng Tuần *(450 / 550 / 500 / 700 LT)*.',
-          '• **Tháp 500 Tầng (`1k → 125k` Lực):** Mốc **T100 / T200 / T300 / T400 / T500** thưởng thêm **`+1 Mảnh Tinh Hoa Hỗn Độn`**; NPC dùng Linh Vực từ F70+.',
+          '• **Tháp 500 Tầng (`1k → ~205k` Lực):** Mốc **T100 / T200 / T300 / T400 / T500** thưởng thêm **`+1 Mảnh Tinh Hoa Hỗn Độn`**; Hộ Tháp dùng **Linh Vực (F45+)**, **Thần Thức (F90+)**, **Thần Cảnh (F160+)** & **Chân Thần + Ultimate** *(thử lửa T150, đại trà T200+, 100% Boss từ T400+)*.',
           '• **Top Chat & Voice Ngày (`00:00`):** `/top loai:chat` & `/top loai:voice` thưởng **500 / 400 / 300 LT** mỗi ngày.',
         ].join('\n'),
         inline: false,
@@ -593,23 +593,33 @@ export const WIKI_CATEGORIES = {
     pages: [
       {
         page: 1,
-        subtitle: 'Trang 1/4 — Chỉ Số, Giáp, Xuyên DEF & Hồi Phục',
+        subtitle: 'Trang 1/4 — 4 Loại Sát Thương, Giáp, Phản Đòn & Hồi Phục',
         fields: [
           {
             name: `${em('su_crossed_swords')} Xuyên DEF vs Giảm DEF (Không Trùng Nhau)`,
             value: [
-              '• **`Xuyên X% DEF`** *(`defPiercePct`, trần `90%`)*: Chỉ số **tự thân của người đánh** khi ra đòn, không gắn debuff lên địch. Tính ở bước kết toán sát thương.',
-              '• **`Giảm X% DEF`** *(`defDebuffPct` / `defReductionPct`, trần `75%`)*: **Debuff gắn trực tiếp lên kẻ địch** từ kỹ năng hoặc Linh Vực/Thần Cảnh.',
-              '• **Công thức tính Giáp thực tế:** `DEF hiệu dụng = DEF × (1 - Giảm DEF) × (1 - Xuyên DEF)` *(nhân `Giảm DEF` trước, rồi mới `Xuyên DEF`)*.',
+              '• **`Xuyên X% DEF`** *(`defPiercePct`, trần `90%`)*: Chỉ số **tự thân của người đánh** khi ra đòn, không gắn debuff lên địch.',
+              '• **`Giảm X% DEF`** *(`defDebuffPct` / `defReductionPct`, trần `75%`)*: **Debuff gắn trực tiếp lên kẻ địch** từ kỹ năng hoặc Vực/Cảnh.',
+              '• **Giáp hiệu dụng:** `DEF × (1 - Giảm DEF) × (1 - Xuyên DEF)` *(trừ `Giảm DEF` trước, rồi `Xuyên DEF`)*.',
             ].join('\n'),
             inline: false,
           },
           {
-            name: `${em('su_stats_chart')} Sát Thương Chuẩn, Hút Máu & Giới Hạn HP`,
+            name: `${em('su_arena')} 4 Loại Sát Thương Trong Giao Tranh`,
             value: [
-              '• **Sát Thương Chuẩn (Bỏ Qua DEF & Khiên):** Các hiệu ứng **Đốt HP / Trúng Độc (DoT)**, **Phản Đòn**, **Nổ Hộ Thuẫn**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** trừ **thẳng vào HP** mà không qua Giáp hay Khiên.',
-              '• **`Giảm X% Hồi Máu`** *(`healReductionPct`, trần `90%`)*: Giảm tương ứng lượng HP hồi từ kỹ năng hồi máu, Hút Máu và tái sinh *(không giảm Khiên)*.',
-              '• **`Cắt X% Trần HP Tối Đa`** *(`maxHpCutPct`, trần `48%`)*: Hạ trực tiếp trần HP tối đa của mục tiêu trong suốt trận *(vào từ Linh Vực / Thần Cảnh / Đạo Áp)*.',
+              '• **Sát Thương Thường:** Đòn cơ bản `(ATK×1.5 - DEF hiệu dụng×0.5) × Ngũ Hành`; qua Giáp & Khiên trước rồi chịu **Giảm ST Nhận** *(tối đa giảm **`85%`**, luôn lọt tối thiểu `15%`)*.',
+              '• **Bạo Kích (Crit):** Tỉ lệ `5%→100%`, sát thương mặc định **`×1.75`**, có thể kèm *Xuyên Giáp / Bỏ Qua Né khi Crit*.',
+              '• **Sát Thương Kỹ Năng:** Đòn phụ / Truy kích / Phản Công khi Né / Ultimate tính theo `% ATK` hoặc `% MaxHP`, vẫn trừ `DEF×0.4` *(trừ khi Xuyên 100% DEF)* & đánh vào Khiên trước.',
+              '• **Sát Thương Chuẩn:** Bỏ qua DEF & Khiên, trừ thẳng HP *(giảm bởi `Kháng ST Chuẩn`, trần **`65%`**)*.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_stats_chart')} Phản Đòn, Hút Máu, Hồi Phục & Giới Hạn HP`,
+            value: [
+              '• **ST Chuẩn Trừ Thẳng HP:** **Độc / Thiêu Đốt (DoT)**, **Phản Đòn**, **Nổ Hộ Thuẫn**, **Hút Sinh Lực định kỳ** & **Mị Hoặc Phản Phệ** đều bỏ qua Giáp & Khiên.',
+              '• **`Phản Đòn`** *(`reflectPct`, tổng trần **`85%`**)*: Dội `%` ST vừa nhận thành ST Chuẩn *(chịu `Kháng Phản Đòn` từ Vực, trần **`80%`**)*.',
+              '• **`Hút Máu`** *(`65%`)* • **`Giảm Hồi Máu`** *(`90%`, không giảm Khiên)* • **`Cắt Trần HP Tối Đa`** *(`48%`)*.',
             ].join('\n'),
             inline: false,
           },
@@ -617,13 +627,14 @@ export const WIKI_CATEGORIES = {
       },
       {
         page: 2,
-        subtitle: 'Trang 2/4 — Hệ Thống Khiên & 5 Cơ Chế Khắc Chế Khiên',
+        subtitle: 'Trang 2/4 — Hệ Thống Khiên, Hấp Thụ & 5 Cơ Chế Khắc Chế',
         fields: [
           {
-            name: `${em('su_shield_def')} Tạo Khiên & Tăng Độ Dày Khiên`,
+            name: `${em('su_shield_def')} Tạo Khiên, Độ Dày & Hấp Thụ Thành Khiên`,
             value: [
-              '• **Khiên Chắn (Shield):** Thanh giáp ảo hấp thụ sát thương thường/bạo kích trước khi trừ vào HP thật.',
-              '• **`Tăng +X% Độ Dày Khiên`** *(`shieldStrengthBonusPct`, trần `+55%`)*: Khuếch đại mọi lượng Khiên phe ta tạo ra từ Pet, Pháp Bảo hoặc Linh Vực.',
+              '• **Khiên Chắn (Shield):** Thanh giáp ảo hấp thụ **Sát Thương Thường / Bạo Kích / Kỹ Năng** trước khi trừ vào HP thật.',
+              '• **`Tăng +X% Độ Dày Khiên`** *(`shieldStrengthBonusPct`, trần **`+55%`**)*: Khuếch đại mọi lượng Khiên phe ta dựng lên.',
+              '• **`Hấp Thụ ST thành Khiên`** *(`absorbDmgAsShieldPct`, trần **`60%`**)*: Chuyển `%` ST vừa nhận thành Khiên mới • **`Nổ Hộ Thuẫn`** *(trần **`40%` MaxHP**)*: Khiên vỡ nổ ST Chuẩn phản lại kẻ phá.',
             ].join('\n'),
             inline: false,
           },
@@ -632,8 +643,8 @@ export const WIKI_CATEGORIES = {
             value: [
               '• **`Xuyên X% Khiên`** *(`shieldPiercePct`)*: Một phần sát thương đánh xuyên thẳng vào HP thật, phần còn lại vẫn đánh vào Khiên.',
               '• **`Phá Khiên (×2 / ×2.2 ST lên Khiên)`** *(`shieldDamageMult`)*: Gây gấp `2×` *(hoặc `2.2×`)* sát thương trực tiếp lên thanh Khiên địch để đập vỡ cực nhanh.',
-              '• **`Bào Mòn X% Khiên/hiệp`** *(`shieldDecayPct`, trần `58%`)*: Cuối mỗi hiệp tự động gọt bớt `%` Khiên hiện có của địch.',
-              '• **`Giảm X% Khiên Tạo Mới`** *(`enemyShieldCapReductionPct`, trần `62%`)*: Ép mọi Khiên mới địch dựng lên bị cắt giảm theo `%` này.',
+              '• **`Bào Mòn X% Khiên/hiệp`** *(`shieldDecayPct`, trần **`58%`**)*: Cuối mỗi hiệp tự động gọt bớt `%` Khiên hiện có của địch.',
+              '• **`Giảm X% Khiên Tạo Mới`** *(`enemyShieldCapReductionPct`, trần **`62%`**)*: Ép mọi Khiên mới địch dựng lên bị cắt giảm theo `%` này.',
               '• **Cấm / Cướp Khiên:** Chặn hoàn toàn việc tạo Khiên mới hoặc hút trực tiếp Khiên địch chuyển sang cho bản thân.',
             ].join('\n'),
             inline: false,
@@ -645,12 +656,12 @@ export const WIKI_CATEGORIES = {
         subtitle: 'Trang 3/4 — Linh Vực, Thần Thức, Thần Cảnh & Đạo Áp',
         fields: [
           {
-            name: `${em('su_realm_star')} Linh Mạch, Khắc Vực & Kháng Trừ Linh Mạch`,
+            name: `${em('su_realm_star')} Linh Mạch, Khắc Vực & Chỉ Số Lãnh Địa`,
             value: [
-              '• **Linh Mạch & Khắc Vực:** Linh Vực vào sân từ Hiệp 2. Nếu 2 bên cùng bật Vực sẽ trừ Linh Mạch mỗi hiệp; bên bị Khắc Vực mất **2 Mạch/hiệp** thay vì **1 Mạch/hiệp**.',
-              '• **`Kháng Trừ Linh Mạch Khắc Vực`** *(`clash_resist_chance`)*: Xác suất **`%` giữ nguyên không bị trừ thêm Linh Mạch** khi bị Vực địch khắc hệ *(không phải kháng sát thương nguyên tố)*.',
-              '• **`Cường Hóa Buff Vực`** *(`buff_boost_pct`)*: Khuếch đại các chỉ số buff cho phe mình từ Linh Vực.',
-              '• **`Cường Hóa Debuff Vực`** *(`debuff_boost_pct`)*: Khuếch đại **toàn bộ Debuff của Linh Vực lẫn Debuff phụ của Thần Cảnh** lên phe địch.',
+              '• **Linh Mạch & Khắc Vực:** Linh Vực vào sân từ Hiệp 2. Khi 2 bên cùng bật Vực sẽ trừ Linh Mạch mỗi hiệp; bên bị Khắc Vực mất **2 Mạch/hiệp** thay vì **1 Mạch/hiệp**.',
+              '• **`Kháng Trừ Linh Mạch Khắc Vực`** *(`clash_resist_chance`)*: Xác suất **`%` giữ nguyên không bị mất thêm Linh Mạch** khi bị Vực địch khắc hệ.',
+              '• **`Cường Hóa Buff Vực`** *(`buff_boost_pct`)* & **`Cường Hóa Debuff Vực`** *(`debuff_boost_pct`)*: Khuếch đại chỉ số Vực & toàn bộ Debuff phụ từ Thần Cảnh.',
+              '• **Kháng Đặc Biệt Lãnh Địa:** `Kháng ST Chuẩn` *(trần **`65%`**)* • `Kháng Phản Đòn` *(trần **`80%`**)* • `Kháng Bạo Kích` *(trần **`65%`**)*.',
             ].join('\n'),
             inline: false,
           },
@@ -667,23 +678,31 @@ export const WIKI_CATEGORIES = {
       },
       {
         page: 4,
-        subtitle: 'Trang 4/4 — Khống Chế (CC), HAX, Kháng & Buff SET',
+        subtitle: 'Trang 4/4 — Né, Khống Chế, Debuff, Bất Tử, Ultimate & SET',
         fields: [
           {
-            name: `${em('su_sparkle')} Khống Chế (CC), Miễn Nhiễm, Stack DoT & Ultimate (v1.7)`,
+            name: `${em('su_sparkle')} Né Tránh, Khống Chế (CC) & Trần Debuff`,
             value: [
-              '• **`Kháng X% Khống Chế`** *(`ccResistPct`, trần `92%`)*: Xác suất kháng các hiệu ứng mất lượt *(Choáng, Đóng Băng, Ngủ, Mị Hoặc, Tê Liệt)*.',
-              '• **`Miễn Nhiễm 100% Khống Chế`** *(`ccImmuneAll`)*: Miễn nhiễm tuyệt đối trạng thái Khống Chế *(không chặn giảm hồi máu/giảm giáp, trừ Pet miễn toàn diện như Quang Minh Thánh Thú)*.',
-              '• **Cộng Dồn Đa Nguồn & Bất Tử Trọn Hiệp (v1.7):** Độc / Thiêu Đốt từ **các nguồn khác nhau** *(Pet + Vũ Khí + Chiến Hồn + Ultimate)* cộng dồn đến trần **`28%` MaxHP/hiệp** *(và đều chịu Kháng Độc/Đốt, kể cả Thần Cảnh)*. **Bất Tử theo hiệp** miễn nhiễm toàn bộ đòn đánh, DoT, Phản Đòn, Nổ Khiên & Ultimate xuyên suốt hiệp đó.',
-              '• **Skill Ultimate Tái Kích Hoạt:** Riêng **40 Pet Tối Thượng Chân Thần** (`/tienhoa`), tự tích nạp theo điều kiện và tung lặp lại nhiều lần trong trận sau mỗi Cooldown (`4–6 hiệp`).',
+              '• **`Né Tránh`** *(trần **`65%`**)*: Né hoàn toàn đòn đánh; nếu có **Phản Công Khi Né** sẽ đánh trả bằng ST Kỹ Năng *(vẫn vào Khiên trước)*.',
+              '• **`Kháng CC`** *(`92%`)* vs **`Miễn 100% CC`** *(chặn Choáng/Đóng Băng/Ngủ/Mị/Mù; không chặn Giảm Hồi Máu trừ Pet miễn toàn diện)*.',
+              '• **Trần Debuff Lên Địch:** `Giảm ATK` (**`65%`**) • `Giảm SPD` (**`75%`**) • `Giảm ST Đầu Ra` (**`50%`**) • `Giảm Chính Xác / Mù` (**`45%`**) • `Giảm Tỉ Lệ HAX` *(còn tối thiểu `25%` hiệu lực)*.',
+            ].join('\n'),
+            inline: false,
+          },
+          {
+            name: `${em('su_thunder_hax')} DoT, Bất Tử / Tịch Diệt, Khóa HAX & Ultimate`,
+            value: [
+              '• **DoT Đa Nguồn & Kháng:** Độc / Thiêu Đốt cộng dồn đa nguồn đến trần **`28%` MaxHP/hiệp**; giảm bởi **`Kháng Độc/Đốt`** *(trần **`95%`**)*.',
+              '• **Bất Tử, Miễn Tử, Tái Sinh & `Tịch Diệt`:** **Bất Tử theo đòn** *(mất từng hit)* vs **Bất Tử theo hiệp** *(miễn 100% mọi đòn, DoT, Phản Đòn, Nổ Khiên trọn hiệp)*; **Miễn Tử** giữ HP khi chí tử; **Tái Sinh** hồi sinh; **`Tịch Diệt`** khóa cả Bất Tử & Hồi Sinh.',
+              '• **`Khóa HAX` • `Cấm/Giải Buff` • `Liên Hoàn Đòn` • `Ultimate`:** Chặn nội tại/buff theo hiệp; 40 Chân Thần (`/tienhoa`) tích nạp & tung lại **Skill Ultimate** sau Cooldown (`4–6 hiệp`).',
             ].join('\n'),
             inline: false,
           },
           {
             name: `${em('explorer_world_map_v14')} Buff SET & Thuận Hệ Địa Hình`,
             value: [
-              '• **Buff SET 2 Tầng (Không Cộng Dồn):** Đếm theo số món cùng Hệ trong đội hình `(1 Pet + 3 Pháp Bảo + 1 Linh Vực)`: Full Hệ Thường `4/4` (**+8%**), `5/5` (**+12%**); Set Thần Thoại `2/3/4/5` (**+6/+12/+18/+25%** toàn chỉ số, mốc `5/5` thêm **+10% Xuyên DEF** & **+1 Linh Mạch**).',
-              '• **Thuận Hệ Địa Hình (`/explorer`):** Pet hoặc Linh Vực khớp Hệ của Map được cộng **`+6%` Tỉ Lệ Sống Sót** & **`+10%` Linh Thạch**.',
+              '• **Buff SET 2 Tầng (Không Cộng Dồn):** Đếm theo số món cùng Hệ `(1 Pet + 3 Pháp Bảo + 1 Linh Vực)`: Full Hệ Thường `4/4` (**+8%**), `5/5` (**+12%**); Set Thần Thoại `2/3/4/5` (**+6/+12/+18/+25%** toàn chỉ số, mốc `5/5` thêm **+10% Xuyên DEF** & **+1 Linh Mạch**).',
+              '• **Thuận Hệ Địa Hình (`/explorer`):** Pet hoặc Linh Vực khớp Hệ của Map nhận **`+6%` Tỉ Lệ Sống Sót** & **`+10%` Linh Thạch**.',
             ].join('\n'),
             inline: false,
           },

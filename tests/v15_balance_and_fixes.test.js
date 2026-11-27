@@ -119,7 +119,9 @@ test('Ver 1.5 Rebalance: Tower +15% LT, smooth curve & /updates 2.000 LT + /wiki
   assert.equal(TOWER_MILESTONE_BONUSES[500].lt, 17250);
 
   const g500 = await buildTowerGuardian(500, () => 0.5);
-  assert.ok(g500.powerScore >= 110000 && g500.powerScore <= 150000, `Unexpected F500 power: ${g500.powerScore}`);
+  assert.ok(g500.powerScore >= 180000 && g500.powerScore <= 265000, `Unexpected F500 power: ${g500.powerScore}`);
+  assert.equal(g500.isEvolved, true, 'F500 Boss must be Chân Thần evolved');
+  assert.ok(g500.ultimateDef, 'F500 Boss must have Ultimate skill');
 
   const upd = getChangelogPayload('1.5');
   assert.equal(upd.ack_reward_lt, 2000);
@@ -365,4 +367,72 @@ test('Ver 1.5 HAX Audit: stunned DoT ticks, team firstStrike, charm attackSelf, 
   );
   const doubleEvents = resDoubleTeam.turnSnapshots[1]?.events || [];
   assert.ok(doubleEvents.some((e) => e.includes('Liên Hoàn Đòn (Thêm Lượt)')), 'soul_mythic_2 must trigger double turn in team battle');
+});
+
+test('Ver 1.7.1 Tower Balance: early Domains/Senses/Realms, Chân Thần milestones (F150, F200-399, 100% Boss F400+), ±8% variance & F50-80 gate', async () => {
+  const g1 = await buildTowerGuardian(1, () => 0.5);
+  assert.equal(g1.domainLoadout.domain, null);
+  assert.equal(g1.towerMeta.enchantGrade, 'D');
+
+  const g45 = await buildTowerGuardian(45, () => 0.5);
+  assert.ok(g45.domainLoadout.domain, 'F45+ must unlock Linh Vực');
+  assert.equal(g45.towerMeta.enchantGrade, 'C');
+
+  const g90 = await buildTowerGuardian(90, () => 0.5);
+  assert.ok(g90.domainLoadout.sense, 'F90+ must unlock Thần Thức');
+  assert.equal(g90.towerMeta.enchantGrade, 'B');
+
+  const g150 = await buildTowerGuardian(150, () => 0.99);
+  assert.equal(g150.isEvolved, true, 'F150 Boss must be guaranteed Chân Thần trial');
+  assert.ok(g150.ultimateDef, 'F150 Chân Thần Boss must have Ultimate');
+
+  const g160 = await buildTowerGuardian(160, () => 0.5);
+  assert.ok(g160.domainLoadout.realm, 'F160+ must unlock Thần Cảnh');
+
+  // Variance ±8% bounds: normal [0.92..1.08], boss [0.96..1.08]
+  const gNormalLow = await buildTowerGuardian(101, () => 0.0);
+  const gNormalHigh = await buildTowerGuardian(101, () => 0.9999);
+  assert.ok(gNormalLow.towerMeta.randomVariance >= 0.92 && gNormalLow.towerMeta.randomVariance <= 0.921);
+  assert.ok(gNormalHigh.towerMeta.randomVariance <= 1.08 && gNormalHigh.towerMeta.randomVariance >= 1.079);
+
+  const gBoss405Low = await buildTowerGuardian(405, () => 0.0);
+  assert.equal(gBoss405Low.isEvolved, true, 'F400+ Boss must be 100% Chân Thần even at rng=0');
+  assert.ok(gBoss405Low.towerMeta.randomVariance >= 0.96, 'Boss variance min must be 0.96');
+
+  const gBoss405High = await buildTowerGuardian(405, () => 0.9999);
+  assert.equal(gBoss405High.isEvolved, true, 'F400+ Boss must be 100% Chân Thần even at rng=0.9999');
+  assert.ok(gBoss405High.powerScore >= 145000, `F405 Boss power too low: ${gBoss405High.powerScore}`);
+});
+
+test('Ver 1.7.1 Wiki Glossary covers Sát Thương Thường, Phản Đòn 85% cap, Shield & Debuff caps within Discord embed limits', () => {
+  const gl = getWikiData('glossary');
+  assert.equal(gl.pages.length, 4);
+  const allText = gl.pages.map((p) => {
+    let totalLen = (p.subtitle || '').length;
+    for (const f of p.fields) {
+      assert.ok(f.name.length <= 256, `Glossary field name too long: ${f.name.length}`);
+      assert.ok(f.value.length <= 1024, `Glossary field value exceeds 1024 (${f.value.length}): ${f.name}`);
+      totalLen += f.name.length + f.value.length;
+    }
+    assert.ok(totalLen <= 5500, `Glossary page ${p.page} total length too high: ${totalLen}`);
+    return p.fields.map((f) => `${f.name}\n${f.value}`).join('\n');
+  }).join('\n');
+
+  for (const kw of [
+    'Sát Thương Thường',
+    'Sát Thương Kỹ Năng',
+    'Sát Thương Chuẩn',
+    '85%',
+    'Phản Đòn',
+    'Kháng Phản Đòn',
+    'Kháng ST Chuẩn',
+    'Hấp Thụ ST thành Khiên',
+    'Né Tránh',
+    'Giảm ATK',
+    'Giảm SPD',
+    'Tịch Diệt',
+    'Khóa HAX',
+  ]) {
+    assert.ok(allText.includes(kw), `Glossary missing keyword: ${kw}`);
+  }
 });

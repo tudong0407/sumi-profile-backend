@@ -4,7 +4,7 @@
  * - 5 Nhiệm Vụ Hàng Ngày (UTC+7): 2 cố định (/daily, 150 EXP) + 3 xoay vòng ngẫu nhiên từ Pool 10 hoạt động.
  *   Thưởng +10% (17/22/28... LT + mốc 5/5: +130 LT + 1 Vé Pháp Bảo + 1 Tinh Thạch + 1 Đá Khắc Ấn).
  * - 3 Hợp Đồng Tuần (Reset Thứ Hai 00:00 UTC+7).
- * - Tháp Thí Luyện PvE 500 Tầng: buff +10% nền, random chiến lực ±12%, Linh Vực từ F70 (+ Thần Thức F150, Thần Cảnh F250).
+ * - Tháp Thí Luyện PvE 500 Tầng: đường cong lực chiến 1k → ~225k, Chân Thần + Ultimate (thử lửa F150, F200+ 20–60%, Boss F400+ 100%), Linh Vực F45+, Thần Thức F90+, Thần Cảnh F160+, random ±8% (Boss 0.96–1.08x).
  */
 
 import { supabase } from '../config/supabase.js';
@@ -14,6 +14,7 @@ import {
   DOMAIN_CATALOG,
   DIVINE_SENSE_CATALOG,
   DIVINE_REALM_CATALOG,
+  V17_PET_EVOLUTIONS,
   WEEKLY_CONTRACTS_CONFIG,
   computeCosmeticBuffTotals,
 } from '../data/catalog.js';
@@ -21,6 +22,7 @@ import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
+import { doesDomainMatchElement } from './battleEngine/setBonusEngine.js';
 import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 
 export const DAILY_QUEST_EXP_TARGET = 150;
@@ -147,6 +149,7 @@ const PUBLIC_TOWER_PETS_BY_RARITY = {
   mythic: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'mythic'),
   mythic_free: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'mythic' && !p.is_unique),
   mythic_unique: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'mythic' && p.is_unique),
+  mythic_unique_evo: PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi && p.rarity_key === 'mythic' && p.is_unique && Boolean(V17_PET_EVOLUTIONS[p.pet_type])),
 };
 
 const TOWER_EQUIP_BY_TIER_SLOT = {
@@ -751,73 +754,111 @@ function pickWeightedCount(dist, rng = Math.random) {
   return dist[dist.length - 1].count;
 }
 
+function pickMatchedEquip(pool, element, matchProb, rng = Math.random) {
+  if (!pool || !pool.length) return null;
+  if (element && rng() < matchProb) {
+    const matched = pool.filter((item) => item.element === element);
+    if (matched.length) return pickRandomFrom(matched, rng);
+  }
+  return pickRandomFrom(pool, rng);
+}
+
+function pickMatchedDomain(pool, element, matchProb, rng = Math.random) {
+  if (!pool || !pool.length) return null;
+  if (element && rng() < matchProb) {
+    const matched = pool.filter((dom) => doesDomainMatchElement(dom, element));
+    if (matched.length) return pickRandomFrom(matched, rng);
+  }
+  return pickRandomFrom(pool, rng);
+}
+
 export async function buildTowerGuardian(floor, rng = Math.random) {
   const f = Math.min(TOWER_MAX_FLOOR, Math.max(1, Number(floor) || 1));
   const isBoss = f % 5 === 0;
   const isMilestoneBoss = Boolean(TOWER_MILESTONE_BONUSES[f]);
   const bossTitle = TOWER_BOSS_NAMES[(f - 1) % TOWER_BOSS_NAMES.length];
 
-  // Level & Star tăng dần mượt từ F1 -> F500
-  const level = f <= 250
-    ? Math.max(1, Math.round(1 + (f - 1) * (99 / 249)))
-    : Math.round(100 + (f - 250) * (50 / 250));
-  const star = Math.min(10, Math.max(1, 1 + Math.floor((f - 1) / 48)));
+  // Level & Star tăng mượt từ F1 -> F500 (F50=25, F100=50, F150=70, F300=100, F500=125 để không phồng HP quá trần Lv.100)
+  const level = f <= 50
+    ? Math.max(1, Math.round(1 + (f - 1) * (24 / 49)))
+    : f <= 150
+      ? Math.round(25 + (f - 50) * (45 / 100))
+      : f <= 300
+        ? Math.round(70 + (f - 150) * (30 / 150))
+        : Math.round(100 + (f - 300) * (25 / 200));
+  const star = Math.min(10, Math.max(1, 1 + Math.floor((f - 1) / 38)));
 
-  // Hạng Khắc Ấn phân tầng mượt D -> S
+  // Hạng Khắc Ấn: D (1-39) -> C (40-79) -> B (80-179) -> A (180-299) -> S (300-500)
   let enchantGrade = 'D';
-  if (f < 80) {
-    enchantGrade = f < 50 ? 'D' : (rng() < 0.45 ? 'C' : 'D');
+  if (f < 40) {
+    enchantGrade = 'D';
+  } else if (f < 80) {
+    enchantGrade = (isBoss && f >= 60 && rng() < 0.35) ? 'B' : 'C';
   } else if (f < 180) {
-    enchantGrade = rng() < 0.45 ? 'B' : 'C';
-  } else if (f < 280) {
-    enchantGrade = rng() < 0.45 ? 'A' : 'B';
-  } else if (f < 350) {
-    enchantGrade = (isBoss && rng() < 0.25) ? 'S' : 'A';
-  } else if (f < 420) {
-    enchantGrade = (isBoss || rng() < 0.55) ? 'S' : 'A';
+    enchantGrade = (isBoss && f >= 140 && rng() < 0.35) ? 'A' : 'B';
+  } else if (f < 300) {
+    enchantGrade = (isBoss && f >= 250 && rng() < 0.40) ? 'S' : 'A';
   } else {
-    enchantGrade = 'S';
+    enchantGrade = (f >= 340 || isBoss || rng() < 0.70) ? 'S' : 'A';
   }
 
-  // Pet Mythic rate: F1 = 0%, +10% mỗi 10 tầng -> F100+ = 100%
-  const mythicPetChance = f <= 1 ? 0 : Math.min(1, Math.floor(f / 10) * 0.10);
-  const isMythicPet = rng() < mythicPetChance;
-  const uniquePetChance = f >= 100 ? Math.min(1, (Math.floor((f - 100) / 10) + 1) * 0.05) : 0;
+  // Chân Thần + Ultimate: Boss F150 thử lửa 100%, F200-299 (20%->40%), F300-399 (40%->60%), F400+ Boss 100% / thường 60%->85%
+  let evolvedPetChance = 0;
+  if (f === 150) {
+    evolvedPetChance = 1.0;
+  } else if (f >= 200 && f < 300) {
+    evolvedPetChance = 0.20 + ((f - 200) / 99) * 0.20;
+  } else if (f >= 300 && f < 400) {
+    evolvedPetChance = 0.40 + ((f - 300) / 99) * 0.20;
+  } else if (f >= 400) {
+    evolvedPetChance = isBoss ? 1.0 : (0.60 + ((f - 400) / 100) * 0.25);
+  }
+
+  const isEvolvedPet = rng() < evolvedPetChance;
+  const mythicPetChance = f < 15 ? 0 : Math.min(1, 0.15 + ((f - 15) / 45) * 0.85);
+  const uniquePetChance = f < 100 ? 0 : Math.min(1, 0.15 + ((f - 100) / 250) * 0.85);
 
   let pickedPet = null;
-  if (isMythicPet) {
+  if (isEvolvedPet && PUBLIC_TOWER_PETS_BY_RARITY.mythic_unique_evo.length > 0) {
+    pickedPet = pickRandomFrom(PUBLIC_TOWER_PETS_BY_RARITY.mythic_unique_evo, rng);
+  } else if (rng() < mythicPetChance) {
     const useUnique = f >= 100 && rng() < uniquePetChance;
     const pool = useUnique ? PUBLIC_TOWER_PETS_BY_RARITY.mythic_unique : PUBLIC_TOWER_PETS_BY_RARITY.mythic_free;
     pickedPet = pickRandomFrom(pool, rng) || pickRandomFrom(PUBLIC_TOWER_PETS_BY_RARITY.mythic, rng);
   } else {
     const r = rng();
     let petTier = 'common';
-    if (f <= 5) petTier = 'common';
-    else if (f <= 30) petTier = r < 0.70 ? 'common' : 'rare';
-    else if (f <= 69) petTier = r < 0.15 ? 'common' : r < 0.75 ? 'rare' : 'epic';
-    else petTier = r < 0.35 ? 'rare' : 'epic';
+    if (f <= 8) petTier = 'common';
+    else if (f <= 25) petTier = r < 0.55 ? 'common' : 'rare';
+    else if (f <= 45) petTier = r < 0.60 ? 'rare' : 'epic';
+    else petTier = r < 0.25 ? 'rare' : 'epic';
     pickedPet = pickRandomFrom(PUBLIC_TOWER_PETS_BY_RARITY[petTier], rng) || PUBLIC_TOWER_PETS_BY_RARITY.common[0];
   }
 
-  // 4 Slot Trang Bị (3 Loadout + 1 Linh Vực từ F70) tách biệt với Pet
+  // 4 Slot trang bị mở sớm (F3/F10/F20) + Linh Vực (F45+) + Thần Thức (F90+) + Thần Cảnh (F160+)
   const unlockedSlots = [];
-  if (f >= 5) unlockedSlots.push('weapon');
-  if (f >= 20) unlockedSlots.push('gem');
-  if (f >= 35) unlockedSlots.push('soul');
-  if (f >= 70) unlockedSlots.push('domain');
+  if (f >= 3) unlockedSlots.push('weapon');
+  if (f >= 10) unlockedSlots.push('gem');
+  if (f >= 20) unlockedSlots.push('soul');
+  if (f >= 45) unlockedSlots.push('domain');
 
-  const equipMythicChance = f < 50 ? 0 : Math.min(1, (Math.floor((f - 50) / 10) + 1) * 0.20);
-  const equipUniqueChance = f < 100 ? 0 : Math.min(1, (Math.floor((f - 100) / 10) + 1) * 0.20);
+  const equipMythicChance = f < 35 ? 0 : Math.min(1, 0.25 + ((f - 35) / 40) * 0.75);
+  const equipUniqueChance = f < 90 ? 0 : Math.min(1, 0.12 + ((f - 90) / 210) * 0.88);
 
   let mythicSlotCount = 0;
   if (unlockedSlots.length > 0 && equipMythicChance > 0 && rng() < equipMythicChance) {
     let dist;
-    if (f < 100) dist = [{ count: 4, w: 0.05 }, { count: 3, w: 0.15 }, { count: 2, w: 0.25 }, { count: 1, w: 0.55 }];
-    else if (f < 200) dist = [{ count: 4, w: 0.10 }, { count: 3, w: 0.20 }, { count: 2, w: 0.30 }, { count: 1, w: 0.40 }];
-    else if (f < 300) dist = [{ count: 4, w: 0.15 }, { count: 3, w: 0.25 }, { count: 2, w: 0.35 }, { count: 1, w: 0.25 }];
-    else if (f < 400) dist = [{ count: 4, w: 0.20 }, { count: 3, w: 0.30 }, { count: 2, w: 0.40 }, { count: 1, w: 0.10 }];
-    else dist = [{ count: 4, w: 0.45 }, { count: 3, w: 0.35 }, { count: 2, w: 0.20 }, { count: 1, w: 0.00 }];
+    if (f < 60) dist = [{ count: 4, w: 0.05 }, { count: 3, w: 0.15 }, { count: 2, w: 0.35 }, { count: 1, w: 0.45 }];
+    else if (f < 100) dist = [{ count: 4, w: 0.15 }, { count: 3, w: 0.30 }, { count: 2, w: 0.35 }, { count: 1, w: 0.20 }];
+    else if (f < 200) dist = [{ count: 4, w: 0.25 }, { count: 3, w: 0.35 }, { count: 2, w: 0.30 }, { count: 1, w: 0.10 }];
+    else if (f < 300) dist = [{ count: 4, w: 0.45 }, { count: 3, w: 0.35 }, { count: 2, w: 0.20 }, { count: 1, w: 0.00 }];
+    else dist = [{ count: 4, w: 0.75 }, { count: 3, w: 0.25 }, { count: 2, w: 0.00 }, { count: 1, w: 0.00 }];
 
+    if (isBoss && f >= 80) {
+      dist = dist.map((d, idx) => (idx === 0 ? { ...d, w: d.w + 0.20 } : d));
+      const totalW = dist.reduce((s, d) => s + d.w, 0);
+      dist = dist.map((d) => ({ ...d, w: d.w / totalW }));
+    }
     mythicSlotCount = Math.min(unlockedSlots.length, pickWeightedCount(dist, rng));
   }
 
@@ -828,16 +869,25 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
   }
   const mythicSlotSet = new Set(shuffledSlots.slice(0, mythicSlotCount));
 
-  const fallbackGearTier = f <= 30 ? 'common' : f <= 69 ? 'rare' : 'epic';
+  let matchProb = 0.20;
+  if (f >= 300) matchProb = isBoss ? 1.0 : 0.90;
+  else if (f >= 160) matchProb = isBoss ? 0.95 : 0.80;
+  else if (f >= 80) matchProb = isBoss ? 0.85 : 0.65;
+  else if (f >= 40) matchProb = isBoss ? 0.65 : 0.40;
+  else if (isBoss) matchProb = 0.35;
+
+  const fallbackGearTier = f <= 20 ? 'common' : f <= 49 ? 'rare' : 'epic';
   const pickSlotItem = (slotName) => {
     if (!unlockedSlots.includes(slotName)) return null;
     if (mythicSlotSet.has(slotName)) {
-      const useUni = f >= 100 && rng() < equipUniqueChance;
+      const useUni = f >= 90 && rng() < equipUniqueChance;
       const pool = useUni ? TOWER_EQUIP_BY_TIER_SLOT.mythic_unique[slotName] : TOWER_EQUIP_BY_TIER_SLOT.mythic_free[slotName];
-      const picked = pickRandomFrom(pool, rng) || pickRandomFrom(TOWER_EQUIP_BY_TIER_SLOT.mythic[slotName], rng);
+      const picked = pickMatchedEquip(pool, pickedPet.element, matchProb, rng)
+        || pickRandomFrom(TOWER_EQUIP_BY_TIER_SLOT.mythic[slotName], rng);
       return picked ? { ...picked, slot: slotName, enchant_grade: enchantGrade } : null;
     }
-    const picked = pickRandomFrom(TOWER_EQUIP_BY_TIER_SLOT[fallbackGearTier][slotName], rng) || TOWER_EQUIP_BY_TIER_SLOT.common[slotName][0];
+    const picked = pickMatchedEquip(TOWER_EQUIP_BY_TIER_SLOT[fallbackGearTier][slotName], pickedPet.element, matchProb, rng)
+      || TOWER_EQUIP_BY_TIER_SLOT.common[slotName][0];
     return picked ? { ...picked, slot: slotName, enchant_grade: enchantGrade } : null;
   };
 
@@ -852,38 +902,49 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
   let pickedRealm = null;
   if (unlockedSlots.includes('domain')) {
     if (mythicSlotSet.has('domain')) {
-      const useUni = f >= 100 && rng() < equipUniqueChance;
+      const useUni = f >= 90 && rng() < equipUniqueChance;
       const dPool = useUni ? TOWER_DOMAIN_POOLS.mythic_unique : TOWER_DOMAIN_POOLS.mythic_free;
-      pickedDomain = pickRandomFrom(dPool, rng) || pickRandomFrom(TOWER_DOMAIN_POOLS.mythic, rng);
+      pickedDomain = pickMatchedDomain(dPool, pickedPet.element, matchProb, rng) || pickRandomFrom(TOWER_DOMAIN_POOLS.mythic, rng);
     } else {
-      pickedDomain = pickRandomFrom(TOWER_DOMAIN_POOLS[fallbackGearTier] || TOWER_DOMAIN_POOLS.rare, rng);
+      pickedDomain = pickMatchedDomain(TOWER_DOMAIN_POOLS[fallbackGearTier] || TOWER_DOMAIN_POOLS.rare, pickedPet.element, matchProb, rng);
     }
-    if (f >= 150) {
-      pickedSense = pickRandomFrom(f >= 250 ? TOWER_SENSE_POOLS.mythic : TOWER_SENSE_POOLS.public, rng);
+    if (f >= 90) {
+      pickedSense = pickRandomFrom(f >= 180 ? TOWER_SENSE_POOLS.mythic : TOWER_SENSE_POOLS.public, rng);
     }
-    if (f >= 250) {
-      pickedRealm = pickRandomFrom(f >= 350 ? TOWER_REALM_POOLS.mythic : TOWER_REALM_POOLS.public, rng);
+    if (f >= 160) {
+      pickedRealm = pickRandomFrom(f >= 260 ? TOWER_REALM_POOLS.mythic : TOWER_REALM_POOLS.public, rng);
     }
   }
 
-  // Buff tổng +10% & Random chiến lực ±12% mỗi lượt leo, cân mượt hướng tới ~125k ở F500 (phù hợp trần người thường 150k)
-  const baseCurve = f <= 4
-    ? (0.68 + (f - 1) * 0.08)
-    : (0.78 + Math.pow((f - 1) / (TOWER_MAX_FLOOR - 1), 1.52) * 11.75);
-  const buff10 = 1.10;
-  const randomVariance = 0.88 + rng() * 0.24;
-  const bossMult = isMilestoneBoss ? 1.14 : (isBoss ? 1.09 : 1.0);
-  const statScale = baseCurve * buff10 * randomVariance * bossMult;
+  // Đường cong lực chiến chuẩn Ver 1.7.1: F1~1k -> F50~19k -> F80~32k -> F150~55k -> F300~115k -> F500~200k-215k
+  let baseCurve;
+  if (f <= 5) {
+    baseCurve = 0.72 + (f - 1) * 0.12;
+  } else if (f <= 50) {
+    baseCurve = 1.20 + Math.pow((f - 5) / 45, 1.05) * 1.15;
+  } else if (f <= 100) {
+    baseCurve = 2.35 + Math.pow((f - 50) / 50, 1.0) * 2.15;
+  } else if (f <= 250) {
+    baseCurve = 4.50 + Math.pow((f - 100) / 150, 1.02) * 5.20;
+  } else {
+    baseCurve = 9.70 + Math.pow((f - 250) / 250, 1.05) * 11.10;
+  }
+
+  // Siết randomVariance về ±8% (0.92..1.08x), riêng Boss là 0.96..1.08x để tránh câu may né Boss
+  const randomVariance = isBoss ? (0.96 + rng() * 0.12) : (0.92 + rng() * 0.16);
+  const bossMult = isMilestoneBoss ? 1.12 : (isBoss ? 1.07 : 1.0);
+  const statScale = baseCurve * randomVariance * bossMult;
 
   const baseAtk = Math.round(pickedPet.base_atk * statScale);
   const baseDef = Math.round(pickedPet.base_def * statScale);
   const baseSpd = Math.round(pickedPet.base_spd * statScale);
 
+  const evoMeta = isEvolvedPet ? V17_PET_EVOLUTIONS[pickedPet.pet_type] : null;
   const npcProfile = {
     user_id: `tower_guardian_${f}`,
     username: isBoss ? `Boss Tầng ${f} • ${bossTitle}` : `Hộ Tháp Tầng ${f}`,
     avatar_url: 'assets/default_avatar.png',
-    avatar_frame: pickedPet.rarity_key === 'mythic' ? 'crimson_phoenix' : pickedPet.rarity_key === 'epic' ? 'amethyst_celestial' : 'default',
+    avatar_frame: evoMeta ? 'frame_v17_09_celestial_lotus' : pickedPet.rarity_key === 'mythic' ? 'crimson_phoenix' : pickedPet.rarity_key === 'epic' ? 'amethyst_celestial' : 'default',
     level,
     domain_loadout: pickedDomain ? { domain: pickedDomain, sense: pickedSense, realm: pickedRealm } : null,
     pet: {
@@ -895,6 +956,8 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
       level,
       star,
       enchant_grade: enchantGrade,
+      is_evolved: Boolean(evoMeta),
+      evo_stats_applied: Boolean(evoMeta),
       base_atk: baseAtk,
       base_def: baseDef,
       base_spd: baseSpd,
@@ -917,6 +980,8 @@ export async function buildTowerGuardian(floor, rng = Math.random) {
     mythicSlotCount,
     enchantGrade,
     hasDomain: Boolean(pickedDomain),
+    isEvolved: Boolean(evoMeta),
+    ultimateName: evoMeta?.ultimate?.name || null,
   };
   return combatant;
 }
@@ -1091,6 +1156,8 @@ export async function challengeTower(userId, options = {}) {
       rewardChaosShards > 0 ? `+${rewardChaosShards} ${em('chaos_essence_shard')} **Mảnh Tinh Hoa Hỗn Độn**` : '',
     ].filter(Boolean).join(' • ');
 
+    const guardianDisplayName = `${isBoss && !String(guardian.petName || '').startsWith('[BOSS]') ? '[BOSS] ' : ''}${guardian.petName}${guardian.isEvolved ? ' *(Chân Thần)*' : ''}`;
+
     return {
       success: true,
       won,
@@ -1110,8 +1177,8 @@ export async function challengeTower(userId, options = {}) {
       webLogUrl: battleRes.webLogUrl,
       image_url: battleRes.finalImageWebpUrl || battleRes.reportImageUrl,
       message: won
-        ? `${em('su_winner_trophy')} **VƯỢT THÁP TẦNG ${targetFloor} THÀNH CÔNG!**${milestone ? ` *(CHINH PHỤC MỐC TẦNG ${targetFloor}!)*` : isBoss ? ' *(Hạ gục Yêu Vương Boss!)*' : ''}\n• Giao chiến với **${guardian.petName}** (Hệ ${guardian.element} • Lv.${guardian.level}) thắng sau **${battleRes.turnCount} hiệp**.\n• Phần thưởng: **${rewardSummary}**\n• Tiến độ Tháp: \`Tầng ${nextFloor}/${TOWER_MAX_FLOOR}\` • Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``
-        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardian.petName}** (Hệ ${guardian.element} • Lv.${guardian.level}) quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Phạt thất bại: **${actualLtDelta} ${em('su_linhthach')} Linh Thạch** *(Ví còn: ${newBal.toLocaleString('vi-VN')} LT)*.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`), Khắc Ấn (\`/enchant\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
+        ? `${em('su_winner_trophy')} **VƯỢT THÁP TẦNG ${targetFloor} THÀNH CÔNG!**${milestone ? ` *(CHINH PHỤC MỐC TẦNG ${targetFloor}!)*` : isBoss ? ' *(Hạ gục Yêu Vương Boss!)*' : ''}\n• Giao chiến với **${guardianDisplayName}** (Hệ ${guardian.element} • Lv.${guardian.level}) thắng sau **${battleRes.turnCount} hiệp**.\n• Phần thưởng: **${rewardSummary}**\n• Tiến độ Tháp: \`Tầng ${nextFloor}/${TOWER_MAX_FLOOR}\` • Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``
+        : `${em('su_arena')} **KHIÊU CHIẾN THÁP TẦNG ${targetFloor} THẤT BẠI!**\n• **${guardianDisplayName}** (Hệ ${guardian.element} • Lv.${guardian.level}) quá mạnh sau **${battleRes.turnCount} hiệp**.\n• Phạt thất bại: **${actualLtDelta} ${em('su_linhthach')} Linh Thạch** *(Ví còn: ${newBal.toLocaleString('vi-VN')} LT)*.\n• Hãy nâng cấp Linh Thú (\`/linhthu\`), Khắc Ấn (\`/enchant\`) hoặc mặc thêm Pháp Bảo (\`/equip\`) rồi thử lại!\n• Lượt hôm nay: \`${nextAttempts}/${TOWER_DAILY_ATTEMPTS_LIMIT}\``,
       footer: '',
     };
   });

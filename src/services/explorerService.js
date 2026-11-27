@@ -1248,10 +1248,11 @@ export async function claimExpedition(userId, opts = {}) {
     }
 
     const exp = busy.expedition;
+    const adminOv = exp?.outcome_json && typeof exp.outcome_json === 'object' ? (exp.outcome_json.admin_override || null) : null;
     const mapDef = V14_EXPLORER_MAP_BY_ID[exp.map_id] || V14_EXPLORER_MAPS[0];
     const now = opts.now instanceof Date ? opts.now : new Date();
     const nowIso = now.toISOString();
-    if (!opts.forceComplete && now.getTime() < new Date(exp.ends_at).getTime()) {
+    if (!opts.forceComplete && !adminOv?.force_complete && now.getTime() < new Date(exp.ends_at).getTime()) {
       const rem = formatDurationLeft(exp.ends_at, now);
       return explorerError(
         400,
@@ -1264,8 +1265,9 @@ export async function claimExpedition(userId, opts = {}) {
     const lockedDomainIds = Array.isArray(exp.locked_domain_ids) ? exp.locked_domain_ids : [];
     const terrain = evaluateExplorerTerrainBonus(mapDef, { pet_type: exp.pet_type }, lockedDomainIds);
     const surv = computeExplorerSurvival(exp.pet_power, exp.map_power, exp.food_item_id, terrain.survivalBonus);
-    const survivalRoll = opts.forceOutcome === 'survive' ? 0.0 : opts.forceOutcome === 'die' ? 0.9999 : rng();
-    const survived = survivalRoll < surv.survivalRate;
+    const ovMode = opts.forceOutcome || adminOv?.mode || null;
+    const survivalRoll = rng();
+    const survived = ovMode === 'survive' ? true : ovMode === 'die' ? false : (survivalRoll < surv.survivalRate);
 
     const ltIcon = em('su_linhthach');
     const lockedEquipIds = Array.isArray(exp.locked_equip_ids) ? exp.locked_equip_ids : [];
@@ -1280,7 +1282,14 @@ export async function claimExpedition(userId, opts = {}) {
       const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
       const foodYieldBonus = exp.food_item_id ? Number(EXPLORER_FOOD_EFFECTS[exp.food_item_id]?.yieldBonus || 0) : 0;
       const basePerHour = (200 + rng() * 100) * 1.05;
-      const earnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * Math.max(0.5, 1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100 + Number(fortuneInfo?.fortuneLtPct || 0) / 100));
+      const naturalEarnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * Math.max(0.5, 1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100 + Number(fortuneInfo?.fortuneLtPct || 0) / 100));
+      const hasCustomLt = adminOv?.custom_lt !== undefined && adminOv?.custom_lt !== null && adminOv?.custom_lt !== '' && Number.isFinite(Number(adminOv.custom_lt));
+      const hasBonusLt = adminOv?.bonus_lt !== undefined && adminOv?.bonus_lt !== null && adminOv?.bonus_lt !== '' && Number.isFinite(Number(adminOv.bonus_lt));
+      const earnedLt = hasCustomLt
+        ? Math.max(0, Math.round(Number(adminOv.custom_lt)))
+        : hasBonusLt
+          ? Math.max(0, naturalEarnedLt + Math.round(Number(adminOv.bonus_lt)))
+          : naturalEarnedLt;
 
       if (uRow) {
         await supabase
@@ -1289,49 +1298,76 @@ export async function claimExpedition(userId, opts = {}) {
           .eq('user_id', cleanId);
       }
 
-      // 3. Quà rớt theo mốc thời gian
+      // 3. Quà rớt theo mốc thời gian (hỗ trợ extra_items / replace_loot từ admin_override nếu có)
       const bonusRollCount = exp.duration_hours >= 12 ? 5 : exp.duration_hours >= 6 ? 3 : exp.duration_hours >= 3 ? 2 : 1;
       const lootPool = ['enchant_stone', 'pet_star_stone', 'gacha_ticket_equip', 'gacha_ticket_pet', 'gacha_ticket_domain', 'tower_reset_card', 'food_survival_pill', 'food_yield_tea', 'food_speed_fruit'];
       const gainedItems = new Map();
-      for (let i = 0; i < bonusRollCount; i += 1) {
-        if (rng() < 0.65) {
-          const picked = lootPool[Math.floor(rng() * lootPool.length) % lootPool.length];
-          gainedItems.set(picked, (gainedItems.get(picked) || 0) + 1);
+      const replaceLoot = Boolean(adminOv?.replace_loot);
+
+      if (!replaceLoot) {
+        for (let i = 0; i < bonusRollCount; i += 1) {
+          if (rng() < 0.65) {
+            const picked = lootPool[Math.floor(rng() * lootPool.length) % lootPool.length];
+            gainedItems.set(picked, (gainedItems.get(picked) || 0) + 1);
+          }
         }
       }
 
       // 4. Đá Khắc Ấn Tuyệt Đối (5% thường, 25% khi bật Bùa Đá Tuyệt Ấn)
       const charmRes = await consumeAbsEnchantCharmRun(cleanId);
       const absChance = charmRes.used ? 0.25 : 0.05;
-      const gotAbsoluteStone = opts.forceAbsoluteStone === true || rng() < absChance;
+      let gotAbsoluteStone = !replaceLoot && (opts.forceAbsoluteStone === true || rng() < absChance);
       if (gotAbsoluteStone) {
         gainedItems.set('enchant_stone_absolute', (gainedItems.get('enchant_stone_absolute') || 0) + 1);
       }
 
       // 4b. Mảnh Tinh Hoa Hỗn Độn (0.5% CỐ ĐỊNH — MIỄN NHIỄM hoàn toàn Luck Potion & /gieoque; KHÔNG rơi evo_crystal)
-      const gotChaosShard = opts.forceChaosShard === true || rng() < 0.005;
+      let gotChaosShard = !replaceLoot && (opts.forceChaosShard === true || rng() < 0.005);
       if (gotChaosShard) {
         gainedItems.set('chaos_essence_shard', (gainedItems.get('chaos_essence_shard') || 0) + 1);
       }
 
       // 4c. Thẻ Tự Động Chăm Farm 24h (5%) & Thuốc Nông Trại (55% rơi 1–2 gói)
-      const gotFarmAutoCard = opts.forceFarmAutoCard === true || rng() < 0.05;
+      let gotFarmAutoCard = !replaceLoot && (opts.forceFarmAutoCard === true || rng() < 0.05);
       if (gotFarmAutoCard) {
         gainedItems.set('farm_auto_card', (gainedItems.get('farm_auto_card') || 0) + 1);
       }
-      if (opts.forceFarmPack === true || rng() < 0.55) {
+      if (!replaceLoot && (opts.forceFarmPack === true || rng() < 0.55)) {
         const packId = rng() < 0.5 ? 'farm_growth_med' : 'farm_yield_starch';
         const packQty = 1 + Math.floor(rng() * 2);
         gainedItems.set(packId, (gainedItems.get(packId) || 0) + packQty);
+      }
+
+      if (adminOv?.extra_items && typeof adminOv.extra_items === 'object') {
+        for (const [eid, eqtyRaw] of Object.entries(adminOv.extra_items)) {
+          const qty = Math.max(0, Math.floor(Number(eqtyRaw) || 0));
+          if (eid && qty > 0) {
+            gainedItems.set(eid, (gainedItems.get(eid) || 0) + qty);
+            if (eid === 'enchant_stone_absolute') gotAbsoluteStone = true;
+            if (eid === 'chaos_essence_shard') gotChaosShard = true;
+            if (eid === 'farm_auto_card') gotFarmAutoCard = true;
+          }
+        }
       }
 
       for (const [iid, qty] of gainedItems.entries()) {
         await addInventoryConsumable(cleanId, iid, qty);
       }
 
-      // 5. Vũ Khí Thần Thoại KHÔNG Độc Nhất (0.01%)
+      // 5. Vũ Khí Thần Thoại KHÔNG Độc Nhất (0.01%) hoặc Pháp Bảo chỉ định từ admin_override
       let mythicWeaponDrop = null;
-      if (opts.forceMythicWeapon === true || rng() < 0.0001) {
+      const grantedCustomEquips = [];
+      const customEquipList = Array.isArray(adminOv?.grant_equip_ids) ? adminOv.grant_equip_ids : [];
+      if (customEquipList.length > 0) {
+        for (const ge of customEquipList) {
+          const itemDef = EQUIPMENT_BY_ID[ge?.item_id];
+          if (!itemDef) continue;
+          const cleanGr = normalizeEnchantGrade(ge.enchant_grade || 'C');
+          await grantEquipmentPreserveGrade(cleanId, itemDef.item_id, cleanGr, 'explorer_drop');
+          grantedCustomEquips.push({ item_id: itemDef.item_id, item_name: itemDef.item_name, enchant_grade: cleanGr });
+          if (!mythicWeaponDrop) mythicWeaponDrop = itemDef;
+        }
+      } else if (!replaceLoot && (opts.forceMythicWeapon === true || rng() < 0.0001)) {
         const mythicWeapons = EQUIPMENT_CATALOG.filter((e) => e.item_type === 'weapon' && e.rarity_key === 'mythic' && !e.is_unique && !e.is_exclusive_fuyumi);
         if (mythicWeapons.length > 0) {
           const w = mythicWeapons[Math.floor(rng() * mythicWeapons.length) % mythicWeapons.length];
@@ -1340,9 +1376,53 @@ export async function claimExpedition(userId, opts = {}) {
         }
       }
 
+      // Cấp Linh Vực / Thần Thức / Thần Cảnh nếu có chỉ định trong admin_override
+      const grantedDomainNames = [];
+      if (Array.isArray(adminOv?.grant_domain_ids)) {
+        for (const gd of adminOv.grant_domain_ids) {
+          const kind = String(gd?.entity_kind || 'domain');
+          const eid = String(gd?.entity_id || '').trim();
+          const def = kind === 'sense' ? DIVINE_SENSE_BY_ID[eid] : kind === 'realm' ? DIVINE_REALM_BY_ID[eid] : DOMAIN_BY_ID[eid];
+          if (!def) continue;
+          const { data: exDom } = await supabase
+            .from('user_domains')
+            .select('id, quantity')
+            .eq('user_id', cleanId)
+            .eq('entity_id', eid)
+            .maybeSingle();
+          if (exDom) {
+            await supabase.from('user_domains').update({ quantity: Number(exDom.quantity || 1) + 1, updated_at: nowIso }).eq('id', exDom.id);
+          } else if (!def.is_unique) {
+            await supabase.from('user_domains').insert({
+              user_id: cleanId,
+              entity_kind: kind,
+              entity_id: eid,
+              quantity: 1,
+              is_equipped: false,
+              is_unique: false,
+              source: 'explorer_drop',
+            });
+          }
+          grantedDomainNames.push(def.name || def.domain_name || def.sense_name || def.realm_name || eid);
+        }
+      }
+
       // 6. Cơ chế nhặt đồ rơi của người trước (60% tỉ lệ nếu đúng map & duration >= min_duration_hours!)
       let salvagedDrop = null;
-      const { data: candidates } = await supabase
+      if (adminOv?.salvage_drop_id) {
+        const { data: pickedRow } = await supabase
+          .from('explorer_map_drops')
+          .update({ status: 'claimed', claimed_by_user_id: cleanId, claimed_at: nowIso })
+          .eq('drop_id', adminOv.salvage_drop_id)
+          .eq('status', 'available')
+          .select('*')
+          .maybeSingle();
+        if (pickedRow) {
+          await grantEquipmentPreserveGrade(cleanId, pickedRow.item_id, pickedRow.enchant_grade, 'explorer_salvage');
+          salvagedDrop = pickedRow;
+        }
+      }
+      const { data: candidates } = !salvagedDrop ? await supabase
         .from('explorer_map_drops')
         .select('*')
         .eq('map_id', exp.map_id)
@@ -1350,9 +1430,9 @@ export async function claimExpedition(userId, opts = {}) {
         .lte('min_duration_hours', exp.duration_hours)
         .neq('dropped_by_user_id', cleanId)
         .order('dropped_at', { ascending: true })
-        .limit(5);
+        .limit(5) : { data: [] };
 
-      if (candidates && candidates.length > 0 && (opts.forceSalvage === true || rng() < 0.60)) {
+      if (!salvagedDrop && candidates && candidates.length > 0 && (opts.forceSalvage === true || rng() < 0.60)) {
         for (const cand of candidates) {
           // Atomic conditional update chống 2 người nhặt trùng 1 món!
           const { data: claimedRow } = await supabase
@@ -1381,6 +1461,7 @@ export async function claimExpedition(userId, opts = {}) {
         absCharmUsed: charmRes.used,
         absCharmRemaining: charmRes.remaining,
         mythicWeaponDrop: mythicWeaponDrop ? mythicWeaponDrop.item_id : null,
+        grantedDomains: grantedDomainNames,
         salvagedDrop: salvagedDrop ? { drop_id: salvagedDrop.drop_id, item_id: salvagedDrop.item_id, enchant_grade: salvagedDrop.enchant_grade } : null,
       };
 
@@ -1400,10 +1481,13 @@ export async function claimExpedition(userId, opts = {}) {
         `• **Linh Thạch Thu Hoạch:** **+${earnedLt.toLocaleString('vi-VN')}** ${ltIcon}`,
         lootText ? `• **Vật Phẩm Nhặt Được:** ${lootText}` : '',
         gotAbsoluteStone ? `• ${em('su_sparkle')} **CỰC PHẨM ${charmRes.used ? '25%' : '5%'}:** Nhặt được ${em('enchant_stone_absolute')} **Thiên Đạo Tuyệt Ấn Thạch** *(100% Khắc Ấn)*!` : '',
-        gotChaosShard ? `• ${em('chaos_essence_shard')} **HỖN ĐỘN KỲ NGỘ (0.5%):** Nhặt được **Mảnh Tinh Hoa Hỗn Độn** *(dùng cho `/tienhoa`)*!` : '',
+        gotChaosShard ? `• ${em('chaos_essence_shard')} **HỖN ĐỘN KỲ NGỘ (0.5%):** Nhặt được **Mảnh Tinh Hoa Hỗn Độn** *(dùng cho \`/tienhoa\`)*!` : '',
         gotFarmAutoCard ? `• ${em('farm_auto_card')} **NÔNG TRẠI (5%):** Nhặt được **Thẻ Tự Động Chăm Farm 24h**!` : '',
         charmRes.used ? `• ${em('abs_enchant_charm')} *Đã dùng 1 lượt Bùa Đá Tuyệt Ấn (còn **${charmRes.remaining}** chuyến).*` : '',
-        mythicWeaponDrop ? `• ${em('su_crossed_swords')} **KỲ NGỘ 0.01%:** Nhặt được Vũ Khí Thần Thoại ${itemEmoji(mythicWeaponDrop.item_id)} **${mythicWeaponDrop.item_name}**!` : '',
+        grantedCustomEquips.length > 0
+          ? `• ${em('su_crossed_swords')} **KỲ NGỘ BẢO VẬT:** Nhặt được ${grantedCustomEquips.map((e) => `${itemEmoji(e.item_id)} **${e.item_name}** (${e.enchant_grade})`).join(', ')}!`
+          : mythicWeaponDrop ? `• ${em('su_crossed_swords')} **KỲ NGỘ 0.01%:** Nhặt được ${itemEmoji(mythicWeaponDrop.item_id)} **${mythicWeaponDrop.item_name}**!` : '',
+        grantedDomainNames.length > 0 ? `• ${em('su_realm_star')} **KỲ NGỘ LÃNH ĐỊA:** Nhặt được **${grantedDomainNames.join(', ')}**!` : '',
         salvagedDrop
           ? `• ${em('su_linhthach')} **NHẶT BẢO VẬT RƠI TRÊN BẢN ĐỒ (60%):** Nhặt được ${itemEmoji(salvagedDrop.item_id)} ${gradeEmoji(salvagedDrop.enchant_grade)} **${EQUIPMENT_BY_ID[salvagedDrop.item_id]?.item_name || salvagedDrop.item_id}** *(Bậc ${salvagedDrop.enchant_grade} — của tu sĩ đi trước bỏ lại)*!`
           : '',
@@ -1481,40 +1565,42 @@ export async function claimExpedition(userId, opts = {}) {
     const droppedItems = [];
     const returnedUniqueItems = [];
 
-    for (const eqId of lockedEquipIds) {
-      const eqDef = EQUIPMENT_BY_ID[eqId];
-      if (!eqDef) continue;
-      const isUniqueEq = Boolean(eqDef.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(eqId) || eqDef.is_exclusive_fuyumi);
-      if (isUniqueEq) {
-        returnedUniqueItems.push(eqDef.item_name);
-        continue;
-      }
-
-      const { data: eqRow } = await supabase
-        .from('user_pet_items')
-        .select('id, item_id, quantity, enchant_grade')
-        .eq('user_id', cleanId)
-        .eq('item_id', eqId)
-        .maybeSingle();
-
-      if (eqRow) {
-        const grade = normalizeEnchantGrade(eqRow.enchant_grade || 'D');
-        if (Number(eqRow.quantity || 1) > 1) {
-          await supabase.from('user_pet_items').update({ quantity: Number(eqRow.quantity) - 1 }).eq('id', eqRow.id);
-        } else {
-          await supabase.from('user_pet_items').delete().eq('id', eqRow.id);
+    if (!adminOv?.skip_equip_drop) {
+      for (const eqId of lockedEquipIds) {
+        const eqDef = EQUIPMENT_BY_ID[eqId];
+        if (!eqDef) continue;
+        const isUniqueEq = Boolean(eqDef.is_unique || MYTHIC_UNIQUE_ITEM_IDS.has(eqId) || eqDef.is_exclusive_fuyumi);
+        if (isUniqueEq) {
+          returnedUniqueItems.push(eqDef.item_name);
+          continue;
         }
-        await supabase.from('explorer_map_drops').insert({
-          map_id: exp.map_id,
-          min_duration_hours: exp.duration_hours,
-          item_id: eqId,
-          item_type: eqDef.item_type,
-          enchant_grade: grade,
-          dropped_by_user_id: cleanId,
-          status: 'available',
-          dropped_at: nowIso,
-        });
-        droppedItems.push({ item_id: eqId, item_name: eqDef.item_name, enchant_grade: grade });
+
+        const { data: eqRow } = await supabase
+          .from('user_pet_items')
+          .select('id, item_id, quantity, enchant_grade')
+          .eq('user_id', cleanId)
+          .eq('item_id', eqId)
+          .maybeSingle();
+
+        if (eqRow) {
+          const grade = normalizeEnchantGrade(eqRow.enchant_grade || 'D');
+          if (Number(eqRow.quantity || 1) > 1) {
+            await supabase.from('user_pet_items').update({ quantity: Number(eqRow.quantity) - 1 }).eq('id', eqRow.id);
+          } else {
+            await supabase.from('user_pet_items').delete().eq('id', eqRow.id);
+          }
+          await supabase.from('explorer_map_drops').insert({
+            map_id: exp.map_id,
+            min_duration_hours: exp.duration_hours,
+            item_id: eqId,
+            item_type: eqDef.item_type,
+            enchant_grade: grade,
+            dropped_by_user_id: cleanId,
+            status: 'available',
+            dropped_at: nowIso,
+          });
+          droppedItems.push({ item_id: eqId, item_name: eqDef.item_name, enchant_grade: grade });
+        }
       }
     }
 

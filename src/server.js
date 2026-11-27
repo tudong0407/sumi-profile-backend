@@ -80,6 +80,7 @@ import {
   setActivePet,
   upgradePet,
   enchantTarget,
+  invalidateInventoryCache,
 } from './services/inventoryService.js';
 import { switchLoadout } from './services/loadoutService.js';
 import { getJobStatus, doJob } from './services/jobService.js';
@@ -97,6 +98,8 @@ import {
   getPrerenderStatus,
   computeDynamicDataHash,
   getOrRenderDynamicCard,
+  invalidateUniqueItemCard,
+  invalidateUniquePetCard,
 } from './services/staticAssetCacheService.js';
 import {
   getShopCatalog,
@@ -2952,6 +2955,30 @@ app.post('/api/farm/use-item', requireBackendApiKey, requireUpdateAck, async (re
   } catch (err) {
     console.error('[Server] /api/farm/use-item error:', err);
     return res.status(500).json({ success: false, error: 'FARM_USE_ITEM_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/admin/invalidate-cache', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const userIds = Array.isArray(body.userIds) ? body.userIds : (body.userId ? [body.userId] : []);
+    for (const uid of userIds) {
+      const cleanId = sanitizeUserId(uid);
+      if (cleanId) invalidateInventoryCache(cleanId);
+    }
+    if (Array.isArray(body.itemIds)) {
+      for (const iid of body.itemIds) {
+        if (iid) invalidateUniqueItemCard(String(iid));
+      }
+    }
+    if (Array.isArray(body.petTypes)) {
+      for (const pt of body.petTypes) {
+        if (pt) invalidateUniquePetCard(String(pt));
+      }
+    }
+    return res.status(200).json({ success: true, cleared_users: userIds.length });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: 'INVALIDATE_CACHE_FAILED', message: err.message });
   }
 });
 
