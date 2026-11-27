@@ -1106,6 +1106,7 @@ export async function startExpedition(userId, opts = {}) {
     await supabase.from('user_pets').update({ status: 'exploring' }).eq('pet_id', pet.pet_id);
     const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
     await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    const { invalidateInventoryCache } = await import('./inventoryService.js');
     invalidateInventoryCache(cleanId);
 
     const { data: exp, error: expErr } = await supabase

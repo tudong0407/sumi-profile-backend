@@ -369,12 +369,16 @@ function handValue(cards) {
   return total;
 }
 
+function formatCardToken(card) {
+  return `**${card.rank}**${card.suit}`;
+}
+
 function formatHand(cards, hideSecond = false) {
   if (hideSecond && cards.length >= 2) {
     const back = minigameEmoji('card_back', '🂠');
-    return `\`${cards[0].label}\` ${back}`;
+    return `${formatCardToken(cards[0])}  ${back}`;
   }
-  return cards.map((c) => `\`${c.label}\``).join(' ');
+  return cards.map(formatCardToken).join('  ');
 }
 
 function drawBiasedCard(deck, rng, biasMode = 'normal') {

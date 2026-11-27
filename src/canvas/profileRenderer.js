@@ -580,9 +580,9 @@ export async function renderProfileCard(data, options = {}) {
   // LỚP 5: THANH TIẾN ĐỘ EXP NGHỆ THUẬT (GLOWING EXP BAR)
   // ============================================================================
   const expBarX = 50;
-  const expBarY = 168;
+  const expBarY = 163;
   const expBarW = 900;
-  const expBarH = 26;
+  const expBarH = 24;
 
   const currentExp = Math.max(0, profile.exp);
   const maxExp = Math.max(1, profile.nextExp);
@@ -626,8 +626,8 @@ export async function renderProfileCard(data, options = {}) {
   // ============================================================================
   // LỚP 6: PHẦN DƯỚI (2 BẢNG THÔNG TIN: CHIẾN PET & ROLES TRANG BỊ)
   // ============================================================================
-  const bottomY = 212;
-  const bottomH = 242;
+  const bottomY = 204;
+  const bottomH = 258;
 
   // ----------------------------------------------------------------------------
   // BẢNG 6A: LINH THÚ XUẤT TRẬN (PET SYSTEM VỚI NGŨ HÀNH & KỸ NĂNG HAX)
@@ -657,12 +657,12 @@ export async function renderProfileCard(data, options = {}) {
 
   if (profile.pet) {
     const hasPetImg = !!petImg;
-    // Khung Linh Thú Chuyên Biệt
-    const petFrameW = 94;
-    const petFrameH = 78;
+    // Khung Linh Thú Chuyên Biệt mở rộng thoáng bên phải, không chạm thanh Chiến Lực
+    const petFrameW = 132;
+    const petFrameH = 114;
     const petFrameX = petX + petW - 18 - petFrameW;
-    const petFrameY = bottomY + 23;
-    const leftTextW = petFrameX - petX - 30;
+    const petFrameY = bottomY + 30;
+    const leftTextW = petFrameX - petX - 36;
 
     // 1. Huy hiệu Độ hiếm (Rarity Badge) căn giữa ngay trên nóc Khung Pet
     const rarityText = profile.pet.rarity || 'Thần Thoại';
@@ -671,7 +671,7 @@ export async function renderProfileCard(data, options = {}) {
     const rarPillW = rarMetrics.width + 14;
     const rarPillH = 18;
     const rarPillX = petFrameX + (petFrameW - rarPillW) / 2;
-    const rarPillY = petFrameY - 8;
+    const rarPillY = petFrameY - 12;
 
     // Vẽ Khung Viền Linh Thú (Pet Frame)
     drawRoundRect(ctx, petFrameX, petFrameY, petFrameW, petFrameH, 10);
@@ -824,7 +824,7 @@ export async function renderProfileCard(data, options = {}) {
     ctx.save();
     ctx.shadowColor = 'rgba(253, 224, 71, 0.5)';
     ctx.shadowBlur = 5;
-    drawAutoFitIconText(ctx, icoBolt, haxName, petX + 20, bottomY + 90, leftTextW, {
+    drawAutoFitIconText(ctx, icoBolt, haxName, petX + 20, bottomY + 92, leftTextW, {
       iconSize: 14,
       gap: 5,
       maxFont: 11,
@@ -834,11 +834,11 @@ export async function renderProfileCard(data, options = {}) {
     });
     ctx.restore();
 
-    // Bảng Chiến Lực Nổi Bật (Power Score Box)
+    // Bảng Chiến Lực Nổi Bật (đặt gọn ở cột trái, cách ly hoàn toàn Khung Linh Thú)
     const powerBoxX = petX + 16;
-    const powerBoxW = petW - 32;
-    const powerBoxY = bottomY + 104;
-    const powerBoxH = 24;
+    const powerBoxW = petFrameX - powerBoxX - 18;
+    const powerBoxY = bottomY + 111;
+    const powerBoxH = 25;
     drawRoundRect(ctx, powerBoxX, powerBoxY, powerBoxW, powerBoxH, 6);
     const powerBg = ctx.createLinearGradient(powerBoxX, powerBoxY, powerBoxX + powerBoxW, powerBoxY + powerBoxH);
     powerBg.addColorStop(0, 'rgba(245, 158, 11, 0.35)');
@@ -857,13 +857,13 @@ export async function renderProfileCard(data, options = {}) {
       iconSize: 15,
       gap: 6,
       align: 'center',
-      font: `bold 12.5px ${FONT_FAMILY}`,
+      font: `bold 12px ${FONT_FAMILY}`,
       fillStyle: '#fef08a',
     });
     ctx.restore();
 
-    // Thuộc tính chi tiết của Linh Thú (GIỮ LẠI theo A1 — thay icon Unicode bằng PNG badge sắc nét)
-    const statsY = bottomY + 141;
+    // Thuộc tính chi tiết của Linh Thú (cách Khung Pet 14px bên dưới, thẳng hàng với header Lãnh Địa)
+    const statsY = bottomY + 160;
     const atkStr = `ATK: ${(profile.pet.atk || 0).toLocaleString('vi-VN')}`;
     const defStr = `DEF: ${(profile.pet.def || 0).toLocaleString('vi-VN')}`;
     const spdStr = `SPD: ${(profile.pet.spd || 0).toLocaleString('vi-VN')}`;
@@ -878,7 +878,7 @@ export async function renderProfileCard(data, options = {}) {
     // 3 SLOTS TRANG BỊ LINH THÚ (Vũ Khí, Bảo Ngọc, Chiến Hồn)
     // Bỏ dòng stats +720ATK bên trong thẻ; hiển thị ĐẦY ĐỦ tên 1 dòng không cắt cụt, không xuống dòng!
     // ========================================================================
-    const equipY = bottomY + 157;
+    const equipY = bottomY + 177;
     const equipH = 68;
     const equipPadX = 16;
     const availEquipW = petW - equipPadX * 2;
@@ -1053,16 +1053,16 @@ export async function renderProfileCard(data, options = {}) {
   ctx.fillText(`Slot: ${profile.maxSlots}/5`, rolesX + rolesW - 14, bottomY + 17);
   ctx.textAlign = 'left';
 
-  // 5 Slots Role gọn 32px/hàng (y = bottomY + 28..132) để dành phần đáy cho Linh Vực • Thần Thức • Thần Cảnh
+  // 5 Slots Role 34px/hàng (y = bottomY + 31..147) cân đối & thẳng hàng tuyệt đối với bảng Pet
   const rSlotW = 178;
   const rFullSlotW = 364;
-  const rSlotH = 32;
+  const rSlotH = 34;
   const roleSlotsLayout = [
-    { slot: 1, x: rolesX + 14, y: bottomY + 28, w: rSlotW, h: rSlotH },
-    { slot: 2, x: rolesX + 200, y: bottomY + 28, w: rSlotW, h: rSlotH },
-    { slot: 3, x: rolesX + 14, y: bottomY + 64, w: rSlotW, h: rSlotH },
-    { slot: 4, x: rolesX + 200, y: bottomY + 64, w: rSlotW, h: rSlotH },
-    { slot: 5, x: rolesX + 14, y: bottomY + 100, w: rFullSlotW, h: rSlotH },
+    { slot: 1, x: rolesX + 14, y: bottomY + 31, w: rSlotW, h: rSlotH },
+    { slot: 2, x: rolesX + 200, y: bottomY + 31, w: rSlotW, h: rSlotH },
+    { slot: 3, x: rolesX + 14, y: bottomY + 70, w: rSlotW, h: rSlotH },
+    { slot: 4, x: rolesX + 200, y: bottomY + 70, w: rSlotW, h: rSlotH },
+    { slot: 5, x: rolesX + 14, y: bottomY + 109, w: rFullSlotW, h: rSlotH },
   ];
 
   roleSlotsLayout.forEach((layout) => {
@@ -1143,13 +1143,13 @@ export async function renderProfileCard(data, options = {}) {
 
   // Đường phân cách + Header LINH VỰC • THẦN THỨC • THẦN CẢNH
   ctx.beginPath();
-  ctx.moveTo(rolesX + 14, bottomY + 136);
-  ctx.lineTo(rolesX + rolesW - 14, bottomY + 136);
+  ctx.moveTo(rolesX + 14, bottomY + 150);
+  ctx.lineTo(rolesX + rolesW - 14, bottomY + 150);
   ctx.strokeStyle = 'rgba(244, 114, 182, 0.25)';
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  const domHeaderY = bottomY + 144;
+  const domHeaderY = bottomY + 161;
   drawIconText(ctx, icoFox, 'LINH VỰC • THẦN THỨC • THẦN CẢNH', rolesX + 14, domHeaderY, {
     iconSize: 13,
     gap: 5,
@@ -1187,8 +1187,8 @@ export async function renderProfileCard(data, options = {}) {
     ctx.fillText('Chưa khai mở', rolesX + rolesW - 14, domHeaderY);
   }
 
-  // 3 Thẻ Linh Vực / Thần Thức / Thần Cảnh ngang hàng với 3 Pháp Bảo (sy = bottomY + 157, h = 68)
-  const domEquipY = bottomY + 157;
+  // 3 Thẻ Linh Vực / Thần Thức / Thần Cảnh ngang hàng tuyệt đối với 3 Pháp Bảo (sy = bottomY + 177, h = 68)
+  const domEquipY = bottomY + 177;
   const domEquipH = 68;
   const domPadX = 14;
   const domGap = 7;

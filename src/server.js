@@ -166,6 +166,7 @@ import {
   claimExpedition,
   reviveInjuredUniquePet,
   getExplorerMapBoard,
+  switchExplorerLoadoutSlot,
 } from './services/explorerService.js';
 import {
   getDomainInventory,
@@ -189,7 +190,21 @@ import {
   claimNextFarmDmNotification,
   getExchangeCatalog,
   buyExchangeItem,
+  activateFarmAutoCard,
+  useFarmGrowthMed,
+  useFarmYieldStarch,
 } from './services/farmService.js';
+import {
+  getEvolutionHub,
+  evolveUniquePet,
+  craftEvoCrystal,
+} from './services/evolutionService.js';
+import {
+  getSpecialShopCatalog,
+  convertLtToCrystals,
+  buySpecialShopItem,
+  openMythicSelectorCard,
+} from './services/specialShopService.js';
 import { renderProfileCard } from './canvas/profileRenderer.js';
 import { renderRankCard } from './canvas/rankRenderer.js';
 import { renderBattleCard } from './canvas/battleRenderer.js';
