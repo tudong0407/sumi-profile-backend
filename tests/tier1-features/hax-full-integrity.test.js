@@ -21,13 +21,17 @@ import { V13_PET_HAX, V13_EQUIP_HAX } from '../../src/services/battleEngine/v13H
 import { createInitialCombatState, compileCombatant } from '../../src/services/battleEngine/statsCompiler.js';
 import {
   cleanseCombatantDebuffs,
+  triggerBattleStart,
   triggerTurnStart,
   triggerAttackPhase,
   triggerDamageReceived,
+  isControlImmune,
+  getDotResistance,
+  tickEndOfTurnImmortality,
 } from '../../src/services/battleEngine/haxEngine.js';
-import { createDomainCombatSide, resolveSideModifiers } from '../../src/services/battleEngine/domainEngine.js';
-import { simulateBattle } from '../../src/services/battleEngine/battleService.js';
-import { simulateTeamBattle } from '../../src/services/battleEngine/teamBattleService.js';
+import { createDomainCombatSide, resolveSideModifiers, initDomainBattleState, processTurnDomainPhase } from '../../src/services/battleEngine/domainEngine.js';
+import { simulateBattle, renderBattleLogHtml } from '../../src/services/battleEngine/battleService.js';
+import { simulateTeamBattle, renderTeamBattleLogHtml } from '../../src/services/battleEngine/teamBattleService.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.resolve(__dirname, '../../src/services/battleEngine');
@@ -282,4 +286,142 @@ test('5. Behavioral & Log Regressions: u_linh_tieu_mieu, weapon_rare_5, gem_uniq
   const cB = await compileCombatant(tankUser, 'defender');
   const teamRes = simulateTeamBattle([cA], [cB], { maxTurns: 3, rng: () => 0.99 });
   assert.equal(teamRes.turnSnapshots.length > 1, true);
+});
+
+test('6. Ver 1.7 Deep Logic, Stacking, Immortality, Ultimate & Battle Log Clarity Gate', async () => {
+  // 6a. soul_mythic_5 blocks CC/Charm but MUST NOT block enemyHealRedPct (-30% from weapon_mythic_19)
+  const ayame = makeUnit({
+    id: 'ayame',
+    petType: 'xich_diem_ky_lan',
+    equipment: { weapon: null, gem: null, soul: cat.EQUIPMENT_BY_ID.soul_mythic_5 },
+  });
+  const dino = makeUnit({
+    id: 'dino',
+    petType: 'tinh_van_cuu_loc',
+    equipment: { weapon: cat.EQUIPMENT_BY_ID.weapon_mythic_19, gem: cat.EQUIPMENT_BY_ID.gem_epic_5, soul: cat.EQUIPMENT_BY_ID.soul_epic_2 },
+  });
+  assert.equal(isControlImmune(ayame, 'cc'), true);
+  assert.equal(isControlImmune(ayame, 'charm'), true);
+  assert.equal(isControlImmune(ayame, 'debuff'), false, 'soul_mythic_5 must NOT block stat debuffs / heal reduction');
+  triggerAttackPhase(dino, ayame, 1000, () => 0.99);
+  assert.ok(ayame.state.healReductionPct >= 0.30, 'weapon_mythic_19 -30% heal reduction must apply through soul_mythic_5');
+
+  // 6b. Distinct Poison sources STACK (soul_epic_2 8% + weapon_mythic_19 8% = 16%!)
+  const pTarget = makeUnit({ id: 'p_tgt', maxHp: 25000, currentHp: 25000 });
+  triggerBattleStart(dino, pTarget, () => 0.99);
+  assert.ok(Math.abs(pTarget.state.poisonPct - 0.16) < 1e-6, `Expected stacked 16% poison, got ${pTarget.state.poisonPct}`);
+  const pStart = triggerTurnStart(pTarget, dino, () => 0.99, 1);
+  assert.equal(pTarget.currentHp, 25000 - 4000, '16% of 25000 HP = -4000 HP poison tick');
+  assert.ok(pStart.events.some((e) => e.skill.includes('2 nguồn=16%')));
+
+  // 6c. Distinct Burn sources STACK (xich_diem_ky_lan 9% + weapon_mythic_7 9% = 18%)
+  const burnActor = makeUnit({
+    id: 'burn_a',
+    petType: 'xich_diem_ky_lan',
+    equipment: { weapon: cat.EQUIPMENT_BY_ID.weapon_mythic_7, gem: null, soul: null },
+  });
+  const burnVictim = makeUnit({ id: 'burn_v', maxHp: 20000, currentHp: 20000 });
+  triggerAttackPhase(burnActor, burnVictim, 1000, () => 0.99);
+  assert.ok(Math.abs(burnVictim.state.burnPct - 0.18) < 1e-6, `Expected stacked 18% burn, got ${burnVictim.state.burnPct}`);
+  triggerTurnStart(burnVictim, burnActor, () => 0.99, 2);
+  assert.equal(burnVictim.currentHp, 20000 - 3600);
+
+  // 6d. domain_dot respects DoT resistance (gem_epic_5 35% resist) & Immortality
+  const fireDomUnit = makeUnit({
+    id: 'dom_a',
+    domainLoadout: { domain: cat.DOMAIN_BY_ID.domain_mythic_8, sense: null, realm: cat.DIVINE_REALM_BY_ID.realm_epic_3 },
+  });
+  const resistVictim = makeUnit({
+    id: 'dom_v',
+    maxHp: 20000,
+    currentHp: 20000,
+    equipment: { weapon: null, gem: cat.EQUIPMENT_BY_ID.gem_epic_5, soul: null },
+  });
+  assert.equal(getDotResistance(resistVictim), 0.35);
+  const dState = initDomainBattleState(fireDomUnit, resistVictim);
+  processTurnDomainPhase(2, fireDomUnit, resistVictim, dState, () => 0.99);
+  const dmgTakenWithResist = resistVictim.maxHp - resistVictim.currentHp;
+  const dotPct = Number(fireDomUnit.domainRuntime.own.debuffsOnEnemy.dotMaxHpPct || 0);
+  const rawExpected = Math.floor(resistVictim.maxHp * dotPct);
+  const expectedWithResist = Math.max(1, Math.floor(resistVictim.maxHp * dotPct * (1 - 0.35)));
+  assert.equal(dmgTakenWithResist, expectedWithResist, `domain_dot (${dmgTakenWithResist}) must equal 65% of raw ${rawExpected}`);
+
+  // 6e. isImmortalTurns = 1 protects FULL round against attacks, DoT, domain_dot & reflect, then expires after that round
+  const immTarget = makeUnit({
+    id: 'imm_t',
+    maxHp: 20000,
+    currentHp: 3000,
+    state: { isImmortalTurns: 1, immortalGrantedTurn: 5, burnTurns: 2, burnPct: 0.10 },
+  });
+  const immRes1 = triggerDamageReceived(immTarget, 5000, burnActor, () => 0.99);
+  const immRes2 = triggerDamageReceived(immTarget, 5000, burnActor, () => 0.99);
+  assert.equal(immRes1.finalDamage, 0);
+  assert.equal(immRes2.finalDamage, 0, 'Multi-hit in same turn must not strip round-based immortality');
+  assert.equal(immTarget.state.isImmortalTurns, 1);
+  triggerTurnStart(immTarget, burnActor, () => 0.99, 6);
+  assert.equal(immTarget.currentHp, 3000, 'Immortality must block burn DoT during protected turn');
+  tickEndOfTurnImmortality(immTarget, 6);
+  assert.equal(immTarget.state.isImmortalTurns, 0, 'Immortality expires cleanly at end of protected round 6');
+
+  // 6f. weapon_mythic_1 pierces 100% shield via target.state.antiShieldTurns (was checking actor!)
+  const ttActor = makeUnit({ id: 'tt_a', equipment: { weapon: cat.EQUIPMENT_BY_ID.weapon_mythic_1, gem: null, soul: null } });
+  const ttTarget = makeUnit({ id: 'tt_b', shield: 5000 });
+  triggerBattleStart(ttActor, ttTarget, () => 0.99);
+  assert.equal(ttTarget.state.antiShieldTurns, 3);
+  const ttAtk = triggerAttackPhase(ttActor, ttTarget, 1000, () => 0.99);
+  assert.equal(ttAtk.shieldPiercePct, 1.0);
+
+  // 6g. vo_cuc_nguyet_anh_diep blindTurns & huyen_minh_co_long_vuong periodic Turn-2 shield
+  const moth = makeUnit({ id: 'moth_a', petType: 'vo_cuc_nguyet_anh_diep' });
+  const mothTarget = makeUnit({ id: 'moth_b' });
+  triggerBattleStart(moth, mothTarget, () => 0.99);
+  assert.equal(mothTarget.state.blindTurns, 2, 'vo_cuc_nguyet_anh_diep blindTurns must apply at battle start');
+  const seaDragon = makeUnit({ id: 'sea_a', petType: 'huyen_minh_co_long_vuong', maxHp: 20000, currentHp: 20000 });
+  triggerTurnStart(seaDragon, mothTarget, () => 0.99, 2);
+  assert.equal(seaDragon.shield, 3200, 'huyen_minh_co_long_vuong must gain 16% MaxHP shield every 2 turns');
+
+  // 6h. Battle Log separates [Đầu lượt] phase from attack line & Web Log HTML renders cleanly with Ultimate card
+  const simPair = await simulateBattle(
+    {
+      user_id: 'log_a',
+      username: 'Dino',
+      level: 50,
+      pet: {
+        pet_type: 'hon_don_chi_to_long',
+        is_evolved: true,
+        level: 50,
+        star: 8,
+        equipment: { weapon: cat.EQUIPMENT_BY_ID.weapon_mythic_19, gem: cat.EQUIPMENT_BY_ID.gem_epic_5, soul: cat.EQUIPMENT_BY_ID.soul_epic_2 },
+      },
+      domain_loadout: { domain: cat.DOMAIN_BY_ID.domain_mythic_7 },
+    },
+    {
+      user_id: 'log_b',
+      username: 'Ayame',
+      level: 50,
+      pet: {
+        pet_type: 'xich_diem_ky_lan',
+        level: 50,
+        star: 8,
+        equipment: { weapon: cat.EQUIPMENT_BY_ID.weapon_mythic_7, gem: cat.EQUIPMENT_BY_ID.gem_mythic_2, soul: cat.EQUIPMENT_BY_ID.soul_mythic_5 },
+      },
+      domain_loadout: { domain: cat.DOMAIN_BY_ID.domain_mythic_8, realm: cat.DIVINE_REALM_BY_ID.realm_epic_3 },
+    },
+    { maxTurns: 12, seed: 101, preRender: false },
+  );
+  assert.ok(simPair.turns.some((t) => t.action === 'turn_start'), '1v1 battle must emit separate turn_start entries');
+  assert.ok(simPair.fullBattleLog.includes('[Đầu lượt'), 'Discord log must label [Đầu lượt ...] separately from attacks');
+  const html1v1 = await renderBattleLogHtml(simPair.battleId);
+  assert.equal(html1v1.found, true);
+  assert.ok(html1v1.html.includes('Skill Ultimate Chân Thần'), 'Web Battle Log must render Evolved Ultimate section');
+  const htmlBodyOnly = html1v1.html.split('<script>')[0];
+  assert.ok(!htmlBodyOnly.includes('undefined') && !htmlBodyOnly.includes('NaN'), 'Rendered Web Battle Log body must contain zero undefined/NaN');
+
+  // Team Web Log renders cleanly too
+  const tcA = await compileCombatant({ user_id: 't1', username: 'LeadA', level: 50, pet: { pet_type: 'hon_don_chi_to_long', is_evolved: true, level: 50, star: 8 } }, 'attacker');
+  const tcB = await compileCombatant({ user_id: 't2', username: 'LeadB', level: 50, pet: { pet_type: 'thai_so_cuu_phuong_hoang', is_evolved: true, level: 50, star: 8 } }, 'defender');
+  const tRes = simulateTeamBattle([tcA], [tcB], { maxTurns: 10, rng: () => 0.42 });
+  const tHtml = await renderTeamBattleLogHtml(tRes.battleId);
+  assert.equal(tHtml.found, true);
+  assert.ok(tHtml.html.includes('Skill Ultimate Chân Thần'));
 });

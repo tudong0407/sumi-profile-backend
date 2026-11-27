@@ -7,16 +7,12 @@ import { em, gradeEmoji } from '../config/emojiHelper.js';
 
 export const LATEST_VERSION = '1.7';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
-export const BIG_UPDATE_ACK_REWARD_LT = 2000;
+export const BIG_UPDATE_ACK_REWARD_LT = 3000;
 
 /**
- * Bản cập nhật LỚN v1.7 (+2.000 LT):
- * - Tiến Hóa Pet Tối Thượng Chân Thần (/tienhoa) cho 40 Pet Độc Nhất + 40 Skill Ultimate tái kích hoạt
- * - Mở rộng +260 item mới (+60 Pet, +99 Pháp Bảo, +101 Lãnh Địa) & 9 Khung Viền Avatar mới
- * - Shop Đặc Biệt Chủ Nhật (/shop_dacbiet) dùng Tinh Thể Đỏ Vàng (750 LT = 1 TT, trần 200 TT/tuần)
- * - Gacha 0.65% Thần Thoại+ (tách 5% Tối Thượng cố định miễn nhiễm Luck), buff +30% /job & /nhiemvu, +10% Đổ Thạch, Tháp tầng 100/200/300/400/500 +1 Mảnh Tinh Hoa Hỗn Độn
- * - /farm giảm -30p khi tưới/cho ăn, Bùa Bảo Vệ (+2h chống héo/cháy), Thẻ Tự Động Chăm Farm 24h & Thuốc Nông Trại
- * Tuyệt đối KHÔNG nhắc đến thay đổi quyền Role Level, KHÔNG thông báo buff Viền/Ảnh Nền, và KHÔNG dùng emoji Unicode Windows.
+ * Bản cập nhật LỚN v1.7 — Quà Mở Bản:
+ * +3.000 LT + 5 Tinh Thể Đỏ Vàng (TT) + 5 Thẻ Reset Tháp (vượt trần vẫn nhận đủ) + 300 Linh Quả + 1 Thiên Đạo Tuyệt Ấn Thạch
+ * Chia 3 trang gọn, dễ đọc (Trang Trước / Trang Sau). TUYỆT ĐỐI KHÔNG đưa dữ liệu Meta lên /updates!
  */
 export const V17_CHANGELOG = {
   version: '1.7',
@@ -24,22 +20,95 @@ export const V17_CHANGELOG = {
   released_at: '2026-11-27',
   color: '#f43f5e',
   is_big_update: true,
-  ack_reward_lt: 2000,
-  summary: 'Đại cập nhật v1.7 mở khóa Tiến Hóa Pet Tối Thượng Chân Thần (/tienhoa) cho 40 Pet Độc Nhất kèm 40 Ultimate tái kích hoạt, bổ sung +60 Pet, +99 Pháp Bảo, +101 Lãnh Địa, 9 Khung Viền mới, Shop Đặc Biệt Chủ Nhật (/shop_dacbiet) & quà +2.000 LT!',
-  sections: [
+  ack_reward_lt: 3000,
+  ack_reward_bundle: {
+    linh_thach: 3000,
+    red_gold_crystals: 5,
+    farm_essence: 300,
+    items: [
+      { item_id: 'tower_reset_card', item_category: 'consumable', quantity: 5, ignore_cap: true, label: 'Thẻ Reset Tháp' },
+      { item_id: 'enchant_stone_absolute', item_category: 'consumable', quantity: 1, ignore_cap: true, label: 'Ấn Khắc Tuyệt Đối' },
+    ],
+  },
+  ack_reward_summary: '+3.000 LT • +5 TT • +5 Thẻ Reset Tháp • +300 Linh Quả • +1 Ấn Khắc Tuyệt Đối',
+  summary: 'Mở Tiến Hóa Chân Thần (/tienhoa) & 40 Ultimate, thêm +260 món mới + 9 Khung Viền, Shop Đặc Biệt Chủ Nhật (/shop_dacbiet), Gacha 0.65% & gói quà lớn v1.7!',
+  pages: [
     {
-      heading: `${em('su_tier_toithuong')} Tiến Hóa Chân Thần (/tienhoa) & 40 Skill Ultimate`,
-      bullets: [
-        '**Tiến Hóa Pet Tối Thượng Chân Thần (`/tienhoa`):** Toàn bộ **40 Pet Độc Nhất** *(10 gốc + 20 Linh Thú mới + 10 Thú Nhân mới)* đạt **`Lv.40 & 8★`** có thể tiến hóa bằng **`1 Hồng Mông Tiến Hóa Tinh`** *(chế tạo từ `3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT`)*, tăng mạnh chỉ số, đổi ảnh & mở khóa **Ultimate Tái Kích Hoạt** trong 1v1 / 3v3 / 3vBoss!',
-        '**Mở Rộng `+260` Trang Bị & Pet Mới:** Bổ sung **`+60 Pet Thần Thoại`** *(gồm 20 Tối Thượng Linh Thú, 10 Tối Thượng Thú Nhân & 30 Thần Thoại thường)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực / Thần Thức / Thần Cảnh)* và **9 Khung Viền Avatar** *(phân trang `/shop` & `/wiki`)*.',
+      page: 1,
+      subtitle: 'Trang 1/3 — Tiến Hóa Chân Thần (/tienhoa), +260 Món Mới & Quà Mở Bản 1.7',
+      sections: [
+        {
+          heading: `${em('su_tier_toithuong')} 1. Tiến Hóa Chân Thần (/tienhoa) & 40 Skill Ultimate`,
+          bullets: [
+            '**Tiến Hóa 40 Pet Độc Nhất:** Đạt **`Lv.40 & 8★`** + **`1 Hồng Mông Tiến Hóa Tinh`** + Linh Thạch để tiến hóa thành **Tối Thượng Chân Thần**, đổi ảnh mới, tăng mạnh chỉ số & mở khóa **Skill Ultimate tái kích hoạt** trong `/battle` & `/linhmach` *(thất bại không mất Hồng Mông)*.',
+            '**Chế Tạo Hồng Mông (Tab 2 `/tienhoa`):** Ghép từ **`3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT`** *(xác nhận 2 bước an toàn)*.',
+          ],
+        },
+        {
+          heading: `${em('su_sparkle')} 2. Mở Rộng +260 Món Mới, 9 Khung Viền & Gói Quà v1.7`,
+          bullets: [
+            '**Kho Mới Siêu Lớn:** **`+60 Linh Thú`** *(20 Tối Thượng Linh Thú, 10 Tối Thượng Thú Nhân & 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực • Thần Thức • Thần Cảnh)* và **9 Khung Avatar mới** *(đã phân trang trong `/shop` & `/wiki`)*.',
+            '**Quà Mở Bản v1.7 Khi Xác Nhận:** Tặng ngay **`+3.000 LT`** • **`+5 Tinh Thể Đỏ Vàng (TT)`** • **`+5 Thẻ Reset Tháp`** *(nhận đủ kể cả khi túi đang đầy 15 thẻ)* • **`+300 Linh Quả`** • **`+1 Ấn Khắc Tuyệt Đối`**!',
+          ],
+        },
       ],
     },
     {
-      heading: `${em('su_sparkle')} Shop Đặc Biệt Chủ Nhật, Gacha 0.65% & Cân Bằng Kinh Tế`,
+      page: 2,
+      subtitle: 'Trang 2/3 — Shop Đặc Biệt Chủ Nhật (/shop_dacbiet), Gacha 0.65% & Kinh Tế',
+      sections: [
+        {
+          heading: `${em('su_linhthach')} 3. Shop Đặc Biệt Chủ Nhật (/shop_dacbiet)`,
+          bullets: [
+            '**Mở Cửa Chủ Nhật (`08:00–24:00` UTC+7):** Đổi **`750 LT = 1 Tinh Thể Đỏ Vàng (TT)`** *(tối thiểu `5 TT`, tối đa `200 TT/tuần`)*.',
+            '**Vật Phẩm Hiếm:** Bán **Hồng Mông Tiến Hóa Tinh**, **Thẻ Chọn Thần Thoại** *(chọn 7 nhóm, ưu tiên món chưa sở hữu)*, **Mảnh Tinh Hoa Hỗn Độn**, **Bùa Tuyệt Ấn**, **Thẻ Auto Farm 24h**, **Bùa Bảo Vệ Farm/Luyện Đan** & 5 Khung Đặc Biệt.',
+          ],
+        },
+        {
+          heading: `${em('su_gacha_dice')} 4. Tăng Gacha 0.65%, Đổ Thạch & Thưởng Hằng Ngày`,
+          bullets: [
+            '**Gacha `/roll` `0.65%`:** Nâng tỉ lệ Thần Thoại+ lên **`0.65%`** *(tách cố định `0.0325%` Độc Nhất, Pity 350 ra `5%` Độc Nhất)*.',
+            '**`/dothach` Dễ Trúng Hơn:** Giảm **`-10%`** tỉ lệ xịt đá ở cả 4 sạp & đổi tên **Hộp Thần Thoại Cực Phẩm**.',
+            '**Tăng Thu Nhập Toàn Server:** `/daily` tăng lên **`55–80 LT`**; `/job` & `/nhiemvu` tăng **`+30%`** *(5/5 ngày: `170 LT`, Tuần: `450–700 LT`)*; **Tháp mốc T100/200/300/400/500** thưởng thêm **`+1 Mảnh Hỗn Độn`**!',
+          ],
+        },
+      ],
+    },
+    {
+      page: 3,
+      subtitle: 'Trang 3/3 — Nâng Cấp /farm, /luyendan, /explorer & Tối Ưu Chiến Báo /battle',
+      sections: [
+        {
+          heading: `${em('su_sprout')} 5. Tiện Ích /farm, /luyendan & /explorer`,
+          bullets: [
+            '**`/farm` & `/luyendan`:** Tưới nước / cho ăn nay rút ngắn **`-30 phút`** chín; bổ sung **Thẻ Tự Động Chăm Farm 24h**, **Bùa Bảo Vệ +2h** *(tự cứu trước khi héo/cháy)*, **Thuốc Tốc Độ (-25% giờ)** & **Bột Sản Lượng (+30% Linh Quả)**.',
+            '**`/explorer` Đồng Bộ Bộ 1/2/3:** Chuyển nhanh bộ trang bị ngay trong `/explorer`; cập nhật bảng rơi đồ mới *(Bùa Tuyệt Ấn nâng cơ hội Đá Tuyệt Ấn lên `25%`, thêm tỉ lệ rơi `0.5%` Mảnh Hỗn Độn & gói nông trại)*.',
+          ],
+        },
+        {
+          heading: `${em('su_crossed_swords')} 6. Chuẩn Hóa Chiến Đấu & Chiến Báo Rõ Ràng Hơn`,
+          bullets: [
+            '**Log `/battle` & Web Dễ Đọc Hơn:** Tách riêng pha **`[Đầu lượt]`** *(Độc / Thiêu Đốt / Hồi Máu)* khỏi dòng tấn công để tránh nhìn nhầm, bổ sung thẻ **Skill Ultimate** trên Web Battle Log.',
+            '**Sửa Triệt Để Cơ Chế HAX:** Cho phép **cộng dồn Độc / Thiêu Đốt / Debuff** từ nhiều nguồn khác nhau, sửa **Bất Tử** bảo vệ trọn hiệp, đồng bộ kháng DoT lên Thần Cảnh & miễn nhiễm khống chế không chặn nhầm giảm hồi máu.',
+          ],
+        },
+      ],
+    },
+  ],
+  sections: [
+    {
+      heading: `${em('su_tier_toithuong')} Tiến Hóa Chân Thần (/tienhoa) & +260 Món Mới`,
       bullets: [
-        '**Shop Đặc Biệt (`/shop_dacbiet` — `08:00–24:00` Chủ Nhật):** Quy đổi **`750 LT = 1 Tinh Thể Đỏ Vàng (TT)`** *(tối thiểu `5 TT`, trần `200 TT/tuần`)* để mua **Hồng Mông Tiến Hóa Tinh**, **Thẻ Chọn Thần Thoại** (`7 nhóm`), **Mảnh Tinh Hoa Hỗn Độn**, **Bùa Tuyệt Ấn**, **Thẻ Tự Động Farm** & 5 Viền đặc biệt.',
-        '**Tăng Thưởng Kinh Tế & Gacha `0.65%`:** `/roll` tăng trần **Thần Thoại+ lên `0.65%`** *(tách cố định `5%` ra Tối Thượng miễn nhiễm Luck)*; `/dothach` giảm `-10%` xịt đá; **Tháp mỗi 100 tầng (`100..500`)** tặng **`+1 Mảnh Hỗn Độn`**; `/daily` (`55–80 LT`), `/job` & `/nhiemvu` tăng **`+30%`**!',
-        '**Nâng Cấp `/farm`, `/luyendan` & `/explorer`:** Tưới/cho ăn `/farm` nay rút ngắn **`-30 phút`** chín; bổ sung **Bùa Bảo Vệ +2h**, **Thẻ Tự Động Chăm Farm 24h**, **Thuốc Tốc Độ (-25%)** & **Bột Tăng Sản Lượng (+30%)**. `/explorer` đồng bộ **Bộ 1/2/3** từ `/inv` & tặng **`+2.000 Linh Thạch`** khi xác nhận!',
+        '**Tiến Hóa 40 Pet Độc Nhất (`/tienhoa`):** Đạt **`Lv.40 & 8★`** + **`1 Hồng Mông Tiến Hóa Tinh`** để lên **Tối Thượng Chân Thần** & mở **40 Skill Ultimate tái kích hoạt**.',
+        '**+260 Món Mới & 9 Khung Viền:** **`+60 Pet`** *(20 Tối Thượng + 10 Thú Nhân + 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`**, 9 Khung mới.',
+      ],
+    },
+    {
+      heading: `${em('su_sparkle')} Shop Đặc Biệt, Kinh Tế & Quà Mở Bản v1.7`,
+      bullets: [
+        '**`/shop_dacbiet` (Chủ Nhật `08:00–24:00`):** Đổi `750 LT = 1 TT` *(max `200 TT/tuần`)* mua Hồng Mông, Thẻ Chọn Thần Thoại & vật phẩm hiếm.',
+        '**Gacha `0.65%` & Kinh Tế:** `/dothach` `-10%` xịt, `/daily` `55–80 LT`, `/job` & `/nhiemvu` `+30%`, Tháp T100..500 `+1 Mảnh Hỗn Độn`, `/farm` tưới `-30p`.',
+        '**Quà Xác Nhận v1.7:** **`+3.000 LT + 5 TT + 5 Thẻ Reset Tháp + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối`**!',
       ],
     },
   ],
@@ -370,7 +439,28 @@ export function getUpdateAckReward(version = LATEST_VERSION) {
   return entry?.is_big_update ? BIG_UPDATE_ACK_REWARD_LT : DEFAULT_UPDATE_ACK_REWARD_LT;
 }
 
-export function getChangelogPayload(rawVersion = '') {
+export function getUpdateAckBundle(version = LATEST_VERSION) {
+  const entry = CHANGELOG_BY_VERSION[String(version || LATEST_VERSION).trim().toLowerCase().replace(/^v/, '')];
+  const lt = getUpdateAckReward(version);
+  if (entry?.ack_reward_bundle) {
+    return {
+      linh_thach: Number(entry.ack_reward_bundle.linh_thach ?? lt),
+      red_gold_crystals: Number(entry.ack_reward_bundle.red_gold_crystals || 0),
+      farm_essence: Number(entry.ack_reward_bundle.farm_essence || 0),
+      items: Array.isArray(entry.ack_reward_bundle.items) ? entry.ack_reward_bundle.items : [],
+      summary: entry.ack_reward_summary || `+${lt.toLocaleString('vi-VN')} LT`,
+    };
+  }
+  return {
+    linh_thach: lt,
+    red_gold_crystals: 0,
+    farm_essence: 0,
+    items: [],
+    summary: `+${lt.toLocaleString('vi-VN')} LT`,
+  };
+}
+
+export function getChangelogPayload(rawVersion = '', rawPage = 1) {
   const cleaned = String(rawVersion || '').trim().toLowerCase().replace(/^v/, '');
   const version = cleaned || LATEST_VERSION;
   const entry = CHANGELOG_BY_VERSION[version];
@@ -384,6 +474,11 @@ export function getChangelogPayload(rawVersion = '') {
       version,
       latest_version: LATEST_VERSION,
       available_versions: CHANGELOGS.map((c) => c.version),
+      page: 1,
+      total_pages: 1,
+      prev_page: 1,
+      next_page: 1,
+      has_pagination: 'false',
       title: `${em('su_wiki_scroll')} Không tìm thấy phiên bản v${version}`,
       description: `Phiên bản \`${version}\` chưa tồn tại trong nhật ký.\n• Các phiên bản hiện có: ${available}\n• Dùng \`/updates\` để xem bản mới nhất **v${LATEST_VERSION}**.`,
       color: '#f43f5e',
@@ -391,10 +486,21 @@ export function getChangelogPayload(rawVersion = '') {
     };
   }
 
+  const hasPages = Array.isArray(entry.pages) && entry.pages.length > 1;
+  const totalPages = hasPages ? entry.pages.length : 1;
+  const parsedPage = Number.parseInt(String(rawPage || 1), 10);
+  const currentPage = hasPages
+    ? Math.min(Math.max(1, Number.isFinite(parsedPage) ? parsedPage : 1), totalPages)
+    : 1;
+  const activePageObj = hasPages ? entry.pages[currentPage - 1] : null;
+  const activeSections = activePageObj ? activePageObj.sections : entry.sections;
+
   const descriptionLines = [
-    `*Ngày phát hành: \`${entry.released_at}\` • ${entry.summary}*`,
+    activePageObj
+      ? `*Ngày phát hành: \`${entry.released_at}\` • ${activePageObj.subtitle}*`
+      : `*Ngày phát hành: \`${entry.released_at}\` • ${entry.summary}*`,
     '',
-    ...entry.sections.flatMap((sec) => [
+    ...activeSections.flatMap((sec) => [
       `**${sec.heading}**`,
       ...sec.bullets.map((b) => `• ${b}`),
       '',
@@ -406,14 +512,27 @@ export function getChangelogPayload(rawVersion = '') {
     description = description.slice(0, 3940) + '\n…';
   }
 
+  const prevPage = currentPage > 1 ? currentPage - 1 : totalPages;
+  const nextPage = currentPage < totalPages ? currentPage + 1 : 1;
+  const bundle = getUpdateAckBundle(entry.version);
+
   return {
     success: true,
     version: entry.version,
     latest_version: LATEST_VERSION,
     available_versions: CHANGELOGS.map((c) => c.version),
-    ack_reward_lt: getUpdateAckReward(entry.version),
+    page: currentPage,
+    total_pages: totalPages,
+    prev_page: prevPage,
+    next_page: nextPage,
+    has_pagination: hasPages ? 'true' : 'false',
+    ack_reward_lt: bundle.linh_thach,
+    ack_reward_bundle: bundle,
+    ack_reward_summary: bundle.summary,
     is_big_update: Boolean(entry.is_big_update),
-    title: `${em('su_level_up')} ${entry.title}`,
+    title: hasPages
+      ? `${em('su_level_up')} ${entry.title} (Trang ${currentPage}/${totalPages})`
+      : `${em('su_level_up')} ${entry.title}`,
     description,
     color: entry.color,
     footer: '',

@@ -8,7 +8,12 @@ import assert from 'node:assert/strict';
 
 import * as cat from '../../src/data/catalog.js';
 import { STONE_TIERS } from '../../src/data/v16ExpansionCatalog.js';
-import { LATEST_VERSION, V17_CHANGELOG } from '../../src/data/changelogs.js';
+import {
+  LATEST_VERSION,
+  V17_CHANGELOG,
+  getChangelogPayload,
+  getUpdateAckBundle,
+} from '../../src/data/changelogs.js';
 import { DOMAIN_TO_PET_ELEMENTS, evaluateSetBonus } from '../../src/services/battleEngine/setBonusEngine.js';
 import { rollRarityWithUniqueSplit, PITY_UNIQUE_CHANCE, DAILY_BASE_MIN, DAILY_BASE_MAX } from '../../src/services/economyService.js';
 import { claimSupremeStonePick } from '../../src/services/stoneCuttingService.js';
@@ -59,7 +64,32 @@ test('Ver 1.7 Catalog counts, 7-tier rarity ladder, SetBonus & Economy config', 
   assert.equal(Object.keys(cat.V17_PET_EVOLUTIONS).length, 40);
 
   assert.equal(LATEST_VERSION, '1.7');
-  assert.equal(V17_CHANGELOG.ack_reward_lt, 2000);
+  assert.equal(V17_CHANGELOG.ack_reward_lt, 3000);
+
+  // Verify Ver 1.7 full gift bundle (3000 LT + 5 TT + 5 Tower Reset Cards [ignore_cap] + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối)
+  const bundle = getUpdateAckBundle('1.7');
+  assert.equal(bundle.linh_thach, 3000);
+  assert.equal(bundle.red_gold_crystals, 5);
+  assert.equal(bundle.farm_essence, 300);
+  const trCard = bundle.items.find((i) => i.item_id === 'tower_reset_card');
+  const absStone = bundle.items.find((i) => i.item_id === 'enchant_stone_absolute');
+  assert.ok(trCard && trCard.quantity === 5 && trCard.ignore_cap === true, 'Must grant +5 tower_reset_card ignoring cap');
+  assert.ok(absStone && absStone.quantity === 1 && absStone.ignore_cap === true, 'Must grant +1 enchant_stone_absolute');
+
+  // Verify /updates 3-page pagination & ZERO Meta leaks & ZERO raw Unicode
+  for (let p = 1; p <= 3; p += 1) {
+    const pl = getChangelogPayload('1.7', p);
+    assert.equal(pl.success, true);
+    assert.equal(pl.page, p);
+    assert.equal(pl.total_pages, 3);
+    assert.equal(pl.has_pagination, 'true');
+    assert.equal(pl.prev_page, p > 1 ? p - 1 : 3);
+    assert.equal(pl.next_page, p < 3 ? p + 1 : 1);
+    assert.ok(pl.description.length > 100 && pl.description.length < 3800);
+    assert.ok(!/\bmeta\b|tier\s*list|win\s*rate/i.test(pl.description), `Page ${p} must NOT expose Meta analysis`);
+    const stripped = `${pl.title}\n${pl.description}`.replace(/<a?:[a-zA-Z0-9_]+:\d+>/g, '');
+    assert.equal(/\p{Extended_Pictographic}/u.test(stripped), false, `Page ${p} contains raw Unicode emoji`);
+  }
 
   assert.equal(cat.normalizeRarityKey('Phàm Phẩm'), 'common');
   assert.equal(cat.normalizeRarityKey('Linh Phẩm'), 'rare');

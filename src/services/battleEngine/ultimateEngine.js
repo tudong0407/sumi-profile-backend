@@ -2,11 +2,31 @@
  * src/services/battleEngine/ultimateEngine.js
  * Hệ thống 40 Skill Ultimate Tái Kích Hoạt (Tối Thượng Chân Thần — SuMi Ver 1.7).
  * - Kích hoạt tự động lặp lại suốt trận (1v1 / 3v3 / 3vBoss) khi đủ Điều Kiện Kích Hoạt & hết Cooldown.
- * - Dùng unified helpers từ haxEngine.js: cleanseCombatantDebuffs(), getTrueDamageResistPct(), applyHeal().
+ * - Dùng unified helpers từ haxEngine.js: cleanseCombatantDebuffs(), getTrueDamageResistPct(), applyHeal(),
+ *   addShield(), applyBurnSource(), applyPoisonSource(), applyDebuffSource(), rollControlResist(),
+ *   isControlImmune(), getDotResistance(), isCombatantImmortal().
+ * - Sửa triệt để: addLinhMach cộng trực tiếp vào domainSide.energy, stripAllBuffs hoàn trả atk/def đã stack,
+ *   tôn trọng Bất Tử / Kháng DoT / Kháng CC / antiShieldTurns / ignoreDodge, và hỗ trợ fastMode cho benchmark.
  * Tuyệt đối KHÔNG dùng emoji Unicode Windows.
  */
 
-import { cleanseCombatantDebuffs, getTrueDamageResistPct, applyHeal, triggerLethalInterception } from './haxEngine.js';
+import {
+  cleanseCombatantDebuffs,
+  getTrueDamageResistPct,
+  applyHeal,
+  triggerLethalInterception,
+  addShield,
+  applyBurnSource,
+  applyPoisonSource,
+  applyDebuffSource,
+  rollControlResist,
+  isControlImmune,
+  getDotResistance,
+  isCombatantImmortal,
+  hasPet,
+  hasItem,
+} from './haxEngine.js';
+import { getCombatantV13HaxList } from './v13HaxRegistry.js';
 
 export function createUltimateState(ultimateDef = null, isEvolved = false) {
   return {
@@ -52,7 +72,8 @@ export function tickUltimateTurn(combatant, turnNumber = 1) {
   if (u.cooldown > 0) u.cooldown = Math.max(0, u.cooldown - 1);
   u.turnsLived += 1;
   if (Number(combatant.shield || 0) > 0) u.shieldTurns += 1;
-  if (turnNumber === 1) {
+  if (turnNumber === 1 && u.firstStrikes === 0) {
+    // Fallback cho unit test gọi tickUltimateTurn trực tiếp không qua battle loop
     u.firstStrikes += 1;
   }
 }
@@ -115,6 +136,21 @@ export function isUltimateReadyToFire(actor, target) {
   }
 }
 
+function getTargetDodgeForUltimate(target) {
+  const targetV13 = (target?.state?.haxLockedTurns || 0) > 0 ? [] : getCombatantV13HaxList(target);
+  let dodge = Number(target?.domainRuntime?.own?.buffs?.dodgeBonusPct || 0);
+  for (const e of targetV13) {
+    if (typeof e.dodgePct === 'number') dodge += e.dodgePct;
+  }
+  if (hasPet(target, 'thai_am_ngoc_tho')) dodge += 0.30;
+  if (hasPet(target, 'phong_vu_tieu_tuoc')) dodge += 0.12;
+  if (hasItem(target, 'soul_epic_5')) dodge += 0.25;
+  if (hasItem(target, 'weapon_rare_4')) dodge += 0.10;
+  if (hasItem(target, 'soul_common_2')) dodge += 0.05;
+  // Ultimate giảm một nửa khả năng né thường trừ khi có ignoreDodge (né = 0)
+  return Math.min(0.35, dodge * 0.5);
+}
+
 /**
  * Thử kích hoạt Skill Ultimate nếu đủ điều kiện & hết cooldown.
  * @returns {{ triggered: boolean, ultimateName?: string, damage?: number, shieldAbsorbed?: number, healAmt?: number, logs?: string[], ko?: boolean }}
@@ -125,65 +161,79 @@ export function tryTriggerUltimate(actor, target, options = {}) {
   }
 
   const rng = typeof options.rng === 'function' ? options.rng : Math.random;
+  const turnNumber = Number(options.turnNumber || 1);
+  const fastMode = Boolean(options.fastMode);
   const u = actor.state.ultimate;
   const def = u.ultDef;
   const ef = def.effect || {};
-  const logs = [];
+  const logs = fastMode ? null : [];
+  const pushLog = (s) => { if (logs) logs.push(s); };
   let totalDamage = 0;
   let totalShieldAbsorbed = 0;
   let totalHeal = 0;
+  const targetImmortal = isCombatantImmortal(target);
 
-  // 1. Sát thương chuẩn theo % MaxHP địch (bỏ qua DEF/Khiên)
-  if (ef.trueMaxHpDmgPct > 0) {
-    const resist = getTrueDamageResistPct(target);
-    const dmg = Math.max(100, Math.floor(target.maxHp * Number(ef.trueMaxHpDmgPct) * (1 - resist)));
-    target.currentHp = Math.max(0, target.currentHp - dmg);
-    totalDamage += dmg;
-    logs.push(`ST Chuẩn -${dmg.toLocaleString('vi-VN')} HP`);
-  }
+  // Phần tấn công lên mục tiêu (tôn trọng Bất Tử của mục tiêu!)
+  if (targetImmortal && (ef.trueMaxHpDmgPct > 0 || ef.atkDmgPct > 0 || ef.drainEnemyCurrHpPct > 0)) {
+    if (!fastMode) pushLog('Kim Thân Miễn Nhiễm ST');
+  } else {
+    // 1. Sát thương chuẩn theo % MaxHP địch (bỏ qua DEF/Khiên)
+    if (ef.trueMaxHpDmgPct > 0) {
+      const resist = getTrueDamageResistPct(target);
+      const dmg = Math.max(100, Math.floor(target.maxHp * Number(ef.trueMaxHpDmgPct) * (1 - resist)));
+      target.currentHp = Math.max(0, target.currentHp - dmg);
+      totalDamage += dmg;
+      if (!fastMode) pushLog(`ST Chuẩn -${dmg.toLocaleString('vi-VN')} HP`);
+    }
 
-  // 2. Sát thương theo % ATK (có thể xuyên DEF & Khiên)
-  if (ef.atkDmgPct > 0 && target.currentHp > 0) {
-    const baseDmg = Math.floor(Number(actor.atk || 500) * Number(ef.atkDmgPct));
-    const dmgRed = ef.ignoreDmgRed ? 0 : Math.min(0.65, Number(target.state?.damageReductionPct || 0));
-    const finalRaw = Math.max(120, Math.floor(baseDmg * (1 - dmgRed)));
-    const pierce = Math.min(1, Math.max(0, Number(ef.shieldPierce || 0)));
-    const bypass = Math.floor(finalRaw * pierce);
-    const shieldPart = Math.max(0, finalRaw - bypass);
-    let absorbed = 0;
-    let intoHp = bypass;
-    if (shieldPart > 0) {
-      if (Number(target.shield || 0) >= shieldPart) {
-        target.shield -= shieldPart;
-        absorbed = shieldPart;
+    // 2. Sát thương theo % ATK (hỗ trợ ignoreDodge + shieldPierce + ignoreDmgRed)
+    if (ef.atkDmgPct > 0 && target.currentHp > 0) {
+      const dodged = !ef.ignoreDodge && rng() < getTargetDodgeForUltimate(target);
+      if (dodged) {
+        if (!fastMode) pushLog('Địch Né Tránh Đòn ATK');
       } else {
-        absorbed = Math.max(0, Number(target.shield || 0));
-        intoHp += shieldPart - absorbed;
-        target.shield = 0;
+        const baseDmg = Math.floor(Number(actor.atk || 500) * Number(ef.atkDmgPct));
+        const dmgRed = ef.ignoreDmgRed ? 0 : Math.min(0.65, Number(target.state?.damageReductionPct || 0));
+        const finalRaw = Math.max(120, Math.floor(baseDmg * (1 - dmgRed)));
+        const pierce = Math.min(1, Math.max(0, Number(ef.shieldPierce || 0)));
+        const bypass = Math.floor(finalRaw * pierce);
+        const shieldPart = Math.max(0, finalRaw - bypass);
+        let absorbed = 0;
+        let intoHp = bypass;
+        if (shieldPart > 0) {
+          if (Number(target.shield || 0) >= shieldPart) {
+            target.shield -= shieldPart;
+            absorbed = shieldPart;
+          } else {
+            absorbed = Math.max(0, Number(target.shield || 0));
+            intoHp += shieldPart - absorbed;
+            target.shield = 0;
+          }
+        }
+        target.currentHp = Math.max(0, target.currentHp - intoHp);
+        totalDamage += intoHp;
+        totalShieldAbsorbed += absorbed;
+        if (!fastMode) pushLog(`-${intoHp.toLocaleString('vi-VN')} HP${absorbed > 0 ? ` *(khiên chặn ${absorbed.toLocaleString('vi-VN')})*` : ''}`);
       }
     }
-    target.currentHp = Math.max(0, target.currentHp - intoHp);
-    totalDamage += intoHp;
-    totalShieldAbsorbed += absorbed;
-    logs.push(`-${intoHp.toLocaleString('vi-VN')} HP${absorbed > 0 ? ` *(khiên chặn ${absorbed.toLocaleString('vi-VN')})*` : ''}`);
+
+    // 3. Rút % HP hiện tại của địch (hút máu)
+    if (ef.drainEnemyCurrHpPct > 0 && target.currentHp > 0) {
+      const drain = Math.max(80, Math.floor(target.currentHp * Number(ef.drainEnemyCurrHpPct)));
+      target.currentHp = Math.max(0, target.currentHp - drain);
+      totalDamage += drain;
+      const healed = applyHeal(actor, drain);
+      totalHeal += healed;
+      if (!fastMode) pushLog(`Hút Hồn -${drain.toLocaleString('vi-VN')} HP`);
+    }
   }
 
-  // 3. Rút % HP hiện tại của địch (hút máu)
-  if (ef.drainEnemyCurrHpPct > 0 && target.currentHp > 0) {
-    const drain = Math.max(80, Math.floor(target.currentHp * Number(ef.drainEnemyCurrHpPct)));
-    target.currentHp = Math.max(0, target.currentHp - drain);
-    totalDamage += drain;
-    const healed = applyHeal(actor, drain);
-    totalHeal += healed;
-    logs.push(`Hút Hồn -${drain.toLocaleString('vi-VN')} HP`);
-  }
-
-  // 4. Hồi máu & Hồi theo % HP đã mất
+  // 4. Hồi máu & Hồi theo % HP đã mất (bản thân)
   if (ef.healMaxHpPct > 0 && actor.currentHp > 0) {
     const healed = applyHeal(actor, actor.maxHp * Number(ef.healMaxHpPct));
     if (healed > 0) {
       totalHeal += healed;
-      logs.push(`Hồi +${healed.toLocaleString('vi-VN')} HP`);
+      if (!fastMode) pushLog(`Hồi +${healed.toLocaleString('vi-VN')} HP`);
     }
   }
   if (ef.restoreMissingHpPct > 0 && actor.currentHp > 0) {
@@ -191,95 +241,137 @@ export function tryTriggerUltimate(actor, target, options = {}) {
     const healed = applyHeal(actor, missing * Number(ef.restoreMissingHpPct));
     if (healed > 0) {
       totalHeal += healed;
-      logs.push(`Phục Sinh +${healed.toLocaleString('vi-VN')} HP`);
+      if (!fastMode) pushLog(`Phục Sinh +${healed.toLocaleString('vi-VN')} HP`);
     }
   }
 
-  // 5. Tạo Khiên % MaxHP bản thân
+  // 5. Tạo Khiên % MaxHP bản thân (dùng addShield chuẩn hóa — tôn trọng antiShieldTurns & Buff Vực!)
   if (ef.shieldMaxHpPct > 0 && actor.currentHp > 0) {
-    const sh = Math.round(actor.maxHp * Number(ef.shieldMaxHpPct));
-    actor.shield = Math.max(0, Number(actor.shield || 0) + sh);
-    logs.push(`+${sh.toLocaleString('vi-VN')} Khiên`);
+    const sh = addShield(actor, actor.maxHp * Number(ef.shieldMaxHpPct));
+    if (sh > 0) {
+      if (!fastMode) pushLog(`+${sh.toLocaleString('vi-VN')} Khiên`);
+    }
   }
 
-  // 6. Thanh tẩy toàn bộ debuff bản thân (dùng cleanseCombatantDebuffs thống nhất!)
+  // 6. Thanh tẩy toàn bộ debuff bản thân
   if (ef.cleanseAll && actor.currentHp > 0) {
     cleanseCombatantDebuffs(actor, 99);
-    logs.push('Thanh Tẩy Toàn Bộ Debuff');
+    if (!fastMode) pushLog('Thanh Tẩy Toàn Bộ Debuff');
   }
 
   // 7. Giảm sát thương nhận vào
   if (ef.dmgRedPct > 0 && actor.currentHp > 0) {
     actor.state.damageReductionPct = Math.max(Number(actor.state.damageReductionPct || 0), Number(ef.dmgRedPct));
     actor.state.damageReductionTurns = Math.max(Number(actor.state.damageReductionTurns || 0), Number(ef.dmgRedTurns || 2));
-    logs.push(`Giảm ${Math.round(ef.dmgRedPct * 100)}% ST (${ef.dmgRedTurns || 2}h)`);
+    if (!fastMode) pushLog(`Giảm ${Math.round(ef.dmgRedPct * 100)}% ST (${ef.dmgRedTurns || 2}h)`);
   }
 
-  // 8. Xóa buff địch (Strip all enemy buffs / shield)
+  // 8. Xóa buff địch (Strip all enemy buffs / shield — hoàn trả chính xác ATK/DEF đã cộng từ stack!)
   if (ef.stripAllBuffs && target.currentHp > 0) {
     target.shield = 0;
     if (target.state) {
+      if ((target.state.atkBonusApplied || 0) > 0) {
+        target.atk = Math.max(50, target.atk - target.state.atkBonusApplied);
+        target.state.atkBonusApplied = 0;
+      }
+      if ((target.state.defBonusApplied || 0) > 0) {
+        target.def = Math.max(50, target.def - target.state.defBonusApplied);
+        target.state.defBonusApplied = 0;
+      }
       target.state.atkStacks = 0;
+      target.state.atkStacksBySource = {};
       target.state.defStacks = 0;
       target.state.damageReductionTurns = 0;
       target.state.damageReductionPct = 0;
       target.state.earlySpdBonusTurns = 0;
+      target.state.earlySpdBonusPct = 0;
       target.state.stunImmuneTurns = 0;
     }
-    logs.push('Xóa Sạch Buff Địch');
+    if (!fastMode) pushLog('Xóa Sạch Buff Địch');
   }
 
-  // 9. Tích tầng Linh Mạch (nếu có Domain Runtime)
-  if (ef.addLinhMach > 0 && actor.domainRuntime?.own) {
-    actor.domainRuntime.own.linhMachCount = Math.min(5, Number(actor.domainRuntime.own.linhMachCount || 0) + Number(ef.addLinhMach));
-    logs.push(`+${ef.addLinhMach} Linh Mạch`);
+  // 9. Tích tầng Linh Mạch (FIX: cộng trực tiếp vào domainSide.energy đang hoạt động!)
+  if (ef.addLinhMach > 0) {
+    const domSide = actor.domainRuntime?.side;
+    if (domSide && domSide.hasDomain && !domSide.indestructible && domSide.energy > 0) {
+      const addAmt = Number(ef.addLinhMach);
+      domSide.energy += addAmt;
+      domSide.maxEnergy = Math.max(domSide.maxEnergy || 0, domSide.energy);
+      if (actor.domainRuntime?.own) {
+        actor.domainRuntime.own.energy = domSide.energy;
+        actor.domainRuntime.own.maxEnergy = domSide.maxEnergy;
+      }
+      if (!fastMode) pushLog(`+${addAmt} Linh Mạch`);
+    }
   }
 
-  // 10. Debuff địch: Giảm DEF, Đóng Băng, Choáng, Thiêu Đốt, Trúng Độc, Giảm Hồi Máu, Cướp SPD
-  if (target.currentHp > 0 && target.state) {
-    if (ef.defDebuffPct > 0) {
-      target.state.defDebuffPct = Math.max(Number(target.state.defDebuffPct || 0), Number(ef.defDebuffPct));
-      target.state.defDebuffTurns = Math.max(Number(target.state.defDebuffTurns || 0), Number(ef.defDebuffTurns || 2));
-      logs.push(`Giảm ${Math.round(ef.defDebuffPct * 100)}% DEF`);
+  // 10. Debuff địch (tôn trọng Bất Tử, Kháng CC, Kháng DoT & cộng dồn theo nguồn!)
+  if (target.currentHp > 0 && target.state && !targetImmortal) {
+    const ultSrc = def.id || 'ultimate';
+    if (ef.defDebuffPct > 0 && !isControlImmune(target, 'debuff')) {
+      applyDebuffSource(target, 'def', ultSrc, Number(ef.defDebuffPct), Number(ef.defDebuffTurns || 2));
+      if (!fastMode) pushLog(`Giảm ${Math.round(ef.defDebuffPct * 100)}% DEF`);
     }
     if (ef.freezeTurns > 0) {
-      target.state.isStunned = true;
-      logs.push('Đóng Băng (Mất Lượt)');
+      const res = rollControlResist(target, rng, 'freeze');
+      if (!res.resisted) {
+        target.state.isStunned = true;
+        if (!fastMode) pushLog('Đóng Băng (Mất Lượt)');
+      } else {
+        if (!fastMode) pushLog(`${res.source} (Kháng Đóng Băng)`);
+      }
     }
     if (ef.stunChance > 0 && rng() < Number(ef.stunChance)) {
-      target.state.isStunned = true;
-      logs.push('Choáng Lôi Phạt');
+      const res = rollControlResist(target, rng, 'stun');
+      if (!res.resisted) {
+        target.state.isStunned = true;
+        if (!fastMode) pushLog('Choáng Lôi Phạt');
+      } else {
+        if (!fastMode) pushLog(`${res.source} (Kháng Choáng)`);
+      }
     }
-    if (ef.burnPct > 0) {
-      target.state.burnPct = Math.max(Number(target.state.burnPct || 0), Number(ef.burnPct));
-      target.state.burnTurns = Math.max(Number(target.state.burnTurns || 0), Number(ef.burnTurns || 2));
-      target.state.burnIgnoresShield = true;
-      logs.push(`Thiêu Đốt ${Math.round(ef.burnPct * 100)}% MaxHP`);
+    if (ef.burnPct > 0 && getDotResistance(target) < 1) {
+      applyBurnSource(target, ultSrc, {
+        pct: Number(ef.burnPct),
+        turns: Number(ef.burnTurns || 2),
+        mode: 'max',
+        ignoresShield: true,
+        label: def.name,
+      });
+      if (!fastMode) pushLog(`Thiêu Đốt ${Math.round(ef.burnPct * 100)}% MaxHP`);
     }
-    if (ef.poisonPct > 0) {
-      target.state.poisonActive = true;
-      target.state.poisonPct = Math.max(Number(target.state.poisonPct || 0), Number(ef.poisonPct));
-      target.state.poisonTurns = Math.max(Number(target.state.poisonTurns || 0), Number(ef.poisonTurns || 2));
-      logs.push(`Trúng Độc ${Math.round(ef.poisonPct * 100)}%`);
+    if (ef.poisonPct > 0 && getDotResistance(target) < 1) {
+      applyPoisonSource(target, ultSrc, {
+        pct: Number(ef.poisonPct),
+        turns: Number(ef.poisonTurns || 2),
+        label: def.name,
+      });
+      if (!fastMode) pushLog(`Trúng Độc ${Math.round(ef.poisonPct * 100)}%`);
     }
-    if (ef.healReductionPct > 0) {
-      target.state.healReductionPct = Math.max(Number(target.state.healReductionPct || 0), Number(ef.healReductionPct));
-      target.state.healReductionTurns = Math.max(Number(target.state.healReductionTurns || 0), Number(ef.healReductionTurns || 2));
-      logs.push(`Giảm ${Math.round(ef.healReductionPct * 100)}% Hồi Máu`);
+    if (ef.healReductionPct > 0 && !isControlImmune(target, 'debuff')) {
+      applyDebuffSource(target, 'healRed', ultSrc, Number(ef.healReductionPct), Number(ef.healReductionTurns || 2));
+      if (!fastMode) pushLog(`Giảm ${Math.round(ef.healReductionPct * 100)}% Hồi Máu`);
     }
     if (ef.spdStealPct > 0) {
-      const stealAmt = Math.round(Number(target.baseSpd || target.spd || 300) * Number(ef.spdStealPct));
-      target.spd = Math.max(50, Number(target.spd || 300) - stealAmt);
-      actor.spd = Number(actor.spd || 300) + stealAmt;
-      logs.push(`Cướp ${Math.round(ef.spdStealPct * 100)}% SPD`);
+      const res = rollControlResist(target, rng, 'steal');
+      if (!res.resisted) {
+        const stealAmt = Math.round(Number(target.baseSpd || target.spd || 300) * Number(ef.spdStealPct));
+        target.spd = Math.max(50, Number(target.spd || 300) - stealAmt);
+        actor.spd = Number(actor.spd || 300) + stealAmt;
+        if (!fastMode) pushLog(`Cướp ${Math.round(ef.spdStealPct * 100)}% SPD`);
+      }
     }
+  }
+
+  if (totalDamage + totalShieldAbsorbed > 0 && target?.state?.ultimate?.active) {
+    target.state.ultimate.dmgTaken += (totalDamage + totalShieldAbsorbed);
   }
 
   // Check Lethal Interception nếu target về 0 HP sau Ultimate
   if (target.currentHp <= 0) {
-    const li = triggerLethalInterception(target, actor, rng);
+    const li = triggerLethalInterception(target, actor, rng, turnNumber);
     if (li?.survived && li.skill) {
-      logs.push(li.skill);
+      if (!fastMode) pushLog(li.skill);
     }
   }
 
@@ -296,7 +388,7 @@ export function tryTriggerUltimate(actor, target, options = {}) {
     damage: totalDamage,
     shieldAbsorbed: totalShieldAbsorbed,
     healAmt: totalHeal,
-    logs,
+    logs: logs || [],
     ko: target.currentHp === 0,
   };
 }

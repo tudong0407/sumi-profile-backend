@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
 import {
   PET_CATALOG,
   EQUIPMENT_CATALOG,
@@ -18,6 +19,11 @@ import {
   AVATAR_FRAMES,
   ALL_CONSUMABLES,
 } from '../src/data/catalog.js';
+
+const SHOP_ITEM_IDS = new Set([
+  ...ALL_CONSUMABLES.map((c) => c.item_id),
+  'red_gold_crystal',
+]);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,28 +112,56 @@ export function auditV17Assets() {
 
 export async function installFromStagingDir(sourceDir, options = {}) {
   const apply = Boolean(options.apply);
+  const webpQuality = Number(options.webpQuality || 88);
   const absSource = path.resolve(sourceDir);
   if (!fs.existsSync(absSource)) {
     throw new Error(`Staging asset directory not found: ${absSource}`);
   }
 
   const copied = [];
+  let srcBytes = 0;
+  let dstBytes = 0;
   const subdirs = ['pets', 'items', 'domains', 'shop', 'frames'];
   for (const sub of subdirs) {
     const srcSub = path.join(absSource, sub);
     if (!fs.existsSync(srcSub)) continue;
-    const dstSub = path.join(ASSETS_ROOT, sub);
-    if (apply && !fs.existsSync(dstSub)) fs.mkdirSync(dstSub, { recursive: true });
-    for (const file of fs.readdirSync(srcSub)) {
+    for (const file of fs.readdirSync(srcSub).sort()) {
       if (!/\.(png|webp)$/i.test(file)) continue;
+      const stem = file.replace(/\.(png|webp)$/i, '');
+      const targetSub = (sub === 'items' && SHOP_ITEM_IDS.has(stem)) ? 'shop' : sub;
+      const targetFile = targetSub === 'frames' ? file : `${stem}.webp`;
       const srcFile = path.join(srcSub, file);
-      const dstFile = path.join(dstSub, file);
-      if (apply) fs.copyFileSync(srcFile, dstFile);
-      copied.push(`${sub}/${file}`);
+      const dstDir = path.join(ASSETS_ROOT, targetSub);
+      const dstFile = path.join(dstDir, targetFile);
+      const st = fs.statSync(srcFile);
+      srcBytes += st.size;
+
+      if (apply) {
+        if (!fs.existsSync(dstDir)) fs.mkdirSync(dstDir, { recursive: true });
+        if (targetSub === 'frames') {
+          fs.copyFileSync(srcFile, dstFile);
+          dstBytes += st.size;
+        } else {
+          // Chuyển sang WebP lossy q=88 (giữ 100% alpha trong suốt) để nhẹ hơn ~65% so với WebP lossless/PNG
+          const img = await loadImage(srcFile);
+          const canvas = createCanvas(img.width, img.height);
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          const outBuf = await canvas.encode('webp', webpQuality);
+          fs.writeFileSync(dstFile, outBuf);
+          dstBytes += outBuf.length;
+        }
+      }
+      copied.push(`${targetSub}/${targetFile}`);
     }
   }
 
-  return { mode: apply ? 'apply' : 'dry-run', copied_count: copied.length, copied };
+  return {
+    mode: apply ? 'apply' : 'dry-run',
+    copied_count: copied.length,
+    source_mb: Number((srcBytes / 1024 / 1024).toFixed(2)),
+    installed_mb: Number((dstBytes / 1024 / 1024).toFixed(2)),
+    copied,
+  };
 }
 
 const isCli = process.argv[1] && path.resolve(process.argv[1]) === __filename;

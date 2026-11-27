@@ -473,7 +473,8 @@ app.get('/health', (req, res) => {
 
 app.get(['/api/update', '/api/update/:version'], (req, res) => {
   const ver = getCleanParam(req.params.version || req.query.version, '');
-  const result = getChangelogPayload(ver || LATEST_VERSION);
+  const page = getCleanParam(req.query.page, '1');
+  const result = getChangelogPayload(ver || LATEST_VERSION, page);
   return res.status(result.status || 200).json(result);
 });
 

@@ -184,7 +184,7 @@ export async function runMigration(argv = process.argv.slice(2)) {
           item.hax_skill || null,
           item.hax_description || null,
           Number(item.drop_rate || 0),
-          item.icon || '',
+          String(item.icon || '').startsWith('<') ? '' : String(item.icon || '').slice(0, 10),
         ],
       );
     }
@@ -216,7 +216,7 @@ export async function runMigration(argv = process.argv.slice(2)) {
           Number(pet.base_spd || 100),
           pet.hax_skill || null,
           pet.hax_description || null,
-          pet.icon || '',
+          String(pet.icon || '').startsWith('<') ? '' : String(pet.icon || '').slice(0, 10),
           null,
         ],
       );

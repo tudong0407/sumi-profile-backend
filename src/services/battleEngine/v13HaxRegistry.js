@@ -180,15 +180,41 @@ export const V13_EQUIP_HAX = {
  * Thu thập tất cả entry HAX v1.3 đang hoạt động trên một Combatant (Pet + Weapon + Gem + Soul).
  */
 export function getCombatantV13HaxList(combatant) {
-  const list = [];
-  const petEff = combatant?.petType ? V13_PET_HAX[combatant.petType] : null;
-  if (petEff) list.push({ id: combatant.petType, source: combatant.petName || combatant.petType, ...petEff });
-
-  const eq = combatant?.equipment || {};
-  for (const piece of [eq.weapon, eq.gem, eq.soul]) {
-    if (!piece?.item_id) continue;
-    const eqEff = V13_EQUIP_HAX[piece.item_id];
-    if (eqEff) list.push({ id: piece.item_id, source: piece.item_name || piece.item_id, ...eqEff });
+  if (!combatant) return [];
+  const pt = combatant.petType || '';
+  const eq = combatant.equipment;
+  const wId = eq?.weapon?.item_id || '';
+  const gId = eq?.gem?.item_id || '';
+  const sId = eq?.soul?.item_id || '';
+  if (
+    combatant._v13CacheList
+    && combatant._v13Pet === pt
+    && combatant._v13W === wId
+    && combatant._v13G === gId
+    && combatant._v13S === sId
+  ) {
+    return combatant._v13CacheList;
   }
+  const list = [];
+  const petEff = pt ? V13_PET_HAX[pt] : null;
+  if (petEff) list.push({ id: pt, source: combatant.petName || pt, ...petEff });
+
+  if (wId) {
+    const e = V13_EQUIP_HAX[wId];
+    if (e) list.push({ id: wId, source: eq.weapon.item_name || wId, ...e });
+  }
+  if (gId) {
+    const e = V13_EQUIP_HAX[gId];
+    if (e) list.push({ id: gId, source: eq.gem.item_name || gId, ...e });
+  }
+  if (sId) {
+    const e = V13_EQUIP_HAX[sId];
+    if (e) list.push({ id: sId, source: eq.soul.item_name || sId, ...e });
+  }
+  combatant._v13Pet = pt;
+  combatant._v13W = wId;
+  combatant._v13G = gId;
+  combatant._v13S = sId;
+  combatant._v13CacheList = list;
   return list;
 }

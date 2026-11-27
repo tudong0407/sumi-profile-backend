@@ -186,8 +186,11 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   const legacyPetCrit = petType === 'loi_dinh_kim_ho' ? 0.15 : petType === 'nguyet_anh_thao_tho' ? 0.08 : petType === 'tu_kim_bach_trach' ? 0.20 : 0;
   const v13PetCrit = V13_PET_HAX[petType]?.flatCritPct || 0;
   const petCritBonus = legacyPetCrit + v13PetCrit;
-  const v13SoulCrit = V13_EQUIP_HAX[soul?.item_id]?.flatCritPct || 0;
-  const itemCritBonus = (bonusCrit / 100) + v13SoulCrit + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
+  const v13EquipCrit = [weapon, gem, soul].reduce(
+    (sum, p) => sum + (p?.item_id ? (V13_EQUIP_HAX[p.item_id]?.flatCritPct || 0) : 0),
+    0,
+  );
+  const itemCritBonus = (bonusCrit / 100) + v13EquipCrit + (soul?.item_id === 'soul_common_3' ? 0.04 : soul?.item_id === 'soul_common_5' ? 0.05 : 0);
   const critRate = Math.min(1.0, Math.max(0.05, 0.05 + itemCritBonus + petCritBonus));
 
   const petHaxName = pet.hax_skill || catalogPet?.hax_skill || null;
@@ -297,6 +300,8 @@ export function createInitialCombatState(ultimateDef = null, isEvolved = false) 
     ultimate: createUltimateState(ultimateDef, isEvolved),
     turnCount: 0,
     isImmortalTurns: 0,
+    immortalHits: 0,
+    immortalGrantedTurn: -1,
     antiImmortalityTurns: 0,
     antiShieldTurns: 0,
     haxLockedTurns: 0,
@@ -319,28 +324,43 @@ export function createInitialCombatState(ultimateDef = null, isEvolved = false) 
     executeBlockUsed: false,
     phoenixGemHealUsed: false,
     emergencyHealUsed: false,
+    emergencyHealUsedBySource: {},
     firstStrikeDone: false,
     pierceDefNext: false,
     enrageActive: false,
     defStacks: 0,
+    defBonusApplied: 0,
     atkStacks: 0,
+    atkStacksBySource: {},
+    atkBonusApplied: 0,
     atkDebuffTurns: 0,
     atkDebuffPct: 0,
     defDebuffTurns: 0,
     defDebuffPct: 0,
     defDebuffTotalPct: 0,
     atkStealStacks: 0,
+    atkStealStacksBySource: {},
     spdDebuffTurns: 0,
     spdDebuffPct: 0,
     healReductionTurns: 0,
     healReductionPct: 0,
+    debuffSources: {
+      atk: {},
+      def: {},
+      spd: {},
+      healRed: {},
+      enemyDmg: {},
+      enemyAcc: {},
+    },
     burnTurns: 0,
     burnPct: 0,
     burnMode: null,
     burnIgnoresShield: false,
+    burnSources: {},
     poisonActive: false,
     poisonPct: 0,
     poisonTurns: 0,
+    poisonSources: {},
     nextHitBonusPct: 0,
     damageReductionTurns: 0,
     damageReductionPct: 0,

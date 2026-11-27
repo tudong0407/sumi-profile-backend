@@ -10,8 +10,9 @@ import {
   DOMAIN_BY_ID,
   DIVINE_SENSE_BY_ID,
   DIVINE_REALM_BY_ID,
+  V17_PET_EVOLUTIONS,
 } from '../../data/catalog.js';
-import { em, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById, uiEm } from '../../config/emojiHelper.js';
+import { em, tierEmoji, petEmoji, itemEmoji, domainEmoji, domainElementEmoji, senseEmoji, realmEmojiById, uiEm } from '../../config/emojiHelper.js';
 import { initDomainBattleState, processTurnDomainPhase, computeEffectiveDomainEnergy } from './domainEngine.js';
 import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
@@ -49,6 +50,9 @@ import {
   applyHeal,
   getEffectiveCombatSpd,
   getTrueDamageResistPct,
+  isCombatantImmortal,
+  tickEndOfTurnImmortality,
+  getHaxProcMultiplier,
 } from './haxEngine.js';
 import {
   tickUltimateTurn,
@@ -400,6 +404,13 @@ function buildStructuredUnitForWeb(c, initHp, domSummarySide = null) {
       hp: initHp || c.maxHp || 0,
     },
     petHax: petHaxName ? { name: petHaxName, desc: petHaxDesc } : null,
+    ultimate: c.isEvolved && V17_PET_EVOLUTIONS[c.petType]?.ultimate
+      ? {
+          name: V17_PET_EVOLUTIONS[c.petType].ultimate.name,
+          desc: V17_PET_EVOLUTIONS[c.petType].ultimate.desc || '',
+          triggerCount: Number(c.ultCount || 0),
+        }
+      : null,
     domain: resolveCombatantDomainMeta(c, domSummarySide),
     equipment: [
       mapEquip(c.equipment?.weapon, 'Vũ Khí', em('su_crossed_swords')),
@@ -630,7 +641,13 @@ function buildFullBattleLog({
     const d = DOMAIN_BY_ID[dl.domain.domain_id] || dl.domain;
     const sense = dl.sense ? (DIVINE_SENSE_BY_ID[dl.sense.sense_id] || dl.sense) : null;
     const realm = dl.realm ? (DIVINE_REALM_BY_ID[dl.realm.realm_id] || dl.realm) : null;
-    const lm = d.base_energy >= 999 ? '∞' : (d.base_energy + (sense?.bonus_energy || 0));
+    const energyInfo = computeEffectiveDomainEnergy({
+      domain: d,
+      sense,
+      equipment: c.equipment,
+      setBonus: c.setBonus,
+    });
+    const lm = energyInfo.isInfinite ? '∞' : energyInfo.totalEnergy;
     const domElIcon = domainElementEmoji(d.element, em('su_realm_star'));
     if (compact) {
       const compactParts = [
@@ -688,6 +705,12 @@ function buildFullBattleLog({
   const buildTurnLines = (compactMode = false) => turns.map((t) => {
     const actorObj = t.actor === 'attacker' ? attacker : defender;
     const targetObj = t.actor === 'attacker' ? defender : attacker;
+    if (t.action === 'turn_start') {
+      return `• **H${t.turn}** ${em('su_sparkle')} **[Đầu lượt ${actorObj.petName}]** ${t.haxTriggered} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+    }
+    if (t.action === 'ultimate') {
+      return `• **H${t.turn}** ${tierEmoji('evolved_supreme')} **${actorObj.petName}** ${t.haxTriggered} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+    }
     if (t.action === 'skip') {
       const sIcon = compactMode ? `${em('su_shield_def')}` : em('su_shield_def');
       return `• **H${t.turn}** [${actorObj.petName}]: ${sIcon} ${t.haxTriggered || 'Mất lượt'}`;
@@ -701,6 +724,9 @@ function buildFullBattleLog({
     const critTag = t.isCrit ? ` ${cIcon} **CRIT**` : '';
     const shieldTag = t.absorbedByShield > 0 ? ` *(khiên chặn ${t.absorbedByShield.toLocaleString('vi-VN')})*` : '';
     const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
+    if (t.selfHit) {
+      return `• **H${t.turn}** **${actorObj.petName}** *(Tự đánh bản thân)*: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+    }
     if (compactMode) {
       return `• **H${t.turn}** **${actorObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')}/${t.defenderHp.toLocaleString('vi-VN')})*`;
     }
@@ -1061,6 +1087,8 @@ function executeHit({
   forcedDefPiercePct = 0,
   forcedShieldPiercePct = 0,
   extraEvents = [],
+  selfHit = false,
+  fastMode = false,
 }) {
   let attackPhase;
   if (forcedDamage !== null) {
@@ -1083,28 +1111,36 @@ function executeHit({
       onHitMaxHpHealPct: 0,
       applyOnHitEffects: null,
       instantExecute: false,
-      haxTriggered: label,
+      haxTriggered: fastMode ? null : label,
     };
   } else {
-    attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, elemData, { deferOnHitEffects: true });
+    attackPhase = triggerAttackPhase(actor, target, rawBaseDamage, rng, elemData, { deferOnHitEffects: true, fastMode });
   }
 
-  const notes = [...extraEvents];
-  if (attackPhase.haxTriggered) notes.push(attackPhase.haxTriggered);
+  const notes = fastMode ? null : [...extraEvents];
+  const pushNote = (s) => { if (notes && s) notes.push(s); };
+  if (attackPhase.haxTriggered) pushNote(attackPhase.haxTriggered);
   let actualDamageDealt = 0;
   let absorbedByShield = 0;
 
-  if (!attackPhase.isMiss) {
+  if (attackPhase.isMiss) {
+    if (attackPhase.isDodged) {
+      recordUltimateCombatMetrics(actor, target, { dodgedByTarget: true });
+    }
+  } else {
     const damageRecv = triggerDamageReceived(target, attackPhase.damage, actor, rng, {
       ignoreEnemyDmgRedPct: attackPhase.ignoreEnemyDmgRedPct || 0,
       isTrueDamage: Boolean(attackPhase.isTrueDamage),
+      fastMode,
     });
     if (!damageRecv.nullified && typeof attackPhase.applyOnHitEffects === 'function') {
       const onHitNotes = attackPhase.applyOnHitEffects();
-      if (onHitNotes.length > 0) notes.push(...onHitNotes);
+      if (notes && onHitNotes.length > 0) notes.push(...onHitNotes);
     }
-    for (const ev of damageRecv.events || []) {
-      if (ev?.skill) notes.push(ev.skill);
+    if (notes) {
+      for (const ev of damageRecv.events || []) {
+        if (ev?.skill) notes.push(ev.skill);
+      }
     }
 
     let dmgToApply = damageRecv.finalDamage;
@@ -1132,17 +1168,21 @@ function executeHit({
         if (attackPhase.bonusTrueOnShieldBreakPct > 0) {
           const breakBonus = Math.floor(target.maxHp * attackPhase.bonusTrueOnShieldBreakPct * (1 - getTrueDamageResistPct(target)));
           dmgToApply += breakBonus;
-          notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
+          if (notes) notes.push(`Vỡ Khiên +${breakBonus.toLocaleString('vi-VN')} ST Chuẩn`);
         }
         if (target.state.shieldExplodePct > 0) {
           const pct = target.state.shieldExplodePct;
           target.state.shieldExplodePct = 0;
-          const explodeDmg = Math.floor(target.maxHp * pct * (1 - getTrueDamageResistPct(actor)));
-          actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
-          notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
-          if (actor.currentHp <= 0) {
-            const li = triggerLethalInterception(actor, target, rng);
-            if (li.survived && li.skill) notes.push(li.skill);
+          if (!isCombatantImmortal(actor)) {
+            const explodeDmg = Math.floor(target.maxHp * pct * (1 - getTrueDamageResistPct(actor)));
+            actor.currentHp = Math.max(0, actor.currentHp - explodeDmg);
+            if (notes) notes.push(`Nổ Hộ Thuẫn (-${explodeDmg.toLocaleString('vi-VN')} ST chuẩn, bỏ qua khiên)`);
+            if (actor.currentHp <= 0) {
+              const li = triggerLethalInterception(actor, target, rng, turnNumber);
+              if (li.survived && li.skill) pushNote(li.skill);
+            }
+          } else {
+            pushNote('Kim Thân Miễn Nhiễm Nổ Hộ Thuẫn');
           }
         }
       }
@@ -1151,57 +1191,65 @@ function executeHit({
     target.currentHp = Math.max(0, target.currentHp - dmgToApply);
     actualDamageDealt = dmgToApply;
     recordUltimateCombatMetrics(actor, target, {
-      damageDealt: actualDamageDealt,
+      damageDealt: actualDamageDealt + absorbedByShield,
       isCrit: attackPhase.isCrit,
-      dodgedByTarget: attackPhase.isMiss,
-      burnApplied: Boolean(target.state?.burnTurns > 0),
-      stunApplied: Boolean(target.state?.isStunned),
     });
 
-    if (attackPhase.lifestealPct > 0 && actualDamageDealt > 0 && actor.currentHp > 0) {
+    if (attackPhase.lifestealPct > 0 && actualDamageDealt > 0 && actor.currentHp > 0 && !selfHit) {
       const healed = applyHeal(actor, actualDamageDealt * attackPhase.lifestealPct);
-      if (healed > 0) notes.push(`Hút Máu +${healed.toLocaleString('vi-VN')}`);
+      if (healed > 0 && notes) notes.push(`Hút Máu +${healed.toLocaleString('vi-VN')}`);
     }
 
-    if (!damageRecv.nullified && attackPhase.onHitMaxHpHealPct > 0 && actor.currentHp > 0) {
+    if (!damageRecv.nullified && attackPhase.onHitMaxHpHealPct > 0 && actor.currentHp > 0 && !selfHit) {
       const healed = applyHeal(actor, actor.maxHp * attackPhase.onHitMaxHpHealPct);
-      if (healed > 0) notes.push(`Ngọc Tiêu Hồi +${healed.toLocaleString('vi-VN')} HP`);
+      if (healed > 0 && notes) notes.push(`Hồi Đòn Đánh +${healed.toLocaleString('vi-VN')} HP`);
     }
 
-    if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0) {
-      actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
-      notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST (thẳng máu, bỏ qua khiên)`);
-      if (actor.currentHp <= 0) {
-        const li = triggerLethalInterception(actor, target, rng);
-        if (li.survived && li.skill) notes.push(li.skill);
+    if (damageRecv.reflectedDamage > 0 && actor.currentHp > 0 && !selfHit) {
+      if (isCombatantImmortal(actor)) {
+        pushNote('Kim Thân Miễn Nhiễm Phản Đòn');
+      } else {
+        actor.currentHp = Math.max(0, actor.currentHp - damageRecv.reflectedDamage);
+        if (actor.state?.ultimate?.active) actor.state.ultimate.dmgTaken += damageRecv.reflectedDamage;
+        if (target.state?.ultimate?.active) target.state.ultimate.dmgDealt += damageRecv.reflectedDamage;
+        if (notes) notes.push(`Phản Đòn -${damageRecv.reflectedDamage.toLocaleString('vi-VN')} ST (thẳng máu, bỏ qua khiên)`);
+        if (actor.currentHp <= 0) {
+          const li = triggerLethalInterception(actor, target, rng, turnNumber);
+          if (li.survived && li.skill) pushNote(li.skill);
+        }
       }
     }
 
     if (target.currentHp > 0) {
-      const postEvents = triggerPostDamage(target, actor);
-      for (const pev of postEvents) {
-        if (pev?.skill) notes.push(pev.skill);
+      const postEvents = triggerPostDamage(target, actor, { fastMode });
+      if (notes) {
+        for (const pev of postEvents) {
+          if (pev?.skill) notes.push(pev.skill);
+        }
       }
     } else {
-      const lethalInterception = triggerLethalInterception(target, actor, rng);
+      const lethalInterception = triggerLethalInterception(target, actor, rng, turnNumber);
       if (lethalInterception.survived && lethalInterception.skill) {
-        notes.push(lethalInterception.skill);
+        pushNote(lethalInterception.skill);
       }
     }
   }
 
-  turns.push({
-    turn: turnNumber,
-    actor: role,
-    action: attackPhase.isMiss ? 'miss' : 'attack',
-    damage: actualDamageDealt,
-    absorbedByShield,
-    isCrit: attackPhase.isCrit,
-    elementAdvantage: elemData.elementAdvantage,
-    haxTriggered: notes.length > 0 ? notes.join(' • ') : null,
-    attackerHp: attacker.currentHp,
-    defenderHp: defender.currentHp,
-  });
+  if (!fastMode && turns) {
+    turns.push({
+      turn: turnNumber,
+      actor: role,
+      action: attackPhase.isMiss ? 'miss' : 'attack',
+      selfHit: Boolean(selfHit),
+      damage: actualDamageDealt,
+      absorbedByShield,
+      isCrit: attackPhase.isCrit,
+      elementAdvantage: elemData.elementAdvantage,
+      haxTriggered: notes && notes.length > 0 ? notes.join(' • ') : null,
+      attackerHp: attacker.currentHp,
+      defenderHp: defender.currentHp,
+    });
+  }
 
   return { attackPhase, actualDamageDealt };
 }
@@ -1348,12 +1396,16 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       ? [{ actor: attacker, target: defender, role: 'attacker' }, { actor: defender, target: attacker, role: 'defender' }]
       : [{ actor: defender, target: attacker, role: 'defender' }, { actor: attacker, target: defender, role: 'attacker' }];
 
-    for (const step of order) {
+    for (let stepIdx = 0; stepIdx < order.length; stepIdx += 1) {
+      const step = order[stepIdx];
       if (attacker.currentHp <= 0 || defender.currentHp <= 0) break;
 
       const { actor, target, role } = step;
       const oppRole = role === 'attacker' ? 'defender' : 'attacker';
       tickUltimateTurn(actor, turnNumber);
+      if (stepIdx === 0) {
+        recordUltimateCombatMetrics(actor, target, { firstStrike: true });
+      }
       const turnStartResult = triggerTurnStart(actor, target, rng, turnNumber);
       const startTags = (turnStartResult.events || []).map((e) => (typeof e === 'object' ? e.skill : e)).filter(Boolean);
 
@@ -1372,9 +1424,26 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         continue;
       }
 
-      if (actor.currentHp <= 0 || defender.currentHp <= 0) break;
+      // Tách riêng dòng Đầu Lượt (Độc/Thiêu Đốt/Hồi HP/Hóa Giải trên chủ lượt) để log minh bạch 100%!
+      if (startTags.length > 0) {
+        turns.push({
+          turn: turnNumber,
+          actor: role,
+          action: 'turn_start',
+          damage: 0,
+          absorbedByShield: 0,
+          isCrit: false,
+          elementAdvantage: null,
+          haxTriggered: startTags.join(' • '),
+          attackerHp: attacker.currentHp,
+          defenderHp: defender.currentHp,
+        });
+      }
 
-      const actualTarget = turnStartResult.attackSelf ? actor : target;
+      if (actor.currentHp <= 0 || target.currentHp <= 0) break;
+
+      const isSelfHit = Boolean(turnStartResult.attackSelf);
+      const actualTarget = isSelfHit ? actor : target;
       const elemData = getElementalAdvantage(actor.element, actualTarget.element);
       const rawBaseDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (actualTarget.def * 0.5)) * elemData.multiplier));
 
@@ -1389,11 +1458,11 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         turnNumber,
         role,
         turns,
-        extraEvents: startTags,
+        selfHit: isSelfHit,
       });
 
       // Phản công tức thì nếu Thái Âm Ngọc Thỏ hoặc Thiên Cơ Ngọc Hồ / Chiến Hồn né đòn thành công
-      if (mainRes.attackPhase.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0) {
+      if (!isSelfHit && mainRes.attackPhase.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0) {
         const counterElem = getElementalAdvantage(actualTarget.element, actor.element);
         const ratio = mainRes.attackPhase.counterAtkRatio || 0.80;
         const pierce = mainRes.attackPhase.counterDefPierce || 0;
@@ -1415,52 +1484,70 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
         });
       }
 
-      // Cửu Thiên Lôi Phượng: 30% đánh thêm đòn sét 60% ATK xuyên 30% DEF
-      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && hasPet(actor, 'cuu_thien_loi_phuong') && rng() < 0.30) {
-        executeHit({
-          actor,
-          target: actualTarget,
-          rawBaseDamage: 0,
-          elemData,
-          rng,
-          attacker,
-          defender,
-          turnNumber,
-          role,
-          turns,
-          label: 'Lôi Kiếp Liên Hoàn (60% ATK • Xuyên 30% Giáp)',
-          forcedDamage: Math.floor(actor.atk * 0.60),
-          forcedDefPiercePct: 0.30,
-        });
-      }
+      // Liên kích phụ & Tuyệt kỹ chu kỳ 2 hiệp (chỉ chạy khi không bị Mị Hoặc tự đánh mình)
+      if (!isSelfHit && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        if (hasPet(actor, 'cuu_thien_loi_phuong') && rng() < Math.min(0.55, 0.30 * getHaxProcMultiplier(actor))) {
+          executeHit({
+            actor,
+            target: actualTarget,
+            rawBaseDamage: 0,
+            elemData,
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns,
+            label: 'Lôi Kiếp Liên Hoàn (60% ATK • Xuyên 30% Giáp)',
+            forcedDamage: Math.floor(actor.atk * 0.60),
+            forcedDefPiercePct: 0.30,
+          });
+        }
 
-      // « Thái Bạch Kiếm Tiên Hồn » (soul_mythic_4): Mỗi 2 hiệp tung kiếm khí 70% ATK xuyên 50% DEF
-      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && turnNumber % 2 === 0 && hasItem(actor, 'soul_mythic_4')) {
-        executeHit({
-          actor,
-          target: actualTarget,
-          rawBaseDamage: 0,
-          elemData,
-          rng,
-          attacker,
-          defender,
-          turnNumber,
-          role,
-          turns,
-          label: 'Vạn Kiếm Quy Tông (70% ATK • Xuyên 50% Giáp)',
-          forcedDamage: Math.floor(actor.atk * 0.70),
-          forcedDefPiercePct: 0.50,
-        });
-      }
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && turnNumber % 2 === 0 && hasItem(actor, 'soul_mythic_4')) {
+          executeHit({
+            actor,
+            target: actualTarget,
+            rawBaseDamage: 0,
+            elemData,
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns,
+            label: 'Vạn Kiếm Quy Tông (70% ATK • Xuyên 50% Giáp)',
+            forcedDamage: Math.floor(actor.atk * 0.70),
+            forcedDefPiercePct: 0.50,
+          });
+        }
 
-      // Liên kích phụ & Tuyệt kỹ chu kỳ 2 hiệp v1.3 (Thanh Lam Tiểu Diều, Thiên Khung Kim Điêu, Lôi Tiễn, Thời Không Trảm, Đế Kiếm...)
-      if (actor.currentHp > 0 && actualTarget.currentHp > 0 && (actor.state?.haxLockedTurns || 0) === 0) {
-        const actorV13 = getCombatantV13HaxList(actor);
-        const haxBoost = 1 + Number(actor.domainRuntime?.own?.buffs?.haxProcBonusPct || 0);
-        for (const h of actorV13) {
-          if (h.extraStrike && actor.currentHp > 0 && actualTarget.currentHp > 0) {
-            const p = Math.min(0.60, h.extraStrike.chance * haxBoost);
-            if (rng() < p) {
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && (actor.state?.haxLockedTurns || 0) === 0) {
+          const actorV13 = getCombatantV13HaxList(actor);
+          const haxMult = getHaxProcMultiplier(actor);
+          for (const h of actorV13) {
+            if (h.extraStrike && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+              const p = Math.min(0.60, h.extraStrike.chance * haxMult);
+              if (rng() < p) {
+                executeHit({
+                  actor,
+                  target: actualTarget,
+                  rawBaseDamage: 0,
+                  elemData,
+                  rng,
+                  attacker,
+                  defender,
+                  turnNumber,
+                  role,
+                  turns,
+                  label: h.extraStrike.label,
+                  forcedDamage: Math.floor(actor.atk * h.extraStrike.atkRatio),
+                  forcedDefPiercePct: h.extraStrike.defPierce || 0,
+                  forcedShieldPiercePct: h.extraStrike.shieldPierce || 0,
+                });
+              }
+            }
+            if (h.every2TurnStrike && turnNumber % 2 === 0 && actor.currentHp > 0 && actualTarget.currentHp > 0) {
               executeHit({
                 actor,
                 target: actualTarget,
@@ -1472,36 +1559,18 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
                 turnNumber,
                 role,
                 turns,
-                label: h.extraStrike.label,
-                forcedDamage: Math.floor(actor.atk * h.extraStrike.atkRatio),
-                forcedDefPiercePct: h.extraStrike.defPierce || 0,
-                forcedShieldPiercePct: h.extraStrike.shieldPierce || 0,
+                label: h.every2TurnStrike.label,
+                forcedDamage: Math.floor(actor.atk * h.every2TurnStrike.atkRatio),
+                forcedDefPiercePct: h.every2TurnStrike.defPierce || 0,
+                forcedShieldPiercePct: h.every2TurnStrike.shieldPierce || 0,
               });
             }
-          }
-          if (h.every2TurnStrike && turnNumber % 2 === 0 && actor.currentHp > 0 && actualTarget.currentHp > 0) {
-            executeHit({
-              actor,
-              target: actualTarget,
-              rawBaseDamage: 0,
-              elemData,
-              rng,
-              attacker,
-              defender,
-              turnNumber,
-              role,
-              turns,
-              label: h.every2TurnStrike.label,
-              forcedDamage: Math.floor(actor.atk * h.every2TurnStrike.atkRatio),
-              forcedDefPiercePct: h.every2TurnStrike.defPierce || 0,
-              forcedShieldPiercePct: h.every2TurnStrike.shieldPierce || 0,
-            });
           }
         }
       }
 
       // Skill Ultimate Tái Kích Hoạt (40 Pet Tối Thượng Chân Thần)
-      if (!turnStartResult.attackSelf && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+      if (!isSelfHit && actor.currentHp > 0 && actualTarget.currentHp > 0) {
         const ultRes = tryTriggerUltimate(actor, actualTarget, { rng, turnNumber });
         if (ultRes.triggered) {
           turns.push({
@@ -1540,9 +1609,19 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       }
     }
 
+    // Cuối hiệp: giảm thời hạn Bất Tử theo hiệp (đảm bảo Bất Tử 1 hiệp bảo vệ TRỌN vẹn 1 hiệp trước DoT, Vực, Phản Đòn!)
+    tickEndOfTurnImmortality(attacker, turnNumber);
+    tickEndOfTurnImmortality(defender, turnNumber);
+
     const thisTurnActions = turns.slice(startTurnIdx).map((t) => {
       const actorObj = t.actor === 'attacker' ? attacker : defender;
       const targetObj = t.actor === 'attacker' ? defender : attacker;
+      if (t.action === 'turn_start') {
+        return `• ${em('su_sparkle')} **[Đầu lượt ${actorObj.petName}]** ${t.haxTriggered} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+      }
+      if (t.action === 'ultimate') {
+        return `• ${tierEmoji('evolved_supreme')} **${actorObj.petName}** ${t.haxTriggered} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+      }
       if (t.action === 'skip') {
         return `• ${em('su_shield_def')} **${actorObj.petName}**: ${t.haxTriggered || 'Mất lượt'}`;
       }
@@ -1552,6 +1631,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       const critTag = t.isCrit ? ` ${em('su_crit_boom')} **CRIT**` : '';
       const shieldTag = t.absorbedByShield > 0 ? ` *(khiên chặn ${t.absorbedByShield.toLocaleString('vi-VN')})*` : '';
       const haxTag = t.haxTriggered ? ` *(${t.haxTriggered})*` : '';
+      if (t.selfHit) {
+        return `• **${actorObj.petName}** *(Tự đánh bản thân)*: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
+      }
       return `• **${actorObj.petName}** → **${targetObj.petName}**: **-${t.damage.toLocaleString('vi-VN')} HP**${critTag}${shieldTag}${haxTag} *(HP: ${t.attackerHp.toLocaleString('vi-VN')} / ${t.defenderHp.toLocaleString('vi-VN')})*`;
     });
 
@@ -1858,4 +1940,214 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
   }
 
   return finalResult;
+}
+
+/**
+ * Phiên bản mô phỏng 1v1 siêu tốc (zero-allocation log/canvas/DB) chạy CÙNG 100% engine toán học,
+ * HAX, Domain, Ultimate & RNG như `simulateBattle` — dùng cho kiểm định & benchmark 30M–100M ván.
+ */
+export function simulateBattleFast(attacker, defender, options = {}) {
+  const maxTurns = options.maxTurns || 30;
+  const rng = typeof options.rng === 'function' ? options.rng : Math.random;
+
+  triggerBattleStart(attacker, defender, rng, { fastMode: true });
+  const domainState = initDomainBattleState(attacker, defender);
+
+  const atkHasSpeedPriority = hasPet(attacker, 'loi_dinh_kim_ho') || Boolean(V13_PET_HAX[attacker.petType]?.firstStrike);
+  const defHasSpeedPriority = hasPet(defender, 'loi_dinh_kim_ho') || Boolean(V13_PET_HAX[defender.petType]?.firstStrike);
+
+  const elemAtoD = getElementalAdvantage(attacker.element, defender.element);
+  const elemDtoA = getElementalAdvantage(defender.element, attacker.element);
+  const elemSelfA = getElementalAdvantage(attacker.element, attacker.element);
+  const elemSelfD = getElementalAdvantage(defender.element, defender.element);
+
+  let turnNumber = 0;
+  while (attacker.currentHp > 0 && defender.currentHp > 0 && turnNumber < maxTurns) {
+    turnNumber += 1;
+
+    if (turnNumber >= 2) {
+      processTurnDomainPhase(turnNumber, attacker, defender, domainState, rng, { fastMode: true });
+    }
+
+    const attackerFirst = (atkHasSpeedPriority && !defHasSpeedPriority)
+      ? true
+      : (!atkHasSpeedPriority && defHasSpeedPriority)
+        ? false
+        : getEffectiveCombatSpd(attacker) >= getEffectiveCombatSpd(defender);
+
+    for (let stepIdx = 0; stepIdx < 2; stepIdx += 1) {
+      if (attacker.currentHp <= 0 || defender.currentHp <= 0) break;
+      const isAtkStep = (stepIdx === 0) ? attackerFirst : !attackerFirst;
+      const actor = isAtkStep ? attacker : defender;
+      const target = isAtkStep ? defender : attacker;
+      const role = isAtkStep ? 'attacker' : 'defender';
+      const oppRole = isAtkStep ? 'defender' : 'attacker';
+
+      tickUltimateTurn(actor, turnNumber);
+      if (stepIdx === 0) {
+        recordUltimateCombatMetrics(actor, target, { firstStrike: true });
+      }
+      const turnStartResult = triggerTurnStart(actor, target, rng, turnNumber, { fastMode: true });
+      if (turnStartResult.skipTurn) continue;
+      if (actor.currentHp <= 0 || target.currentHp <= 0) break;
+
+      const isSelfHit = Boolean(turnStartResult.attackSelf);
+      const actualTarget = isSelfHit ? actor : target;
+      const elemData = isSelfHit
+        ? (isAtkStep ? elemSelfA : elemSelfD)
+        : (isAtkStep ? elemAtoD : elemDtoA);
+      const rawBaseDmg = Math.max(50, Math.floor(((actor.atk * 1.5) - (actualTarget.def * 0.5)) * elemData.multiplier));
+
+      const mainRes = executeHit({
+        actor,
+        target: actualTarget,
+        rawBaseDamage: rawBaseDmg,
+        elemData,
+        rng,
+        attacker,
+        defender,
+        turnNumber,
+        role,
+        turns: null,
+        selfHit: isSelfHit,
+        fastMode: true,
+      });
+
+      if (!isSelfHit && mainRes.attackPhase.triggerCounter && actualTarget.currentHp > 0 && actor.currentHp > 0) {
+        const counterElem = isAtkStep ? elemDtoA : elemAtoD;
+        executeHit({
+          actor: actualTarget,
+          target: actor,
+          rawBaseDamage: 0,
+          elemData: counterElem,
+          rng,
+          attacker,
+          defender,
+          turnNumber,
+          role: oppRole,
+          turns: null,
+          forcedDamage: Math.floor(actualTarget.atk * (mainRes.attackPhase.counterAtkRatio || 0.80)),
+          forcedDefPiercePct: mainRes.attackPhase.counterDefPierce || 0,
+          fastMode: true,
+        });
+      }
+
+      if (!isSelfHit && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        if (hasPet(actor, 'cuu_thien_loi_phuong') && rng() < Math.min(0.55, 0.30 * getHaxProcMultiplier(actor))) {
+          executeHit({
+            actor,
+            target: actualTarget,
+            rawBaseDamage: 0,
+            elemData,
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns: null,
+            forcedDamage: Math.floor(actor.atk * 0.60),
+            forcedDefPiercePct: 0.30,
+            fastMode: true,
+          });
+        }
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && turnNumber % 2 === 0 && hasItem(actor, 'soul_mythic_4')) {
+          executeHit({
+            actor,
+            target: actualTarget,
+            rawBaseDamage: 0,
+            elemData,
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns: null,
+            forcedDamage: Math.floor(actor.atk * 0.70),
+            forcedDefPiercePct: 0.50,
+            fastMode: true,
+          });
+        }
+        if (actor.currentHp > 0 && actualTarget.currentHp > 0 && (actor.state?.haxLockedTurns || 0) === 0) {
+          const actorV13 = getCombatantV13HaxList(actor);
+          const haxMult = getHaxProcMultiplier(actor);
+          for (let i = 0; i < actorV13.length; i += 1) {
+            const h = actorV13[i];
+            if (h.extraStrike && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+              if (rng() < Math.min(0.60, h.extraStrike.chance * haxMult)) {
+                executeHit({
+                  actor,
+                  target: actualTarget,
+                  rawBaseDamage: 0,
+                  elemData,
+                  rng,
+                  attacker,
+                  defender,
+                  turnNumber,
+                  role,
+                  turns: null,
+                  forcedDamage: Math.floor(actor.atk * h.extraStrike.atkRatio),
+                  forcedDefPiercePct: h.extraStrike.defPierce || 0,
+                  forcedShieldPiercePct: h.extraStrike.shieldPierce || 0,
+                  fastMode: true,
+                });
+              }
+            }
+            if (h.every2TurnStrike && turnNumber % 2 === 0 && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+              executeHit({
+                actor,
+                target: actualTarget,
+                rawBaseDamage: 0,
+                elemData,
+                rng,
+                attacker,
+                defender,
+                turnNumber,
+                role,
+                turns: null,
+                forcedDamage: Math.floor(actor.atk * h.every2TurnStrike.atkRatio),
+                forcedDefPiercePct: h.every2TurnStrike.defPierce || 0,
+                forcedShieldPiercePct: h.every2TurnStrike.shieldPierce || 0,
+                fastMode: true,
+              });
+            }
+          }
+        }
+      }
+
+      if (!isSelfHit && actor.currentHp > 0 && actualTarget.currentHp > 0) {
+        tryTriggerUltimate(actor, actualTarget, { rng, turnNumber, fastMode: true });
+      }
+
+      if (actor.state.isDoubleTurn) {
+        actor.state.isDoubleTurn = false;
+        if (actor.currentHp > 0 && target.currentHp > 0) {
+          executeHit({
+            actor,
+            target,
+            rawBaseDamage: rawBaseDmg,
+            elemData: isAtkStep ? elemAtoD : elemDtoA,
+            rng,
+            attacker,
+            defender,
+            turnNumber,
+            role,
+            turns: null,
+            fastMode: true,
+          });
+        }
+      }
+    }
+
+    tickEndOfTurnImmortality(attacker, turnNumber);
+    tickEndOfTurnImmortality(defender, turnNumber);
+  }
+
+  return {
+    attackerWon: attacker.currentHp > defender.currentHp,
+    turnCount: turnNumber,
+    attackerHp: attacker.currentHp,
+    defenderHp: defender.currentHp,
+    attackerUltCount: attacker.state?.ultimate?.triggerCount || 0,
+    defenderUltCount: defender.state?.ultimate?.triggerCount || 0,
+  };
 }

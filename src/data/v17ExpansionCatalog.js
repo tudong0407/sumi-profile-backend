@@ -218,6 +218,8 @@ export const V17_NEW_PETS = [
     "hax_config": {
       "label": "Hải Triều Tịnh Hóa",
       "startShieldPct": 0.55,
+      "turnShieldInterval": 2,
+      "turnShieldPct": 0.16,
       "turnCleanseInterval": 2,
       "dmgRedPct": 0.2
     }
@@ -681,6 +683,8 @@ export const V17_NEW_PETS = [
     "hax_config": {
       "label": "Thương Hải Băng Tâm",
       "startShieldPct": 0.58,
+      "turnShieldInterval": 2,
+      "turnShieldPct": 0.18,
       "turnCleanseInterval": 2,
       "startSpdDebuffPct": 0.16
     }
@@ -2075,8 +2079,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "burnStacksOrRevive",
-        "stacks": 4
+        "kind": "dmgDealtAndTaken",
+        "pctMaxHp": 1.9
       },
       "effect": {
         "atkDmgPct": 2.3,
@@ -2106,9 +2110,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "dmgTaken",
+        "pctMaxHp": 1.6
       },
       "effect": {
         "freezeTurns": 1,
@@ -2137,8 +2140,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "firstStrikesOrStuns",
-        "count": 4
+        "kind": "shieldTurnsOrHeal",
+        "turns": 4,
+        "healPctMaxHp": 0.75
       },
       "effect": {
         "freezeTurns": 1,
@@ -2198,9 +2202,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "turnsOrDodges",
+        "turns": 5,
+        "dodges": 3
       },
       "effect": {
         "restoreMissingHpPct": 0.24,
@@ -2229,8 +2233,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "firstStrikesOrStuns",
-        "count": 4
+        "kind": "shieldTurnsOrHeal",
+        "turns": 4,
+        "healPctMaxHp": 0.6
       },
       "effect": {
         "cleanseAll": true,
@@ -2261,8 +2266,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "burnStacksOrRevive",
-        "stacks": 4
+        "kind": "firstStrikesOrStuns",
+        "count": 4
       },
       "effect": {
         "cleanseAll": true,
@@ -2293,9 +2298,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "healsOrCleanses",
+        "count": 4,
+        "pctMaxHp": 0.6
       },
       "effect": {
         "drainEnemyCurrHpPct": 0.22,
@@ -2325,9 +2330,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "extreme",
       "cooldownTurns": 6,
       "trigger": {
-        "kind": "critsOrDmgDealt",
-        "crits": 4,
-        "pctMaxHp": 2.35
+        "kind": "dmgOrLowEnemyHp",
+        "pctMaxHp": 1.8,
+        "enemyHpLt": 0.5
       },
       "effect": {
         "drainEnemyCurrHpPct": 0.22,
@@ -2357,9 +2362,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "shieldTurnsOrHeal",
-        "turns": 4,
-        "healPctMaxHp": 0.75
+        "kind": "healsOrCleanses",
+        "count": 4,
+        "pctMaxHp": 0.75
       },
       "effect": {
         "cleanseAll": true,
@@ -2390,9 +2395,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "shieldTurnsOrHeal",
+        "turns": 4,
+        "healPctMaxHp": 0.75
       },
       "effect": {
         "cleanseAll": true,
@@ -2423,8 +2428,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgTaken",
-        "pctMaxHp": 1.7
+        "kind": "dmgOrLowEnemyHp",
+        "pctMaxHp": 1.9,
+        "enemyHpLt": 0.45
       },
       "effect": {
         "atkDmgPct": 2,
@@ -2455,9 +2461,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "shieldTurnsOrHeal",
-        "turns": 4,
-        "healPctMaxHp": 0.75
+        "kind": "firstStrikesOrStuns",
+        "count": 4
       },
       "effect": {
         "atkDmgPct": 2,
@@ -2488,9 +2493,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "dmgTaken",
+        "pctMaxHp": 1.7
       },
       "effect": {
         "trueMaxHpDmgPct": 0.26,
@@ -2520,8 +2524,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "firstStrikesOrStuns",
-        "count": 4
+        "kind": "shieldTurnsOrHeal",
+        "turns": 4,
+        "healPctMaxHp": 0.75
       },
       "effect": {
         "trueMaxHpDmgPct": 0.26,
@@ -2551,9 +2556,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "extreme",
       "cooldownTurns": 6,
       "trigger": {
-        "kind": "turnsOrDodges",
-        "turns": 5,
-        "dodges": 3
+        "kind": "dmgDealtAndTaken",
+        "pctMaxHp": 2.5
       },
       "effect": {
         "trueMaxHpDmgPct": 0.34,
@@ -2615,8 +2619,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgTaken",
-        "pctMaxHp": 1.7
+        "kind": "burnStacksOrRevive",
+        "stacks": 5
       },
       "effect": {
         "atkDmgPct": 2.15,
@@ -2646,9 +2650,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "extreme",
       "cooldownTurns": 6,
       "trigger": {
-        "kind": "turnsOrDodges",
-        "turns": 5,
-        "dodges": 3
+        "kind": "critsOrDmgDealt",
+        "crits": 4,
+        "pctMaxHp": 2.3
       },
       "effect": {
         "atkDmgPct": 2.3,
@@ -2678,9 +2682,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "dmgOrLowEnemyHp",
-        "pctMaxHp": 1.95,
-        "enemyHpLt": 0.45
+        "kind": "shieldTurnsOrHeal",
+        "turns": 4,
+        "healPctMaxHp": 0.75
       },
       "effect": {
         "freezeTurns": 1,
@@ -2741,9 +2745,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "easy",
       "cooldownTurns": 4,
       "trigger": {
-        "kind": "shieldTurnsOrHeal",
-        "turns": 4,
-        "healPctMaxHp": 0.75
+        "kind": "healsOrCleanses",
+        "count": 4,
+        "pctMaxHp": 0.75
       },
       "effect": {
         "cleanseAll": true,
@@ -2806,9 +2810,9 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "extreme",
       "cooldownTurns": 6,
       "trigger": {
-        "kind": "critsOrDmgDealt",
-        "crits": 4,
-        "pctMaxHp": 2.35
+        "kind": "turnsOrDodges",
+        "turns": 5,
+        "dodges": 3
       },
       "effect": {
         "restoreMissingHpPct": 0.24,
@@ -2837,8 +2841,8 @@ export const V17_PET_EVOLUTIONS = {
       "difficulty": "hard",
       "cooldownTurns": 5,
       "trigger": {
-        "kind": "burnStacksOrRevive",
-        "stacks": 4
+        "kind": "dmgTaken",
+        "pctMaxHp": 1.6
       },
       "effect": {
         "trueMaxHpDmgPct": 0.26,

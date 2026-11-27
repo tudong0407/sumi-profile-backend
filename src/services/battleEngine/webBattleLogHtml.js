@@ -101,6 +101,9 @@ function renderUnitCardHtml(u, sideCls) {
   const petHaxHtml = u.petHax?.name
     ? `<div class="section-card hax-card"><div class="section-label">⚡ HAX Linh Thú</div><div class="hax-body"><strong>${escapeHtml(u.petHax.name)}</strong>${u.petHax.desc ? ` — <span class="sub-desc">${escapeHtml(u.petHax.desc)}</span>` : ''}</div></div>`
     : '';
+  const ultHtml = u.ultimate?.name
+    ? `<div class="section-card" style="border-color:rgba(244,63,94,.45)"><div class="section-label" style="color:#fda4af">🔥 Skill Ultimate Chân Thần${u.ultimate.triggerCount > 0 ? ` (Đã kích ${u.ultimate.triggerCount} lần)` : ''}</div><div class="hax-body"><strong>${escapeHtml(u.ultimate.name)}</strong>${u.ultimate.desc ? ` — <span class="sub-desc">${escapeHtml(u.ultimate.desc)}</span>` : ''}</div></div>`
+    : '';
   const domainHtml = u.showDomain !== false ? renderDomainCardHtml(u.domain) : '';
   return `<div class="unit-block ${sideCls}">
     <div class="unit-head">
@@ -115,6 +118,7 @@ function renderUnitCardHtml(u, sideCls) {
       <div class="stat-pill"><span>HP</span><strong>${fmt(u.stats?.hp)}</strong></div>
     </div>
     ${petHaxHtml}
+    ${ultHtml}
     ${u.setBonus?.active ? `<div class="section-card" style="border-color:rgba(250,204,21,.45);color:#fde68a">✨ <strong>Buff SET:</strong> ${escapeHtml(u.setBonus.badgeText)}</div>` : ''}
     ${domainHtml}
     ${renderEquipmentRowsHtml(u.equipment)}
