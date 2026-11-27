@@ -686,7 +686,7 @@ app.get('/api/wiki/pet/:petType', async (req, res) => {
     const wantWebp = rawParam.toLowerCase().endsWith('.webp') || req.query.format === 'webp';
     const wantPng = rawParam.toLowerCase().endsWith('.png') || req.query.format === 'png';
     const wantImg = wantWebp || wantPng;
-    const detail = await getWikiPetDetail(rawParam);
+    const detail = await getWikiPetDetail(rawParam, { form: req.query.form });
 
     if (!detail.success) {
       return res.status(404).json(detail);

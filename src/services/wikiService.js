@@ -1073,7 +1073,7 @@ async function resolveMythicPetOwner(petType) {
 /**
  * Tra cứu chi tiết 1 Linh Thú theo mã pet_type (ẩn pet độc quyền Fuyumi khỏi /wiki)
  */
-export async function getWikiPetDetail(petType) {
+export async function getWikiPetDetail(petType, options = {}) {
   if (!petType || typeof petType !== 'string') {
     return { success: false, error: 'Pet not found', message: 'Thiếu mã Linh Thú.' };
   }
@@ -1088,10 +1088,22 @@ export async function getWikiPetDetail(petType) {
   }
 
   const pet = PET_BY_TYPE[cleanType];
-  const dispKey = resolveEntityDisplayRarityKey(pet, false);
-  const tier = RARITY_TIERS[dispKey] || RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
   const currentOwner = pet.is_unique ? await resolveMythicPetOwner(pet.pet_type) : null;
   const evoData = V17_PET_EVOLUTIONS[pet.pet_type] || null;
+  const canToggleForm = Boolean(evoData);
+  const isEvoForm = canToggleForm && String(options.form || '').toLowerCase() === 'evo';
+  const activeForm = isEvoForm ? 'evo' : 'base';
+  const nextForm = isEvoForm ? 'base' : 'evo';
+
+  const dispKey = isEvoForm ? 'evolved_supreme' : resolveEntityDisplayRarityKey(pet, false);
+  const tier = RARITY_TIERS[dispKey] || RARITY_TIERS[pet.rarity_key] || RARITY_TIERS.common;
+
+  const dispAtk = isEvoForm ? Math.round(Number(pet.base_atk || 0) * Number(evoData?.stat_mult?.atk || 1)) : pet.base_atk;
+  const dispDef = isEvoForm ? Math.round(Number(pet.base_def || 0) * Number(evoData?.stat_mult?.def || 1)) : pet.base_def;
+  const dispSpd = isEvoForm ? Math.round(Number(pet.base_spd || 0) * Number(evoData?.stat_mult?.spd || 1)) : pet.base_spd;
+  const dispHp = isEvoForm ? Math.round(Number(pet.base_hp || 0) * Number(evoData?.stat_mult?.hp || 1)) : pet.base_hp;
+  const dispName = isEvoForm && evoData ? `${evoData.evolved_name} (Chân Thần)` : pet.pet_name;
+  const dispRarity = isEvoForm ? 'Tối Thượng Chân Thần' : pet.rarity;
 
   const tagNotes = [];
   if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
@@ -1107,17 +1119,28 @@ export async function getWikiPetDetail(petType) {
     : null;
 
   const descriptionLines = [
-    `${tier.emoji} **${pet.rarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
-    `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${pet.base_atk.toLocaleString('vi-VN')} | DEF ${pet.base_def.toLocaleString('vi-VN')} | SPD ${pet.base_spd.toLocaleString('vi-VN')} | HP ${pet.base_hp.toLocaleString('vi-VN')}\``,
+    `${tier.emoji} **${dispRarity}** • ${elementEmoji(pet.element)} Hệ **${pet.element}** • Tỉ lệ rớt **${pet.drop_rate}%**${tagNotes.length ? ` • ${tagNotes.join(' • ')}` : ''}`,
+    `${em('su_stats_chart')} **Chỉ số gốc (Lv.1)**: \`ATK ${dispAtk.toLocaleString('vi-VN')} | DEF ${dispDef.toLocaleString('vi-VN')} | SPD ${dispSpd.toLocaleString('vi-VN')} | HP ${dispHp.toLocaleString('vi-VN')}\``,
     `${em('su_thunder_hax')} **Nội tại (${pet.hax_skill})**: ${pet.hax_description}`,
   ];
   if (evoLine) descriptionLines.push(evoLine);
   if (ownerLine) descriptionLines.push(ownerLine);
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7`;
+  const imageUrl = canToggleForm
+    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s5&form=${activeForm}`
+    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s5`;
+  const formFooter = canToggleForm
+    ? (isEvoForm
+      ? 'Đang xem: Tiến Hóa Chân Thần • Bấm nút bên dưới để chuyển Bản Thường'
+      : 'Đang xem: Bản Thường • Bấm nút bên dưới để xem Tiến Hóa Chân Thần')
+    : '';
 
   return {
     success: true,
+    can_toggle_form: String(canToggleForm),
+    current_form: activeForm,
+    toggle_target_form: nextForm,
+    entity_id: pet.pet_type,
     data: {
       ...pet,
       current_owner: currentOwner,
@@ -1126,12 +1149,12 @@ export async function getWikiPetDetail(petType) {
       image_url: imageUrl,
     },
     embed: {
-      title: `${petEmoji(pet.pet_type, pet.icon, Boolean(currentOwner?.is_evolved))} ${pet.pet_name}`.trim(),
+      title: `${petEmoji(pet.pet_type, pet.icon, isEvoForm || Boolean(currentOwner?.is_evolved))} ${dispName}`.trim(),
       description: descriptionLines.join('\n'),
       color: tier.color,
       color_dec: tier.colorDec,
       image_url: imageUrl,
-      footer: '',
+      footer: formFooter,
     },
   };
 }

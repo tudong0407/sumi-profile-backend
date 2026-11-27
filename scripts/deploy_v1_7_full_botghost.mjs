@@ -1218,16 +1218,57 @@ export function buildWikiV17Cmd() {
   }, { x: 1700, y: 2450 });
   apiAction(gb, 'pet_detail_api', 'pet_res', 'GET', `${BACKEND_BASE}/api/wiki/pet/{wiki_pet_id}`, '', { x: 1700, y: 2630 });
   gb.link('pet_detail_ack', 'pet_detail_api');
+
+  const petToggleGate = gb.cmp('pet_can_toggle', '{pet_res.response.can_toggle_form}', 'true', 'equal_to', { ignoreCase: true, option: '', not: false }, { x: 1700, y: 2770 });
+  gb.link('pet_detail_api', petToggleGate.condId);
+
   embedMsg(gb, 'pet_detail_edit', {
     title: '{pet_res.response.embed.title}',
     description: '{pet_res.response.embed.description}',
     color: '#ec4899',
-    imageUrl: `${BACKEND_BASE}/api/wiki/pet/{wiki_pet_id}.webp?v=1.7`,
-    footer: '',
+    imageUrl: '{pet_res.response.embed.image_url}',
+    footer: '{pet_res.response.embed.footer}',
     target: { editId: 'pet_detail_ack' },
     action_id: 'pet_detail_ack',
-  }, { x: 1700, y: 2810 });
-  gb.link('pet_detail_api', 'pet_detail_edit');
+  }, { x: 1500, y: 2940 });
+  gb.link(petToggleGate.no, 'pet_detail_edit');
+
+  embedMsg(gb, 'pet_detail_edit_evo', {
+    title: '{pet_res.response.embed.title}',
+    description: '{pet_res.response.embed.description}',
+    color: '#ec4899',
+    imageUrl: '{pet_res.response.embed.image_url}',
+    footer: '{pet_res.response.embed.footer}',
+    target: { editId: 'pet_detail_ack' },
+    action_id: 'pet_detail_ack',
+  }, { x: 1920, y: 2940 });
+  gb.link(petToggleGate.yes, 'pet_detail_edit_evo');
+
+  // 6-hop Base <-> Chân Thần Splash Art toggle loop on pet_detail_edit_evo
+  let prevWikiPetMsgId = 'pet_detail_edit_evo';
+  let prevWikiPetResVar = 'pet_res';
+  for (let hop = 1; hop <= 6; hop += 1) {
+    const ty = 2940 + hop * 340;
+    const btnId = `btn_wpet_tgl_${hop}`;
+    const apiId = `wpet_tgl_${hop}_api`;
+    const resVar = `wpet_tgl_${hop}_res`;
+    const msgId = `wpet_tgl_${hop}_msg`;
+    gb.advBtn(btnId, prevWikiPetMsgId, btnCfg('Đổi Splash (Thường ↔ Tiến Hóa)', 'PRIMARY', 'su_tier_toithuong', '1', '1', 'hide'), { x: 1920, y: ty - 220 });
+    apiAction(gb, apiId, resVar, 'GET', `${BACKEND_BASE}/api/wiki/pet/{pet_res.response.entity_id}?form={${prevWikiPetResVar}.response.toggle_target_form}`, '', { x: 1920, y: ty - 110 });
+    gb.link(btnId, apiId);
+    embedMsg(gb, msgId, {
+      title: `{${resVar}.response.embed.title}`,
+      description: `{${resVar}.response.embed.description}`,
+      color: '#ec4899',
+      imageUrl: `{${resVar}.response.embed.image_url}`,
+      footer: `{${resVar}.response.embed.footer}`,
+      target: { editId: 'pet_detail_ack' },
+      action_id: 'pet_detail_ack',
+    }, { x: 1920, y: ty + 20 });
+    gb.link(apiId, msgId);
+    prevWikiPetMsgId = msgId;
+    prevWikiPetResVar = resVar;
+  }
 
   for (const sh of petSubHubs) {
     const btnId = `btn_pet_sh_${sh.key}`;
