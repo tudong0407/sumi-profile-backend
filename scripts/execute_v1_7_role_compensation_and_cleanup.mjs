@@ -138,8 +138,8 @@ async function discordProxy(evalFn, { method, path: apiPath, bodyObj = null, aud
       try { j = JSON.parse(text); } catch { return { httpStatus: r.status, nonJson: text.slice(0, 200) }; }
       return { httpStatus: r.status, apiStatus: j?.api_data?.status, response: j?.api_data?.response };
     })()`, 25000);
-    if ((res?.apiStatus === 429 || (res?.httpStatus >= 500 && res?.httpStatus < 600)) && attempt < 3) {
-      const waitSec = Number(res?.response?.retry_after || 2);
+    if ((!res?.apiStatus || res?.apiStatus === 429 || (res?.httpStatus >= 500 && res?.httpStatus < 600)) && attempt < 3) {
+      const waitSec = Number(res?.response?.retry_after || 3);
       await new Promise((r) => setTimeout(r, Math.ceil((waitSec + 0.5) * 1000)));
       continue;
     }
@@ -359,17 +359,23 @@ async function main() {
     const freshUser = initRes.user;
     if (!freshUser) throw new Error(`Failed ensureUserInitialized for ${u.user_id}`);
 
+    const partialFirstRetry =
+      u.user_id === '1170015790620233749' &&
+      Number(freshUser.linh_thach || 0) === u.lt &&
+      Number(freshUser.red_gold_crystals || 0) === u.tt;
     const nowIso = new Date().toISOString();
-    const nextLt = Number(freshUser.linh_thach || 0) + u.lt;
-    const nextTt = Number(freshUser.red_gold_crystals || 0) + u.tt;
-    const userUpdate = {
-      linh_thach: nextLt,
-      red_gold_crystals: nextTt,
-      updated_at: nowIso,
-      ...(u.custom_title ? { custom_title: u.custom_title } : {}),
-    };
-    const { error: uErr } = await supabase.from('users').update(userUpdate).eq('user_id', u.user_id);
-    if (uErr) throw new Error(`Failed updating users for ${u.user_id}: ${uErr.message}`);
+    const nextLt = partialFirstRetry ? Number(freshUser.linh_thach || 0) : Number(freshUser.linh_thach || 0) + u.lt;
+    const nextTt = partialFirstRetry ? Number(freshUser.red_gold_crystals || 0) : Number(freshUser.red_gold_crystals || 0) + u.tt;
+    if (!partialFirstRetry) {
+      const userUpdate = {
+        linh_thach: nextLt,
+        red_gold_crystals: nextTt,
+        updated_at: nowIso,
+        ...(u.custom_title ? { custom_title: u.custom_title } : {}),
+      };
+      const { error: uErr } = await supabase.from('users').update(userUpdate).eq('user_id', u.user_id);
+      if (uErr) throw new Error(`Failed updating users for ${u.user_id}: ${uErr.message}`);
+    }
 
     if (u.grant_frame_6) {
       const { error: fErr } = await supabase.from('user_frames').upsert(
@@ -397,7 +403,7 @@ async function main() {
         expires_at: u.picked_role.is_permanent ? null : new Date(Date.now() + 90 * 86400000).toISOString(),
         is_equipped: existingRoleRow?.is_equipped ?? u.picked_role.is_equipped,
         equipped_slot: existingRoleRow?.equipped_slot ?? u.picked_role.equipped_slot,
-        source: 'pet_role_compensation',
+        source: 'pet_role_comp',
         paid_price: 0,
       };
       if (existingRoleRow) {
@@ -463,9 +469,9 @@ async function main() {
     }
     console.log('  [SAFETY OK] BotGhost /pet verified free of all 10 deleted role IDs.');
 
-    // 2b. Add equipped Gacha Discord roles for compensated users with free_slot
+    // 2b. Add equipped Gacha Discord roles for compensated users (skip if already compensated in an earlier run)
     for (const u of enriched) {
-      if (u.picked_role?.is_equipped) {
+      if (u.picked_role?.is_equipped && !u.already_compensated) {
         const res = await discordProxy(evalFn, {
           method: 'PUT',
           path: `/guilds/${GUILD_ID}/members/${u.user_id}/roles/${u.picked_role.role_id}`,
@@ -475,6 +481,8 @@ async function main() {
         u.discord_role_added = res.apiStatus >= 200 && res.apiStatus < 300;
         console.log(`  [DISCORD ROLE ADD] ${u.user_id} (@${u.username}) + ${u.picked_role.role_id} (${u.picked_role.name}) -> HTTP ${res.apiStatus}`);
         await new Promise((r) => setTimeout(r, 350));
+      } else if (u.picked_role?.is_equipped && u.already_compensated) {
+        u.discord_role_added = true;
       }
     }
 
@@ -498,8 +506,8 @@ async function main() {
       console.log(`  [PET OF FUYUMI OK] Already clean at ${livePermPlan.clean}`);
     }
 
-    // 2d. Send best-effort DM to Bậc 6 holders + Báo Chúa
-    const dmTargets = enriched.filter((u) => u.tier_key === 'bac_6' || u.tier_key === 'bac_5_bao_chua');
+    // 2d. Send best-effort DM to Bậc 6 holders + Báo Chúa (only on first execution)
+    const dmTargets = enriched.filter((u) => !u.already_compensated && (u.tier_key === 'bac_6' || u.tier_key === 'bac_5_bao_chua'));
     for (const u of dmTargets) {
       try {
         const chRes = await discordProxy(evalFn, {
@@ -552,11 +560,11 @@ async function main() {
         auditReason: 'SuMi v1.7 Close Pet Level & Extra Roles',
       });
       console.log(`  [DELETED] ${delRole.id} (${delRole.label}) -> HTTP ${delRes.apiStatus}`);
-      if (delRes.apiStatus < 200 || delRes.apiStatus >= 300) {
+      if (!delRes?.apiStatus || delRes.apiStatus < 200 || delRes.apiStatus >= 300) {
         throw new Error(`Failed deleting role ${delRole.id}: ${JSON.stringify(delRes)}`);
       }
       report.deleted_roles.push({ ...delRole, status: delRes.apiStatus });
-      await new Promise((r) => setTimeout(r, 450));
+      await new Promise((r) => setTimeout(r, 950));
     }
 
     // 2f. Post-deletion live verification
