@@ -1053,10 +1053,33 @@ export async function deployViaCDP({ groupId = GA_GROUP_ID, mode, name, elements
       return { ok: false, error: 'Save button not found', mode: cfg.mode, canSave, probText };
     }
 
-    for (let i = 0; i < 45; i++) {
+    const findSaveErrorToast = () => {
+      const nodes = [...document.querySelectorAll('[role="alert"], [role="dialog"], .Toastify__toast, [class*="toast"], [class*="alert"], [class*="notification"], [class*="modal"]')];
+      for (const el of nodes) {
+        const txt = (el.innerText || '').trim();
+        if (/save\s*failed|failed\s*to\s*save|unauthorized|forbidden|permission\s*denied|error\s*saving|someone\s*saved\s*this\s*bot/i.test(txt)) {
+          return txt.slice(0, 300);
+        }
+      }
+      return null;
+    };
+
+    for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 250));
+      const errToast = findSaveErrorToast();
+      if (errToast) {
+        return {
+          ok: false,
+          saveFailed: true,
+          toastText: errToast,
+          probText,
+          canSave,
+          beforeSave,
+          afterSave: store.getState().data.bot.last_save,
+        };
+      }
       const st = store.getState();
-      if (i === 20 && st.data.bot.last_save === beforeSave) {
+      if (i === 24 && st.data.bot.last_save === beforeSave) {
         if (typeof cb.save === 'function') {
           try { cb.save(); } catch {}
         } else {
