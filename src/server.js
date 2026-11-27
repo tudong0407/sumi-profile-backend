@@ -1092,7 +1092,7 @@ app.get('/api/profile/:userId', async (req, res) => {
 
     const isWebp = rawUserId.toLowerCase().endsWith('.webp') || format === 'webp';
     const fmt = isWebp ? 'webp' : 'png';
-    const cardHash = computeDynamicDataHash({ fmt, v: '1.4', ...profileData });
+    const cardHash = computeDynamicDataHash({ fmt, v: '1.5', ...profileData });
     const imgBuffer = await getOrRenderDynamicCard(
       `profile:${cleanUserId}:${fmt}`,
       cardHash,

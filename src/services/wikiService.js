@@ -196,7 +196,7 @@ export const WIKI_CATEGORIES = {
     title: `${em('su_arena')} Đấu Trường, Ngũ Hành & Linh Vực`,
     icon: em('su_arena'),
     description: 'Luật 1v1 /battle, Buff SET 2 tầng, Web Logs 48h, Ngũ Hành • Dị Tố, Linh Vực (Hiệp 2+) & Tổ Đội Linh Mạch.',
-    image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.3.1`,
+    image_url: `${PUBLIC_BASE_URL}/api/wiki/chart/elements.webp?v=1.7-s8`,
     sections: [
       {
         heading: '1. Ngũ Hành & Dị Tố',
@@ -1031,7 +1031,7 @@ export async function getWikiItemDetail(itemId) {
     descriptionLines.push(`${tierEmoji('supreme')} **Chủ sở hữu:** **${currentOwner.username}** (<@${currentOwner.user_id}>)`);
   }
 
-  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.7-s7`;
+  const imageUrl = `${PUBLIC_BASE_URL}/api/wiki/item/${item.item_id}.webp?v=1.7-s8`;
 
   return {
     success: true,
@@ -1135,13 +1135,8 @@ export async function getWikiPetDetail(petType, options = {}) {
   if (ownerMentionLine) descriptionLines.push(ownerMentionLine);
 
   const imageUrl = canToggleForm
-    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s7&form=${activeForm}`
-    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s7`;
-  const formFooter = canToggleForm
-    ? (isEvoForm
-      ? 'Đang xem: Tiến Hóa Chân Thần • Bấm nút bên dưới để chuyển Bản Thường'
-      : 'Đang xem: Bản Thường • Bấm nút bên dưới để xem Tiến Hóa Chân Thần')
-    : '';
+    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s8&form=${activeForm}`
+    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s8`;
 
   return {
     success: true,
@@ -1162,7 +1157,7 @@ export async function getWikiPetDetail(petType, options = {}) {
       color: tier.color,
       color_dec: tier.colorDec,
       image_url: imageUrl,
-      footer: formFooter,
+      footer: '',
     },
   };
 }

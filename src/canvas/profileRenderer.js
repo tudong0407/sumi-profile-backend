@@ -1314,17 +1314,6 @@ export async function renderProfileCard(data, options = {}) {
   });
   ctx.restore();
 
-  // ============================================================================
-  // FOOTER CHỮ KÝ ĐẶC TRƯNG MÁY CHỦ SUMI FAMILY (ICON LINH HỒ TÁCH NỀN)
-  // ============================================================================
-  drawIconText(ctx, icoFox, 'SuMi Family • Trợ Lý Linh Hồ AI Nhiễm Nhiễm', width - 28, height - 22, {
-    iconSize: 14,
-    gap: 5,
-    align: 'right',
-    font: `11px ${FONT_FAMILY}`,
-    fillStyle: 'rgba(226, 232, 240, 0.55)',
-  });
-
   // Xuất ra PNG hoặc WebP Buffer (tăng độ sắc nét + chất lượng WebP 96)
   sharpenCanvas(canvas, 0.22);
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 96);

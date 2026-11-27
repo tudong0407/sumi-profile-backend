@@ -237,8 +237,8 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
     ];
 
     const imgEndpoint = p.is_exclusive_fuyumi
-      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s7&form=${activeForm}`
-      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s7&form=${activeForm}`;
+      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s8&form=${activeForm}`
+      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s8&form=${activeForm}`;
 
     return {
       success: true,
@@ -254,7 +254,7 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
       description: lines.join('\n'),
       color: p.rarity_key === 'supreme' ? '#ec4899' : p.rarity_key === 'mythic' ? '#f59e0b' : p.rarity_key === 'epic' ? '#a855f7' : p.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
       image_url: imgEndpoint,
-      footer: canToggleForm ? 'Bấm nút bên dưới để chuyển đổi qua lại giữa Splash Art Bản Thường & Bản Tiến Hóa Chân Thần!' : '',
+      footer: '',
     };
   }
 
@@ -292,7 +292,7 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
       title: `${itemEmoji(it.item_id, em('su_crossed_swords'))} PHÁP BẢO: ${it.item_name}`,
       description: lines.join('\n'),
       color: it.rarity_key === 'mythic' ? '#f59e0b' : it.rarity_key === 'epic' ? '#a855f7' : it.rarity_key === 'rare' ? '#3b82f6' : '#94a3b8',
-      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=${LATEST_VERSION}-s7`,
+      image_url: `${PUBLIC_BASE_URL}/api/wiki/item/${it.item_id}.webp?v=${LATEST_VERSION}-s8`,
       footer: '',
     };
   }

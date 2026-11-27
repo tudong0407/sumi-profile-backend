@@ -434,7 +434,7 @@ function buildAlchemyEmbed({
     description: descParts.join('\n'),
     color: overrideColor || (hasExplodedSlot ? '#ef4444' : '#ec4899'),
     image_url: '',
-    footer: `Tổng mẻ thành công: ${profile.total_batches_completed} • DM nhắc khi chín & trước nổ 10p`,
+    footer: '',
     f1_name: f1.name,
     f1_value: f1.value.slice(0, 1024),
     f2_name: f2.name,

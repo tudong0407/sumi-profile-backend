@@ -156,18 +156,6 @@ function drawCelestialBackground(ctx, accentColor = 'rgba(236, 72, 153, 0.20)') 
   ctx.restore();
 }
 
-async function drawFooter(ctx, label = 'SuMi Family • Cẩm Nang Tu Tiên Toàn Thư') {
-  const cleanLabel = String(label || '').replace(/🦊\s*/g, '').trim();
-  const icoFox = await loadBadgeImage('badges/su_fox_mascot.png');
-  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 27, {
-    iconSize: 14,
-    gap: 5,
-    align: 'right',
-    font: `bold 11.5px ${FONT_FAMILY}`,
-    fillStyle: 'rgba(241, 245, 249, 0.88)',
-  });
-}
-
 function drawCurvedArrow(ctx, x1, y1, x2, y2, cx, cy, color = '#fbbf24') {
   ctx.save();
   ctx.strokeStyle = color;
@@ -636,7 +624,6 @@ export async function renderElementalChart(options = {}) {
   });
   ctx.restore();
 
-  await drawFooter(ctx, 'SuMi Family • Sơ Đồ Ngũ Hành Linh Thú & Ngũ Đại Linh Vực');
   sharpenCanvas(canvas, 0.2);
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }
@@ -898,7 +885,6 @@ export async function renderWikiItemCard(itemData, options = {}) {
   }
   ctx.restore();
 
-  await drawFooter(ctx, `SuMi Family • Bách Khoa Pháp Bảo (${itemData.slot_label || 'Loadout'})`);
   sharpenCanvas(canvas, 0.22);
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }
@@ -1211,7 +1197,6 @@ export async function renderWikiPetCard(petData, options = {}) {
   }
   ctx.restore();
 
-  await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
   sharpenCanvas(canvas, 0.25);
   return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }
