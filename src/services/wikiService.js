@@ -1102,7 +1102,7 @@ export async function getWikiPetDetail(petType, options = {}) {
   const dispDef = isEvoForm ? Math.round(Number(pet.base_def || 0) * Number(evoData?.stat_mult?.def || 1)) : pet.base_def;
   const dispSpd = isEvoForm ? Math.round(Number(pet.base_spd || 0) * Number(evoData?.stat_mult?.spd || 1)) : pet.base_spd;
   const dispHp = isEvoForm ? Math.round(Number(pet.base_hp || 0) * Number(evoData?.stat_mult?.hp || 1)) : pet.base_hp;
-  const dispName = isEvoForm && evoData ? `${evoData.evolved_name} (Chân Thần)` : pet.pet_name;
+  const dispName = isEvoForm && evoData ? evoData.evolved_name : pet.pet_name;
   const dispRarity = isEvoForm ? 'Tối Thượng Chân Thần' : pet.rarity;
 
   const tagNotes = [];
