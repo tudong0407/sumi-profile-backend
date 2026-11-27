@@ -357,7 +357,7 @@ function buildHtml(meta) {
     <h3>Gói Quà Mở Bản v1.7, /updates, /wiki &amp; AI Mention</h3>
     <ul>
       <li><strong>Quà Xác Nhận Cập Nhật v1.7 (tự động cấp 1 lần/user):</strong>
-        <strong>+3.000 LT</strong> • <strong>+5 Tinh Thể Đỏ Vàng (TT)</strong> • <strong>+5 Thẻ Reset Tháp</strong> <em>(bỏ qua giới hạn 15 thẻ khi nhận quà; nếu tràn &ge;15 vẫn khóa mua thêm tại /shop &amp; /exchange đúng yêu cầu)</em> • <strong>+300 Linh Quả</strong> • <strong>+1 Ấn Khắc Tuyệt Đối</strong>.</li>
+        <strong>+3.000 LT</strong> • <strong>+5 Xích Kim Tinh Thạch (TT)</strong> • <strong>+5 Thẻ Reset Tháp</strong> <em>(bỏ qua giới hạn 15 thẻ khi nhận quà; nếu tràn &ge;15 vẫn khóa mua thêm tại /shop &amp; /exchange đúng yêu cầu)</em> • <strong>+300 Linh Quả</strong> • <strong>+1 Ấn Khắc Tuyệt Đối</strong>.</li>
       <li><strong>Lệnh <span class="code">/updates</span>:</strong> Gọn, dễ đọc, chia <strong>3 trang</strong> với nút <strong>[Trang Trước]</strong> / <strong>[Trang Sau]</strong> + nút <strong>[Nhận Quà v1.7]</strong> + menu lịch sử v1.7→v1.1. <strong>TUYỆT ĐỐI KHÔNG đưa số liệu Meta lên /updates.</strong></li>
       <li><strong>Lệnh <span class="code">/wiki</span>:</strong> Đã nâng cấp đủ 100% Ver 1.7 — 150 Pet công khai (4 Sub-Hub nút gồm 40 Độc Nhất &amp; 10 Thú Nhân), 264 Pháp Bảo (90/87/87), 161 Lãnh Địa (65/48/48), Roles &amp; Glossary phân trang bằng nút.</li>
       <li><strong>Bé Bot Nhiễm Nhiễm (AI Mention):</strong> Đã cập nhật toàn bộ kiến thức Ver 1.7 vào cả 2 nhánh prompt hệ thống (<span class="code">4cc5db30-029c-4a55-86e6-6e6850012afd</span>) và xác minh hậu lưu.</li>

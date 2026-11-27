@@ -18,6 +18,7 @@ import {
   loadBadgeImage,
   drawIconText,
   drawAutoFitSingleLineText,
+  drawElementalPetBorderFX,
   encodeCanvas,
   FONT_FAMILY,
 } from './drawUtils.js';
@@ -906,10 +907,14 @@ export async function renderWikiPetCard(petData, options = {}) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  const dispRarity = petData.display_rarity_key || (petData.is_exclusive_fuyumi ? 'supreme' : petData.is_evolved ? 'evolved_supreme' : petData.is_unique ? 'unique_supreme' : petData.rarity_key);
+  const petIsEvolved = Boolean(petData.is_evolved || petData.current_owner?.is_evolved);
+  const dispRarity = petData.display_rarity_key || (petData.is_exclusive_fuyumi ? 'supreme' : petIsEvolved ? 'evolved_supreme' : petData.is_unique ? 'unique_supreme' : petData.rarity_key);
   const rarityStyle = RARITY_STYLES[dispRarity] || RARITY_STYLES.common;
   const elemMeta = ELEMENT_COLORS[petData.element] || { color: '#94a3b8', icon: '✨' };
-  const petImg = await loadImageSafe(petData.image_file || `pets/${petData.pet_type}.png`, 2500, 'pets/hoa_thach_nham_nham.png');
+  const petImgPath = petIsEvolved && petData.evo_data?.evo_image_file
+    ? petData.evo_data.evo_image_file
+    : (petData.image_file || `pets/${petData.pet_type}.png`);
+  const petImg = await loadImageSafe(petImgPath, 2500, 'pets/hoa_thach_nham_nham.png');
 
   drawCelestialBackground(ctx, rarityStyle.bgTint);
 
@@ -936,6 +941,13 @@ export async function renderWikiPetCard(petData, options = {}) {
   ctx.shadowBlur = 12;
   ctx.stroke();
   ctx.shadowBlur = 0;
+
+  if (petIsEvolved || petData.pet_type === 'cuu_vi_hong_ho') {
+    drawElementalPetBorderFX(ctx, leftX, leftY, leftW, leftH, 18, petData.element, {
+      allowShadowBlur: false,
+      lineWidth: 2.6,
+    });
+  }
 
   // Vầng hào quang nguyên tố phía sau Linh Thú
   const aura = ctx.createRadialGradient(cx, cy, 18, cx, cy, 148);

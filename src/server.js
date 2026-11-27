@@ -92,6 +92,7 @@ import {
   getStaticPetCardBuffer,
   getStaticNonUniqueItemCardBuffer,
   getCachedUniqueItemCard,
+  getCachedUniquePetCard,
   warmStaticAssetsInBackground,
   getPrerenderStatus,
   computeDynamicDataHash,
@@ -644,10 +645,13 @@ app.get('/api/wiki/pet/:petType', async (req, res) => {
 
     if (wantImg) {
       const fmt = wantWebp ? 'webp' : 'png';
-      const imgBuffer = await getStaticPetCardBuffer(detail.data, fmt);
+      const isUniquePet = Boolean(detail.data?.is_unique || detail.data?.is_exclusive_fuyumi);
+      const imgBuffer = isUniquePet
+        ? await getCachedUniquePetCard(detail.data, fmt)
+        : await getStaticPetCardBuffer(detail.data, fmt);
       res.setHeader('Content-Type', wantWebp ? 'image/webp' : 'image/png');
       res.setHeader('Content-Length', imgBuffer.length);
-      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      res.setHeader('Cache-Control', isUniquePet ? 'public, max-age=30' : 'public, max-age=604800, immutable');
       return res.end(imgBuffer);
     }
 

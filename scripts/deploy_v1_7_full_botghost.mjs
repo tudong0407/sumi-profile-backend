@@ -501,7 +501,7 @@ export function buildShopDacBietV17Cmd() {
     x: 420,
     y: 0,
   });
-  gb.option('so_luong_tt', 'int', 'Số Tinh Thể Đỏ Vàng muốn đổi (tối thiểu 5 TT, tối đa 200 TT/tuần)', {
+  gb.option('so_luong_tt', 'int', 'Số Xích Kim Tinh Thạch (TT) muốn đổi (tối thiểu 5 TT, tối đa 200 TT/tuần)', {
     required: false,
     x: 700,
     y: 0,
@@ -534,7 +534,7 @@ export function buildShopDacBietV17Cmd() {
   gb.link(brConv, 'ss_conv_api');
   const convOk = attachAckBranchV17(gb, 'ssc', 'ss_conv_api', 'ss_conv_res', { editId: 'ss_ack', x: -460, y: 820 });
   embedMsg(gb, 'ss_conv_msg', {
-    title: `${uidEm('red_gold_crystal', 'su_sparkle')} QUY ĐỔI TINH THỂ ĐỎ VÀNG (TT)`,
+    title: `${uidEm('red_gold_crystal', 'su_sparkle')} QUY ĐỔI XÍCH KIM TINH THẠCH (TT)`,
     description: '{ss_conv_res.response.message}',
     color: '#f59e0b',
     footer: '',
@@ -615,7 +615,7 @@ export function buildShopDacBietV17Cmd() {
       `{"userId":"{user_id}","ttAmount":${qc.tt}}`, { x: qc.dx, y: 1380 });
     gb.link(bId, aId);
     embedMsg(gb, mId, {
-      title: `${uidEm('red_gold_crystal', 'su_sparkle')} QUY ĐỔI ${qc.tt} TINH THỂ ĐỎ VÀNG`,
+      title: `${uidEm('red_gold_crystal', 'su_sparkle')} QUY ĐỔI ${qc.tt} XÍCH KIM TINH THẠCH`,
       description: `{${rVar}.response.message}`,
       color: '#f59e0b',
       footer: '',
@@ -1645,21 +1645,332 @@ function patchDothachTreeV17(oldTree) {
 }
 
 function patchExplorerTreeV17(oldTree) {
-  const tree = sweepTreeV17(JSON.parse(JSON.stringify(oldTree)));
-  // Fix Row 2 [Bộ 1] [Bộ 2] [Bộ 3] left-to-right weights (3 = Bộ 1 left, 2 = Bộ 2 mid, 1 = Bộ 3 right)
-  for (const slot of [1, 2, 3]) {
-    const existingBtn = tree.find((e) => e.id === `ex_btn_slot_${slot}` && e.type === 'advMessageButton');
-    if (existingBtn?.data?.data) {
-      existingBtn.data.data.weight = String(4 - slot);
-      existingBtn.data.data.orderComponent = true;
+  let tree = sweepTreeV17(JSON.parse(JSON.stringify(oldTree)));
+  const removedIds = new Set();
+  for (const el of tree) {
+    const id = String(el.id || '');
+    if (
+      id === 'ex_btn_lo' ||
+      id === 'ex_btn_lo_inj' ||
+      id === 'ex_btn_claim_inj' ||
+      /^ex_lo_/.test(id) ||
+      /^ex_wf_/.test(id) ||
+      /^ex_ui_/.test(id) ||
+      id === 'ex_hub_claim_msg' ||
+      id === 'ex_hub_locked_msg' ||
+      id === 'ex_btn_ref' ||
+      id === 'ex_ref_api' ||
+      id === 'ex_ref_edit' ||
+      /^ex_btn_slot_inj_/.test(id)
+    ) {
+      removedIds.add(id);
     }
   }
+  tree = tree.filter((el) => {
+    if (el.source && el.target) {
+      if (removedIds.has(el.source) || removedIds.has(el.target)) return false;
+      if (el.source === 'ex_gate_no' && el.target === 'ex_has_injured') return false;
+      if (el.source === 'ex_hub_msg' && el.target === 'ex_btn_claim') return false;
+      if (el.source === 'ex_hub_inj_msg' && el.target === 'ex_btn_claim_inj') return false;
+      return true;
+    }
+    return !removedIds.has(el.id);
+  });
+
+  // Enforce author-only protection + button styling on every component in /explorer
+  for (const el of tree) {
+    if ((el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
+      el.data.data.who_can_press = 'user';
+      el.data.data.who_can_press_message = AUTHOR_ONLY_MSG;
+    }
+  }
+
+  const cloneNodeOpts = (fallbackId, fallbackObj) => {
+    const src = tree.find((e) => e.id === fallbackId)?.data?.node_options;
+    return src ? JSON.parse(JSON.stringify(src)) : fallbackObj;
+  };
+  const condNodeOpts = cloneNodeOpts('ex_gate', { __COND_OPT__: 'comparison' });
+  const msgNodeOpts = cloneNodeOpts('ex_hub_msg', { __ACT_OPT__: 'advanced_message' });
+  const apiNodeOpts = cloneNodeOpts('ex_hub_api', { __ACT_OPT__: 'api_action' });
+
+  const exHubMsg = tree.find((e) => e.id === 'ex_hub_msg');
+  const exHubInjMsg = tree.find((e) => e.id === 'ex_hub_inj_msg');
+  for (const msg of [exHubMsg, exHubInjMsg]) {
+    const emb = msg?.data?.data?.message?.embeds?.[0];
+    if (emb) {
+      emb.footer = {
+        text: 'Chọn Xuất Phát Khám Phá hoặc đổi nhanh Bộ 1 / Bộ 2 / Bộ 3 (đồng bộ /inv)',
+        iconURL: emb.footer?.iconURL || '',
+      };
+    }
+  }
+
+  const updBtn = (id, patch) => {
+    const b = tree.find((e) => e.id === id && e.type === 'advMessageButton');
+    if (b?.data?.data) Object.assign(b.data.data, patch);
+  };
+  updBtn('ex_btn_go', { row: '1', weight: '3', orderComponent: true });
+  updBtn('ex_btn_go_inj', { row: '1', weight: '3', orderComponent: true });
+  updBtn('ex_btn_revive', { row: '1', weight: '2', orderComponent: true });
+  updBtn('ex_btn_claim', {
+    label: 'Nhận Quà Khám Phá',
+    style: 'SUCCESS',
+    emoji_id: uidId('su_chest_loot', 'su_sparkle') || undefined,
+    row: '1',
+    weight: '3',
+    orderComponent: true,
+    showReplies: 'hide',
+    who_can_press: 'user',
+    who_can_press_message: AUTHOR_ONLY_MSG,
+  });
+
+  const addNode = (n) => tree.push(n);
+  const addEdge = (source, target, { sh = 'action', th = 'action', type = 'custom' } = {}) => {
+    tree.push({
+      source,
+      ...(sh ? { sourceHandle: sh } : {}),
+      target,
+      ...(th ? { targetHandle: th } : {}),
+      animated: false,
+      arrowHeadType: 'arrowclosed',
+      type,
+      id: `reactflow__edge-${source}${sh || ''}-${target}${th || ''}`,
+    });
+  };
+
+  // Condition: ui_variant === 'claimable' | 'exploring_locked' | else ('idle')
+  addNode({
+    id: 'ex_ui_cond',
+    type: 'condition',
+    draggable: true,
+    position: { x: 260, y: 720 },
+    width: 280,
+    height: 100,
+    data: {
+      node_options: JSON.parse(JSON.stringify(condNodeOpts)),
+      data: {
+        type: 'condition',
+        condition_type: 'comparison',
+        base_value: '{ex_hub_res.response.ui_variant}',
+        multiple: false,
+        target: { self: true },
+        validated: true,
+        actions: [],
+      },
+    },
+  });
+  addEdge('ex_gate_no', 'ex_ui_cond');
+
+  addNode({
+    id: 'ex_ui_claim',
+    type: 'conditionChild',
+    draggable: true,
+    position: { x: 640, y: 860 },
+    width: 240,
+    height: 80,
+    data: {
+      node_options: { type: 'comparison' },
+      data: { type: 'equal_to', comparison_value: 'claimable', ignoreCase: true, option: '', not: false, validated: true, actions: [] },
+    },
+  });
+  addEdge('ex_ui_cond', 'ex_ui_claim', { sh: null, th: null, type: 'step' });
+
+  addNode({
+    id: 'ex_ui_locked',
+    type: 'conditionChild',
+    draggable: true,
+    position: { x: 960, y: 860 },
+    width: 240,
+    height: 80,
+    data: {
+      node_options: { type: 'comparison' },
+      data: { type: 'equal_to', comparison_value: 'exploring_locked', ignoreCase: true, option: '', not: false, validated: true, actions: [] },
+    },
+  });
+  addEdge('ex_ui_cond', 'ex_ui_locked', { sh: null, th: null, type: 'step' });
+
+  addNode({
+    id: 'ex_ui_idle',
+    type: 'conditionChild',
+    draggable: true,
+    position: { x: 200, y: 860 },
+    width: 240,
+    height: 80,
+    data: {
+      node_options: { type: 'comparison' },
+      data: { type: 'else', validated: undefined, actions: [] },
+    },
+  });
+  addEdge('ex_ui_cond', 'ex_ui_idle', { sh: null, th: null, type: 'step' });
+  addEdge('ex_ui_idle', 'ex_has_injured');
+
+  // Claimable Hub -> ONLY shows [Nhận Quà Khám Phá]
+  addNode({
+    id: 'ex_hub_claim_msg',
+    type: 'action',
+    draggable: true,
+    position: { x: 640, y: 1000 },
+    width: 340,
+    height: 110,
+    data: {
+      node_options: JSON.parse(JSON.stringify(msgNodeOpts)),
+      data: {
+        type: 'advanced_message',
+        messageType: 'basic',
+        useComponentsV2: false,
+        target: { editId: 'ex_ack' },
+        action_id: 'ex_ack',
+        success_handles: false,
+        validated: true,
+        message: {
+          content: '',
+          embeds: [{
+            title: '{ex_hub_res.response.title}',
+            description: '{ex_hub_res.response.description}',
+            color: '#10b981',
+            timestamp: false,
+            author: { name: '', iconURL: '', url: '' },
+            footer: { text: 'Chuyến thám hiểm đã hoàn thành — Bấm Nhận Quà Khám Phá để thu hoạch!', iconURL: '' },
+            image: { url: '{ex_hub_res.response.map_image_url}' },
+            thumbnail: { url: '' },
+            fields: [],
+          }],
+        },
+      },
+    },
+  });
+  addEdge('ex_ui_claim', 'ex_hub_claim_msg');
+  addEdge('ex_hub_claim_msg', 'ex_btn_claim', { sh: 'components_source', th: null, type: 'step' });
+
+  // Locked Hub -> NO [Xuất Phát], NO [Nhận Quà]; only [Cập Nhật Tiến Độ]
+  addNode({
+    id: 'ex_hub_locked_msg',
+    type: 'action',
+    draggable: true,
+    position: { x: 960, y: 1000 },
+    width: 340,
+    height: 110,
+    data: {
+      node_options: JSON.parse(JSON.stringify(msgNodeOpts)),
+      data: {
+        type: 'advanced_message',
+        messageType: 'basic',
+        useComponentsV2: false,
+        target: { editId: 'ex_ack' },
+        action_id: 'ex_ack',
+        success_handles: false,
+        validated: true,
+        message: {
+          content: '',
+          embeds: [{
+            title: '{ex_hub_res.response.title}',
+            description: '{ex_hub_res.response.description}',
+            color: '#3b82f6',
+            timestamp: false,
+            author: { name: '', iconURL: '', url: '' },
+            footer: { text: 'Đội hình đang viễn chinh — Chỉ dùng Bộ khác hoặc đợi đến giờ hoàn thành!', iconURL: '' },
+            image: { url: '{ex_hub_res.response.map_image_url}' },
+            thumbnail: { url: '' },
+            fields: [],
+          }],
+        },
+      },
+    },
+  });
+  addEdge('ex_ui_locked', 'ex_hub_locked_msg');
+
+  addNode({
+    id: 'ex_btn_ref',
+    type: 'advMessageButton',
+    draggable: true,
+    position: { x: 960, y: 1180 },
+    width: 240,
+    height: 80,
+    data: {
+      node_options: {},
+      data: {
+        type: 'button',
+        ...btnCfg('Cập Nhật Tiến Độ', 'SECONDARY', 'su_clock', '1', '1', 'hide', 'user'),
+        validated: true,
+      },
+    },
+  });
+  addEdge('ex_hub_locked_msg', 'ex_btn_ref', { sh: 'components_source', th: null, type: 'step' });
+
+  addNode({
+    id: 'ex_ref_api',
+    type: 'action',
+    draggable: true,
+    position: { x: 960, y: 1340 },
+    width: 280,
+    height: 90,
+    data: {
+      node_options: JSON.parse(JSON.stringify(apiNodeOpts)),
+      data: {
+        type: 'api_action',
+        name: 'ex_ref_res',
+        ephemeral: false,
+        request_options: {
+          method: 'GET',
+          url: `${BACKEND_BASE}/api/explorer/hub/{user_id}?username={encode_text[{user_displayName}]}`,
+          headers: [],
+          params: [],
+          body: [],
+          rawBody: '',
+          contentType: 'application/json',
+          options: { excludeEmptyFields: true, replaceParams: true, replaceURL: true, replaceHeaders: true, replaceBody: true, failOnError: false },
+        },
+        success_handles: false,
+        validated: true,
+      },
+    },
+  });
+  addEdge('ex_btn_ref', 'ex_ref_api');
+
+  addNode({
+    id: 'ex_ref_edit',
+    type: 'action',
+    draggable: true,
+    position: { x: 960, y: 1500 },
+    width: 320,
+    height: 100,
+    data: {
+      node_options: JSON.parse(JSON.stringify(msgNodeOpts)),
+      data: {
+        type: 'advanced_message',
+        messageType: 'basic',
+        useComponentsV2: false,
+        target: { editId: 'ex_ack' },
+        action_id: 'ex_ack',
+        success_handles: false,
+        validated: true,
+        message: {
+          content: '',
+          embeds: [{
+            title: '{ex_ref_res.response.title}',
+            description: '{ex_ref_res.response.description}',
+            color: '#3b82f6',
+            timestamp: false,
+            author: { name: '', iconURL: '', url: '' },
+            footer: { text: 'Đã cập nhật tiến độ khám phá mới nhất! (Nếu đã xong hãy chạy lại /explorer để Nhận Quà)', iconURL: '' },
+            image: { url: '{ex_ref_res.response.map_image_url}' },
+            thumbnail: { url: '' },
+            fields: [],
+          }],
+        },
+      },
+    },
+  });
+  addEdge('ex_ref_api', 'ex_ref_edit');
+
+  // Fix Row 2 [Bộ 1] [Bộ 2] [Bộ 3] left-to-right weights on BOTH idle messages
+  for (const slot of [1, 2, 3]) {
+    updBtn(`ex_btn_slot_${slot}`, { row: '2', weight: String(4 - slot), orderComponent: true, who_can_press: 'user', who_can_press_message: AUTHOR_ONLY_MSG });
+  }
   const existingIds = new Set(tree.map((e) => e.id));
-  // Add [Bộ 1] [Bộ 2] [Bộ 3] quick loadout switcher on Row 2 of ex_hub_msg (idempotent!)
-  if (existingIds.has('ex_hub_msg') && !existingIds.has('ex_btn_slot_1')) {
-    const hub = tree.find((e) => e.id === 'ex_hub_msg');
-    const baseX = hub?.position?.x || 0;
-    const baseY = (hub?.position?.y || 600) + 260;
+  if (exHubMsg && !existingIds.has('ex_btn_slot_1')) {
+    const baseX = exHubMsg.position?.x || 0;
+    const baseY = (exHubMsg.position?.y || 600) + 260;
 
     for (const slot of [1, 2, 3]) {
       const bId = `ex_btn_slot_${slot}`;
@@ -1668,7 +1979,7 @@ function patchExplorerTreeV17(oldTree) {
       const rVar = `ex_slot_res_${slot}`;
       const dx = (slot - 2) * 260;
 
-      tree.push({
+      addNode({
         id: bId,
         type: 'advMessageButton',
         draggable: true,
@@ -1678,23 +1989,15 @@ function patchExplorerTreeV17(oldTree) {
         data: {
           node_options: {},
           data: {
-            type: 'adv_button',
-            ...btnCfg(`Bộ ${slot}`, 'SECONDARY', 'su_crossed_swords', '2', String(4 - slot), 'show'),
+            type: 'button',
+            ...btnCfg(`Bộ ${slot}`, 'SECONDARY', 'su_crossed_swords', '2', String(4 - slot), 'show', 'user'),
             validated: true,
           },
         },
       });
-      tree.push({
-        source: 'ex_hub_msg',
-        sourceHandle: 'components_source',
-        target: bId,
-        animated: false,
-        arrowHeadType: 'arrowclosed',
-        type: 'step',
-        id: `reactflow__edge-ex_hub_msgcomponents_source-${bId}`,
-      });
+      addEdge('ex_hub_msg', bId, { sh: 'components_source', th: null, type: 'step' });
 
-      tree.push({
+      addNode({
         id: aId,
         type: 'action',
         draggable: true,
@@ -1702,7 +2005,7 @@ function patchExplorerTreeV17(oldTree) {
         width: 280,
         height: 90,
         data: {
-          node_options: {},
+          node_options: JSON.parse(JSON.stringify(apiNodeOpts)),
           data: {
             type: 'api_action',
             name: rVar,
@@ -1735,18 +2038,9 @@ function patchExplorerTreeV17(oldTree) {
           },
         },
       });
-      tree.push({
-        source: bId,
-        sourceHandle: 'action',
-        target: aId,
-        targetHandle: 'action',
-        animated: false,
-        arrowHeadType: 'arrowclosed',
-        type: 'smoothstep',
-        id: `reactflow__edge-${bId}action-${aId}action`,
-      });
+      addEdge(bId, aId);
 
-      tree.push({
+      addNode({
         id: mId,
         type: 'action',
         draggable: true,
@@ -1754,7 +2048,7 @@ function patchExplorerTreeV17(oldTree) {
         width: 280,
         height: 90,
         data: {
-          node_options: {},
+          node_options: JSON.parse(JSON.stringify(msgNodeOpts)),
           data: {
             type: 'advanced_message',
             messageType: 'basic',
@@ -1779,6 +2073,217 @@ function patchExplorerTreeV17(oldTree) {
           },
         },
       });
+      addEdge(aId, mId);
+    }
+  }
+
+  if (exHubInjMsg && tree.some((e) => e.id === 'ex_api_slot_1')) {
+    const baseX = exHubInjMsg.position?.x || -260;
+    const baseY = (exHubInjMsg.position?.y || 920) + 260;
+    for (const slot of [1, 2, 3]) {
+      const bId = `ex_btn_slot_inj_${slot}`;
+      const dx = (slot - 2) * 240;
+      addNode({
+        id: bId,
+        type: 'advMessageButton',
+        draggable: true,
+        position: { x: baseX + dx, y: baseY },
+        width: 220,
+        height: 80,
+        data: {
+          node_options: {},
+          data: {
+            type: 'button',
+            ...btnCfg(`Bộ ${slot}`, 'SECONDARY', 'su_crossed_swords', '2', String(4 - slot), 'show', 'user'),
+            validated: true,
+          },
+        },
+      });
+      addEdge('ex_hub_inj_msg', bId, { sh: 'components_source', th: null, type: 'step' });
+      addEdge(bId, `ex_api_slot_${slot}`);
+    }
+  }
+  return tree;
+}
+
+function patchJobTreeV17(oldTree) {
+  const tree = sweepTreeV17(JSON.parse(JSON.stringify(oldTree)));
+  const jobDescMap = {
+    quet_san: '55–80 LT + 30 EXP • Cooldown 1 giờ',
+    rua_bat: '60–80 LT + 30 EXP • Cooldown 1 giờ',
+    tuoi_cay: '65–90 LT + 35 EXP • Cooldown 1 giờ',
+    giao_trasua: '70–95 LT + 40 EXP • Cooldown 1 giờ',
+    cau_ca: '75–105 LT + 45 EXP • Cooldown 1 giờ',
+    tuan_tra: '85–120 LT + 50 EXP • Cooldown 1 giờ',
+  };
+  const jobEmojiMap = {
+    tuoi_cay: uidId('seed_linh_thao', 'su_sprout'),
+    giao_trasua: uidId('su_mooncake', 'su_sparkle'),
+  };
+  for (const el of tree) {
+    if ((el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
+      el.data.data.who_can_press = 'user';
+      el.data.data.who_can_press_message = AUTHOR_ONLY_MSG;
+    }
+    if (el.id === 'sel_job_pick' && el.type === 'advMessageSelectMenu' && Array.isArray(el.data?.data?.basic_options)) {
+      el.data.data.basic_options = el.data.data.basic_options.map((opt) => ({
+        ...opt,
+        description: jobDescMap[opt.value] || opt.description,
+        emoji_id: opt.emoji_id || jobEmojiMap[opt.value] || '',
+      }));
+    }
+  }
+  return tree;
+}
+
+function patchFarmTreeV17(oldTree) {
+  let tree = sweepTreeV17(JSON.parse(JSON.stringify(oldTree)));
+  const dropPrefix = (id) => /^fm_btn_use_/.test(String(id || '')) || /^fm_u_/.test(String(id || ''));
+  tree = tree.filter((el) => {
+    if (el.source && el.target) return !dropPrefix(el.source) && !dropPrefix(el.target);
+    return !dropPrefix(el.id);
+  });
+
+  for (const el of tree) {
+    if ((el.type === 'advMessageButton' || el.type === 'advMessageSelectMenu') && el.data?.data) {
+      el.data.data.who_can_press = 'user';
+      el.data.data.who_can_press_message = AUTHOR_ONLY_MSG;
+    }
+  }
+  const setBtn = (id, patch) => {
+    const b = tree.find((e) => e.id === id && e.type === 'advMessageButton');
+    if (b?.data?.data) Object.assign(b.data.data, patch);
+  };
+  setBtn('fm_btn_care', { row: '1', weight: '3', orderComponent: true });
+  setBtn('fm_btn_harv', { row: '1', weight: '2', orderComponent: true });
+  setBtn('fm_btn_clr', { row: '1', weight: '1', orderComponent: true });
+
+  const editMsg = tree.find((e) => e.id === 'fm_s_edit');
+  if (editMsg) {
+    const apiNodeOpts = JSON.parse(JSON.stringify(tree.find((e) => e.id === 'fm_b_care_api')?.data?.node_options || { __ACT_OPT__: 'api_action' }));
+    const msgNodeOpts = JSON.parse(JSON.stringify(tree.find((e) => e.id === 'fm_b_care_msg')?.data?.node_options || { __ACT_OPT__: 'advanced_message' }));
+    const quickItems = [
+      { key: 'auto', itemId: 'farm_auto_card', label: 'Thẻ Auto 24h', title: 'KÍCH HOẠT THẺ AUTO FARM 24H', style: 'PRIMARY', weight: '3', dx: 560 },
+      { key: 'growth', itemId: 'farm_growth_med', label: 'Thuốc -25% Giờ', title: 'SỬ DỤNG THUỐC KÍCH THÍCH (-25% GIỜ)', style: 'PRIMARY', weight: '2', dx: 820 },
+      { key: 'starch', itemId: 'farm_yield_starch', label: 'Bột +30% Sản Lượng', title: 'SỬ DỤNG BỘT TĂNG SẢN LƯỢNG (+30%)', style: 'SUCCESS', weight: '1', dx: 1080 },
+    ];
+    for (const qi of quickItems) {
+      const bId = `fm_btn_use_${qi.key}`;
+      const aId = `fm_u_${qi.key}_api`;
+      const mId = `fm_u_${qi.key}_msg`;
+      const rVar = `fm_u_${qi.key}_res`;
+      tree.push({
+        id: bId,
+        type: 'advMessageButton',
+        draggable: true,
+        position: { x: qi.dx, y: 2040 },
+        width: 240,
+        height: 90,
+        data: {
+          node_options: {},
+          data: {
+            type: 'button',
+            ...btnCfg(qi.label, qi.style, qi.itemId, '3', qi.weight, 'show', 'user'),
+            validated: true,
+          },
+        },
+      });
+      tree.push({
+        source: 'fm_s_edit',
+        sourceHandle: 'components_source',
+        target: bId,
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        type: 'step',
+        id: `reactflow__edge-fm_s_editcomponents_source-${bId}`,
+      });
+      tree.push({
+        id: aId,
+        type: 'action',
+        draggable: true,
+        position: { x: qi.dx, y: 2220 },
+        width: 300,
+        height: 100,
+        data: {
+          node_options: JSON.parse(JSON.stringify(apiNodeOpts)),
+          data: {
+            type: 'api_action',
+            name: rVar,
+            ephemeral: false,
+            validated: true,
+            linked: true,
+            success_handles: false,
+            request_options: {
+              method: 'POST',
+              url: `${BACKEND_BASE}/api/farm/use-item`,
+              headers: [
+                { key: 'Content-Type', value: 'application/json' },
+                { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' },
+              ],
+              params: [],
+              body: [],
+              rawBody: `{"userId":"{user_id}","itemId":"${qi.itemId}"}`,
+              contentType: 'application/json',
+              options: {
+                excludeEmptyFields: true,
+                replaceParams: true,
+                replaceURL: true,
+                replaceHeaders: true,
+                replaceBody: true,
+                jsonSafeVariables: true,
+                bodyMode: 'raw',
+                contentType: 'application/json',
+                failOnError: false,
+              },
+            },
+          },
+        },
+      });
+      tree.push({
+        source: bId,
+        sourceHandle: 'action',
+        target: aId,
+        targetHandle: 'action',
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        type: 'custom',
+        id: `reactflow__edge-${bId}action-${aId}action`,
+      });
+      tree.push({
+        id: mId,
+        type: 'action',
+        draggable: true,
+        position: { x: qi.dx, y: 2400 },
+        width: 320,
+        height: 100,
+        data: {
+          node_options: JSON.parse(JSON.stringify(msgNodeOpts)),
+          data: {
+            type: 'advanced_message',
+            messageType: 'basic',
+            useComponentsV2: false,
+            target: { reply: true },
+            success_handles: false,
+            validated: true,
+            linked: true,
+            message: {
+              content: '',
+              embeds: [{
+                title: `${uidEm(qi.itemId, 'su_sparkle')} ${qi.title}`,
+                description: `{${rVar}.response.message}`,
+                color: '#10b981',
+                url: '',
+                thumbnail: { url: '' },
+                image: { url: '' },
+                footer: { text: 'Dùng /farm để xem lại toàn bộ ô đất & buff hiệu lực', icon_url: '' },
+              }],
+            },
+            components: [],
+            componentsV2Data: null,
+            reactions: '',
+          },
+        },
+      });
       tree.push({
         source: aId,
         sourceHandle: 'action',
@@ -1786,10 +2291,58 @@ function patchExplorerTreeV17(oldTree) {
         targetHandle: 'action',
         animated: false,
         arrowHeadType: 'arrowclosed',
-        type: 'smoothstep',
+        type: 'custom',
         id: `reactflow__edge-${aId}action-${mId}action`,
       });
     }
+  }
+  return tree;
+}
+
+const DELETED_PET_LEVEL_ROLE_IDS = new Set([
+  '1487134121242394875',
+  '1487151959457923102',
+  '1487134131522506783',
+  '1487134136547279088',
+  '1487136488331153589',
+  '1487071105486291145',
+]);
+
+function patchPetTreeV17(oldTree) {
+  let tree = JSON.parse(JSON.stringify(oldTree));
+  const root = tree.find((e) => e.id === 'root' && e.type === 'root');
+  if (root?.data?.data?.permissions?.allowed_roles) {
+    root.data.data.permissions.allowed_roles = root.data.data.permissions.allowed_roles.filter(
+      (r) => !DELETED_PET_LEVEL_ROLE_IDS.has(String(r?.id || ''))
+    );
+  }
+  const singRemove = new Set([
+    'option_30_e5a9_68c3',
+    'condition_32_0285_250f',
+    '$else_32_f1e1_40bf',
+    'conChild36_1645',
+    'condition_40_2664_2f18',
+    '$else_40_7be0_9bff',
+    'conChild45_sxpy71ltv',
+    'action_38_7846_d4c6',
+    'action_1774674487997',
+  ]);
+  const hadSingBranch = tree.some((e) => singRemove.has(e.id));
+  tree = tree.filter((e) => {
+    if (e.source && e.target) return !singRemove.has(e.source) && !singRemove.has(e.target);
+    return !singRemove.has(e.id);
+  });
+  if (hadSingBranch && !tree.some((e) => e.source === 'action_15_eb25_49eb' && e.target === 'action_17_ebd9_4e89')) {
+    tree.push({
+      source: 'action_15_eb25_49eb',
+      sourceHandle: 'success_actions',
+      target: 'action_17_ebd9_4e89',
+      targetHandle: 'action',
+      animated: false,
+      arrowHeadType: 'arrowclosed',
+      type: 'custom',
+      id: 'reactflow__edge-action_15_eb25_49ebsuccess_actions-action_17_ebd9_4e89action',
+    });
   }
   return tree;
 }
@@ -1801,8 +2354,8 @@ function buildV17KnowledgeBlock(includeFuyumiSecret) {
     '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa — MỚI v1.7): Áp dụng cho toàn bộ 40 Pet Độc Nhất (10 gốc + 30 Tối Thượng mới). Tab 1 Tiến Hóa cần Pet đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60%, 3.000 = 70%, 5.000 = 80%, 7.000 = 90%, 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần, đổi ảnh mới, tăng mạnh chỉ số & mở khóa Skill Ultimate tái kích hoạt trong /battle và /linhmach. Tab 2 Chế Tạo Hồng Mông: ghép từ 3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT (xác nhận 2 bước, KHÔNG có lệnh /hiente).',
     '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHẮC ẤN] (/inv, /linhthu, /pet, /phapbao, /linhvuc, /roles, /equip, /unequip, /enchant, /dismantle): /inv hiển thị ngang 2×3 kèm 3 nút Bộ 1 / Bộ 2 / Bộ 3 tự lưu trọn bộ Linh Thú + 3 Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh (đồng bộ cả trong /explorer). Kho v1.7 mở rộng tổng cộng 150 Pet công khai (40 Tối Thượng Độc Nhất), 264 Pháp Bảo (90 Vũ Khí, 87 Bảo Ngọc, 87 Chiến Hồn), 161 Lãnh Địa (65 Linh Vực, 48 Thần Thức, 48 Thần Cảnh) và 29 Khung Avatar. Khắc Ấn /enchant D→S (+0/+8/+18/+32/+50%, Pity +5%). Buff SET: Thường 4/5 (+8%/+12%); Thần Thoại 2/3/4/5 (+6/+12/+18/+25%, mốc 5 thêm +10% Xuyên DEF & +1 Linh Mạch).',
     '• [ĐẤU TRƯỜNG 1V1, LINH MẠCH GIỜ VÀNG & CHIẾN ĐẤU v1.7] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE 25/ngày, cooldown 15s, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố, HAX Engine, 40 Skill Ultimate, Linh Vực từ Hiệp 2 & Đạo Áp, kèm Web Battle Logs 48h (đã tách riêng dòng [Đầu lượt] và thẻ Ultimate). Cơ chế v1.7: Độc/Thiêu Đốt/Debuff từ nhiều nguồn khác nhau CỘNG DỒN (trần DoT 28%), Bất Tử bảo vệ trọn hiệp (chặn cả DoT/Vực/Phản Đòn/Ultimate), Thần Cảnh tôn trọng Kháng DoT. /linhmach & /party CHỈ mở vào 6 Khung Giờ Vàng (UTC+7): 08:00, 12:00, 18:00, 20:00, 21:00, 22:00 (60 phút/đợt). /nhiemvu tăng +30% thưởng (5/5 ngày: 170 LT, Tuần: 450–700 LT); Tháp 500 Tầng mốc T100/200/300/400/500 tặng thêm +1 Mảnh Tinh Hoa Hỗn Độn.',
-    '• [SHOP ĐẶC BIỆT CHỦ NHẬT (/shop_dacbiet), GACHA 0.65% & ĐỔ THẠCH] (/shop_dacbiet, /roll, /dothach, /autosell, /shop, /info): /shop_dacbiet CHỈ mở Chủ Nhật 08:00–24:00 (UTC+7), quy đổi 1 chiều 750 LT = 1 Tinh Thể Đỏ Vàng (TT) (tối thiểu 5 TT, tối đa 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh (120 TT), Thẻ Chọn Thần Thoại (55 TT — chọn 1/7 nhóm, ưu tiên món chưa có), Đá Tuyệt Ấn (40 TT), Mảnh Hỗn Độn, Bùa Tuyệt Ấn (+5 lượt nâng tỉ lệ Đá Tuyệt Ấn /explorer lên 25%), Thẻ Auto Farm 24h, Bùa Bảo Vệ & 5 Khung Đặc Biệt. Gacha /roll nâng tỉ lệ Thần Thoại+ lên 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck, Pity 350 ra 5% Độc Nhất). /dothach giảm -10% tỉ lệ xịt ở cả 4 sạp & đổi tên Hộp Thần Thoại Cực Phẩm. /daily tăng lên 55–80 LT, /job tăng +30%.',
-    '• [LÒ LUYỆN ĐAN, NÔNG TRẠI, KHÁM PHÁ & QUÀ v1.7] (/luyendan, /farm, /exchange, /gieoque, /explorer, /wiki, /updates): /luyendan 2 Lò song song tối đa 6 mẻ/ngày + Thẻ Bảo Vệ Cháy Đan (+2h tự cứu). /farm tối đa 8 ô, tưới nước/cho ăn nay giảm -30 phút chín + có Thẻ Auto Farm 24h, Thẻ Bảo Vệ Cây & Trứng (+2h), Thuốc Tốc Độ (-25% giờ), Bột Sản Lượng (+30% Linh Quả). /explorer 12 Địa Danh có đồng bộ Bộ 1/2/3 & rơi Mảnh Hỗn Độn 0.5%. /updates v1.7 chia 3 trang (Trang Trước/Sau) tặng trọn gói quà mở bản: +3.000 LT + 5 Tinh Thể Đỏ Vàng (TT) + 5 Thẻ Reset Tháp (vượt trần 15 vẫn nhận đủ) + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối!',
+    '• [SHOP ĐẶC BIỆT CHỦ NHẬT (/shop_dacbiet), GACHA 0.65% & ĐỔ THẠCH] (/shop_dacbiet, /roll, /dothach, /autosell, /shop, /info): /shop_dacbiet CHỈ mở Chủ Nhật 08:00–24:00 (UTC+7), quy đổi 1 chiều 750 LT = 1 Xích Kim Tinh Thạch (TT) (tối thiểu 5 TT, tối đa 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh (120 TT), Thẻ Chọn Thần Thoại (55 TT — chọn 1/7 nhóm, ưu tiên món chưa có), Đá Tuyệt Ấn (40 TT), Mảnh Hỗn Độn, Bùa Tuyệt Ấn (+5 lượt nâng tỉ lệ Đá Tuyệt Ấn /explorer lên 25%), Thẻ Auto Farm 24h, Bùa Bảo Vệ & 5 Khung Đặc Biệt. Gacha /roll nâng tỉ lệ Thần Thoại+ lên 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck, Pity 350 ra 5% Độc Nhất). /dothach giảm -10% tỉ lệ xịt ở cả 4 sạp & đổi tên Hộp Thần Thoại Cực Phẩm. /daily tăng lên 55–80 LT, /job tăng +30%.',
+    '• [LÒ LUYỆN ĐAN, NÔNG TRẠI, KHÁM PHÁ & QUÀ v1.7] (/luyendan, /farm, /exchange, /gieoque, /explorer, /wiki, /updates): /luyendan 2 Lò song song tối đa 6 mẻ/ngày + Thẻ Bảo Vệ Cháy Đan (+2h tự cứu). /farm tối đa 8 ô, tưới nước/cho ăn nay giảm -30 phút chín + có Thẻ Auto Farm 24h, Thẻ Bảo Vệ Cây & Trứng (+2h), Thuốc Tốc Độ (-25% giờ), Bột Sản Lượng (+30% Linh Quả). /explorer 12 Địa Danh có đồng bộ Bộ 1/2/3 & rơi Mảnh Hỗn Độn 0.5%. /updates v1.7 chia 3 trang (Trang Trước/Sau) tặng trọn gói quà mở bản: +3.000 LT + 5 Xích Kim Tinh Thạch (TT) + 5 Thẻ Reset Tháp (vượt trần 15 vẫn nhận đủ) + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối!',
   ];
   if (includeFuyumiSecret) {
     lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
@@ -1945,6 +2498,7 @@ async function fetchAllLiveReduxState() {
 async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
+  const dryLive = args.includes('--dry-live');
   const onlyArg = args.find((a) => a.startsWith('--only='));
   const onlySet = onlyArg ? new Set(onlyArg.slice(7).split(',').map((s) => s.trim().toLowerCase())) : null;
   const shouldRun = (k) => !onlySet || onlySet.has(k);
@@ -2002,6 +2556,27 @@ async function main() {
     specs.push({ name: 'dothach', kind: 'slash', groupId: cmdMap.get('dothach').groupId || PROFILE_GROUP_ID, elements: newTree });
   }
 
+  if (shouldRun('job') && cmdMap.has('job')) {
+    const oldTree = JSON.parse(LZString.decompressFromBase64(cmdMap.get('job').compressed_tree));
+    const newTree = patchJobTreeV17(oldTree);
+    validateTreeStrict(newTree, 'job');
+    specs.push({ name: 'job', kind: 'slash', groupId: cmdMap.get('job').groupId || PROFILE_GROUP_ID, elements: newTree });
+  }
+
+  if (shouldRun('farm') && cmdMap.has('farm')) {
+    const oldTree = JSON.parse(LZString.decompressFromBase64(cmdMap.get('farm').compressed_tree));
+    const newTree = patchFarmTreeV17(oldTree);
+    validateTreeStrict(newTree, 'farm');
+    specs.push({ name: 'farm', kind: 'slash', groupId: cmdMap.get('farm').groupId || PROFILE_GROUP_ID, elements: newTree });
+  }
+
+  if (shouldRun('pet') && cmdMap.has('pet')) {
+    const oldTree = JSON.parse(LZString.decompressFromBase64(cmdMap.get('pet').compressed_tree));
+    const newTree = patchPetTreeV17(oldTree);
+    validateTreeStrict(newTree, 'pet');
+    specs.push({ name: 'pet', kind: 'slash', groupId: cmdMap.get('pet').groupId ?? '', elements: newTree });
+  }
+
   if (shouldRun('ai')) {
     const aiEv = liveState.events.find((e) => e.int_id === AI_MENTION_INT_ID || e.id === AI_MENTION_INT_ID);
     if (!aiEv) throw new Error(`AI Mention event ${AI_MENTION_INT_ID} not found`);
@@ -2027,7 +2602,7 @@ async function main() {
 
   if (shouldRun('sweep')) {
     const alreadyHandled = new Set([
-      'updates', 'tienhoa', 'shop_dacbiet', 'wiki', 'shop', 'explorer', 'dothach',
+      'updates', 'tienhoa', 'shop_dacbiet', 'wiki', 'shop', 'explorer', 'dothach', 'job', 'farm', 'pet',
       'info', 'exp', 'giveaway_create', 'giveaway_end', 'giveaway_list', 'giveaway_cancel', 'giveaway_check',
       'play', 'queue', 'music', 'sound', 'sticky-set', 'sticky-off',
     ]);
@@ -2042,12 +2617,22 @@ async function main() {
     }
   }
 
+  if (dryLive) {
+    for (const sp of specs) {
+      const json = JSON.stringify(sp.elements);
+      const comp = LZString.compressToBase64(json);
+      console.log(`[DRY-LIVE OK] ${sp.kind}:${sp.name} (${sp.elements.length} els, ${(comp.length / 1024).toFixed(1)} KB LZ)`);
+    }
+    console.log(`\n[DRY-LIVE] Validated all ${specs.length} live-patched & full BotGhost graphs with 0 errors!`);
+    return;
+  }
+
   console.log(`Deploying ${specs.length} Ver 1.7 command/event updates via Edge CDP...`);
   const deployedSummary = [];
   for (const sp of specs) {
     console.log(`\n--> Deploying ${sp.kind}:${sp.name} (${sp.elements.length} elements)...`);
     let res = await deployViaCDP({
-      groupId: sp.groupId || PROFILE_GROUP_ID,
+      groupId: 'groupId' in sp ? sp.groupId : PROFILE_GROUP_ID,
       mode: sp.kind === 'event' ? 'event' : 'command',
       name: sp.name,
       elements: sp.elements,
@@ -2057,7 +2642,7 @@ async function main() {
       console.log(`    [RETRY] Transient save timeout on ${sp.name} (likely BotGhost burst rate limit); resting 12s & retrying once...`);
       await new Promise((r) => setTimeout(r, 12000));
       res = await deployViaCDP({
-        groupId: sp.groupId || PROFILE_GROUP_ID,
+        groupId: 'groupId' in sp ? sp.groupId : PROFILE_GROUP_ID,
         mode: sp.kind === 'event' ? 'event' : 'command',
         name: sp.name,
         elements: sp.elements,

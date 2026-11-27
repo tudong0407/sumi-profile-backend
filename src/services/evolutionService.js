@@ -20,7 +20,7 @@ import {
 import { em, petEmoji, tierEmoji, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { computeScaledPetBaseStats, invalidateInventoryCache } from './inventoryService.js';
-import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
+import { invalidateUniqueItemCard, invalidateUniquePetCard } from './staticAssetCacheService.js';
 
 export const EVOLUTION_MIN_LEVEL = 40;
 export const EVOLUTION_MIN_STAR = 8;
@@ -143,7 +143,7 @@ export async function getEvolutionHub(userId, options = {}) {
         : eligible
           ? `${uiEm('ui_check')} Sẵn sàng tiến hóa`
           : `*(Cần Lv.${EVOLUTION_MIN_LEVEL} & ${EVOLUTION_MIN_STAR}★ — hiện Lv.${p.level || 1} • ${p.star || 1}★)*`;
-      return `• ${petEmoji(p.pet_type)} \`${p.pet_type}\` **${p.pet_name}**: ${statusBadge}`;
+      return `• ${petEmoji(p.pet_type, '', Boolean(p.is_evolved))} \`${p.pet_type}\` **${p.pet_name}**: ${statusBadge}`;
     })
     : ['• Bạn chưa sở hữu Linh Thú Độc Nhất nào trong 40 chủng loại có thể Tiến Hóa.'];
 
@@ -303,6 +303,7 @@ export async function evolveUniquePet(userId, options = {}) {
       ]);
       invalidateInventoryCache(cleanId);
       invalidateUniqueItemCard(target.pet_type);
+      invalidateUniquePetCard(target.pet_type);
     } else {
       user.linh_thach = nextBal;
       inv.evo_crystal = nextCrystal;
@@ -331,7 +332,7 @@ export async function evolveUniquePet(userId, options = {}) {
       evo_crystal_remaining: nextCrystal,
       title: `${tierEmoji('evolved_supreme')} TIẾN HÓA CHÂN THẦN THÀNH CÔNG!!`,
       description: [
-        `${petEmoji(target.pet_type)} **${evoDef.evolved_name}** chính thức bước vào cảnh giới **Tối Thượng Chân Thần**!`,
+        `${petEmoji(target.pet_type, '', true)} **${evoDef.evolved_name}** chính thức bước vào cảnh giới **Tối Thượng Chân Thần**!`,
         `• **Giữ nguyên:** \`Lv.${lvl}\` • \`${star}★\` • Khắc Ấn \`${target.enchant_grade || 'D'}\``,
         `• **Chỉ số mới:** ATK **${scaled.atk.toLocaleString('vi-VN')}** • DEF **${scaled.def.toLocaleString('vi-VN')}** • SPD **${scaled.spd.toLocaleString('vi-VN')}** • Lực **${scaled.power_score.toLocaleString('vi-VN')}**`,
         `• **Mở khóa Skill Ultimate Tái Kích Hoạt:** **${evoDef.ultimate.name}** — *${evoDef.ultimate.desc}*`,

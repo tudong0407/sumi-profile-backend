@@ -258,7 +258,7 @@ export async function acknowledgeUpdate(userId) {
     const finalEss = Number(updatedRow.farm_essence ?? nextEssence);
     const rewardLines = [
       `• **+${rewardLt.toLocaleString('vi-VN')}** ${lt} Linh Thạch *(Ví: **${finalBal.toLocaleString('vi-VN')} LT**)*`,
-      ...(rewardTt > 0 ? [`• **+${rewardTt}** ${em('red_gold_crystal', em('su_sparkle'))} Tinh Thể Đỏ Vàng (TT) *(Hiện có: **${finalTt} TT**)*`] : []),
+      ...(rewardTt > 0 ? [`• **+${rewardTt}** ${em('red_gold_crystal', em('su_sparkle'))} Xích Kim Tinh Thạch (TT) *(Hiện có: **${finalTt} TT**)*`] : []),
       ...(rewardEssence > 0 ? [`• **+${rewardEssence.toLocaleString('vi-VN')}** ${farmEmoji('farm_essence') || em('su_sprout')} Linh Quả *(Hiện có: **${finalEss.toLocaleString('vi-VN')}**)*`] : []),
       ...grantedItems.map((gi) => `• **+${gi.quantity}** ${em(gi.item_id, em('su_sparkle'))} **${gi.label || gi.item_id}** *(Hiện có trong túi: **${gi.total_now}** — quà không giới hạn trần)*`),
     ];

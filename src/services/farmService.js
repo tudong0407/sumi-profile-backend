@@ -218,6 +218,31 @@ export async function getFarmStatus(userId, options = {}) {
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
   const { cap, plots } = await loadAndSyncPlots(cleanId, user.farm_slots_unlocked, now);
+  const { data: farmInvRows } = await supabase
+    .from('user_inventory')
+    .select('item_id, quantity')
+    .eq('user_id', cleanId)
+    .in('item_id', ['farm_auto_card', 'farm_protect_card', 'farm_growth_med', 'farm_yield_starch']);
+  const farmInvMap = new Map((farmInvRows || []).map((r) => [r.item_id, Number(r.quantity || 0)]));
+  const autoMs = user.farm_auto_until ? new Date(user.farm_auto_until).getTime() : 0;
+  const autoRemainMs = Math.max(0, autoMs - now.getTime());
+  const formatRemainShort = (ms) => {
+    const mins = Math.max(1, Math.ceil(ms / 60000));
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return h > 0 ? `${h}h${m > 0 ? `${m}p` : ''}` : `${m}p`;
+  };
+  const activeBuffParts = [];
+  if (autoRemainMs > 0) activeBuffParts.push(`${em('farm_auto_card')} Auto 24h (**còn ${formatRemainShort(autoRemainMs)}**)`);
+  if (user.farm_growth_med_active) activeBuffParts.push(`${em('farm_growth_med')} Thuốc -25% Giờ (**đã bật**)`);
+  if (user.farm_yield_starch_active) activeBuffParts.push(`${em('farm_yield_starch')} Bột +30% Sản Lượng (**đã bật**)`);
+  const farmBagLine = [
+    `${em('farm_auto_card')} Auto \`x${farmInvMap.get('farm_auto_card') || 0}\``,
+    `${em('farm_protect_card')} Bảo Vệ \`x${farmInvMap.get('farm_protect_card') || 0}\``,
+    `${em('farm_growth_med')} Thuốc \`x${farmInvMap.get('farm_growth_med') || 0}\``,
+    `${em('farm_yield_starch')} Bột \`x${farmInvMap.get('farm_yield_starch') || 0}\``,
+  ].join(' • ');
+  const activeBuffLine = activeBuffParts.length > 0 ? activeBuffParts.join(' • ') : 'Chưa kích hoạt buff nào';
   const essenceIcon = farmEmoji('farm_essence');
   const ltIcon = em('su_linhthach');
   const essence = Number(user.farm_essence || 0);
@@ -263,11 +288,24 @@ export async function getFarmStatus(userId, options = {}) {
     ready_count: readyCount,
     care_due_count: careCount,
     wilted_count: wiltedCount,
+    farm_items: {
+      farm_auto_card: farmInvMap.get('farm_auto_card') || 0,
+      farm_protect_card: farmInvMap.get('farm_protect_card') || 0,
+      farm_growth_med: farmInvMap.get('farm_growth_med') || 0,
+      farm_yield_starch: farmInvMap.get('farm_yield_starch') || 0,
+    },
+    active_buffs: {
+      farm_auto_until: autoRemainMs > 0 ? user.farm_auto_until : null,
+      farm_growth_med_active: Boolean(user.farm_growth_med_active),
+      farm_yield_starch_active: Boolean(user.farm_yield_starch_active),
+    },
     plots,
     title: `${essenceIcon} LINH ĐIỀN & LINH THÚ CÁC — ${user.username}`,
     description: [
       `• **Số Dư:** **${bal.toLocaleString('vi-VN')}** ${ltIcon} • **Linh Quả Tiên Giới:** **${essence.toLocaleString('vi-VN')}** ${essenceIcon}`,
       `• **Linh Điền:** \`${linhDienPlots.length}/4\` • **Linh Các:** \`${linhCacPlots.length}/4\` *(Tổng \`${cap}/${MAX_FARM_SLOTS}\` ô • Tự động DM nhắc tưới & cảnh báo héo 1h/30p/15p)*`,
+      `• **Buff /farm:** ${activeBuffLine}`,
+      `• **Vật Phẩm Hiện Có:** ${farmBagLine}`,
       '',
       `**${farmEmoji('seed_linh_thao')} KHU LINH ĐIỀN (${linhDienPlots.length}/4 ô):**`,
       ...linhDienLines,

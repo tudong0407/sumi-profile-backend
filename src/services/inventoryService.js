@@ -421,7 +421,7 @@ export async function getInventory(userId, options = {}) {
       ...p,
       enchant_grade: grade,
       grade_icon: gradeEmoji(grade),
-      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
+      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho'), Boolean(p.is_evolved)),
       tier_icon: tierEmoji(petMeta.rarity_key || 'common'),
     };
   }), options.petSort || 'power_desc');
@@ -755,7 +755,7 @@ export async function getUserPets(userId, options = {}) {
       rarity_label: rarityLabel,
       enchant_grade: grade,
       grade_icon: gradeEmoji(grade),
-      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
+      icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho'), Boolean(p.is_evolved)),
       tier_icon: tierEmoji(petMeta.rarity_key || 'common'),
     };
   }), sortMode);
@@ -2321,7 +2321,7 @@ export async function setActivePet(userId, petIdentifier) {
   return {
     success: true,
     active_pet: { ...target, enchant_grade: grade, is_active: true },
-    message: `${petEmoji(target.pet_type, em('su_pet_paw'))} ${gradeEmoji(grade)} Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star} ${em('su_realm_star')})!`,
+    message: `${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} ${gradeEmoji(grade)} Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star} ${em('su_realm_star')})!`,
   };
 }
 
@@ -2437,7 +2437,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
       cost_stones: stoneCost,
       linh_thach: currentBal - ltCost,
       power_score: newPower,
-      message: `${em('pet_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** (**${currentStar}★ → ${nextStar}★** ${em('su_realm_star')}) • Tiêu hao **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} + **${stoneCost}** ${em('pet_star_stone')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**.`,
+      message: `${em('pet_star_stone')} Đột phá sao thành công! ${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} **${target.pet_name}** (**${currentStar}★ → ${nextStar}★** ${em('su_realm_star')}) • Tiêu hao **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} + **${stoneCost}** ${em('pet_star_stone')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**.`,
     };
   }
 
@@ -2497,7 +2497,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
     cost_lt: ltCost,
     linh_thach: currentBal - ltCost,
     power_score: newPower,
-    message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'))} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) • Tổng chi phí: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**!`,
+    message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) • Tổng chi phí: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**!`,
   };
 }
 

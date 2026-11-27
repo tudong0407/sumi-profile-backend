@@ -2,7 +2,7 @@
  * src/services/specialShopService.js
  * Shop Đặc Biệt Chủ Nhật (/shop_dacbiet) — SuMi Family Ver 1.7:
  * - Mở cố định Chủ Nhật 08:00–24:00 (UTC+7 / giờ Việt Nam, 16 tiếng).
- * - Quy đổi 1 chiều 750 LT = 1 Tinh Thể Đỏ Vàng (TT), tối thiểu 5 TT (3.750 LT), trần 200 TT/tuần (150.000 LT).
+ * - Quy đổi 1 chiều 750 LT = 1 Xích Kim Tinh Thạch (TT), tối thiểu 5 TT (3.750 LT), trần 200 TT/tuần (150.000 LT).
  * - 13 mặt hàng đặc biệt có giới hạn tuần / vĩnh viễn + Thẻ Chọn Thần Thoại ưu tiên món CHƯA SỞ HỮU.
  * Tuyệt đối KHÔNG dùng emoji Unicode Windows.
  */
@@ -383,7 +383,7 @@ export async function getSpecialShopCatalog(userId, options = {}) {
 
   const lines = [
     statusBanner,
-    `• ${ttIcon} **Tinh Thể Đỏ Vàng (TT):** **${crystals.toLocaleString('vi-VN')} TT** • ${ltIcon} **Linh Thạch:** **${balance.toLocaleString('vi-VN')} LT**`,
+    `• ${ttIcon} **Xích Kim Tinh Thạch (TT):** **${crystals.toLocaleString('vi-VN')} TT** • ${ltIcon} **Linh Thạch:** **${balance.toLocaleString('vi-VN')} LT**`,
     `• ${uiEm('ui_refresh')} **Quy Đổi Tuần Này:** \`${convertedThisWeek}/${SPECIAL_SHOP_WEEKLY_TT_CAP} TT\` *(Tỷ giá: \`${SPECIAL_SHOP_EXCHANGE_RATE} LT = 1 TT\`, tối thiểu \`${SPECIAL_SHOP_MIN_TT} TT\`, 1 chiều)*`,
     selectorQty > 0 ? `• ${em('mythic_selector_card')} **Bạn đang có \`${selectorQty}\` Thẻ Chọn Thần Thoại chờ mở!**` : '',
     '',
@@ -426,7 +426,7 @@ export async function convertLtToCrystals(userId, rawTtAmount, options = {}) {
       success: false,
       status: 403,
       error: 'SPECIAL_SHOP_CLOSED',
-      message: `${uiEm('ui_clock_timer')} **Shop Đặc Biệt** chỉ mở vào **Chủ Nhật 08:00–24:00 (UTC+7)**! Hiện tại chưa thể quy đổi Tinh Thể Đỏ Vàng.`,
+      message: `${uiEm('ui_clock_timer')} **Shop Đặc Biệt** chỉ mở vào **Chủ Nhật 08:00–24:00 (UTC+7)**! Hiện tại chưa thể quy đổi Xích Kim Tinh Thạch.`,
     };
   }
 

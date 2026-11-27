@@ -737,7 +737,7 @@ export async function saveExplorerLoadout(userId, patch = {}) {
     const hub = await getExplorerHub(cleanId);
     const updatedMsg = [
       `${uiEm('ui_check')} **Đã cập nhật Loadout Khám Phá thành công!**`,
-      `-> *Bạn có thể tiếp tục bấm các nút ô khác ở bảng **[Chỉnh Loadout]** phía trên để gắn thêm đồ, hoặc bấm **[Xuất Phát Khám Phá]** ở bảng chính!*`,
+      `-> *Dùng các nút **[Bộ 1] [Bộ 2] [Bộ 3]** ở bảng chính (đã đồng bộ với \`/inv\`) hoặc bấm **[Xuất Phát Khám Phá]** để lên đường!*`,
       '',
       hub.description,
     ].join('\n');
@@ -1242,7 +1242,7 @@ export async function claimExpedition(userId, opts = {}) {
         404,
         'NO_ACTIVE_EXPEDITION',
         `${em('explorer_world_map_v14')} CHƯA CÓ CHUYẾN KHÁM PHÁ NÀO`,
-        'Bạn hiện chưa xuất phát chuyến khám phá nào! Hãy bấm **[Xuất Phát Khám Phá]** (hoặc **[Chỉnh Loadout]** trước) để đưa Linh Thú lên đường.',
+        'Bạn hiện chưa xuất phát chuyến khám phá nào! Hãy chọn **Bộ 1 / Bộ 2 / Bộ 3** rồi bấm **[Xuất Phát Khám Phá]** để đưa Linh Thú lên đường.',
       );
     }
 

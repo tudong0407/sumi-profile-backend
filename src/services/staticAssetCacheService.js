@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s1`;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s2`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 
@@ -237,11 +237,60 @@ export async function getCachedUniqueItemCard(itemData, format = 'webp') {
   return job;
 }
 
+export async function getCachedUniquePetCard(petData, format = 'webp') {
+  const fmt = format === 'png' ? 'png' : 'webp';
+  const petType = String(petData?.pet_type || '').trim();
+  const cacheKey = `pet:${petType}:${fmt}`;
+  const isEv = Boolean(petData?.is_evolved || petData?.current_owner?.is_evolved) ? 'evo' : 'base';
+  const ownerKey = petData?.current_owner?.user_id
+    ? `${petData.current_owner.user_id}:${petData.current_owner.username || ''}:${isEv}`
+    : `unowned:${isEv}`;
+
+  const hit = uniqueRamCache.get(cacheKey);
+  if (hit && hit.ownerKey === ownerKey && hit.buffer) {
+    return hit.buffer;
+  }
+
+  const flightKey = `${cacheKey}:${ownerKey}`;
+  if (inFlightUnique.has(flightKey)) {
+    return inFlightUnique.get(flightKey);
+  }
+
+  const job = (async () => {
+    const buf = await renderWikiPetCard(petData, { format: fmt });
+    if (uniqueRamCache.has(cacheKey)) uniqueRamCache.delete(cacheKey);
+    uniqueRamCache.set(cacheKey, {
+      ownerKey,
+      buffer: buf,
+      updatedAt: Date.now(),
+    });
+    while (uniqueRamCache.size > UNIQUE_RAM_CACHE_MAX) {
+      const oldest = uniqueRamCache.keys().next().value;
+      if (!oldest) break;
+      uniqueRamCache.delete(oldest);
+    }
+    return buf;
+  })().finally(() => {
+    inFlightUnique.delete(flightKey);
+  });
+
+  inFlightUnique.set(flightKey, job);
+  return job;
+}
+
 export function invalidateUniqueItemCard(itemId) {
   const clean = String(itemId || '').trim();
   if (!clean || !MYTHIC_UNIQUE_ITEM_IDS.has(clean)) return false;
   uniqueRamCache.delete(`${clean}:webp`);
   uniqueRamCache.delete(`${clean}:png`);
+  return true;
+}
+
+export function invalidateUniquePetCard(petType) {
+  const clean = String(petType || '').trim();
+  if (!clean) return false;
+  uniqueRamCache.delete(`pet:${clean}:webp`);
+  uniqueRamCache.delete(`pet:${clean}:png`);
   return true;
 }
 

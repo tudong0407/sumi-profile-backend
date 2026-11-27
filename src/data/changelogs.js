@@ -11,7 +11,7 @@ export const BIG_UPDATE_ACK_REWARD_LT = 3000;
 
 /**
  * Bản cập nhật LỚN v1.7 — Quà Mở Bản:
- * +3.000 LT + 5 Tinh Thể Đỏ Vàng (TT) + 5 Thẻ Reset Tháp (vượt trần vẫn nhận đủ) + 300 Linh Quả + 1 Thiên Đạo Tuyệt Ấn Thạch
+ * +3.000 LT + 5 Xích Kim Tinh Thạch (TT) + 5 Thẻ Reset Tháp (vượt trần vẫn nhận đủ) + 300 Linh Quả + 1 Thiên Đạo Tuyệt Ấn Thạch
  * Chia 3 trang gọn, dễ đọc (Trang Trước / Trang Sau). TUYỆT ĐỐI KHÔNG đưa dữ liệu Meta lên /updates!
  */
 export const V17_CHANGELOG = {
@@ -48,7 +48,7 @@ export const V17_CHANGELOG = {
           heading: `${em('su_sparkle')} 2. Mở Rộng +260 Món Mới, 9 Khung Viền & Gói Quà v1.7`,
           bullets: [
             '**Kho Mới Siêu Lớn:** **`+60 Linh Thú`** *(30 Tối Thượng Độc Nhất & 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực • Thần Thức • Thần Cảnh)* và **9 Khung Avatar mới** *(đã phân trang trong `/shop` & `/wiki`)*.',
-            '**Quà Mở Bản v1.7 Khi Xác Nhận:** Tặng ngay **`+3.000 LT`** • **`+5 Tinh Thể Đỏ Vàng (TT)`** • **`+5 Thẻ Reset Tháp`** *(nhận đủ kể cả khi túi đang đầy 15 thẻ)* • **`+300 Linh Quả`** • **`+1 Ấn Khắc Tuyệt Đối`**!',
+            '**Quà Mở Bản v1.7 Khi Xác Nhận:** Tặng ngay **`+3.000 LT`** • **`+5 Xích Kim Tinh Thạch (TT)`** • **`+5 Thẻ Reset Tháp`** *(nhận đủ kể cả khi túi đang đầy 15 thẻ)* • **`+300 Linh Quả`** • **`+1 Ấn Khắc Tuyệt Đối`**!',
           ],
         },
       ],
@@ -60,7 +60,7 @@ export const V17_CHANGELOG = {
         {
           heading: `${em('su_linhthach')} 3. Shop Đặc Biệt Chủ Nhật (/shop_dacbiet)`,
           bullets: [
-            '**Mở Cửa Chủ Nhật (`08:00–24:00` UTC+7):** Đổi **`750 LT = 1 Tinh Thể Đỏ Vàng (TT)`** *(tối thiểu `5 TT`, tối đa `200 TT/tuần`)*.',
+            '**Mở Cửa Chủ Nhật (`08:00–24:00` UTC+7):** Đổi **`750 LT = 1 Xích Kim Tinh Thạch (TT)`** *(tối thiểu `5 TT`, tối đa `200 TT/tuần`)*.',
             '**Vật Phẩm Hiếm:** Bán **Hồng Mông Tiến Hóa Tinh**, **Thẻ Chọn Thần Thoại** *(chọn 7 nhóm, ưu tiên món chưa sở hữu)*, **Mảnh Tinh Hoa Hỗn Độn**, **Bùa Tuyệt Ấn**, **Thẻ Auto Farm 24h**, **Bùa Bảo Vệ Farm/Luyện Đan** & 5 Khung Đặc Biệt.',
           ],
         },

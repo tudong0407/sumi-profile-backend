@@ -155,12 +155,17 @@ export function itemEmoji(itemId, fallback = '') {
   return em(itemEmojiKey(itemId), fallback);
 }
 
-export function petEmojiKey(petType) {
-  return petType ? String(petType).trim() : '';
+export function petEmojiKey(petType, isEvolved = false) {
+  if (!petType) return '';
+  const clean = String(petType).trim();
+  if (isEvolved && clean && getEmojiEntry(`${clean}_evo`)) {
+    return `${clean}_evo`;
+  }
+  return clean;
 }
 
-export function petEmoji(petType, fallback = '') {
-  return em(petEmojiKey(petType), fallback);
+export function petEmoji(petType, fallback = '', isEvolved = false) {
+  return em(petEmojiKey(petType, isEvolved), fallback);
 }
 
 export function ringEmojiKey(ringIdOrRarity) {

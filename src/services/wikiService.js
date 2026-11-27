@@ -499,7 +499,7 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Kiếm LT, Gacha 0.65%, Đổ Thạch & Shop Đặc Biệt',
-        content: '• /daily (55–80 LT + Streak 7d) • /job (+30%, 6 nghề, 8 ca/ngày) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, 0.65% Thần Thoại+, Pity 350 với 5% Độc Nhất) hỗ trợ /autosell.\n• /shop_dacbiet (Chủ Nhật 08:00–24:00 UTC+7): Đổi 750 LT = 1 Tinh Thể Đỏ Vàng (TT, min 5 TT, max 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh, Thẻ Chọn Thần Thoại (7 nhóm), Mảnh Hỗn Độn, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.\n• /dothach (40 Nguyên Thạch, 300 manh mối, giảm -10% xịt): Săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Hộp Thần Thoại Cực Phẩm.\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận + Cầu An Giải Hạn 250 LT • /shop (7 quầy, phân trang 30 Khung Avatar + 3 Lọ Luck Potion).',
+        content: '• /daily (55–80 LT + Streak 7d) • /job (+30%, 6 nghề, 8 ca/ngày) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, 0.65% Thần Thoại+, Pity 350 với 5% Độc Nhất) hỗ trợ /autosell.\n• /shop_dacbiet (Chủ Nhật 08:00–24:00 UTC+7): Đổi 750 LT = 1 Xích Kim Tinh Thạch (TT, min 5 TT, max 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh, Thẻ Chọn Thần Thoại (7 nhóm), Mảnh Hỗn Độn, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.\n• /dothach (40 Nguyên Thạch, 300 manh mối, giảm -10% xịt): Săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Hộp Thần Thoại Cực Phẩm.\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận + Cầu An Giải Hạn 250 LT • /shop (7 quầy, phân trang 30 Khung Avatar + 3 Lọ Luck Potion).',
       },
       {
         heading: '2. Nhiệm Vụ (+30%), Tháp 500 Tầng, Nông Trại (-30p) & Lò Luyện Đan',
@@ -1126,7 +1126,7 @@ export async function getWikiPetDetail(petType) {
       image_url: imageUrl,
     },
     embed: {
-      title: `${petEmoji(pet.pet_type, pet.icon)} ${pet.pet_name}`.trim(),
+      title: `${petEmoji(pet.pet_type, pet.icon, Boolean(currentOwner?.is_evolved))} ${pet.pet_name}`.trim(),
       description: descriptionLines.join('\n'),
       color: tier.color,
       color_dec: tier.colorDec,
