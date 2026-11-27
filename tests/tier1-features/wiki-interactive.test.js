@@ -155,7 +155,7 @@ describe('Tier 1 - Pillar 1 Interactive Wiki (Charts, 45 Items, 20 Standard Pets
     assert.equal(fuProf.status, 200);
     const fuJson = await fuProf.json();
     assert.equal(fuJson.data.pet?.pet_type, 'cuu_vi_hong_ho');
-    assert.match(fuJson.data.pet?.name || '', /Cửu Vĩ Hồng Hồ/);
+    assert.match(fuJson.data.pet?.name || '', /Cửu Vĩ Hồng Hồ|Hồng Mông Đế Nữ/);
   });
 
   it('8. /wiki roles + battle shield-bypass, /info role perms, stripLeadingEmojis & reflect battle log clarity', async () => {

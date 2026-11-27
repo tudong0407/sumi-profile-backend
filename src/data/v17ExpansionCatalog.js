@@ -7460,7 +7460,7 @@ export const FUYUMI_SUPREME_ULTIMATE = {
 
 export const FUYUMI_SUPREME_EVOLUTION = {
   base_pet_type: 'cuu_vi_hong_ho',
-  evolved_name: 'Cửu Vĩ Hồng Hồ • Hồng Mông Đế Cơ',
+  evolved_name: 'Hồng Mông Đế Nữ',
   element: 'Hỗn Độn',
   evo_image_file: 'pets/cuu_vi_hong_ho_evo.webp',
   evo_emoji_key: 'cuu_vi_hong_ho',

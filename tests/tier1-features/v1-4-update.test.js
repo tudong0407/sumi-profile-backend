@@ -552,7 +552,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
 
   const fuyumiCompiled = applyFatigueToCombatant(await compileCombatant(FUYUMI_USER_ID, 'attacker'), 0);
   assert.equal(fuyumiCompiled.pet.pet_type, 'cuu_vi_hong_ho');
-  assert.match(fuyumiCompiled.pet.pet_name, /Cửu Vĩ Hồng Hồ/);
+  assert.match(fuyumiCompiled.pet.pet_name, /Cửu Vĩ Hồng Hồ|Hồng Mông Đế Nữ/);
   assert.equal(fuyumiCompiled.powerScore, fuyumiProfile.pet.power, 'Compiled Linh Mạch combatant must match /profile power 1:1 without double-applying Set Bonus');
 
   const sp = V14_SPIRIT_VEIN_TIERS.find((t) => t.tier_code === 'S+');
@@ -583,7 +583,7 @@ test('v1.4.1 Regression Fixes: Explorer Power/Food/Error/DefaultLoadout + Auto L
   assert.match(logPayload.description, /Hiệp 1/);
   const htmlLog = await renderTeamBattleLogHtml(soloBattle.battleId);
   assert.equal(htmlLog.found, true);
-  assert.match(htmlLog.html, /Cửu Vĩ Hồng Hồ/);
+  assert.match(htmlLog.html, /Cửu Vĩ Hồng Hồ|Hồng Mông Đế Nữ/);
 
   const pngSolo = await renderTeamBattleCard(soloBattle, { format: 'png' });
   assertPngValid(pngSolo, 1800, 1035);

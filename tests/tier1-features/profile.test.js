@@ -51,7 +51,7 @@ describe('Tier 1 - Profile Card Rendering (PNG & JSON)', () => {
     assert.match(json.data.username, /Fuyumi/);
     assert.equal(json.data.level, FIXTURE_USERS.fuyumi.level);
     assert.ok(json.data.pet, 'Fuyumi profile must include active pet');
-    assert.match(json.data.pet.name, /Cửu Vĩ Hồng Hồ/);
+    assert.match(json.data.pet.name, /Cửu Vĩ Hồng Hồ|Hồng Mông Đế Nữ/);
     assert.match(json.data.realm, /Cửu Vĩ Tiên Chủ|Hỗn Độn Chúa Tể/);
   });
 
