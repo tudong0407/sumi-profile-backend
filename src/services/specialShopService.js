@@ -202,7 +202,7 @@ export const SPECIAL_SHOP_CATALOG = [
     weekly_limit: 3,
     lifetime_limit: null,
     icon: em('chaos_essence_shard'),
-    description: ALL_CONSUMABLE_BY_ID.chaos_essence_shard?.description || '3 mảnh + 1 Pet Thần Thoại thường + 2.500 LT chế thành 1 Hồng Mông Tiến Hóa Tinh.',
+    description: ALL_CONSUMABLE_BY_ID.chaos_essence_shard?.description || '3 mảnh + 1 Đồ Thần Thoại thường (Pet/Pháp Bảo/Vực/Thức/Cảnh) + 2.500 LT chế thành 1 Hồng Mông Tiến Hóa Tinh.',
   },
   {
     item_id: 'frame_v17_01_moon_fox',

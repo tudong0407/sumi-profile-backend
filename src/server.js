@@ -2872,6 +2872,7 @@ app.post('/api/tienhoa/craft-crystal', requireBackendApiKey, requireUpdateAck, a
     const result = await craftEvoCrystal(body.userId, {
       targetPetId: body.targetPetId,
       targetPetType: getCleanParam(body.targetPetType),
+      targetAsset: getCleanParam(body.targetAsset || body.targetPetType),
       confirmed: Boolean(body.confirmed),
     });
     return res.status(result.status || 200).json(result);

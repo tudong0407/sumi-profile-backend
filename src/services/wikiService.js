@@ -265,7 +265,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${tierEmoji('supreme')} Quy Tắc, Khắc Ấn Mới & Pity 350`,
-        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại+ *(95% Thường / 5% Độc Nhất)*.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
+        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại+ *(95% Thường / 5% Độc Nhất)*.\n• **Hiến Chế Hồng Mông (`/tienhoa` Tab 2):** Dùng **1 Vũ Khí / Bảo Ngọc / Chiến Hồn Thần Thoại thường** *(+3 Mảnh Hỗn Độn + 2.500 LT)* chế `1 Hồng Mông Tiến Hóa Tinh`.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
         inline: false,
       },
     ],
@@ -281,13 +281,13 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Tổng Quan Linh Thú & Tiến Hóa Chân Thần (/tienhoa)',
-        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Tiến Hóa Chân Thần (/tienhoa): Toàn bộ 40 Pet Tối Thượng Độc Nhất đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh (chế từ 3 Mảnh Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT) có thể tiến hóa tăng chỉ số, đổi ảnh & mở khóa 40 Skill Ultimate tái kích hoạt!\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.',
+        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Tiến Hóa Chân Thần (/tienhoa): Toàn bộ 40 Pet Tối Thượng Độc Nhất đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh (chế từ 3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường: Pet / Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh + 2.500 LT) có thể tiến hóa tăng chỉ số, đổi ảnh & mở khóa 40 Skill Ultimate tái kích hoạt!\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.',
       },
     ],
     fields: [
       {
         name: `${em('su_wiki_scroll')} Công Thức, Tiến Hóa (/tienhoa) & 40 Ultimate`,
-        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Tiến Hóa Chân Thần (`/tienhoa`):** 40 Pet Độc Nhất (`Lv.40 & 8★` + `1 Hồng Mông Tiến Hóa Tinh`, trượt không mất Hồng Mông) mở khóa **Skill Ultimate tái kích hoạt** trong 1v1 & Tổ Đội.',
+        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Tiến Hóa Chân Thần (`/tienhoa`):** 40 Pet Độc Nhất (`Lv.40 & 8★` + `1 Hồng Mông Tiến Hóa Tinh`, trượt không mất Hồng Mông) mở khóa **Skill Ultimate tái kích hoạt** • Chế Hồng Mông (Tab 2): `3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Pháp Bảo / Vực / Thức / Cảnh) + 2.500 LT`.',
         inline: false,
       },
       {
@@ -332,7 +332,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('dao_ap_crest')} Khắc Vực, Đạo Áp & Gacha /roll loai:domain`,
         value: [
           `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
-          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65%, Pity 350)* • Trang bị & xem kho qua `/linhvuc` • Dùng nút chọn nhóm bên dưới để tra cứu chi tiết & chủ sở hữu Độc Nhất.',
+          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65%, Pity 350)* • Trang bị & xem kho `/linhvuc` • Có thể dùng **Linh Vực / Thần Thức / Thần Cảnh Thần Thoại thường** làm phôi chế Hồng Mông (`/tienhoa` Tab 2).',
         ].join('\n'),
         inline: false,
       },

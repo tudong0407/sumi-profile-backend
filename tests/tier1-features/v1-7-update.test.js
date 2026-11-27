@@ -33,6 +33,7 @@ import {
 } from '../../src/services/specialShopService.js';
 import { getShopCatalog } from '../../src/services/shopService.js';
 import {
+  getEvolutionHub,
   evolveUniquePet,
   craftEvoCrystal,
   __resetEvolutionTestStore,
@@ -340,6 +341,55 @@ test('Ver 1.7 /tienhoa Tab 1 Evolve & Tab 2 Craft Hồng Mông (NO /hiente)', as
     assert.equal(okEvo.star, 8);
     assert.equal(okEvo.enchant_grade, 'S');
     assert.ok(okEvo.ultimate?.id);
+
+    // Tab 2 multi-category Mythic crafting: Weapon / Domain / Sense / Realm support + protections
+    const uid2 = '770011223344556688';
+    __resetEvolutionTestStore({
+      [uid2]: {
+        linh_thach: 20000,
+        inventory: { chaos_essence_shard: 6, evo_crystal: 0 },
+        pets: [
+          { pet_id: 'p_keep', pet_type: 'hoa_thach_nham_nham', pet_name: 'Hóa Thạch', level: 1, star: 1, is_active: true, status: 'ready', quantity: 1 },
+        ],
+        items: [
+          { id: 'it_eq', item_id: 'weapon_mythic_4', slot: 'weapon', equipped_to_pet: 'hoa_thach_nham_nham', quantity: 1 },
+          { id: 'it_free', item_id: 'weapon_mythic_5', slot: null, equipped_to_pet: null, quantity: 1 },
+          { id: 'it_uniq', item_id: 'weapon_mythic_1', slot: null, equipped_to_pet: null, quantity: 1 },
+        ],
+        domains: [
+          { id: 'dom_free', entity_kind: 'domain', entity_id: 'domain_mythic_1', is_equipped: false, quantity: 1 },
+        ],
+        loadouts: [{ slot_index: 1, weapon_id: 'weapon_mythic_5', domain_id: 'domain_mythic_1' }],
+      },
+    });
+    const hub2 = await getEvolutionHub(uid2);
+    assert.equal(hub2.sacrifice_counts.items, 1);
+    assert.equal(hub2.sacrifice_counts.domains, 1);
+
+    const errEq = await craftEvoCrystal(uid2, { targetAsset: 'weapon_mythic_4', confirmed: true });
+    assert.equal(errEq.success, false);
+    assert.equal(errEq.error, 'ITEM_EQUIPPED');
+
+    const errUniq = await craftEvoCrystal(uid2, { targetAsset: 'weapon_mythic_1', confirmed: true });
+    assert.equal(errUniq.success, false);
+    assert.equal(errUniq.error, 'INVALID_SACRIFICE_RARITY');
+
+    const prevItem = await craftEvoCrystal(uid2, { targetAsset: 'weapon_mythic_5', confirmed: false });
+    assert.equal(prevItem.success, true);
+    assert.equal(prevItem.requires_confirmation, true);
+    assert.equal(prevItem.target_kind, 'item');
+
+    const okItem = await craftEvoCrystal(uid2, { targetPetId: prevItem.target_pet_id, confirmed: true });
+    assert.equal(okItem.success, true);
+    assert.equal(okItem.evo_crystal, 1);
+    assert.equal(__getEvolutionTestState(uid2).items.length, 2);
+    assert.equal(__getEvolutionTestState(uid2).loadouts[0].weapon_id, null);
+
+    const okDom = await craftEvoCrystal(uid2, { targetAsset: 'domain_mythic_1', confirmed: true });
+    assert.equal(okDom.success, true);
+    assert.equal(okDom.evo_crystal, 2);
+    assert.equal(__getEvolutionTestState(uid2).domains.length, 0);
+    assert.equal(__getEvolutionTestState(uid2).loadouts[0].domain_id, null);
   } finally {
     __resetEvolutionTestStore(null);
   }

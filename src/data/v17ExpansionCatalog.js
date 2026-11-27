@@ -7394,7 +7394,7 @@ export function buildV17SpecialConsumables() {
       weekly_limit: 3,
       max_stack: 99,
       icon: em('chaos_essence_shard', em('su_realm_star')),
-      description: 'Nguyên liệu chế tạo Hồng Mông Tiến Hóa Tinh (3 Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT = 1 Hồng Mông). Rơi cố định 0.5% tại /explorer & +1 mỗi 100 tầng Tháp.',
+      description: 'Nguyên liệu chế tạo Hồng Mông Tiến Hóa Tinh (3 Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường: Pet / Vũ Khí / Bảo Ngọc / Chiến Hồn / Linh Vực / Thần Thức / Thần Cảnh + 2.500 LT = 1 Hồng Mông). Rơi cố định 0.5% tại /explorer & +1 mỗi 100 tầng Tháp.',
     },
     {
       item_id: 'evo_crystal',

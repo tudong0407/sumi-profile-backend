@@ -41,7 +41,7 @@ export const V17_CHANGELOG = {
           heading: `${em('su_tier_toithuong')} 1. Tiến Hóa Chân Thần (/tienhoa) & 40 Skill Ultimate`,
           bullets: [
             '**Tiến Hóa 40 Pet Độc Nhất:** Đạt **`Lv.40 & 8★`** + **`1 Hồng Mông Tiến Hóa Tinh`** + Linh Thạch để tiến hóa thành **Tối Thượng Chân Thần**, đổi ảnh mới, tăng mạnh chỉ số & mở khóa **Skill Ultimate tái kích hoạt** trong `/battle` & `/linhmach` *(thất bại không mất Hồng Mông)*.',
-            '**Chế Tạo Hồng Mông (Tab 2 `/tienhoa`):** Ghép từ **`3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT`** *(xác nhận 2 bước an toàn)*.',
+            '**Chế Tạo Hồng Mông (Tab 2 `/tienhoa`):** Ghép từ **`3 Mảnh Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường`** *(Pet / Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh)* **`+ 2.500 LT`** *(xác nhận 2 bước an toàn)*.',
           ],
         },
         {

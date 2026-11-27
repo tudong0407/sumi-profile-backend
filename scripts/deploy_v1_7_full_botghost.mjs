@@ -383,7 +383,7 @@ export function buildTienHoaV17Cmd() {
     x: 420,
     y: 0,
   });
-  gb.option('linh_thu', 'string', 'Mã/tên Pet Độc Nhất (Tab 1) hoặc Pet Thần Thoại thường để hiến phôi (Tab 2)', {
+  gb.option('linh_thu', 'string', 'Mã/tên Pet Độc Nhất (Tab 1) hoặc Đồ Thần Thoại thường: Pet/Pháp Bảo/Vực/Thức/Cảnh (Tab 2)', {
     required: false,
     x: 700,
     y: 0,
@@ -418,7 +418,7 @@ export function buildTienHoaV17Cmd() {
     title: '{th_hub_res.response.title}',
     description: '{th_hub_res.response.description}',
     color: '#fb7185',
-    footer: 'Dùng /tienhoa che_do:tienhoa linh_thu:<mã_pet> muc_phi:9000 hoặc /tienhoa che_do:chetao linh_thu:<mã_pet_thần_thoại>',
+    footer: 'Dùng /tienhoa che_do:tienhoa linh_thu:<mã_pet> muc_phi:9000 hoặc /tienhoa che_do:chetao linh_thu:<mã_đồ_thần_thoại>',
     target: { editId: 'th_ack' },
     action_id: 'th_ack',
   }, { x: 0, y: 1020 });
@@ -453,7 +453,7 @@ export function buildTienHoaV17Cmd() {
     title: `${uidEm('chaos_essence_shard', 'su_sparkle')} XÁC NHẬN CHẾ TẠO HỒNG MÔNG TIẾN HÓA TINH (BƯỚC 1/2)`,
     description: '{th_cp_res.response.message}',
     color: '#f59e0b',
-    footer: 'Thao tác tiêu hủy vĩnh viễn Pet Thần Thoại phôi đã chọn — hãy kiểm tra kỹ trước khi xác nhận!',
+    footer: 'Thao tác tiêu hủy vĩnh viễn Đồ Thần Thoại phôi đã chọn — hãy kiểm tra kỹ trước khi xác nhận!',
     target: { editId: 'th_ack' },
     action_id: 'th_ack',
   }, { x: 280, y: 1180 });
@@ -663,7 +663,7 @@ export function buildShopDacBietV17Cmd() {
 function buildEquipmentDropdownOptions(items) {
   return items.map((it) => ({
     label: `${it.item_name}`,
-    description: `${it.rarity} • ${it.element} • ${it.hax_skill || 'Nội tại cơ bản'}`,
+    description: `${it.rarity} • ${it.element}`,
     emoji_id: uidId(it.item_id, tierEmojiKey(it.rarity_key)),
     value: it.item_id,
   }));
@@ -672,7 +672,7 @@ function buildEquipmentDropdownOptions(items) {
 function buildPetDropdownOptions(pets) {
   return pets.map((p) => ({
     label: p.pet_name,
-    description: `${p.rarity} • ${p.element} • ${p.hax_skill}`,
+    description: `${p.rarity} • ${p.element}`,
     emoji_id: uidId(p.pet_type, 'su_pet_paw'),
     value: p.pet_type,
   }));
@@ -691,14 +691,14 @@ function buildDomainDropdownOptions(items, kind) {
     if (kind === 'sense') {
       return {
         label: it.name,
-        description: `${it.rarity} • +${it.bonus_energy} Mạch • +${Math.round((it.buff_boost_pct || 0) * 100)}% Buff Vực`,
+        description: `${it.rarity} • +${it.bonus_energy} Mạch`,
         emoji_id: uidId(it.sense_id, 'su_realm_star'),
         value: it.sense_id,
       };
     }
     return {
       label: it.name,
-      description: `${it.rarity} • +${Math.round((it.debuff_boost_pct || 0) * 100)}% Debuff Vực`,
+      description: `${it.rarity} • +${Math.round((it.debuff_boost_pct || 0) * 100)}% Debuff`,
       emoji_id: uidId(it.realm_id, 'dao_ap_crest'),
       value: it.realm_id,
     };
@@ -790,7 +790,7 @@ export function buildWikiV17Cmd() {
   gb.link('rl_init_api', 'msg_wiki_roles');
 
   let rlSeq = 0;
-  function attachRolesButtons(parentMsgId, activePage, depth, bx, by) {
+  function attachRolesButtons(parentMsgId, activePage, depth, bx, by, targetMsgId = 'msg_wiki_roles') {
     if (depth >= 2) return;
     const specs = [
       { page: 1, label: 'Trang 1: Cao Cấp', style: activePage === 1 ? 'PRIMARY' : 'SECONDARY', icon: 'su_tier_thanthoai', weight: '3', dx: -240 },
@@ -811,14 +811,14 @@ export function buildWikiV17Cmd() {
         description: `{${rVar}.response.embed_flat.description}`,
         color: '#a855f7',
         footer: '',
-        target: { editId: 'msg_wiki_roles' },
-        action_id: 'msg_wiki_roles',
+        target: { editId: targetMsgId },
+        action_id: targetMsgId,
       }, { x: bx + sp.dx, y: by + 450 });
       gb.link(aId, mId);
-      attachRolesButtons(mId, sp.page, depth + 1, bx + sp.dx, by + 600);
+      attachRolesButtons(mId, sp.page, depth + 1, bx + sp.dx, by + 600, targetMsgId);
     }
   }
-  attachRolesButtons('msg_wiki_roles', 1, 0, -1700, 860);
+  attachRolesButtons('msg_wiki_roles', 1, 0, -1700, 860, 'msg_wiki_roles');
 
   // --- Glossary Hub (100% Button Pagination) ---
   apiAction(gb, 'gl_init_api', 'gl_init_res', 'GET', `${BACKEND_BASE}/api/wiki?category=glossary&page=1`, '', { x: -1150, y: 680 });
@@ -834,7 +834,7 @@ export function buildWikiV17Cmd() {
   gb.link('gl_init_api', 'msg_wiki_glossary');
 
   let glSeq = 0;
-  function attachGlossaryPager(parentMsgId, prevResVar, bx, by) {
+  function attachGlossaryPager(parentMsgId, prevResVar, bx, by, targetMsgId = 'msg_wiki_glossary') {
     for (const c of [
       { key: 'prev', label: 'Trang Trước', icon: 'su_arrow_left', weight: '2', q: `{${prevResVar}.response.prev_page}`, dx: -130 },
       { key: 'next', label: 'Trang Sau', icon: 'su_arrow_right', weight: '1', q: `{${prevResVar}.response.next_page}`, dx: 130 },
@@ -852,14 +852,14 @@ export function buildWikiV17Cmd() {
         description: `{${rVar}.response.embed_flat.description}`,
         color: '#38bdf8',
         footer: '',
-        target: { editId: 'msg_wiki_glossary' },
-        action_id: 'msg_wiki_glossary',
+        target: { editId: targetMsgId },
+        action_id: targetMsgId,
       }, { x: bx + c.dx, y: by + 450 });
       gb.link(aId, mId);
     }
   }
 
-  function attachGlossaryDirectButtons(parentMsgId, activePage, depth, bx, by) {
+  function attachGlossaryDirectButtons(parentMsgId, activePage, depth, bx, by, targetMsgId = 'msg_wiki_glossary') {
     const specs = [
       { page: 1, label: '1: Giáp & DEF', icon: 'su_crossed_swords', weight: '4', dx: -330 },
       { page: 2, label: '2: Khiên', icon: 'su_shield_def', weight: '3', dx: -110 },
@@ -882,17 +882,119 @@ export function buildWikiV17Cmd() {
         description: `{${rVar}.response.embed_flat.description}`,
         color: '#38bdf8',
         footer: '',
-        target: { editId: 'msg_wiki_glossary' },
-        action_id: 'msg_wiki_glossary',
+        target: { editId: targetMsgId },
+        action_id: targetMsgId,
       }, { x: bx + sp.dx, y: by + 450 });
       gb.link(aId, mId);
-      if (depth === 0) attachGlossaryDirectButtons(mId, sp.page, 1, bx + sp.dx, by + 600);
-      else attachGlossaryPager(mId, rVar, bx + sp.dx, by + 600);
+      if (depth === 0) attachGlossaryDirectButtons(mId, sp.page, 1, bx + sp.dx, by + 600, targetMsgId);
+      else attachGlossaryPager(mId, rVar, bx + sp.dx, by + 600, targetMsgId);
     }
   }
-  attachGlossaryDirectButtons('msg_wiki_glossary', 1, 0, -1150, 860);
+  attachGlossaryDirectButtons('msg_wiki_glossary', 1, 0, -1150, 860, 'msg_wiki_glossary');
 
-  // --- 5 unrolled edit-in-place category switches on msg_wiki_0 ---
+  // --- Helper: Paginated Select Menu Attachment (max 2 select menus = <=50 options/msg to prevent DISCORD_40005!) ---
+  const attachPagedDropdowns = ({
+    listMsgId,
+    title,
+    color,
+    labelPrefix,
+    options,
+    totalCount,
+    keyPrefix,
+    varRefName,
+    detailAckId,
+    baseX,
+  }) => {
+    const optChunks = chunkArray(options, 25);
+    const totalPages = Math.max(1, Math.ceil(optChunks.length / 2));
+
+    const wirePageMenus = (parentId, chunkOffset, chunkSlice, pageNum, px, py) => {
+      let itemOffset = chunkOffset * 25;
+      chunkSlice.forEach((chunk, localIdx) => {
+        const startNo = itemOffset + 1;
+        const endNo = itemOffset + chunk.length;
+        itemOffset += chunk.length;
+        const selId = `sel_${keyPrefix}_p${pageNum}_${localIdx + 1}`;
+        const varName = `picked_${keyPrefix}_p${pageNum}_${localIdx + 1}`;
+        const setId = `set_${keyPrefix}_p${pageNum}_${localIdx + 1}`;
+        const cx = px + (localIdx - 0.5) * 140;
+
+        gb.advSelectMenu(selId, parentId, {
+          placeholder: `${labelPrefix} (${startNo}-${endNo} / ${totalCount})...`,
+          customVariableName: varName,
+          basic_options: chunk,
+          row: String(localIdx + 1),
+          weight: '1',
+          showReplies: 'show',
+        }, { x: cx, y: py + 180 });
+        gb.act(setId, 'set_unique_variable', { reference: varRefName, value: `{${varName}}`, success_handles: false }, { x: cx, y: py + 360 });
+        gb.link(selId, setId);
+        gb.link(setId, detailAckId);
+      });
+    };
+
+    if (totalPages === 1) {
+      wirePageMenus(listMsgId, 0, optChunks, 1, baseX, 1600);
+      return;
+    }
+
+    // Page 1 (chunks 0..1 = items 1..50) on initial listMsgId + [Trang Sau] button
+    wirePageMenus(listMsgId, 0, optChunks.slice(0, 2), 1, baseX, 1600);
+    const nextBtnId = `btn_${keyPrefix}_next_p2`;
+    const p2MsgId = `${listMsgId}_p2`;
+    const p1BackMsgId = `${listMsgId}_p1`;
+    const backBtnId = `btn_${keyPrefix}_prev_p1`;
+
+    gb.advBtn(nextBtnId, listMsgId, btnCfg(`Trang Sau (51–${totalCount})`, 'PRIMARY', 'su_arrow_right', '3', '1', 'hide'), { x: baseX + 140, y: 1780 });
+    embedMsg(gb, p2MsgId, {
+      title: `${title} • Trang 2/2`,
+      description: `Danh sách mục **51–${totalCount} / ${totalCount}**. Chọn bên dưới để xem thẻ chi tiết.`,
+      color,
+      footer: '',
+      target: { editId: listMsgId },
+      action_id: listMsgId,
+    }, { x: baseX + 260, y: 1960 });
+    gb.link(nextBtnId, p2MsgId);
+    wirePageMenus(p2MsgId, 2, optChunks.slice(2, 4), 2, baseX + 260, 1960);
+
+    gb.advBtn(backBtnId, p2MsgId, btnCfg('Trang Trước (1–50)', 'SECONDARY', 'su_arrow_left', '3', '1', 'hide'), { x: baseX + 360, y: 2140 });
+    embedMsg(gb, p1BackMsgId, {
+      title: `${title} • Trang 1/2`,
+      description: `Danh sách mục **1–50 / ${totalCount}**. Chọn bên dưới để xem thẻ chi tiết.`,
+      color,
+      footer: '',
+      target: { editId: listMsgId },
+      action_id: listMsgId,
+    }, { x: baseX + 420, y: 2320 });
+    gb.link(backBtnId, p1BackMsgId);
+    wirePageMenus(p1BackMsgId, 0, optChunks.slice(0, 2), 3, baseX + 420, 2320);
+  };
+
+  // --- Pre-wired Sub-Hub Lists (Equipment / Pets / Domains) ---
+  const slotSpecs = [
+    { key: 'weapon', label: 'Vũ Khí', emoji: 'su_crossed_swords', weight: '3', x: 640 },
+    { key: 'gem', label: 'Bảo Ngọc', emoji: 'su_linhthach', weight: '2', x: 900 },
+    { key: 'soul', label: 'Chiến Hồn', emoji: 'su_thunder_hax', weight: '1', x: 1160 },
+  ];
+  const stdPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
+  const lowPets = stdPets.filter((p) => ['common', 'rare', 'epic'].includes(p.rarity_key));
+  const normMythicPets = stdPets.filter((p) => p.rarity_key === 'mythic' && !p.is_unique);
+  const uniqueAllPets = stdPets.filter((p) => p.is_unique);
+  const petSubHubs = [
+    { key: 'low', label: `Phàm/Linh/Tiên (${lowPets.length})`, style: 'SECONDARY', icon: 'su_tier_tien', weight: '3', items: lowPets, x: 1480 },
+    { key: 'mythic', label: `Thần Thoại (${normMythicPets.length})`, style: 'PRIMARY', icon: 'su_tier_thanthoai', weight: '2', items: normMythicPets, x: 1700 },
+    { key: 'unique', label: `40 Tối Thượng & Ult`, style: 'DANGER', icon: 'evo_crystal', weight: '1', items: uniqueAllPets, x: 1920 },
+  ];
+  const pubDomains = DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi);
+  const pubSenses = DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi);
+  const pubRealms = DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi);
+  const domSubHubs = [
+    { key: 'domain', kind: 'domain', label: `Linh Vực (${pubDomains.length})`, style: 'PRIMARY', icon: 'su_realm_star', weight: '3', items: pubDomains, x: 2420 },
+    { key: 'sense', kind: 'sense', label: `Thần Thức (${pubSenses.length})`, style: 'SECONDARY', icon: 'su_sparkle', weight: '2', items: pubSenses, x: 2650 },
+    { key: 'realm', kind: 'realm', label: `Thần Cảnh (${pubRealms.length})`, style: 'DANGER', icon: 'dao_ap_crest', weight: '1', items: pubRealms, x: 2880 },
+  ];
+
+  // --- 5 unrolled edit-in-place category switches on msg_wiki_0 (ALL target msg_wiki_0, ZERO reply-on-hide bugs!) ---
   let curMsgId = 'msg_wiki_0';
   for (let k = 1; k <= 5; k += 1) {
     const prevIdx = k - 1;
@@ -928,11 +1030,90 @@ export function buildWikiV17Cmd() {
     gb.branch(condId, brGl, 'comparison', { type: 'equal_to', comparison_value: 'glossary', ignoreCase: true }, { x: -260, y: baseY - 160 });
     gb.elseBranch(condId, brFlat, 'comparison', { x: 0, y: baseY - 160 });
 
-    gb.link(brEq, 'msg_wiki_equip');
-    gb.link(brPet, 'msg_wiki_pets');
-    gb.link(brDom, 'msg_wiki_domains');
-    gb.link(brRoles, 'rl_init_api');
-    gb.link(brGl, 'gl_init_api');
+    // Edit msg_wiki_0 in place for Equipment / Pets / Domains hubs + sub-hub buttons (opening list messages with showReplies: 'show')
+    const swEqMsgId = `msg_sw_equip_${k}`;
+    embedMsg(gb, swEqMsgId, {
+      title: eqEmb.title,
+      description: eqEmb.description,
+      color: '#f59e0b',
+      fields: eqEmb.fields,
+      footer: 'Mẹo: Gõ /wiki chuyen_muc:<mục> bất kỳ lúc nào hoặc bấm nút bên dưới để mở menu chi tiết.',
+      target: { editId: 'msg_wiki_0' },
+      action_id: 'msg_wiki_0',
+    }, { x: 240, y: baseY + 20 });
+    gb.link(brEq, swEqMsgId);
+    for (const sp of slotSpecs) {
+      const bId = `btn_sw_eq_${sp.key}_${k}`;
+      gb.advBtn(bId, swEqMsgId, btnCfg(`${sp.label} (${EQUIPMENT_CATALOG.filter((e) => e.item_type === sp.key).length})`, 'SECONDARY', sp.emoji, '1', sp.weight, 'show'), { x: 240, y: baseY + 140 });
+      gb.link(bId, `msg_eq_${sp.key}`);
+    }
+
+    const swPetMsgId = `msg_sw_pets_${k}`;
+    embedMsg(gb, swPetMsgId, {
+      title: ptEmb.title,
+      description: ptEmb.description,
+      color: '#ec4899',
+      fields: ptEmb.fields,
+      footer: 'Mẹo: Bấm nút nhóm Linh Thú bên dưới để mở danh sách chi tiết & Ultimate.',
+      target: { editId: 'msg_wiki_0' },
+      action_id: 'msg_wiki_0',
+    }, { x: 420, y: baseY + 20 });
+    gb.link(brPet, swPetMsgId);
+    for (const sh of petSubHubs) {
+      const bId = `btn_sw_pet_${sh.key}_${k}`;
+      gb.advBtn(bId, swPetMsgId, btnCfg(sh.label, sh.style, sh.icon, '1', sh.weight, 'show'), { x: 420, y: baseY + 140 });
+      gb.link(bId, `msg_pet_sh_${sh.key}`);
+    }
+
+    const swDomMsgId = `msg_sw_dom_${k}`;
+    embedMsg(gb, swDomMsgId, {
+      title: domEmb.title,
+      description: domEmb.description,
+      color: '#a855f7',
+      fields: domEmb.fields,
+      footer: 'Mẹo: Bấm nút bên dưới để mở danh sách Linh Vực • Thần Thức • Thần Cảnh chi tiết.',
+      target: { editId: 'msg_wiki_0' },
+      action_id: 'msg_wiki_0',
+    }, { x: 600, y: baseY + 20 });
+    gb.link(brDom, swDomMsgId);
+    for (const sh of domSubHubs) {
+      const bId = `btn_sw_dom_${sh.key}_${k}`;
+      gb.advBtn(bId, swDomMsgId, btnCfg(sh.label, sh.style, sh.icon, '1', sh.weight, 'show'), { x: 600, y: baseY + 140 });
+      gb.link(bId, `msg_dom_sh_${sh.key}`);
+    }
+
+    // Roles & Glossary switched from dropdown ALSO edit msg_wiki_0 in place!
+    const rlSwApi = `rl_sw_api_${k}`;
+    const rlSwVar = `rl_sw_res_${k}`;
+    const rlSwMsg = `msg_sw_roles_${k}`;
+    apiAction(gb, rlSwApi, rlSwVar, 'GET', `${BACKEND_BASE}/api/wiki?category=roles&page=1`, '', { x: -460, y: baseY - 20 });
+    gb.link(brRoles, rlSwApi);
+    embedMsg(gb, rlSwMsg, {
+      title: `{${rlSwVar}.response.embed_flat.title}`,
+      description: `{${rlSwVar}.response.embed_flat.description}`,
+      color: '#a855f7',
+      footer: '',
+      target: { editId: 'msg_wiki_0' },
+      action_id: 'msg_wiki_0',
+    }, { x: -460, y: baseY + 120 });
+    gb.link(rlSwApi, rlSwMsg);
+    attachRolesButtons(rlSwMsg, 1, 1, -460, baseY + 140, 'msg_wiki_0');
+
+    const glSwApi = `gl_sw_api_${k}`;
+    const glSwVar = `gl_sw_res_${k}`;
+    const glSwMsg = `msg_sw_gl_${k}`;
+    apiAction(gb, glSwApi, glSwVar, 'GET', `${BACKEND_BASE}/api/wiki?category=glossary&page=1`, '', { x: -260, y: baseY - 20 });
+    gb.link(brGl, glSwApi);
+    embedMsg(gb, glSwMsg, {
+      title: `{${glSwVar}.response.embed_flat.title}`,
+      description: `{${glSwVar}.response.embed_flat.description}`,
+      color: '#38bdf8',
+      footer: '',
+      target: { editId: 'msg_wiki_0' },
+      action_id: 'msg_wiki_0',
+    }, { x: -260, y: baseY + 120 });
+    gb.link(glSwApi, glSwMsg);
+    attachGlossaryDirectButtons(glSwMsg, 1, 1, -260, baseY + 140, 'msg_wiki_0');
 
     apiAction(gb, apiId, resName, 'GET', `${BACKEND_BASE}/api/wiki?category={${varName}}`, '', { x: 0, y: baseY - 20 });
     gb.link(brFlat, apiId);
@@ -951,7 +1132,7 @@ export function buildWikiV17Cmd() {
   }
 
   // =========================================================================
-  // Equipment Hub (3 buttons -> 4 dropdowns each = ALL 264 items!)
+  // Equipment Hub (3 buttons -> max 2 dropdowns/page <= 50 options, 0 DISCORD_40005!)
   // =========================================================================
   embedMsg(gb, 'msg_wiki_equip', {
     title: eqEmb.title,
@@ -984,54 +1165,38 @@ export function buildWikiV17Cmd() {
   }, { x: 900, y: 2810 });
   gb.link('eq_detail_api', 'eq_detail_edit');
 
-  const slotSpecs = [
-    { key: 'weapon', label: 'Vũ Khí', emoji: 'su_crossed_swords', weight: '3', x: 640 },
-    { key: 'gem', label: 'Bảo Ngọc', emoji: 'su_linhthach', weight: '2', x: 900 },
-    { key: 'soul', label: 'Chiến Hồn', emoji: 'su_thunder_hax', weight: '1', x: 1160 },
-  ];
   for (const sp of slotSpecs) {
     const items = EQUIPMENT_CATALOG.filter((e) => e.item_type === sp.key);
     const btnId = `btn_eq_${sp.key}`;
     const listMsgId = `msg_eq_${sp.key}`;
+    const titleStr = `${uidEm(sp.emoji)} DANH MỤC ${sp.label.toUpperCase()} (${items.length} MÓN • v1.7)`;
     gb.advBtn(btnId, 'msg_wiki_equip', btnCfg(`${sp.label} (${items.length})`, 'SECONDARY', sp.emoji, '1', sp.weight, 'show'), { x: sp.x, y: 1420 });
     embedMsg(gb, listMsgId, {
-      title: `${uidEm(sp.emoji)} DANH MỤC ${sp.label.toUpperCase()} (${items.length} MÓN • v1.7)`,
-      description: `Chọn một **${sp.label}** từ ${Math.ceil(items.length / 25)} menu bên dưới để xem thẻ Full HD+ & kỹ năng HAX chi tiết.`,
+      title: titleStr,
+      description: `Chọn một **${sp.label}** bên dưới để xem thẻ Full HD+ & kỹ năng HAX chi tiết.`,
       color: '#f59e0b',
       footer: '',
       target: { reply: true },
+      editId: listMsgId,
     }, { x: sp.x, y: 1600 });
     gb.link(btnId, listMsgId);
 
-    const optChunks = chunkArray(buildEquipmentDropdownOptions(items), 25);
-    let offset = 0;
-    for (let ci = 0; ci < optChunks.length; ci += 1) {
-      const chunk = optChunks[ci];
-      const startNo = offset + 1;
-      const endNo = offset + chunk.length;
-      offset += chunk.length;
-      const idx = ci + 1;
-      const selId = `sel_eq_${sp.key}_${idx}`;
-      const varName = `picked_${sp.key}_${idx}`;
-      const setId = `set_item_${sp.key}_${idx}`;
-      const cx = sp.x + (ci - 1.5) * 80;
-
-      gb.advSelectMenu(selId, listMsgId, {
-        placeholder: `${sp.label} (${startNo}-${endNo} / ${items.length} món)...`,
-        customVariableName: varName,
-        basic_options: chunk,
-        row: String(idx),
-        weight: '1',
-        showReplies: 'show',
-      }, { x: cx, y: 1820 });
-      gb.act(setId, 'set_unique_variable', { reference: 'wiki_item_id', value: `{${varName}}`, success_handles: false }, { x: cx, y: 2040 });
-      gb.link(selId, setId);
-      gb.link(setId, 'eq_detail_ack');
-    }
+    attachPagedDropdowns({
+      listMsgId,
+      title: titleStr,
+      color: '#f59e0b',
+      labelPrefix: sp.label,
+      options: buildEquipmentDropdownOptions(items),
+      totalCount: items.length,
+      keyPrefix: `eq_${sp.key}`,
+      varRefName: 'wiki_item_id',
+      detailAckId: 'eq_detail_ack',
+      baseX: sp.x,
+    });
   }
 
   // =========================================================================
-  // Pets Hub (4 Sub-Hub Buttons -> ALL 150 Public Pets!)
+  // Pets Hub (3 Sub-Hub Buttons -> ALL 150 Public Pets, max 2 dropdowns/page!)
   // =========================================================================
   embedMsg(gb, 'msg_wiki_pets', {
     title: ptEmb.title,
@@ -1064,59 +1229,37 @@ export function buildWikiV17Cmd() {
   }, { x: 1700, y: 2810 });
   gb.link('pet_detail_api', 'pet_detail_edit');
 
-  const stdPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
-  const lowPets = stdPets.filter((p) => ['common', 'rare', 'epic'].includes(p.rarity_key)); // 40
-  const normMythicPets = stdPets.filter((p) => p.rarity_key === 'mythic' && !p.is_unique); // 70
-  const uniqueAllPets = stdPets.filter((p) => p.is_unique); // 40
-
-  const petSubHubs = [
-    { key: 'low', label: `Phàm/Linh/Tiên (${lowPets.length})`, style: 'SECONDARY', icon: 'su_tier_tien', weight: '3', items: lowPets, x: 1480 },
-    { key: 'mythic', label: `Thần Thoại (${normMythicPets.length})`, style: 'PRIMARY', icon: 'su_tier_thanthoai', weight: '2', items: normMythicPets, x: 1700 },
-    { key: 'unique', label: `40 Tối Thượng & Ult`, style: 'DANGER', icon: 'evo_crystal', weight: '1', items: uniqueAllPets, x: 1920 },
-  ];
-
   for (const sh of petSubHubs) {
     const btnId = `btn_pet_sh_${sh.key}`;
     const listMsgId = `msg_pet_sh_${sh.key}`;
+    const titleStr = `${uidEm(sh.icon, 'su_pet_paw')} KHO LINH THÚ — ${sh.label.toUpperCase()}`;
     gb.advBtn(btnId, 'msg_wiki_pets', btnCfg(sh.label, sh.style, sh.icon, '1', sh.weight, 'show'), { x: sh.x, y: 1420 });
     embedMsg(gb, listMsgId, {
-      title: `${uidEm(sh.icon, 'su_pet_paw')} KHO LINH THÚ — ${sh.label.toUpperCase()}`,
-      description: `Chọn một Linh Thú bên dưới để xem thẻ Full HD+, hệ nguyên tố, HAX & kỹ năng Ultimate Chân Thần (nếu có).`,
+      title: titleStr,
+      description: `Chọn một Linh Thú bên dưới để xem thẻ Full HD+, hệ nguyên tố, HAX & kỹ năng Ultimate (nếu có).`,
       color: '#ec4899',
       footer: '',
       target: { reply: true },
+      editId: listMsgId,
     }, { x: sh.x, y: 1600 });
     gb.link(btnId, listMsgId);
 
-    const optChunks = chunkArray(buildPetDropdownOptions(sh.items), 25);
-    let offset = 0;
-    for (let ci = 0; ci < optChunks.length; ci += 1) {
-      const chunk = optChunks[ci];
-      const startNo = offset + 1;
-      const endNo = offset + chunk.length;
-      offset += chunk.length;
-      const idx = ci + 1;
-      const selId = `sel_pet_${sh.key}_${idx}`;
-      const varName = `picked_pet_${sh.key}_${idx}`;
-      const setId = `set_pet_${sh.key}_${idx}`;
-      const cx = sh.x + (ci - 1) * 70;
-
-      gb.advSelectMenu(selId, listMsgId, {
-        placeholder: `${sh.label} (${startNo}-${endNo} / ${sh.items.length})...`,
-        customVariableName: varName,
-        basic_options: chunk,
-        row: String(idx),
-        weight: '1',
-        showReplies: 'show',
-      }, { x: cx, y: 1820 });
-      gb.act(setId, 'set_unique_variable', { reference: 'wiki_pet_id', value: `{${varName}}`, success_handles: false }, { x: cx, y: 2040 });
-      gb.link(selId, setId);
-      gb.link(setId, 'pet_detail_ack');
-    }
+    attachPagedDropdowns({
+      listMsgId,
+      title: titleStr,
+      color: '#ec4899',
+      labelPrefix: sh.label,
+      options: buildPetDropdownOptions(sh.items),
+      totalCount: sh.items.length,
+      keyPrefix: `pet_${sh.key}`,
+      varRefName: 'wiki_pet_id',
+      detailAckId: 'pet_detail_ack',
+      baseX: sh.x,
+    });
   }
 
   // =========================================================================
-  // Domains Hub (3 Sub-Hub Buttons -> ALL 161 Public Entities!)
+  // Domains Hub (3 Sub-Hub Buttons -> ALL 161 Public Entities, max 2 dropdowns/page!)
   // =========================================================================
   embedMsg(gb, 'msg_wiki_domains', {
     title: domEmb.title,
@@ -1149,53 +1292,33 @@ export function buildWikiV17Cmd() {
   }, { x: 2650, y: 2810 });
   gb.link('dom_detail_api', 'dom_detail_edit');
 
-  const pubDomains = DOMAIN_CATALOG.filter((d) => !d.is_exclusive_fuyumi); // 65
-  const pubSenses = DIVINE_SENSE_CATALOG.filter((s) => !s.is_exclusive_fuyumi); // 48
-  const pubRealms = DIVINE_REALM_CATALOG.filter((r) => !r.is_exclusive_fuyumi); // 48
-  const domSubHubs = [
-    { key: 'domain', kind: 'domain', label: `Linh Vực (${pubDomains.length})`, style: 'PRIMARY', icon: 'su_realm_star', weight: '3', items: pubDomains, x: 2420 },
-    { key: 'sense', kind: 'sense', label: `Thần Thức (${pubSenses.length})`, style: 'SECONDARY', icon: 'su_sparkle', weight: '2', items: pubSenses, x: 2650 },
-    { key: 'realm', kind: 'realm', label: `Thần Cảnh (${pubRealms.length})`, style: 'DANGER', icon: 'dao_ap_crest', weight: '1', items: pubRealms, x: 2880 },
-  ];
-
   for (const sh of domSubHubs) {
     const btnId = `btn_dom_sh_${sh.key}`;
     const listMsgId = `msg_dom_sh_${sh.key}`;
+    const titleStr = `${uidEm(sh.icon, 'su_realm_star')} KHO LÃNH ĐỊA — ${sh.label.toUpperCase()}`;
     gb.advBtn(btnId, 'msg_wiki_domains', btnCfg(sh.label, sh.style, sh.icon, '1', sh.weight, 'show'), { x: sh.x, y: 1420 });
     embedMsg(gb, listMsgId, {
-      title: `${uidEm(sh.icon, 'su_realm_star')} KHO LÃNH ĐỊA — ${sh.label.toUpperCase()}`,
+      title: titleStr,
       description: `Chọn một **${sh.label}** bên dưới để xem thẻ Full HD+ & hiệu ứng chi tiết.`,
       color: '#a855f7',
       footer: '',
       target: { reply: true },
+      editId: listMsgId,
     }, { x: sh.x, y: 1600 });
     gb.link(btnId, listMsgId);
 
-    const optChunks = chunkArray(buildDomainDropdownOptions(sh.items, sh.kind), 25);
-    let offset = 0;
-    for (let ci = 0; ci < optChunks.length; ci += 1) {
-      const chunk = optChunks[ci];
-      const startNo = offset + 1;
-      const endNo = offset + chunk.length;
-      offset += chunk.length;
-      const idx = ci + 1;
-      const selId = `sel_dom_${sh.key}_${idx}`;
-      const varName = `picked_dom_${sh.key}_${idx}`;
-      const setId = `set_dom_${sh.key}_${idx}`;
-      const cx = sh.x + (ci - 1) * 75;
-
-      gb.advSelectMenu(selId, listMsgId, {
-        placeholder: `${sh.label} (${startNo}-${endNo} / ${sh.items.length})...`,
-        customVariableName: varName,
-        basic_options: chunk,
-        row: String(idx),
-        weight: '1',
-        showReplies: 'show',
-      }, { x: cx, y: 1820 });
-      gb.act(setId, 'set_unique_variable', { reference: 'wiki_domain_id', value: `{${varName}}`, success_handles: false }, { x: cx, y: 2040 });
-      gb.link(selId, setId);
-      gb.link(setId, 'dom_detail_ack');
-    }
+    attachPagedDropdowns({
+      listMsgId,
+      title: titleStr,
+      color: '#a855f7',
+      labelPrefix: sh.label,
+      options: buildDomainDropdownOptions(sh.items, sh.kind),
+      totalCount: sh.items.length,
+      keyPrefix: `dom_${sh.key}`,
+      varRefName: 'wiki_domain_id',
+      detailAckId: 'dom_detail_ack',
+      baseX: sh.x,
+    });
   }
 
   return gb.elements();
@@ -2351,7 +2474,7 @@ function buildV17KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
     'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.7):',
     '• [CẢNH GIỚI, LEVEL ROLES & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút; công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (1 lần/Lv). Quyền 8 mốc Level Roles: Lv.5 Gửi Ảnh/File, Lv.10 Stream, Lv.20 Emoji Nitro Ngoại Server & Lập Gia Tộc, Lv.35 Embed Links, Lv.45 Sticker Ngoại Server (+ mở Lò #2), Lv.60 Voice Message, Lv.80 Soundboard, Lv.100 External Sounds. /doiqua đổi 1.000 EXP lấy 10 LT. Top Chat/Voice Ngày trao 500/400/300 LT lúc 00:00 (UTC+7); 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
-    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa — MỚI v1.7): Áp dụng cho toàn bộ 40 Pet Độc Nhất (10 gốc + 30 Tối Thượng mới). Tab 1 Tiến Hóa cần Pet đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60%, 3.000 = 70%, 5.000 = 80%, 7.000 = 90%, 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần, đổi ảnh mới, tăng mạnh chỉ số & mở khóa Skill Ultimate tái kích hoạt trong /battle và /linhmach. Tab 2 Chế Tạo Hồng Mông: ghép từ 3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT (xác nhận 2 bước, KHÔNG có lệnh /hiente).',
+    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa — MỚI v1.7): Áp dụng cho toàn bộ 40 Pet Độc Nhất (10 gốc + 30 Tối Thượng mới). Tab 1 Tiến Hóa cần Pet đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60%, 3.000 = 70%, 5.000 = 80%, 7.000 = 90%, 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần, đổi ảnh mới, tăng mạnh chỉ số & mở khóa Skill Ultimate tái kích hoạt trong /battle và /linhmach. Tab 2 Chế Tạo Hồng Mông: ghép từ 3 Mảnh Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Vũ Khí / Bảo Ngọc / Chiến Hồn / Linh Vực / Thần Thức / Thần Cảnh — KHÔNG Độc Nhất) + 2.500 LT (xác nhận 2 bước, KHÔNG có lệnh /hiente).',
     '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHẮC ẤN] (/inv, /linhthu, /pet, /phapbao, /linhvuc, /roles, /equip, /unequip, /enchant, /dismantle): /inv hiển thị ngang 2×3 kèm 3 nút Bộ 1 / Bộ 2 / Bộ 3 tự lưu trọn bộ Linh Thú + 3 Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh (đồng bộ cả trong /explorer). Kho v1.7 mở rộng tổng cộng 150 Pet công khai (40 Tối Thượng Độc Nhất), 264 Pháp Bảo (90 Vũ Khí, 87 Bảo Ngọc, 87 Chiến Hồn), 161 Lãnh Địa (65 Linh Vực, 48 Thần Thức, 48 Thần Cảnh) và 29 Khung Avatar. Khắc Ấn /enchant D→S (+0/+8/+18/+32/+50%, Pity +5%). Buff SET: Thường 4/5 (+8%/+12%); Thần Thoại 2/3/4/5 (+6/+12/+18/+25%, mốc 5 thêm +10% Xuyên DEF & +1 Linh Mạch).',
     '• [ĐẤU TRƯỜNG 1V1, LINH MẠCH GIỜ VÀNG & CHIẾN ĐẤU v1.7] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE 25/ngày, cooldown 15s, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố, HAX Engine, 40 Skill Ultimate, Linh Vực từ Hiệp 2 & Đạo Áp, kèm Web Battle Logs 48h (đã tách riêng dòng [Đầu lượt] và thẻ Ultimate). Cơ chế v1.7: Độc/Thiêu Đốt/Debuff từ nhiều nguồn khác nhau CỘNG DỒN (trần DoT 28%), Bất Tử bảo vệ trọn hiệp (chặn cả DoT/Vực/Phản Đòn/Ultimate), Thần Cảnh tôn trọng Kháng DoT. /linhmach & /party CHỈ mở vào 6 Khung Giờ Vàng (UTC+7): 08:00, 12:00, 18:00, 20:00, 21:00, 22:00 (60 phút/đợt). /nhiemvu tăng +30% thưởng (5/5 ngày: 170 LT, Tuần: 450–700 LT); Tháp 500 Tầng mốc T100/200/300/400/500 tặng thêm +1 Mảnh Tinh Hoa Hỗn Độn.',
     '• [SHOP ĐẶC BIỆT CHỦ NHẬT (/shop_dacbiet), GACHA 0.65% & ĐỔ THẠCH] (/shop_dacbiet, /roll, /dothach, /autosell, /shop, /info): /shop_dacbiet CHỈ mở Chủ Nhật 08:00–24:00 (UTC+7), quy đổi 1 chiều 750 LT = 1 Xích Kim Tinh Thạch (TT) (tối thiểu 5 TT, tối đa 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh (120 TT), Thẻ Chọn Thần Thoại (55 TT — chọn 1/7 nhóm, ưu tiên món chưa có), Đá Tuyệt Ấn (40 TT), Mảnh Hỗn Độn, Bùa Tuyệt Ấn (+5 lượt nâng tỉ lệ Đá Tuyệt Ấn /explorer lên 25%), Thẻ Auto Farm 24h, Bùa Bảo Vệ & 5 Khung Đặc Biệt. Gacha /roll nâng tỉ lệ Thần Thoại+ lên 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck, Pity 350 ra 5% Độc Nhất). /dothach giảm -10% tỉ lệ xịt ở cả 4 sạp & đổi tên Hộp Thần Thoại Cực Phẩm. /daily tăng lên 55–80 LT, /job tăng +30%.',
