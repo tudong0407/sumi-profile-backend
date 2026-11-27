@@ -21,7 +21,7 @@ import {
   renderWikiPetCard,
 } from '../canvas/wikiRenderer.js';
 
-export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s5`;
+export const STATIC_CACHE_VERSION = `${LATEST_VERSION}-v170-s6`;
 export const CACHE_DIR = path.resolve('cache', 'prerendered');
 export const MANIFEST_PATH = path.join(CACHE_DIR, 'manifest.json');
 

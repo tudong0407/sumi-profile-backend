@@ -214,7 +214,7 @@ const LOCAL_ASSET_CACHE_MAX = 40;
 const REMOTE_IMAGE_CACHE_MAX = 40;
 const REMOTE_IMAGE_TTL_MS = 15 * 60 * 1000;
 const BG_MAX_DIM = { w: 1280, h: 720 };
-const LOCAL_ASSET_MAX_DIM = { w: 384, h: 384 };
+const LOCAL_ASSET_MAX_DIM = { w: 512, h: 512 };
 const REMOTE_AVATAR_MAX_DIM = { w: 256, h: 256 };
 
 const bgImageCache = new Map();
@@ -847,7 +847,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
   // 1. Hào quang đồng tâm phía sau Avatar (phân cấp rõ ràng)
   if (showAura) {
     ctx.save();
-    const baseAuraOffset = tier === 'owner' ? 28 : (tier === 'high' || isCustomFrame) ? 22 : 16;
+    const baseAuraOffset = tier === 'owner' ? 28 : isCustomFrame ? 14 : tier === 'high' ? 22 : 16;
     const auraR = radius + baseAuraOffset * s;
     const auraGrad = ctx.createRadialGradient(centerX, centerY, drawAvatarRadius * 0.82, centerX, centerY, auraR);
     if (tier === 'owner') {

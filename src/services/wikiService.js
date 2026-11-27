@@ -1146,8 +1146,8 @@ export async function getWikiPetDetail(petType, options = {}) {
   if (ownerLine) descriptionLines.push(ownerLine);
 
   const imageUrl = canToggleForm
-    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s5&form=${activeForm}`
-    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s5`;
+    ? `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s6&form=${activeForm}`
+    : `${PUBLIC_BASE_URL}/api/wiki/pet/${pet.pet_type}.webp?v=1.7-s6`;
   const formFooter = canToggleForm
     ? (isEvoForm
       ? 'Đang xem: Tiến Hóa Chân Thần • Bấm nút bên dưới để chuyển Bản Thường'

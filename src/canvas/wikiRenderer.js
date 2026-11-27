@@ -27,7 +27,7 @@ import {
 } from './drawUtils.js';
 import { V17_PET_EVOLUTIONS, FUYUMI_SUPREME_EVOLUTION } from '../data/catalog.js';
 
-const RENDER_SCALE = 1.44; // 1440x720 (+20% độ nét HD+ cho Discord Embed)
+const RENDER_SCALE = 2.0; // 2000x1000 Full HD+ 2x High-DPI cho Discord Embed
 const LOGICAL_W = 1000;
 const LOGICAL_H = 500;
 
@@ -159,12 +159,12 @@ function drawCelestialBackground(ctx, accentColor = 'rgba(236, 72, 153, 0.20)') 
 async function drawFooter(ctx, label = 'SuMi Family • Cẩm Nang Tu Tiên Toàn Thư') {
   const cleanLabel = String(label || '').replace(/🦊\s*/g, '').trim();
   const icoFox = await loadBadgeImage('badges/su_fox_mascot.png');
-  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 25, {
+  drawIconText(ctx, icoFox, cleanLabel, LOGICAL_W - 28, LOGICAL_H - 22, {
     iconSize: 14,
     gap: 5,
     align: 'right',
     font: `11px ${FONT_FAMILY}`,
-    fillStyle: 'rgba(226, 232, 240, 0.52)',
+    fillStyle: 'rgba(226, 232, 240, 0.64)',
   });
 }
 
@@ -1069,9 +1069,10 @@ export async function renderWikiPetCard(petData, options = {}) {
   const cardUlt = (petIsEvolved || petData.show_ultimate) && evoMeta?.ultimate ? evoMeta.ultimate : null;
 
   ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
   ctx.font = `bold ${cardUlt ? 11 : 12}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('BỘ CHỈ SỐ GỐC (CẤP 1 • 1 SAO)', rightX, cardUlt ? 128 : 134);
+  ctx.fillText('BỘ CHỈ SỐ GỐC (CẤP 1 • 1 SAO)', rightX, cardUlt ? 123 : 134);
 
   const statMax = 600;
   const hpMax = 4000;
@@ -1083,9 +1084,9 @@ export async function renderWikiPetCard(petData, options = {}) {
   ];
 
   const colW = Math.floor((rightW - 14) / 2);
-  const rowH = cardUlt ? 38 : 56;
+  const rowH = cardUlt ? 34 : 56;
   const rowGap = cardUlt ? 6 : 12;
-  const statStartY = cardUlt ? 142 : 156;
+  const statStartY = cardUlt ? 139 : 156;
   statList.forEach((st, idx) => {
     const col = idx % 2;
     const row = Math.floor(idx / 2);
@@ -1103,18 +1104,18 @@ export async function renderWikiPetCard(petData, options = {}) {
     ctx.textBaseline = 'middle';
     ctx.font = `bold ${cardUlt ? 11.5 : 12.5}px ${FONT_FAMILY}`;
     ctx.fillStyle = st.color;
-    ctx.fillText(st.label, sx + 14, sy + (cardUlt ? 13 : 20));
+    ctx.fillText(st.label, sx + 14, sy + (cardUlt ? 12 : 20));
 
     ctx.textAlign = 'right';
-    ctx.font = `bold ${cardUlt ? 13.5 : 15}px ${FONT_FAMILY}`;
+    ctx.font = `bold ${cardUlt ? 13 : 15}px ${FONT_FAMILY}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(st.val.toLocaleString('vi-VN'), sx + colW - 14, sy + (cardUlt ? 13 : 20));
+    ctx.fillText(st.val.toLocaleString('vi-VN'), sx + colW - 14, sy + (cardUlt ? 12 : 20));
 
     // Thanh tiến độ trực quan
     const barX = sx + 14;
-    const barY = sy + (cardUlt ? 26 : 38);
+    const barY = sy + (cardUlt ? 23 : 38);
     const barW = colW - 28;
-    const barH = cardUlt ? 6 : 8;
+    const barH = cardUlt ? 5.5 : 8;
     drawRoundRect(ctx, barX, barY, barW, barH, 4);
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
     ctx.fill();
@@ -1126,9 +1127,9 @@ export async function renderWikiPetCard(petData, options = {}) {
   });
 
   // Hộp Kỹ Năng / Nội Tại (HAX) + Ultimate (nếu có) + Chủ Sở Hữu
-  const haxY = cardUlt ? 234 : 298;
+  const haxY = cardUlt ? 221 : 298;
   const haxH = cardUlt
-    ? (petData.is_unique ? 74 : 92)
+    ? (petData.is_unique ? 70 : 86)
     : (petData.is_unique ? 112 : 156);
   drawRoundRect(ctx, rightX, haxY, rightW, haxH, 12);
   ctx.fillStyle = 'rgba(20, 15, 38, 0.86)';
@@ -1143,21 +1144,21 @@ export async function renderWikiPetCard(petData, options = {}) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('KỸ NĂNG / NỘI TẠI ĐẶC BIỆT (HAX)', rightX + 16, haxY + 8);
 
-  ctx.font = `bold ${cardUlt ? 15 : 16.5}px ${FONT_FAMILY}`;
+  ctx.font = `bold ${cardUlt ? 14.5 : 16.5}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#fde047';
-  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 32), rightX + 16, haxY + (cardUlt ? 24 : 34));
+  ctx.fillText(truncateText(ctx, petData.hax_skill, rightW - 32), rightX + 16, haxY + (cardUlt ? 23 : 34));
 
   ctx.font = `${cardUlt ? 12 : 13}px ${FONT_FAMILY}`;
   ctx.fillStyle = '#e2e8f0';
   const haxMaxLines = cardUlt ? (petData.is_unique ? 2 : 3) : (petData.is_unique ? 2 : 4);
   const haxLines = wrapTextLines(ctx, petData.hax_description, rightW - 32, haxMaxLines);
   haxLines.forEach((line, li) => {
-    ctx.fillText(line, rightX + 16, haxY + (cardUlt ? 43 : 62) + li * (cardUlt ? 14.5 : 20));
+    ctx.fillText(line, rightX + 16, haxY + (cardUlt ? 42 : 62) + li * (cardUlt ? 14 : 20));
   });
 
   if (cardUlt) {
     const ultY = haxY + haxH + 8;
-    const ultH = petData.is_unique ? 104 : 136;
+    const ultH = petData.is_unique ? 104 : 138;
     drawRoundRect(ctx, rightX, ultY, rightW, ultH, 12);
     const ultBg = ctx.createLinearGradient(rightX, ultY, rightX + rightW, ultY + ultH);
     ultBg.addColorStop(0, 'rgba(131, 24, 67, 0.42)');
@@ -1174,12 +1175,12 @@ export async function renderWikiPetCard(petData, options = {}) {
 
     ctx.font = `bold ${petData.is_unique ? 15 : 15.5}px ${FONT_FAMILY}`;
     ctx.fillStyle = '#fef08a';
-    ctx.fillText(truncateText(ctx, cardUlt.name || 'Ultimate', rightX + 16 ? rightW - 32 : rightW - 32), rightX + 16, ultY + 24);
+    ctx.fillText(truncateText(ctx, cardUlt.name || 'Ultimate', rightW - 32), rightX + 16, ultY + 24);
 
     ctx.font = `${petData.is_unique ? 11.8 : 11.5}px ${FONT_FAMILY}`;
     ctx.fillStyle = '#f8fafc';
     const ultMaxLines = petData.is_unique ? 4 : 6;
-    const ultLineStep = petData.is_unique ? 14.5 : 14.5;
+    const ultLineStep = 14.5;
     const ultLines = wrapTextLines(ctx, cardUlt.desc || '', rightW - 32, ultMaxLines);
     ultLines.forEach((line, li) => {
       ctx.fillText(line, rightX + 16, ultY + 44 + li * ultLineStep);
@@ -1209,6 +1210,6 @@ export async function renderWikiPetCard(petData, options = {}) {
   ctx.restore();
 
   await drawFooter(ctx, `SuMi Family • Bách Khoa Linh Thú (${petData.rarity} • Hệ ${petData.element})`);
-  sharpenCanvas(canvas, 0.22);
-  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 95);
+  sharpenCanvas(canvas, 0.25);
+  return encodeCanvas(canvas, options.format || 'png', options.webpQuality ?? 98);
 }

@@ -639,7 +639,7 @@ export const V15_AVATAR_FRAME_SPECS = [
     rarity_key: 'mythic',
     price: 4000,
     file: 'frames/frame_eternal_aurora.png',
-    palette: ['#f9a8d4', '#38bdf8', '#fde047'],
+    palette: ['#f9a8d4', '#fde047', '#fbcfe8'],
     description: 'Ánh cực quang hồng ngọc giao thoa linh văn vĩnh hằng tuyệt mỹ.',
     visual_prompt:
       'Circular 512x512 transparent PNG avatar frame border ONLY: ethereal mythic celestial aurora ribbons in pastel rose, pearl gold, and ice cyan weaving around a divine crystalline tiara crown at the top. Completely transparent empty center circle (at least 72% inner circle clear), NO face, NO character inside, NO background, no text, no watermark.',

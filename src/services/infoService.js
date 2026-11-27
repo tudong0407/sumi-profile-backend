@@ -241,8 +241,8 @@ export function lookupInfo(rawQuery, { requesterId, form } = {}) {
     ];
 
     const imgEndpoint = p.is_exclusive_fuyumi
-      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s3&form=${activeForm}`
-      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s3&form=${activeForm}`;
+      ? `${PUBLIC_BASE_URL}/api/info/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s6&form=${activeForm}`
+      : `${PUBLIC_BASE_URL}/api/wiki/pet/${p.pet_type}.webp?v=${LATEST_VERSION}-s6&form=${activeForm}`;
 
     return {
       success: true,
