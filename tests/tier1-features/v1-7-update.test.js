@@ -437,7 +437,7 @@ test('Ver 1.7 Wiki Sub-Hubs, Canvas Renderers, Fuyumi Pill, 9 Frames & Migration
 
   const subKemo = getWikiData('pets', 1, 'kemonomimi');
   assert.equal(subKemo.success, true);
-  assert.equal(subKemo.total_items, 10);
+  assert.equal(subKemo.total_items, 40);
 
   const subDom = getWikiData('domains', 1, 'domain');
   assert.equal(subDom.success, true);
@@ -445,6 +445,12 @@ test('Ver 1.7 Wiki Sub-Hubs, Canvas Renderers, Fuyumi Pill, 9 Frames & Migration
   const petDetail = await getWikiPetDetail('hon_don_chi_to_long');
   assert.equal(petDetail.success, true);
   assert.ok(petDetail.data.evo_data?.ultimate?.id);
+
+  const kemoUnifiedDetail = await getWikiPetDetail('hong_mong_cuu_vy_tien');
+  assert.equal(kemoUnifiedDetail.success, true);
+  assert.equal(kemoUnifiedDetail.data.rarity_key, 'mythic');
+  assert.equal(kemoUnifiedDetail.data.is_unique, true);
+  assert.ok(!/Thú Nhân|Kemonomimi/i.test(kemoUnifiedDetail.embed?.description || ''));
 
   const infoCons = await lookupInfo('evo_crystal', '757091869183311872');
   assert.equal(infoCons.success, true);

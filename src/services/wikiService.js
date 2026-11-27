@@ -276,7 +276,7 @@ export const WIKI_CATEGORIES = {
     id: 'pets',
     title: `${em('su_pet_paw')} Linh Thú Tiên Giới (150 Chiến Pet • 40 Tiến Hóa Chân Thần)`,
     icon: em('su_pet_paw'),
-    description: '150 Linh Thú công khai (13 Phàm / 13 Linh / 14 Tiên / 70 Thần Thoại / 40 Tối Thượng Độc Nhất gồm 10 Thú Nhân), Tiến Hóa /tienhoa & 40 Ultimate.',
+    description: '150 Linh Thú công khai (13 Phàm / 13 Linh / 14 Tiên / 70 Thần Thoại / 40 Tối Thượng Độc Nhất), Tiến Hóa /tienhoa & 40 Ultimate.',
     image_url: '',
     sections: [
       {
@@ -294,7 +294,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_gacha_dice')} Phân Bậc Phẩm Cấp (150 Linh Thú Công Khai)`,
         value: [
           `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.35%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
-          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(70 loài)* & ${tierEmoji('unique_supreme')} **Tối Thượng Độc Nhất** *(40 loài: 30 Linh Thú + 10 Thú Nhân)*: **0.65%** *(\`/roll\`)*`,
+          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(70 loài)* & ${tierEmoji('unique_supreme')} **Tối Thượng Độc Nhất** *(40 loài)*: **0.65%** *(\`/roll\`)*`,
         ].join('\n'),
         inline: false,
       },
@@ -713,12 +713,9 @@ export function getWikiSubHubList(categoryId, rawSubhub = 'all', page = 1) {
     const publicPets = PET_CATALOG.filter((p) => !p.is_exclusive_fuyumi);
     let filtered = publicPets;
     let heading = 'TẤT CẢ LINH THÚ CÔNG KHAI';
-    if (sub === 'unique') {
+    if (sub === 'unique' || sub === 'kemonomimi') {
       filtered = publicPets.filter((p) => p.is_unique);
       heading = '40 TỐI THƯỢNG ĐỘC NHẤT TOÀN SERVER (TIẾN HÓA CHÂN THẦN)';
-    } else if (sub === 'kemonomimi') {
-      filtered = publicPets.filter((p) => p.is_kemonomimi);
-      heading = '10 TỐI THƯỢNG THÚ NHÂN (KEMONOMIMI)';
     } else if (['mythic', 'epic', 'rare', 'common'].includes(sub)) {
       filtered = publicPets.filter((p) => p.rarity_key === sub && (sub !== 'mythic' || !p.is_unique));
       heading = `PHẨM CHẤT ${(RARITY_TIERS[sub]?.label || sub).toUpperCase()}`;
@@ -926,7 +923,6 @@ export function getWikiCatalogSummary() {
       epic: standardPets.filter((p) => p.rarity_key === 'epic'),
       mythic: standardPets.filter((p) => p.rarity_key === 'mythic'),
       unique: standardPets.filter((p) => p.is_unique),
-      kemonomimi: standardPets.filter((p) => p.is_kemonomimi),
     },
     domains: {
       domain: publicDomains.map((d) => ({ id: d.domain_id, name: d.name, rarity: d.rarity, rarity_key: d.rarity_key, element: d.element, is_unique: d.is_unique })),
@@ -1099,7 +1095,6 @@ export async function getWikiPetDetail(petType) {
 
   const tagNotes = [];
   if (pet.is_starter) tagNotes.push(`${em('su_sprout')} Linh Thú Khởi Đầu Mặc Định`);
-  if (pet.is_kemonomimi) tagNotes.push(`${em('su_sparkle')} Thú Nhân (Kemonomimi)`);
 
   const ownerLine = pet.is_unique
     ? (currentOwner

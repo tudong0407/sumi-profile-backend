@@ -4,7 +4,7 @@
  * 1. /updates     — Phân trang [Trang Trước] [Trang Sau] (3 trang v1.7, KHÔNG meta) + [Nhận Quà v1.7] + chọn lịch sử v1.7..v1.1.
  * 2. /tienhoa     — Điện Tiến Hóa Chân Thần (40 Pet Độc Nhất Lv.40 & 8★) & Tab 2 Chế Tạo Hồng Mông (xác nhận 2 bước, KHÔNG /hiente).
  * 3. /shop_dacbiet— Shop Đặc Biệt Chủ Nhật (08:00–24:00 UTC+7): Đổi 750 LT = 1 TT, mua 13 món hiếm, mở Thẻ Chọn Thần Thoại 7 nhóm.
- * 4. /wiki        — Nâng cấp full v1.7: 150 Pet (4 Sub-Hub nút), 264 Pháp Bảo (3 nút × 4 menu), 161 Lãnh Địa (3 Sub-Hub nút), Roles & Glossary nút.
+ * 4. /wiki        — Nâng cấp full v1.7: 150 Pet (3 Sub-Hub nút), 264 Pháp Bảo (3 nút × 4 menu), 161 Lãnh Địa (3 Sub-Hub nút), Roles & Glossary nút.
  * 5. /shop        — Cập nhật 24 Viền Avatar LT (+4 khung mới v1.7) & 16 Vật Phẩm Tiêu Hao (+2 Thẻ Bảo Vệ Farm/Luyện Đan).
  * 6. /explorer    — Bổ sung 3 nút chuyển nhanh [Bộ 1] [Bộ 2] [Bộ 3] đồng bộ với /inv.
  * 7. /dothach     — Đổi nhãn Hộp Chọn Tối Thượng Cực Phẩm -> Hộp Thần Thoại Cực Phẩm.
@@ -671,7 +671,7 @@ function buildEquipmentDropdownOptions(items) {
 
 function buildPetDropdownOptions(pets) {
   return pets.map((p) => ({
-    label: `${p.pet_name}${p.is_kemonomimi ? ' (Thú Nhân)' : ''}`,
+    label: p.pet_name,
     description: `${p.rarity} • ${p.element} • ${p.hax_skill}`,
     emoji_id: uidId(p.pet_type, 'su_pet_paw'),
     value: p.pet_type,
@@ -726,7 +726,7 @@ export function buildWikiV17Cmd() {
     { label: 'Cảnh Giới & Thăng Cấp EXP', description: '7 Đại Cảnh Giới, Chat/Voice EXP & 78 × Level^1.45', emoji_id: uidId('su_realm_7_hondondao'), value: 'realms' },
     { label: 'Đấu Trường, Ultimate & Cộng Dồn HAX', description: '40 Skill Ultimate, Cộng Dồn DoT/Debuff, Bất Tử & Ngũ Vực', emoji_id: uidId('su_arena'), value: 'battle' },
     { label: 'Kho Pháp Bảo Loadout (264 Món)', description: '90 Vũ Khí • 87 Bảo Ngọc • 87 Chiến Hồn + Khắc Ấn D->S', emoji_id: uidId('su_crossed_swords'), value: 'equipment' },
-    { label: 'Linh Thú Tiên Giới (150 Pet • 40 Ult)', description: '40 Độc Nhất Tiến Hóa Chân Thần, 10 Thú Nhân & 110 Linh Thú', emoji_id: uidId('su_pet_paw'), value: 'pets' },
+    { label: 'Linh Thú Tiên Giới (150 Pet • 40 Ult)', description: '40 Tối Thượng Độc Nhất Tiến Hóa Chân Thần & 110 Linh Thú', emoji_id: uidId('su_pet_paw'), value: 'pets' },
     { label: 'Lãnh Địa • Thần Thức • Thần Cảnh (161)', description: '65 Linh Vực • 48 Thần Thức • 48 Thần Cảnh & Chủ Độc Nhất', emoji_id: uidId('su_realm_star'), value: 'domains' },
     { label: 'Role Quyền Năng & Chức Năng (Button)', description: '40 Role + 8 Cảnh Giới & Nút Chi Tiết Chức Năng', emoji_id: uidId('su_medal_role'), value: 'roles' },
     { label: 'Kinh Tế, /shop_dacbiet, Luyện Đan & /farm', description: 'Gacha 0.65%, 750 LT=1 TT, /dothach -10%, /farm -30p & Tháp 500', emoji_id: uidId('su_linhthach'), value: 'economy' },
@@ -1068,13 +1068,11 @@ export function buildWikiV17Cmd() {
   const lowPets = stdPets.filter((p) => ['common', 'rare', 'epic'].includes(p.rarity_key)); // 40
   const normMythicPets = stdPets.filter((p) => p.rarity_key === 'mythic' && !p.is_unique); // 70
   const uniqueAllPets = stdPets.filter((p) => p.is_unique); // 40
-  const kemoPets = stdPets.filter((p) => p.is_kemonomimi); // 10
 
   const petSubHubs = [
-    { key: 'low', label: `Phàm/Linh/Tiên (${lowPets.length})`, style: 'SECONDARY', icon: 'su_tier_tien', weight: '4', items: lowPets, x: 1420 },
-    { key: 'mythic', label: `Thần Thoại (${normMythicPets.length})`, style: 'PRIMARY', icon: 'su_tier_thanthoai', weight: '3', items: normMythicPets, x: 1620 },
-    { key: 'unique', label: `40 Tối Thượng & Ult`, style: 'DANGER', icon: 'evo_crystal', weight: '2', items: uniqueAllPets, x: 1820 },
-    { key: 'kemo', label: `10 Thú Nhân (Mới)`, style: 'SUCCESS', icon: 'su_tier_toithuong', weight: '1', items: kemoPets, x: 2020 },
+    { key: 'low', label: `Phàm/Linh/Tiên (${lowPets.length})`, style: 'SECONDARY', icon: 'su_tier_tien', weight: '3', items: lowPets, x: 1480 },
+    { key: 'mythic', label: `Thần Thoại (${normMythicPets.length})`, style: 'PRIMARY', icon: 'su_tier_thanthoai', weight: '2', items: normMythicPets, x: 1700 },
+    { key: 'unique', label: `40 Tối Thượng & Ult`, style: 'DANGER', icon: 'evo_crystal', weight: '1', items: uniqueAllPets, x: 1920 },
   ];
 
   for (const sh of petSubHubs) {
@@ -1800,8 +1798,8 @@ function buildV17KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
     'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.7):',
     '• [CẢNH GIỚI, LEVEL ROLES & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút; công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT (1 lần/Lv). Quyền 8 mốc Level Roles: Lv.5 Gửi Ảnh/File, Lv.10 Stream, Lv.20 Emoji Nitro Ngoại Server & Lập Gia Tộc, Lv.35 Embed Links, Lv.45 Sticker Ngoại Server (+ mở Lò #2), Lv.60 Voice Message, Lv.80 Soundboard, Lv.100 External Sounds. /doiqua đổi 1.000 EXP lấy 10 LT. Top Chat/Voice Ngày trao 500/400/300 LT lúc 00:00 (UTC+7); 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
-    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa — MỚI v1.7): Áp dụng cho toàn bộ 40 Pet Độc Nhất (10 gốc + 20 Linh Thú mới + 10 Tối Thượng Thú Nhân mới). Tab 1 Tiến Hóa cần Pet đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60%, 3.000 = 70%, 5.000 = 80%, 7.000 = 90%, 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần, đổi ảnh mới, tăng mạnh chỉ số & mở khóa Skill Ultimate tái kích hoạt trong /battle và /linhmach. Tab 2 Chế Tạo Hồng Mông: ghép từ 3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT (xác nhận 2 bước, KHÔNG có lệnh /hiente).',
-    '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHẮC ẤN] (/inv, /linhthu, /pet, /phapbao, /linhvuc, /roles, /equip, /unequip, /enchant, /dismantle): /inv hiển thị ngang 2×3 kèm 3 nút Bộ 1 / Bộ 2 / Bộ 3 tự lưu trọn bộ Linh Thú + 3 Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh (đồng bộ cả trong /explorer). Kho v1.7 mở rộng tổng cộng 150 Pet công khai (40 Độc Nhất trong đó 10 Thú Nhân), 264 Pháp Bảo (90 Vũ Khí, 87 Bảo Ngọc, 87 Chiến Hồn), 161 Lãnh Địa (65 Linh Vực, 48 Thần Thức, 48 Thần Cảnh) và 29 Khung Avatar. Khắc Ấn /enchant D→S (+0/+8/+18/+32/+50%, Pity +5%). Buff SET: Thường 4/5 (+8%/+12%); Thần Thoại 2/3/4/5 (+6/+12/+18/+25%, mốc 5 thêm +10% Xuyên DEF & +1 Linh Mạch).',
+    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa — MỚI v1.7): Áp dụng cho toàn bộ 40 Pet Độc Nhất (10 gốc + 30 Tối Thượng mới). Tab 1 Tiến Hóa cần Pet đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60%, 3.000 = 70%, 5.000 = 80%, 7.000 = 90%, 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần, đổi ảnh mới, tăng mạnh chỉ số & mở khóa Skill Ultimate tái kích hoạt trong /battle và /linhmach. Tab 2 Chế Tạo Hồng Mông: ghép từ 3 Mảnh Tinh Hoa Hỗn Độn + 1 Pet Thần Thoại thường + 2.500 LT (xác nhận 2 bước, KHÔNG có lệnh /hiente).',
+    '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHẮC ẤN] (/inv, /linhthu, /pet, /phapbao, /linhvuc, /roles, /equip, /unequip, /enchant, /dismantle): /inv hiển thị ngang 2×3 kèm 3 nút Bộ 1 / Bộ 2 / Bộ 3 tự lưu trọn bộ Linh Thú + 3 Pháp Bảo + Linh Vực/Thần Thức/Thần Cảnh (đồng bộ cả trong /explorer). Kho v1.7 mở rộng tổng cộng 150 Pet công khai (40 Tối Thượng Độc Nhất), 264 Pháp Bảo (90 Vũ Khí, 87 Bảo Ngọc, 87 Chiến Hồn), 161 Lãnh Địa (65 Linh Vực, 48 Thần Thức, 48 Thần Cảnh) và 29 Khung Avatar. Khắc Ấn /enchant D→S (+0/+8/+18/+32/+50%, Pity +5%). Buff SET: Thường 4/5 (+8%/+12%); Thần Thoại 2/3/4/5 (+6/+12/+18/+25%, mốc 5 thêm +10% Xuyên DEF & +1 Linh Mạch).',
     '• [ĐẤU TRƯỜNG 1V1, LINH MẠCH GIỜ VÀNG & CHIẾN ĐẤU v1.7] (/battle, /party, /linhmach, /nhiemvu): /battle 1v1 (PvP 15/ngày, PvE 25/ngày, cooldown 15s, max 30 hiệp) đầy đủ Ngũ Hành, Dị Tố, HAX Engine, 40 Skill Ultimate, Linh Vực từ Hiệp 2 & Đạo Áp, kèm Web Battle Logs 48h (đã tách riêng dòng [Đầu lượt] và thẻ Ultimate). Cơ chế v1.7: Độc/Thiêu Đốt/Debuff từ nhiều nguồn khác nhau CỘNG DỒN (trần DoT 28%), Bất Tử bảo vệ trọn hiệp (chặn cả DoT/Vực/Phản Đòn/Ultimate), Thần Cảnh tôn trọng Kháng DoT. /linhmach & /party CHỈ mở vào 6 Khung Giờ Vàng (UTC+7): 08:00, 12:00, 18:00, 20:00, 21:00, 22:00 (60 phút/đợt). /nhiemvu tăng +30% thưởng (5/5 ngày: 170 LT, Tuần: 450–700 LT); Tháp 500 Tầng mốc T100/200/300/400/500 tặng thêm +1 Mảnh Tinh Hoa Hỗn Độn.',
     '• [SHOP ĐẶC BIỆT CHỦ NHẬT (/shop_dacbiet), GACHA 0.65% & ĐỔ THẠCH] (/shop_dacbiet, /roll, /dothach, /autosell, /shop, /info): /shop_dacbiet CHỈ mở Chủ Nhật 08:00–24:00 (UTC+7), quy đổi 1 chiều 750 LT = 1 Tinh Thể Đỏ Vàng (TT) (tối thiểu 5 TT, tối đa 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh (120 TT), Thẻ Chọn Thần Thoại (55 TT — chọn 1/7 nhóm, ưu tiên món chưa có), Đá Tuyệt Ấn (40 TT), Mảnh Hỗn Độn, Bùa Tuyệt Ấn (+5 lượt nâng tỉ lệ Đá Tuyệt Ấn /explorer lên 25%), Thẻ Auto Farm 24h, Bùa Bảo Vệ & 5 Khung Đặc Biệt. Gacha /roll nâng tỉ lệ Thần Thoại+ lên 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck, Pity 350 ra 5% Độc Nhất). /dothach giảm -10% tỉ lệ xịt ở cả 4 sạp & đổi tên Hộp Thần Thoại Cực Phẩm. /daily tăng lên 55–80 LT, /job tăng +30%.',
     '• [LÒ LUYỆN ĐAN, NÔNG TRẠI, KHÁM PHÁ & QUÀ v1.7] (/luyendan, /farm, /exchange, /gieoque, /explorer, /wiki, /updates): /luyendan 2 Lò song song tối đa 6 mẻ/ngày + Thẻ Bảo Vệ Cháy Đan (+2h tự cứu). /farm tối đa 8 ô, tưới nước/cho ăn nay giảm -30 phút chín + có Thẻ Auto Farm 24h, Thẻ Bảo Vệ Cây & Trứng (+2h), Thuốc Tốc Độ (-25% giờ), Bột Sản Lượng (+30% Linh Quả). /explorer 12 Địa Danh có đồng bộ Bộ 1/2/3 & rơi Mảnh Hỗn Độn 0.5%. /updates v1.7 chia 3 trang (Trang Trước/Sau) tặng trọn gói quà mở bản: +3.000 LT + 5 Tinh Thể Đỏ Vàng (TT) + 5 Thẻ Reset Tháp (vượt trần 15 vẫn nhận đủ) + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối!',

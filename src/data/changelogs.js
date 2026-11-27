@@ -47,7 +47,7 @@ export const V17_CHANGELOG = {
         {
           heading: `${em('su_sparkle')} 2. Mở Rộng +260 Món Mới, 9 Khung Viền & Gói Quà v1.7`,
           bullets: [
-            '**Kho Mới Siêu Lớn:** **`+60 Linh Thú`** *(20 Tối Thượng Linh Thú, 10 Tối Thượng Thú Nhân & 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực • Thần Thức • Thần Cảnh)* và **9 Khung Avatar mới** *(đã phân trang trong `/shop` & `/wiki`)*.',
+            '**Kho Mới Siêu Lớn:** **`+60 Linh Thú`** *(30 Tối Thượng Độc Nhất & 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`** *(Linh Vực • Thần Thức • Thần Cảnh)* và **9 Khung Avatar mới** *(đã phân trang trong `/shop` & `/wiki`)*.',
             '**Quà Mở Bản v1.7 Khi Xác Nhận:** Tặng ngay **`+3.000 LT`** • **`+5 Tinh Thể Đỏ Vàng (TT)`** • **`+5 Thẻ Reset Tháp`** *(nhận đủ kể cả khi túi đang đầy 15 thẻ)* • **`+300 Linh Quả`** • **`+1 Ấn Khắc Tuyệt Đối`**!',
           ],
         },
@@ -100,7 +100,7 @@ export const V17_CHANGELOG = {
       heading: `${em('su_tier_toithuong')} Tiến Hóa Chân Thần (/tienhoa) & +260 Món Mới`,
       bullets: [
         '**Tiến Hóa 40 Pet Độc Nhất (`/tienhoa`):** Đạt **`Lv.40 & 8★`** + **`1 Hồng Mông Tiến Hóa Tinh`** để lên **Tối Thượng Chân Thần** & mở **40 Skill Ultimate tái kích hoạt**.',
-        '**+260 Món Mới & 9 Khung Viền:** **`+60 Pet`** *(20 Tối Thượng + 10 Thú Nhân + 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`**, 9 Khung mới.',
+        '**+260 Món Mới & 9 Khung Viền:** **`+60 Pet`** *(30 Tối Thượng Độc Nhất & 30 Thần Thoại)*, **`+99 Pháp Bảo`**, **`+101 Lãnh Địa`**, 9 Khung mới.',
       ],
     },
     {
