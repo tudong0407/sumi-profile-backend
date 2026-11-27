@@ -21,6 +21,7 @@ import {
   BACKGROUND_CATALOG,
   BACKGROUND_BY_ID,
   SHOP_CONSUMABLES,
+  SPECIAL_CONSUMABLES,
   MARRY_RING_BY_ID,
   AVATAR_FRAME_BY_ID,
   FUYUMI_USER_ID,
@@ -96,7 +97,7 @@ export function normalizeEmojiAwareQuery(raw) {
     ) {
       return stripped;
     }
-    const matchedCons = SHOP_CONSUMABLES.find((c) => c.item_id === stripped);
+    const matchedCons = [...SHOP_CONSUMABLES, ...SPECIAL_CONSUMABLES].find((c) => c.item_id === stripped);
     if (matchedCons) return matchedCons.item_id;
   }
   return s;
@@ -411,7 +412,7 @@ export async function getInventory(userId, options = {}) {
     : '';
 
   const equippedDomainsRaw = (domainsRes?.data || []).filter((d) => d && d.is_equipped !== false);
-  const SHOP_CONS_BY_ID = Object.fromEntries(SHOP_CONSUMABLES.map((c) => [c.item_id, c]));
+  const ALL_CONS_BY_ID = Object.fromEntries([...SHOP_CONSUMABLES, ...SPECIAL_CONSUMABLES].map((c) => [c.item_id, c]));
 
   const pets = sortPetList((petsRes?.data || []).map((p) => {
     const petMeta = PET_BY_TYPE[p.pet_type] || {};
@@ -449,11 +450,12 @@ export async function getInventory(userId, options = {}) {
       return true;
     })
     .map((inv) => {
-      const cMeta = SHOP_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
+      const cMeta = ALL_CONS_BY_ID[inv.item_id] || MARRY_RING_BY_ID[inv.item_id];
       const domainMeta = DOMAIN_BY_ID[inv.item_id];
       const senseMeta = DIVINE_SENSE_BY_ID[inv.item_id];
       const realmMeta = DIVINE_REALM_BY_ID[inv.item_id];
       const icon = cMeta?.icon
+        || em(inv.item_id)
         || (MARRY_RING_BY_ID[inv.item_id] ? ringEmoji(inv.item_id)
           : inv.item_id === 'farm_essence' ? farmEmoji('farm_essence', em('su_sprout'))
           : domainMeta ? domainEmoji(inv.item_id, em('su_arena'))

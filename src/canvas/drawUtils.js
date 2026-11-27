@@ -586,26 +586,32 @@ function buildFrameSilhouetteCanvas(frameImg, srcSize = 512) {
       }
     }
   }
+  // Exterior flood-fill from all 4 image edges through transparent pixels (alpha < 80),
+  // stopping at the inner avatar barrier (r <= 0.342 * srcSize) so open/gapped rings never erase the center avatar!
+  const half = srcSize / 2;
+  const innerBarrierR2 = (srcSize * 0.342) ** 2;
+  const canFlood = (nx, ny, nIdx) => {
+    if (isExterior[nIdx] || data[nIdx * 4 + 3] >= 80) return false;
+    const dx = nx - half;
+    const dy = ny - half;
+    return (dx * dx + dy * dy) > innerBarrierR2;
+  };
   let head = 0;
   while (head < q.length) {
     const idx = q[head++];
     const x = idx % srcSize;
     const y = (idx / srcSize) | 0;
-    if (x > 0) {
-      const n = idx - 1;
-      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    if (x > 0 && canFlood(x - 1, y, idx - 1)) {
+      isExterior[idx - 1] = 1; q.push(idx - 1);
     }
-    if (x + 1 < srcSize) {
-      const n = idx + 1;
-      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    if (x + 1 < srcSize && canFlood(x + 1, y, idx + 1)) {
+      isExterior[idx + 1] = 1; q.push(idx + 1);
     }
-    if (y > 0) {
-      const n = idx - srcSize;
-      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    if (y > 0 && canFlood(x, y - 1, idx - srcSize)) {
+      isExterior[idx - srcSize] = 1; q.push(idx - srcSize);
     }
-    if (y + 1 < srcSize) {
-      const n = idx + srcSize;
-      if (!isExterior[n] && data[n * 4 + 3] < 80) { isExterior[n] = 1; q.push(n); }
+    if (y + 1 < srcSize && canFlood(x, y + 1, idx + srcSize)) {
+      isExterior[idx + srcSize] = 1; q.push(idx + srcSize);
     }
   }
 

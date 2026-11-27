@@ -292,18 +292,19 @@ export function buildUpdatesV17Cmd() {
     { label: 'Phiên bản v1.1', description: 'Mở rộng Gacha, /info, /phapbao, Thẻ Reset Tháp & cân bằng', emoji_id: uidId('su_wiki_scroll'), value: '1.1' },
   ];
 
-  // Unroll 3-level pagination buttons [Trang Trước] [Trang Sau] + [Nhận Quà v1.7]
+  // Unroll 3-level pagination buttons [Trang Trước] [Trang Sau] [Nhận Quà v1.7]
+  // BotGhost orderComponent sorts weight DESCENDING (3 = left, 2 = middle, 1 = right)
   let pSeq = 0;
   function attachPager(parentMsgId, prevResVar, depth, bx, by) {
-    // Always attach [Nhận Quà v1.7] button on Row 1
+    // Row 1 Rightmost (weight=1): [Nhận Quà v1.7]
     pSeq += 1;
     const claimBtnId = `btn_upds_claim_${pSeq}`;
-    gb.advBtn(claimBtnId, parentMsgId, btnCfg('Nhận Quà v1.7', 'SUCCESS', 'red_gold_crystal', '1', '3', 'show'), { x: bx + 280, y: by + 130 });
+    gb.advBtn(claimBtnId, parentMsgId, btnCfg('Nhận Quà v1.7', 'SUCCESS', 'red_gold_crystal', '1', '1', 'show'), { x: bx + 280, y: by + 130 });
     gb.link(claimBtnId, 'upds_claim_api');
 
     if (depth >= 3) return;
     for (const c of [
-      { key: 'prev', label: 'Trang Trước', style: 'SECONDARY', icon: 'su_arrow_left', weight: '1', pageExpr: `{${prevResVar}.response.prev_page}`, dx: -170 },
+      { key: 'prev', label: 'Trang Trước', style: 'SECONDARY', icon: 'su_arrow_left', weight: '3', pageExpr: `{${prevResVar}.response.prev_page}`, dx: -170 },
       { key: 'next', label: 'Trang Sau', style: 'PRIMARY', icon: 'su_arrow_right', weight: '2', pageExpr: `{${prevResVar}.response.next_page}`, dx: 110 },
     ]) {
       pSeq += 1;
@@ -598,11 +599,11 @@ export function buildShopDacBietV17Cmd() {
   }, { x: -240, y: 1560 });
   gb.link('ss_buy_api', 'ss_buy_msg');
 
-  // Row 2: Quick Convert buttons + Open Mythic Selector button
+  // Row 2: Quick Convert buttons (weight DESC: 10 TT = 3 left, 50 TT = 2 middle, 100 TT = 1 right)
   const quickConverts = [
-    { key: '10', label: 'Đổi 10 TT (7.5k LT)', tt: 10, weight: '1', dx: 40 },
+    { key: '10', label: 'Đổi 10 TT (7.5k LT)', tt: 10, weight: '3', dx: 40 },
     { key: '50', label: 'Đổi 50 TT (37.5k LT)', tt: 50, weight: '2', dx: 260 },
-    { key: '100', label: 'Đổi 100 TT (75k LT)', tt: 100, weight: '3', dx: 480 },
+    { key: '100', label: 'Đổi 100 TT (75k LT)', tt: 100, weight: '1', dx: 480 },
   ];
   for (const qc of quickConverts) {
     const bId = `btn_ss_conv_${qc.key}`;
@@ -1206,7 +1207,13 @@ export function buildWikiV17Cmd() {
 // 5. Surgical Live Tree Upgrades: /shop, /explorer, /dothach, AI Mention, Sweep
 // ============================================================================
 function patchShopTreeV17(oldTree) {
-  const tree = JSON.parse(JSON.stringify(oldTree));
+  // Remove any previously injected v17_sh_* elements for 100% idempotency
+  const baseTree = JSON.parse(JSON.stringify(oldTree)).filter((el) => {
+    if (String(el.id || '').startsWith('v17_sh_')) return false;
+    if (el.source && el.target && (String(el.source).startsWith('v17_sh_') || String(el.target).startsWith('v17_sh_'))) return false;
+    return true;
+  });
+
   const paidLtFrames = AVATAR_FRAMES.filter((f) => Number(f.price || 0) > 0 && !f.special_shop_only && !f.is_exclusive_fuyumi);
   const frameOpts = paidLtFrames.map((f) => ({
     label: String(f.name).slice(0, 95),
@@ -1221,7 +1228,18 @@ function patchShopTreeV17(oldTree) {
     value: c.item_id,
   }));
 
-  for (const el of tree) {
+  const frameAisleTitle = `${uidEm('frame_unlock_token')} QUẦY VIỀN AVATAR (${paidLtFrames.length} MẪU)`;
+  const frameAisleDesc = `${paidLtFrames.map((f) => `• ${uidEm(tierEmojiKey(f.rarity_key), 'su_tier_pham')} **${f.name}** — **${Number(f.price).toLocaleString('vi-VN')}** ${uidEm('su_linhthach')}`).join('\n')}\n\n• *Chọn mẫu ở menu bên dưới để xem ảnh mẫu & mua ngay!*`;
+
+  const bgMsgNode = baseTree.find((e) => e.id === 'msg_shop_bgs');
+  const bgSelNode = baseTree.find((e) => e.id === 'sel_shop_bg');
+  const bgAisleTitle = bgMsgNode?.data?.data?.message?.embeds?.[0]?.title || `${uidEm('frame_unlock_token')} QUẦY BACKGROUND PROFILE & RANK (20 MẪU)`;
+  const bgAisleDesc = bgMsgNode?.data?.data?.message?.embeds?.[0]?.description || '• *Chọn mẫu ở menu bên dưới để xem ảnh mẫu & mua ngay!*';
+  const bgOpts = JSON.parse(JSON.stringify(bgSelNode?.data?.data?.basic_options || []));
+  const bgPlaceholder = bgSelNode?.data?.data?.placeholder || `Chọn Background Hồ Sơ (${bgOpts.length} mẫu • 300 - 4.000 LT)`;
+
+  // Update list embeds & select options on both primary and secondary shop hubs
+  for (const el of baseTree) {
     if (el.type === 'advMessageSelectMenu' && (el.id === 'sel_shop_frame' || el.id === 'sel_shop_frame_2')) {
       el.data.data.placeholder = `Chọn Viền Avatar (${paidLtFrames.length} mẫu • 300 - 4.000 LT)...`;
       el.data.data.basic_options = frameOpts;
@@ -1230,8 +1248,384 @@ function patchShopTreeV17(oldTree) {
       el.data.data.placeholder = `Chọn Vật Phẩm Tiêu Hao / Bảo Vệ / Luck (${consOpts.length} món)...`;
       el.data.data.basic_options = consOpts;
     }
+    if (el.type === 'action' && (el.id === 'msg_shop_frames' || el.id === 'msg_shop_frames_2') && el.data?.data?.message?.embeds?.[0]) {
+      el.data.data.message.embeds[0].title = frameAisleTitle;
+      el.data.data.message.embeds[0].description = frameAisleDesc;
+    }
   }
-  return sweepTreeV17(tree);
+
+  // Dedicated acyclic preview+buy+back-to-aisle chains for Frames & Backgrounds (no kicking back to Home!)
+  const hasRewireTargets = ['set_sh_frame', 'set_sh_bg', 'set_sh2_sel_shop_frame', 'set_sh2_sel_shop_bg', 'msg_shop_home_2']
+    .every((id) => baseTree.some((e) => e.id === id));
+
+  if (hasRewireTargets && bgOpts.length > 0) {
+    const sampleMsgOpts = JSON.parse(JSON.stringify(baseTree.find((e) => e.id === 'msg_shop_frames')?.data?.node_options || {}));
+    const sampleApiOpts = JSON.parse(JSON.stringify(baseTree.find((e) => e.id === 'shop_prev_api')?.data?.node_options || {}));
+    const sampleSetOpts = JSON.parse(JSON.stringify(baseTree.find((e) => e.id === 'set_sh_frame')?.data?.node_options || {}));
+
+    // Remove the old 4 edges connecting Frame/BG sets to shared shop_prev_api / shop_prev_2_api
+    const removedTargets = new Map([
+      ['set_sh_frame', 'shop_prev_api'],
+      ['set_sh_bg', 'shop_prev_api'],
+      ['set_sh2_sel_shop_frame', 'shop_prev_2_api'],
+      ['set_sh2_sel_shop_bg', 'shop_prev_2_api'],
+    ]);
+    const treeFiltered = baseTree.filter((el) => {
+      if (el.source && el.target && removedTargets.get(el.source) === el.target) return false;
+      return true;
+    });
+
+    const addNode = (node) => treeFiltered.push(node);
+    const addEdge = (src, tgt, { sh = 'action', th = 'action', type = 'custom' } = {}) => {
+      treeFiltered.push({
+        source: src,
+        ...(sh ? { sourceHandle: sh } : {}),
+        target: tgt,
+        ...(th ? { targetHandle: th } : {}),
+        animated: false,
+        arrowHeadType: 'arrowclosed',
+        type,
+        id: `reactflow__edge-${src}${sh || ''}-${tgt}${th || ''}`,
+      });
+    };
+
+    const buildAisleChain = ({
+      tag,
+      startSetNodeId,
+      initialVarName,
+      aisleTitle,
+      aisleDesc,
+      aislePlaceholder,
+      aisleOpts,
+      backToAisleLabel,
+      maxHops,
+      allowBackHome,
+      baseX,
+      baseY,
+    }) => {
+      const apiHeaders = [
+        { key: 'Content-Type', value: 'application/json' },
+        { key: 'x-api-key', value: '{SECRET_BACKEND_KEY}' },
+      ];
+      const apiOptions = {
+        excludeEmptyFields: true,
+        replaceParams: true,
+        replaceURL: true,
+        replaceHeaders: true,
+        replaceBody: true,
+        jsonSafeVariables: true,
+        bodyMode: 'raw',
+        contentType: 'application/json',
+        failOnError: false,
+      };
+
+      const makeMsgNode = (id, title, description, imageUrl, pos) => addNode({
+        id,
+        type: 'action',
+        draggable: true,
+        position: pos,
+        width: 280,
+        height: 90,
+        data: {
+          node_options: JSON.parse(JSON.stringify(sampleMsgOpts)),
+          data: {
+            type: 'advanced_message',
+            validated: true,
+            messageType: 'advanced',
+            useComponentsV2: false,
+            target: { editId: 'shop_main_msg' },
+            action_id: 'shop_main_msg',
+            success_handles: false,
+            message: {
+              content: '',
+              embeds: [{
+                title,
+                description,
+                color: '#ec4899',
+                timestamp: false,
+                author: { name: '', iconURL: '', url: '' },
+                footer: { text: '', iconURL: '' },
+                image: { url: imageUrl || '' },
+                thumbnail: { url: '' },
+                fields: [],
+              }],
+            },
+          },
+        },
+      });
+
+      const makeBtnNode = (id, parentMsgId, label, style, iconName, weight, row, pos) => {
+        const eid = uidId(iconName);
+        addNode({
+          id,
+          type: 'advMessageButton',
+          draggable: true,
+          position: pos,
+          width: 240,
+          height: 80,
+          data: {
+            node_options: {},
+            data: {
+              type: 'button',
+              label,
+              style,
+              ...(eid ? { emoji_id: eid } : {}),
+              orderComponent: true,
+              row: String(row),
+              weight: String(weight),
+              showReplies: 'hide',
+              who_can_press: 'user',
+              who_can_press_message: AUTHOR_ONLY_MSG,
+              validated: true,
+            },
+          },
+        });
+        addEdge(parentMsgId, id, { sh: 'components_source', th: null, type: 'step' });
+      };
+
+      let prevEntryNodeId = startSetNodeId;
+      let prevVarName = initialVarName;
+
+      for (let h = 1; h <= maxHops; h += 1) {
+        const hx = baseX + (h - 1) * 520;
+        const pApiId = `v17_sh_${tag}_prev_${h}_api`;
+        const pVar = `v17_sh_${tag}_pf_${h}`;
+        const pMsgId = `v17_sh_${tag}_prev_${h}_msg`;
+        const buyBtnId = `v17_sh_${tag}_buy_${h}_btn`;
+        const buyApiId = `v17_sh_${tag}_buy_${h}_api`;
+        const buyVar = `v17_sh_${tag}_bf_${h}`;
+        const buyMsgId = `v17_sh_${tag}_buy_${h}_msg`;
+
+        addNode({
+          id: pApiId,
+          type: 'action',
+          draggable: true,
+          position: { x: hx, y: baseY + 180 },
+          width: 280,
+          height: 90,
+          data: {
+            node_options: JSON.parse(JSON.stringify(sampleApiOpts)),
+            data: {
+              type: 'api_action',
+              name: pVar,
+              ephemeral: false,
+              request_options: {
+                method: 'POST',
+                url: `${BACKEND_BASE}/api/shop/preview`,
+                headers: apiHeaders,
+                params: [],
+                body: [],
+                rawBody: `{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","itemId":"{${prevVarName}}","messageId":"{message_id}"}`,
+                contentType: 'application/json',
+                options: apiOptions,
+              },
+              success_handles: false,
+              validated: true,
+            },
+          },
+        });
+        addEdge(prevEntryNodeId, pApiId);
+
+        makeMsgNode(pMsgId, `{${pVar}.response.title}`, `{${pVar}.response.description}`, `{${pVar}.response.image_url}`, { x: hx, y: baseY + 340 });
+        addEdge(pApiId, pMsgId);
+
+        // Mua Ngay (RIGHT, weight=1)
+        makeBtnNode(buyBtnId, pMsgId, 'Mua Ngay', 'SUCCESS', 'su_linhthach', '1', '1', { x: hx + 140, y: baseY + 500 });
+        addNode({
+          id: buyApiId,
+          type: 'action',
+          draggable: true,
+          position: { x: hx + 140, y: baseY + 660 },
+          width: 280,
+          height: 90,
+          data: {
+            node_options: JSON.parse(JSON.stringify(sampleApiOpts)),
+            data: {
+              type: 'api_action',
+              name: buyVar,
+              ephemeral: false,
+              request_options: {
+                method: 'POST',
+                url: `${BACKEND_BASE}/api/shop/buy`,
+                headers: apiHeaders,
+                params: [],
+                body: [],
+                rawBody: `{"userId":"{user_id}","username":"{user_displayName}","avatarUrl":"{user_icon}","category":"{${pVar}.response.category}","itemId":"{${pVar}.response.item_id}","messageId":"{message_id}"}`,
+                contentType: 'application/json',
+                options: apiOptions,
+              },
+              success_handles: false,
+              validated: true,
+            },
+          },
+        });
+        addEdge(buyBtnId, buyApiId);
+        makeMsgNode(buyMsgId, `${uidEm('su_sparkle')} GIAO DỊCH TIÊN BẢO CÁC`, `{${buyVar}.response.message}`, '', { x: hx + 140, y: baseY + 820 });
+        addEdge(buyApiId, buyMsgId);
+
+        if (h < maxHops) {
+          const nextAisleId = `v17_sh_${tag}_aisle_${h + 1}`;
+          const nextSelId = `v17_sh_${tag}_sel_${h + 1}`;
+          const nextPicked = `v17_sh_${tag}_pk_${h + 1}`;
+          const nextSetId = `v17_sh_${tag}_set_${h + 1}`;
+          const nextVar = `v17_sh_${tag}_pid_${h + 1}`;
+
+          const backBtnPrev = `v17_sh_${tag}_back_p_${h}`;
+          const backBtnBuy = `v17_sh_${tag}_back_b_${h}`;
+          makeBtnNode(backBtnPrev, pMsgId, backToAisleLabel, 'SECONDARY', 'su_arrow_left', '2', '1', { x: hx - 120, y: baseY + 500 });
+          makeBtnNode(backBtnBuy, buyMsgId, backToAisleLabel, 'SECONDARY', 'su_arrow_left', '2', '1', { x: hx + 20, y: baseY + 980 });
+
+          if (allowBackHome) {
+            const backHomeBuy = `v17_sh_${tag}_home_b_${h}`;
+            makeBtnNode(backHomeBuy, buyMsgId, 'Về Danh Mục Shop', 'SECONDARY', 'su_realm_star', '1', '1', { x: hx + 260, y: baseY + 980 });
+            addEdge(backHomeBuy, 'msg_shop_home_2');
+          }
+
+          makeMsgNode(nextAisleId, aisleTitle, aisleDesc, '', { x: hx + 360, y: baseY + 520 });
+          addEdge(backBtnPrev, nextAisleId);
+          addEdge(backBtnBuy, nextAisleId);
+
+          if (allowBackHome) {
+            const aisleHomeBtn = `v17_sh_${tag}_ahome_${h + 1}`;
+            makeBtnNode(aisleHomeBtn, nextAisleId, 'Về Danh Mục Shop', 'SECONDARY', 'su_realm_star', '1', '2', { x: hx + 460, y: baseY + 680 });
+            addEdge(aisleHomeBtn, 'msg_shop_home_2');
+          }
+
+          addNode({
+            id: nextSelId,
+            type: 'advMessageSelectMenu',
+            draggable: true,
+            position: { x: hx + 520, y: baseY + 20 },
+            width: 280,
+            height: 90,
+            data: {
+              node_options: {},
+              data: {
+                type: 'adv_select_menu',
+                menu_type: 'basic',
+                placeholder: aislePlaceholder,
+                multiselect: false,
+                minOptions: '1',
+                maxOptions: '1',
+                basic_options: aisleOpts.map((o) => ({
+                  label: String(o.label).slice(0, 95),
+                  description: String(o.description || '').slice(0, 95),
+                  emoji_id: o.emoji_id ? String(o.emoji_id) : '',
+                  value: String(o.value).slice(0, 95),
+                })),
+                type_options: {},
+                options: [],
+                orderComponent: true,
+                row: '1',
+                weight: '1',
+                showReplies: 'hide',
+                who_can_press: 'user',
+                who_can_press_message: AUTHOR_ONLY_MSG,
+                validated: true,
+                customVariableName: nextPicked,
+              },
+            },
+          });
+          addEdge(nextAisleId, nextSelId, { sh: 'components_source', th: null, type: 'step' });
+
+          addNode({
+            id: nextSetId,
+            type: 'action',
+            draggable: true,
+            position: { x: hx + 520, y: baseY + 120 },
+            width: 280,
+            height: 90,
+            data: {
+              node_options: JSON.parse(JSON.stringify(sampleSetOpts)),
+              data: {
+                type: 'set_unique_variable',
+                validated: true,
+                reference: nextVar,
+                value: `{${nextPicked}}`,
+                success_handles: false,
+              },
+            },
+          });
+          addEdge(nextSelId, nextSetId);
+
+          prevEntryNodeId = nextSetId;
+          prevVarName = nextVar;
+        } else if (allowBackHome) {
+          // Final hop on primary branch -> safe return to msg_shop_home_2
+          const backHomePrev = `v17_sh_${tag}_home_p_${h}`;
+          const backHomeBuy = `v17_sh_${tag}_home_b_${h}`;
+          makeBtnNode(backHomePrev, pMsgId, 'Về Danh Mục Shop', 'SECONDARY', 'su_realm_star', '2', '1', { x: hx - 120, y: baseY + 500 });
+          addEdge(backHomePrev, 'msg_shop_home_2');
+          makeBtnNode(backHomeBuy, buyMsgId, 'Về Danh Mục Shop', 'SECONDARY', 'su_realm_star', '2', '1', { x: hx + 140, y: baseY + 980 });
+          addEdge(backHomeBuy, 'msg_shop_home_2');
+        }
+      }
+    };
+
+    buildAisleChain({
+      tag: 'fr1',
+      startSetNodeId: 'set_sh_frame',
+      initialVarName: 'shop_preview_id',
+      aisleTitle: frameAisleTitle,
+      aisleDesc: frameAisleDesc,
+      aislePlaceholder: `Chọn Viền Avatar (${paidLtFrames.length} mẫu • 300 - 4.000 LT)...`,
+      aisleOpts: frameOpts,
+      backToAisleLabel: 'Về Quầy Viền Avatar',
+      maxHops: 4,
+      allowBackHome: true,
+      baseX: -2400,
+      baseY: 2400,
+    });
+
+    buildAisleChain({
+      tag: 'bg1',
+      startSetNodeId: 'set_sh_bg',
+      initialVarName: 'shop_preview_id',
+      aisleTitle: bgAisleTitle,
+      aisleDesc: bgAisleDesc,
+      aislePlaceholder: bgPlaceholder,
+      aisleOpts: bgOpts,
+      backToAisleLabel: 'Về Quầy Ảnh Nền',
+      maxHops: 4,
+      allowBackHome: true,
+      baseX: -2400,
+      baseY: 3650,
+    });
+
+    buildAisleChain({
+      tag: 'fr2',
+      startSetNodeId: 'set_sh2_sel_shop_frame',
+      initialVarName: 'shop_preview_2_id',
+      aisleTitle: frameAisleTitle,
+      aisleDesc: frameAisleDesc,
+      aislePlaceholder: `Chọn Viền Avatar (${paidLtFrames.length} mẫu • 300 - 4.000 LT)...`,
+      aisleOpts: frameOpts,
+      backToAisleLabel: 'Về Quầy Viền Avatar',
+      maxHops: 2,
+      allowBackHome: false,
+      baseX: 3300,
+      baseY: 2200,
+    });
+
+    buildAisleChain({
+      tag: 'bg2',
+      startSetNodeId: 'set_sh2_sel_shop_bg',
+      initialVarName: 'shop_preview_2_id',
+      aisleTitle: bgAisleTitle,
+      aisleDesc: bgAisleDesc,
+      aislePlaceholder: bgPlaceholder,
+      aisleOpts: bgOpts,
+      backToAisleLabel: 'Về Quầy Ảnh Nền',
+      maxHops: 2,
+      allowBackHome: false,
+      baseX: 3300,
+      baseY: 3450,
+    });
+
+    return sweepTreeV17(treeFiltered);
+  }
+
+  return sweepTreeV17(baseTree);
 }
 
 function patchDothachTreeV17(oldTree) {
@@ -1254,6 +1648,14 @@ function patchDothachTreeV17(oldTree) {
 
 function patchExplorerTreeV17(oldTree) {
   const tree = sweepTreeV17(JSON.parse(JSON.stringify(oldTree)));
+  // Fix Row 2 [Bộ 1] [Bộ 2] [Bộ 3] left-to-right weights (3 = Bộ 1 left, 2 = Bộ 2 mid, 1 = Bộ 3 right)
+  for (const slot of [1, 2, 3]) {
+    const existingBtn = tree.find((e) => e.id === `ex_btn_slot_${slot}` && e.type === 'advMessageButton');
+    if (existingBtn?.data?.data) {
+      existingBtn.data.data.weight = String(4 - slot);
+      existingBtn.data.data.orderComponent = true;
+    }
+  }
   const existingIds = new Set(tree.map((e) => e.id));
   // Add [Bộ 1] [Bộ 2] [Bộ 3] quick loadout switcher on Row 2 of ex_hub_msg (idempotent!)
   if (existingIds.has('ex_hub_msg') && !existingIds.has('ex_btn_slot_1')) {
@@ -1279,7 +1681,7 @@ function patchExplorerTreeV17(oldTree) {
           node_options: {},
           data: {
             type: 'adv_button',
-            ...btnCfg(`Bộ ${slot}`, 'SECONDARY', 'su_crossed_swords', '2', String(slot), 'show'),
+            ...btnCfg(`Bộ ${slot}`, 'SECONDARY', 'su_crossed_swords', '2', String(4 - slot), 'show'),
             validated: true,
           },
         },

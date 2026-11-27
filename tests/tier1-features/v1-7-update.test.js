@@ -517,4 +517,14 @@ test('Ver 1.7 Wiki Sub-Hubs, Canvas Renderers, Fuyumi Pill, 9 Frames & Migration
   assert.equal(dry.pets_upsert_count, 151);
   assert.equal(dry.items_upsert_count, 264);
   assert.equal(validateBotGhostPatterns().valid, true);
+
+  // Every SHOP_CONSUMABLES + SPECIAL_CONSUMABLES must resolve its own icon cleanly (never su_pin_sigil hairpin fallback)
+  const { em } = await import('../../src/config/emojiHelper.js');
+  const pinTag = em('su_pin_sigil');
+  const allCons = [...cat.SHOP_CONSUMABLES, ...cat.SPECIAL_CONSUMABLES];
+  for (const item of allCons) {
+    const resolvedIcon = item.icon || em(item.item_id);
+    assert.ok(resolvedIcon && resolvedIcon.trim().length > 0, `Consumable ${item.item_id} missing icon`);
+    assert.notEqual(resolvedIcon, pinTag, `Consumable ${item.item_id} unexpectedly uses su_pin_sigil`);
+  }
 });
