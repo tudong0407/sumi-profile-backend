@@ -557,7 +557,7 @@ export function drawProceduralAvatar(ctx, x, y, size, isOwner, initialLetter) {
 const frameOverlayCache = new Map();
 const frameSilhouetteCache = new Map();
 
-function buildFrameSilhouetteCanvas(frameImg, srcSize = 512) {
+function buildFrameSilhouetteCanvas(frameImg, srcSize = 512, frameMetrics = null) {
   const c = createCanvas(srcSize, srcSize);
   const sCtx = c.getContext('2d');
   sCtx.drawImage(frameImg, 0, 0, srcSize, srcSize);
@@ -587,13 +587,17 @@ function buildFrameSilhouetteCanvas(frameImg, srcSize = 512) {
     }
   }
   // Exterior flood-fill from all 4 image edges through transparent pixels (alpha < 80),
-  // stopping at the inner avatar barrier (r <= 0.342 * srcSize) so open/gapped rings never erase the center avatar!
-  const half = srcSize / 2;
-  const innerBarrierR2 = (srcSize * 0.342) ** 2;
+  // stopping at the per-frame inner avatar barrier (r <= (rTuck + 3) around frame cx,cy)
+  // so thin gold filigree / open rings never nibble the circular avatar lopsided!
+  const normScale = srcSize / 512;
+  const cxPx = (frameMetrics?.cx ?? 256) * normScale;
+  const cyPx = (frameMetrics?.cy ?? 256) * normScale;
+  const innerBarrierR = ((frameMetrics?.rTuck ?? 166) + 3) * normScale;
+  const innerBarrierR2 = innerBarrierR * innerBarrierR;
   const canFlood = (nx, ny, nIdx) => {
     if (isExterior[nIdx] || data[nIdx * 4 + 3] >= 80) return false;
-    const dx = nx - half;
-    const dy = ny - half;
+    const dx = nx - cxPx;
+    const dy = ny - cyPx;
     return (dx * dx + dy * dy) > innerBarrierR2;
   };
   let head = 0;
@@ -651,11 +655,11 @@ function buildFrameSilhouetteCanvas(frameImg, srcSize = 512) {
   return c;
 }
 
-function getFrameSilhouetteMaskSync(frameImg, tier) {
+function getFrameSilhouetteMaskSync(frameImg, tier, frameMetrics = null) {
   if (!frameImg) return null;
   if (frameSilhouetteCache.has(tier)) return frameSilhouetteCache.get(tier);
   try {
-    const mask = buildFrameSilhouetteCanvas(frameImg, frameImg.width || 512);
+    const mask = buildFrameSilhouetteCanvas(frameImg, frameImg.width || 512, frameMetrics);
     if (frameSilhouetteCache.size >= 24) {
       const oldest = frameSilhouetteCache.keys().next().value;
       if (oldest) frameSilhouetteCache.delete(oldest);
@@ -733,15 +737,15 @@ export const AVATAR_FRAME_METRICS = {
   frame_chaos_primordial: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
   frame_emperor_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
   frame_eternal_aurora: { cx: 256, cy: 256, rTuck: 166, rUnder: 188 },
-  frame_v17_01_moon_fox: { cx: 256, cy: 256, rTuck: 170, rUnder: 186 },
-  frame_v17_02_azure_dragon: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
-  frame_v17_03_rainbow_ribbon: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
-  frame_v17_04_lotus_feather: { cx: 256, cy: 256, rTuck: 161, rUnder: 184 },
-  frame_v17_05_night_dragon: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
-  frame_v17_06_crimson_raven: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
-  frame_v17_07_jade_leaf: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
-  frame_v17_08_frost_vine: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
-  frame_v17_09_sapphire_butterfly: { cx: 256, cy: 256, rTuck: 166, rUnder: 186 },
+  frame_v17_01_moon_fox: { cx: 254, cy: 255, rTuck: 184, rUnder: 190 },
+  frame_v17_02_azure_dragon: { cx: 255, cy: 259, rTuck: 166, rUnder: 176 },
+  frame_v17_03_rainbow_ribbon: { cx: 256, cy: 254, rTuck: 164, rUnder: 178 },
+  frame_v17_04_lotus_feather: { cx: 254, cy: 252, rTuck: 162, rUnder: 182 },
+  frame_v17_05_night_dragon: { cx: 268, cy: 260, rTuck: 166, rUnder: 186 },
+  frame_v17_06_crimson_raven: { cx: 255, cy: 253, rTuck: 168, rUnder: 184 },
+  frame_v17_07_jade_leaf: { cx: 257, cy: 260, rTuck: 168, rUnder: 186 },
+  frame_v17_08_frost_vine: { cx: 255, cy: 259, rTuck: 169, rUnder: 182 },
+  frame_v17_09_sapphire_butterfly: { cx: 254, cy: 252, rTuck: 162, rUnder: 180 },
 };
 
 /**
@@ -849,7 +853,7 @@ export function drawAntiAliasedAvatarWithBorder(ctx, avatarImg, centerX, centerY
     const drawX = centerX - (frameMetrics.cx * normScale) * k;
     const drawY = centerY - (frameMetrics.cy * normScale) * k;
 
-    const silMask = getFrameSilhouetteMaskSync(pngOverlay, tier);
+    const silMask = getFrameSilhouetteMaskSync(pngOverlay, tier, frameMetrics);
     if (silMask) {
       const boxW = Math.max(8, Math.ceil(drawW));
       const boxH = Math.max(8, Math.ceil(drawH));
