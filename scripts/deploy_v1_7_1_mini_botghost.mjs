@@ -782,6 +782,43 @@ function patchTienHoaTreeV171(oldTree) {
   return JSON.parse(s);
 }
 
+function patchWikiTreeV171(oldTree) {
+  let tree = sweepTreeV171(JSON.parse(JSON.stringify(oldTree)));
+  for (const el of tree) {
+    if (el.type === 'advMessageSelectMenu' && Array.isArray(el.data?.data?.basic_options)) {
+      if (typeof el.data.data.placeholder === 'string') {
+        el.data.data.placeholder = el.data.data.placeholder.replace(/v1\.7\b/g, 'v1.7.1');
+      }
+      for (const opt of el.data.data.basic_options) {
+        if (opt.value === 'overview') {
+          opt.label = 'Tổng Quan & Toàn Bộ Lệnh (v1.7.1)';
+          opt.description = '/thuongtra, /thaplinhhuong, /linhmach SS–SSS+, Gacha 0.60%, Tháp +15%';
+        } else if (opt.value === 'battle') {
+          opt.label = 'Đấu Trường, Ultimate & Linh Mạch SS–SSS+';
+          opt.description = '40 Ultimate, Linh Mạch 4 Mỏ (trần 90%), Cộng Dồn HAX & Ngũ Vực';
+        } else if (opt.value === 'pets') {
+          opt.description = '40 Tối Thượng Tiến Hóa (2 Hồng Mông) & 110 Linh Thú';
+        } else if (opt.value === 'economy') {
+          opt.label = 'Kinh Tế, Trà Đạo Quán, Luck & Tháp 500';
+          opt.description = '/daily ×2, /thuongtra, Hoàng Đạo, /thaplinhhuong, Gacha 0.60%, Tháp +15%';
+        } else if (opt.value === 'explorer') {
+          opt.description = '12 Địa Danh, Thanh Tiến Độ, Bộ 1/2/3 Độc Lập & Hủy Mỏ Giữ Mệt Mỏi';
+        }
+      }
+    } else if (el.data?.data?.type === 'advanced_message') {
+      let s = JSON.stringify(el.data.data.message || {})
+        .replace(/60\.35%/g, '60.40%')
+        .replace(/0\.65%/g, '0.60%')
+        .replace(/1 Hồng Mông Tiến Hóa Tinh/g, '2 Hồng Mông Tiến Hóa Tinh')
+        .replace(/\(v1\.7\)/g, '(v1.7.1)')
+        .replace(/• v1\.7\)/g, '• v1.7.1)')
+        .replace(/v1\.7 •/g, 'v1.7.1 •');
+      el.data.data.message = JSON.parse(s);
+    }
+  }
+  return tree;
+}
+
 function buildV171KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
     'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.7.1):',
@@ -920,6 +957,13 @@ async function main() {
     const newTree = patchTienHoaTreeV171(oldTree);
     validateTreeStrict(newTree, 'tienhoa');
     specs.push({ name: 'tienhoa', kind: 'slash', groupId: cmdMap.get('tienhoa').groupId || PROFILE_GROUP_ID, elements: newTree });
+  }
+
+  if (shouldRun('wiki') && cmdMap.has('wiki')) {
+    const oldTree = JSON.parse(LZString.decompressFromBase64(cmdMap.get('wiki').compressed_tree));
+    const newTree = patchWikiTreeV171(oldTree);
+    validateTreeStrict(newTree, 'wiki');
+    specs.push({ name: 'wiki', kind: 'slash', groupId: cmdMap.get('wiki').groupId || PROFILE_GROUP_ID, enabled: cmdMap.get('wiki').enabled, elements: newTree });
   }
 
   if (shouldRun('ai')) {

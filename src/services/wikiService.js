@@ -92,8 +92,8 @@ const CATEGORY_ALIASES = {
 
 export const WIKI_METADATA = {
   title: 'Cẩm Nang Tu Tiên SuMi Family',
-  subtitle: 'Cẩm nang v1.7 • 10 Chuyên Mục • 150 Linh Thú (40 Tiến Hóa Ultimate) • 264 Pháp Bảo • 161 Lãnh Địa • Shop Đặc Biệt • Luyện Đan',
-  version: '1.7',
+  subtitle: 'Cẩm nang v1.7.1 • 10 Chuyên Mục • 150 Linh Thú (40 Tiến Hóa Ultimate) • 264 Pháp Bảo • 161 Lãnh Địa • Trà Đạo Quán • Linh Mạch SS–SSS+',
+  version: '1.7.1',
   guild: 'SuMi Family (1026096141273661450)',
   guild_id: '1026096141273661450',
   bot: 'Nhiễm Nhiễm (916469360401453067)',
@@ -102,7 +102,7 @@ export const WIKI_METADATA = {
   owner_id: FUYUMI_USER_ID,
   theme_color: '#ec4899',
   theme_color_dec: 15485081,
-  updated_at: '2026-11-27T00:00:00.000Z',
+  updated_at: '2026-11-28T00:00:00.000Z',
   total_categories: 10,
 };
 
@@ -111,7 +111,7 @@ export const WIKI_CATEGORIES = {
     id: 'overview',
     title: `${em('su_wiki_scroll')} Tổng Quan Tu Tiên`,
     icon: em('su_wiki_scroll'),
-    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.7).',
+    description: 'Khởi đầu tu hành, bộ lệnh Tu Tiên & Tiện Ích Server (v1.7.1).',
     image_url: '',
     sections: [
       {
@@ -119,8 +119,8 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.7)',
-        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu & Tiến Hóa: /battle, /tienhoa, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /shop_dacbiet, /dothach, /gieoque, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.7.1)',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu & Tiến Hóa: /battle, /tienhoa, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /shop_dacbiet, /dothach, /gieoque, /thaplinhhuong, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /thuongtra, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
@@ -130,12 +130,12 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.7)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.7.1)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
-          '• **Chiến đấu & Tiến Hóa:** `/battle` • `/tienhoa` *(Tiến Hóa Chân Thần)* • `/linhvuc` • `/party` • `/linhmach` • `/nhiemvu` *(Tháp 500 tầng)*',
-          '• **Kho & Gacha:** `/roll` • `/dothach` • `/gieoque` • `/autosell` • `/shop` • `/shop_dacbiet` *(Chủ Nhật)* • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
-          '• **Kinh tế & Xã hội:** `/daily` • `/job` • `/farm` • `/exchange` • `/luyendan` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
+          '• **Chiến đấu & Tiến Hóa:** `/battle` • `/tienhoa` *(Tiến Hóa Chân Thần)* • `/linhvuc` • `/party` • `/linhmach` *(4 Mỏ SS–SSS+)* • `/nhiemvu` *(Tháp 500 tầng)*',
+          '• **Kho, Gacha & Khí Vận:** `/roll` • `/dothach` • `/gieoque` • `/thaplinhhuong` • `/autosell` • `/shop` • `/shop_dacbiet` *(Chủ Nhật)* • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
+          '• **Kinh tế & Xã hội:** `/daily` • `/thuongtra` • `/job` • `/farm` • `/exchange` • `/luyendan` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
           '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
         ].join('\n'),
         inline: false,
@@ -146,7 +146,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Hệ thống Tu Tiên SuMi Family v1.7: Tiến Hóa Chân Thần (/tienhoa) & 40 Ultimate, +260 món mới, Shop Đặc Biệt Chủ Nhật (/shop_dacbiet), Gacha 0.65%, Buff SET 2 tầng, Pity 350, Đổ Thạch, Lò Luyện Đan, Tháp 500 tầng, Nông Trại 8 ô & Khám Phá 12 địa danh.',
+    content: 'Hệ thống Tu Tiên SuMi Family v1.7.1: Tiến Hóa Chân Thần (/tienhoa 2 Hồng Mông) & 40 Ultimate, Linh Mạch 4 Mỏ (SS–SSS+, trần 90%), Trà Đạo Quán (/thuongtra), Giờ Hoàng Đạo (+10% Luck), /thaplinhhuong, /daily ×2 + chuỗi Luck, Gacha 0.60%, Tháp +15% LT & Boss T10 +10% LT.',
   },
 
   realms: {
@@ -204,7 +204,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Đấu Trường 1v1, Web Logs 48h & Linh Vực',
-        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Sát thương thường đánh vào Khiên trước; Bạo kích ×1.75; Sát thương kỹ năng trừ DEF × 0.4 và đánh vào Khiên trước. Sát thương chuẩn trừ thẳng HP, bỏ qua DEF & Khiên (Phản Đòn trần tổng 85%, Nổ Hộ Thuẫn, DoT 28%, Hút Sinh Lực, Mị Hoặc Phản Phệ). Phản Công khi né đòn vẫn đánh vào Khiên trước.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), chia 6–56 LT/phút.',
+        content: '• Thứ tự: Lôi Quang Tốc > Final SPD; HP = (Lv × 1.000) + (Final DEF × 5) + Bonus HP; max 30 hiệp.\n• Sát thương thường đánh vào Khiên trước; Bạo kích ×1.75; Sát thương kỹ năng trừ DEF × 0.4 và đánh vào Khiên trước. Sát thương chuẩn trừ thẳng HP, bỏ qua DEF & Khiên (Phản Đòn trần tổng 85%, Nổ Hộ Thuẫn, DoT 28%, Hút Sinh Lực, Mị Hoặc Phản Phệ). Phản Công khi né đòn vẫn đánh vào Khiên trước.\n• Discord hiện Hiệp 1/5/10/15/20 & Kết; bấm Xem Nhật Ký Trận Đấu để xem đủ từng hiệp trên Web (lưu 48h).\n• Linh Vực (/linhvuc) vào trận từ Hiệp 2 (Kiếm → Huyễn → Trận → Minh → Thánh → Kiếm); Thần Thoại có Đạo Áp Cấp 2.\n• /party & /linhmach: Mở 6 khung giờ vàng (08/12/18/20/21/22h), spawn 4 mỏ/đợt (F→SSS+: 8.4k→850k Lực, 6–125 LT/phút, tỉ lệ SSS+ 1%), thắng +25% Mệt Mỏi (trần 90%), bị cướp mỏ hồi -15% (còn 10%), đi /explorer hủy giữ mỏ nhưng giữ Mệt Mỏi.',
       },
     ],
     fields: [
@@ -265,7 +265,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         name: `${tierEmoji('supreme')} Quy Tắc, Khắc Ấn Mới & Pity 350`,
-        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại+ *(95% Thường / 5% Độc Nhất)*.\n• **Hiến Chế Hồng Mông (`/tienhoa` Tab 2):** Dùng **1 Vũ Khí / Bảo Ngọc / Chiến Hồn Thần Thoại thường** *(+3 Mảnh Hỗn Độn + 2.500 LT)* chế `1 Hồng Mông Tiến Hóa Tinh`.\n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
+        value: '• **Khắc Ấn (`/enchant` D→S):** `D +0% • C +8% • B +18% • A +32% • S +50%` *(Pity +5%/lần trượt)*.\n• **Pity Thần Thoại 350:** Chạm 350 lượt `/roll` chắc chắn nổ Thần Thoại+ *(95% Thường / 5% Độc Nhất)*.\n• **Hiến Chế Hồng Mông (`/tienhoa` Tab 2):** Dùng **1 Vũ Khí / Bảo Ngọc / Chiến Hồn Thần Thoại thường** *(+3 Mảnh Hỗn Độn + 2.500 LT)* chế `1 Hồng Mông Tiến Hóa Tinh` *(Tab 1 Tiến Hóa cần `2 viên`)*. \n• Quay trùng tự cộng dồn & giữ `max(D..S)` • Xem kho `/phapbao`, tự bán `/autosell`, tháo `/unequip`, phá `/dismantle`.',
         inline: false,
       },
     ],
@@ -315,7 +315,7 @@ export const WIKI_CATEGORIES = {
       },
       {
         heading: '2. Ngũ Hành Khắc Vực & Lệnh Quản Lý',
-        content: '• Vòng Khắc Vực 5 hệ: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực (bên khắc chỉ mất 1 Mạch/hiệp, bên bị khắc mất 2 Mạch/hiệp).\n• Sở hữu qua /roll loai:domain (50 LT/lượt, 0.65% Thần Thoại+, Pity 350 riêng), trang bị qua /linhvuc.',
+        content: '• Vòng Khắc Vực 5 hệ: Kiếm Vực → Huyễn Vực → Trận Vực → Minh Vực → Thánh Vực → Kiếm Vực (bên khắc chỉ mất 1 Mạch/hiệp, bên bị khắc mất 2 Mạch/hiệp).\n• Sở hữu qua /roll loai:domain (50 LT/lượt, 0.60% Thần Thoại+, Pity 350 riêng), trang bị qua /linhvuc.',
       },
     ],
     fields: [
@@ -332,7 +332,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('dao_ap_crest')} Khắc Vực, Đạo Áp & Gacha /roll loai:domain`,
         value: [
           `• **Khắc Vực:** ${domainElementEmoji('Kiếm Vực')} Kiếm → ${domainElementEmoji('Huyễn Vực')} Huyễn → ${domainElementEmoji('Trận Vực')} Trận → ${domainElementEmoji('Minh Vực')} Minh → ${domainElementEmoji('Thánh Vực')} Thánh → Kiếm (\`-1\` vs \`-2 Mạch\`/hiệp).`,
-          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65%, Pity 350)* • Trang bị & xem kho `/linhvuc` • Có thể dùng **Linh Vực / Thần Thức / Thần Cảnh Thần Thoại thường** làm phôi chế Hồng Mông (`/tienhoa` Tab 2).',
+          '• **Gacha & Quản Lý:** `/roll loai:domain` *(Phàm 60.40% • Linh 25% • Tiên 14% • Thần Thoại+ 0.60%, Pity 350)* • Trang bị & xem kho `/linhvuc` • Có thể dùng **Linh Vực / Thần Thức / Thần Cảnh Thần Thoại thường** làm phôi chế Hồng Mông (`/tienhoa` Tab 2).',
         ].join('\n'),
         inline: false,
       },
@@ -538,14 +538,14 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Kinh tế v1.7: Gói quà mở bản +3.000 LT + 5 TT + 5 Thẻ Reset Tháp + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối, /shop_dacbiet Chủ Nhật, Gacha 0.65%, +30% /job & /nhiemvu, Tháp mốc 100..500 +Mảnh Hỗn Độn & /farm -30p.',
+    content: 'Kinh tế v1.7.1: /daily 110–160 LT (+5% LT/10d max +200%, +2% Luck/7d max +40%), /thuongtra 3 ấm/ngày + Ké Chén (+%Luck×5 LT), Giờ Hoàng Đạo (11/17/21h +10% Luck), /thaplinhhuong (+5..+15% Luck), Tháp +15% LT & Boss T10 +10% LT, Gacha 0.60%, /shop_dacbiet Chủ Nhật & /updates v1.7.1 (+800 LT).',
   },
 
   explorer: {
     id: 'explorer',
     title: `${em('explorer_world_map_v14')} Khám Phá Đại Lục & Thuận Hệ Địa Hình (/explorer)`,
     icon: em('explorer_world_map_v14'),
-    description: '12 địa danh (3.5k → 112k Lực), đồng bộ Bộ 1/2/3, Thuận Hệ Địa Hình (+6% Sống / +10% LT), Bùa Tuyệt Ấn 25% & Mảnh Hỗn Độn 0.5%.',
+    description: '12 địa danh (3.5k → 112k Lực), giao diện dọc + thanh tiến độ %, đồng bộ độc lập Bộ 1/2/3, Thuận Hệ Địa Hình & Bùa Tuyệt Ấn 25%.',
     image_url: `${PUBLIC_BASE_URL}/api/explorer/map.webp?v=1.4`,
     sections: [
       {
@@ -555,8 +555,8 @@ export const WIKI_CATEGORIES = {
         ).join('\n'),
       },
       {
-        heading: '2. Bộ 1/2/3, Thuận Hệ Địa Hình & Bảng Rơi Đồ v1.7',
-        content: '• Đồng bộ trực tiếp 3 Loadout (Bộ 1 / 2 / 3) từ /inv; khóa riêng bộ đang xuất hành để bạn chuyển bộ khác đi /battle bình thường.\n• Thưởng mốc 2/3/6/12h: 210–315 LT/giờ × hệ số + 5% Đá Khắc Ấn Tuyệt Đối (tăng lên 25% khi có Bùa Tuyệt Ấn — 3 lượt) + 0.5% Mảnh Tinh Hoa Hỗn Độn cố định + 5% Thẻ Auto Farm + 55% 1–2 gói nông trại.\n• Thuận Hệ Địa Hình: Pet hoặc Linh Vực khớp Hệ Map nhận +6% Sống Sót & +10% LT.',
+        heading: '2. Bộ 1/2/3 Độc Lập, Thuận Hệ & Quy Tắc Linh Mạch (v1.7.1)',
+        content: '• Giao diện dọc mới kèm thanh tiến độ % và nút đổi Bộ 1 / Bộ 2 / Bộ 3 khóa độc lập đồng bộ /inv (không ghi đè chéo bộ khác).\n• Lưu ý Linh Mạch: Vào /explorer khi đang trấn giữ mỏ Linh Mạch sẽ hủy giữ mỏ nhưng vẫn giữ nguyên độ Mệt Mỏi.\n• Thưởng mốc 2/3/6/12h: 210–315 LT/giờ × hệ số + 5% Đá Khắc Ấn Tuyệt Đối (tăng lên 25% khi có Bùa Tuyệt Ấn — 3 lượt) + 0.5% Mảnh Tinh Hoa Hỗn Độn cố định + 5% Thẻ Auto Farm + 55% 1–2 gói nông trại.\n• Thuận Hệ Địa Hình: Pet hoặc Linh Vực khớp Hệ Map nhận +6% Sống Sót & +10% LT.',
       },
     ],
     fields: [
@@ -568,10 +568,11 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_sparkle')} Đồng Bộ Bộ 1/2/3, Thuận Hệ & Rơi Đồ v1.7`,
+        name: `${em('su_sparkle')} Đồng Bộ Bộ 1/2/3, Thuận Hệ & Rơi Đồ (v1.7.1)`,
         value: [
+          '• **Bộ 1/2/3 & Quy Tắc Linh Mạch:** Hiển thị dọc kèm thanh tiến độ `%`; đổi **Bộ 1 / 2 / 3** khóa độc lập hoàn toàn với `/inv`. Xuất phát `/explorer` khi đang giữ **Linh Mạch** sẽ **hủy giữ mỏ nhưng vẫn giữ Mệt Mỏi**.',
           '• **Thuận Hệ Địa Hình:** Khi **Pet** hoặc **Linh Vực** xuất hành khớp **Hệ của Map**, nhận ngay **+6% Tỉ Lệ Sống Sót** & **+10% Linh Thạch**!',
-          '• **Bảng Rơi Đồ v1.7 (`2/3/6/12h`):** **`210–315 LT/giờ × hệ số`** + **`5%` (`25%` với Bùa Tuyệt Ấn)** Đá Khắc Ấn Tuyệt Đối + **`0.5%`** Mảnh Tinh Hoa Hỗn Độn + **`5%`** Thẻ Auto Farm + **`55%`** `1–2` gói nông trại.',
+          '• **Bảng Rơi Đồ (`2/3/6/12h`):** **`210–315 LT/giờ × hệ số`** + **`5%` (`25%` với Bùa Tuyệt Ấn)** Đá Khắc Ấn Tuyệt Đối + **`0.5%`** Mảnh Tinh Hoa Hỗn Độn + **`5%`** Thẻ Auto Farm + **`55%`** `1–2` gói nông trại.',
           '• **Sinh tử & Nhặt đồ:** Lực `>=` Map sống **90%→100%**; `<` Map rủi ro tử nạn tăng dần *(thua từ 2× lực = **0%**)*. Pháp Bảo thường rơi chờ người sau nhặt **60%**.',
         ].join('\n'),
         inline: false,
@@ -582,7 +583,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Khám Phá /explorer v1.7 qua 12 địa danh (3.5k → 112k Lực), đồng bộ Bộ 1/2/3, Thuận Hệ Địa Hình, 5%/25% Đá Tuyệt Ấn & 0.5% Mảnh Hỗn Độn.',
+    content: 'Khám Phá /explorer v1.7.1 qua 12 địa danh (3.5k → 112k Lực), giao diện dọc + thanh tiến độ %, khóa Bộ 1/2/3 độc lập, hủy giữ Linh Mạch giữ Mệt Mỏi, Thuận Hệ Địa Hình, 5%/25% Đá Tuyệt Ấn & 0.5% Mảnh Hỗn Độn.',
   },
 
   glossary: {
@@ -1234,8 +1235,8 @@ export async function getWikiDomainDetail(entityId) {
       : `${tierEmoji('supreme')} **Độc Nhất Toàn Server** — Chưa có chủ sở hữu`)
     : null;
 
-  const dropRateMap = { common: '60.35%', rare: '25%', epic: '14%', mythic: '0.65%' };
-  const dropRate = dropRateMap[item.rarity_key] || '0.65%';
+  const dropRateMap = { common: '60.40%', rare: '25%', epic: '14%', mythic: '0.60%' };
+  const dropRate = dropRateMap[item.rarity_key] || '0.60%';
   const kindLabel = entityKind === 'domain' ? 'Linh Vực' : entityKind === 'sense' ? 'Thần Thức' : 'Thần Cảnh';
 
   const lines = [];
