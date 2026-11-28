@@ -27,7 +27,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hong_mong_nguyen_phuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3865,
     "base_power": 4121,
     "hax_config": {
@@ -53,7 +53,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thai_so_van_tuong_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3850,
     "base_power": 4150,
     "hax_config": {
@@ -79,7 +79,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/phan_thien_kim_o_de.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3540,
     "base_power": 4051,
     "hax_config": {
@@ -105,7 +105,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/xich_diem_chuc_long_vuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3565,
     "base_power": 4051,
     "hax_config": {
@@ -131,7 +131,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/bach_de_tru_tien_ung.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3525,
     "base_power": 4060,
     "hax_config": {
@@ -157,7 +157,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thai_bach_thien_kiem_lan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3515,
     "base_power": 4091,
     "hax_config": {
@@ -183,7 +183,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thuong_hai_bang_phuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4015,
     "base_power": 3986,
     "hax_config": {
@@ -212,7 +212,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/huyen_minh_co_long_vuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4000,
     "base_power": 4015,
     "hax_config": {
@@ -240,7 +240,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tinh_ha_hu_khong_long.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3715,
     "base_power": 4051,
     "hax_config": {
@@ -267,7 +267,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/vo_cuc_nguyet_anh_diep.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3740,
     "base_power": 4051,
     "hax_config": {
@@ -297,7 +297,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/cuu_tieu_thanh_loan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3850,
     "base_power": 3990,
     "hax_config": {
@@ -325,7 +325,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/nhat_nguyet_thien_ma_de.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3840,
     "base_power": 4021,
     "hax_config": {
@@ -355,7 +355,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/vinh_da_huyet_nha_hoang.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3515,
     "base_power": 4051,
     "hax_config": {
@@ -380,7 +380,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/u_minh_man_chau_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3500,
     "base_power": 4080,
     "hax_config": {
@@ -406,7 +406,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/van_hoa_linh_loc_vuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3940,
     "base_power": 4001,
     "hax_config": {
@@ -432,7 +432,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thai_at_co_moc_phuong.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3965,
     "base_power": 4001,
     "hax_config": {
@@ -457,7 +457,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tu_tieu_thien_loi_long.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3450,
     "base_power": 4050,
     "hax_config": {
@@ -486,7 +486,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/loi_hoang_kim_dieu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3440,
     "base_power": 4081,
     "hax_config": {
@@ -517,7 +517,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hau_tho_tran_nhac_quy.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4240,
     "base_power": 3951,
     "hax_config": {
@@ -543,7 +543,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/huyen_hoang_thach_su.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4225,
     "base_power": 3980,
     "hax_config": {
@@ -569,7 +569,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hong_mong_cuu_vy_tien.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3840,
     "base_power": 4141,
     "hax_config": {
@@ -597,7 +597,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/huyet_nguyet_thien_lang_nu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3515,
     "base_power": 4071,
     "hax_config": {
@@ -623,7 +623,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/xich_diem_phuong_hoang_co.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3550,
     "base_power": 4040,
     "hax_config": {
@@ -650,7 +650,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/bach_de_kiem_ho_quan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3515,
     "base_power": 4091,
     "hax_config": {
@@ -677,7 +677,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thuong_hai_long_nu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4015,
     "base_power": 3986,
     "hax_config": {
@@ -706,7 +706,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tu_tieu_loi_ho_quan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3450,
     "base_power": 4070,
     "hax_config": {
@@ -738,7 +738,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/van_hoa_linh_loc_co.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3940,
     "base_power": 4001,
     "hax_config": {
@@ -765,7 +765,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thai_am_ngoc_tho_tien.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3865,
     "base_power": 4001,
     "hax_config": {
@@ -793,7 +793,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tinh_ha_nguyet_mieu_co.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3725,
     "base_power": 4040,
     "hax_config": {
@@ -821,7 +821,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hoang_thien_ky_lan_quan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4215,
     "base_power": 3991,
     "hax_config": {
@@ -847,7 +847,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/kim_linh_kiem_dieu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3465,
     "base_power": 3946,
     "hax_config": {
@@ -872,7 +872,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/bach_ngoc_kiem_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3450,
     "base_power": 3975,
     "hax_config": {
@@ -897,7 +897,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thien_cuong_kim_bao.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3440,
     "base_power": 3966,
     "hax_config": {
@@ -926,7 +926,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/linh_kim_phuong_vu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3465,
     "base_power": 3966,
     "hax_config": {
@@ -952,7 +952,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/bich_ngoc_linh_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3875,
     "base_power": 3885,
     "hax_config": {
@@ -977,7 +977,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/xuan_lam_thanh_loc.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3865,
     "base_power": 3916,
     "hax_config": {
@@ -1002,7 +1002,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thien_dang_moc_xa.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3890,
     "base_power": 3876,
     "hax_config": {
@@ -1027,7 +1027,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/bang_tam_tuyet_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3925,
     "base_power": 3910,
     "hax_config": {
@@ -1053,7 +1053,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/lam_hai_giao_long.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3915,
     "base_power": 3901,
     "hax_config": {
@@ -1078,7 +1078,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/ngoc_lo_linh_hac.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3940,
     "base_power": 3901,
     "hax_config": {
@@ -1103,7 +1103,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/xich_hoa_linh_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3475,
     "base_power": 3935,
     "hax_config": {
@@ -1128,7 +1128,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/viem_vuong_hoa_su.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3465,
     "base_power": 3966,
     "hax_config": {
@@ -1154,7 +1154,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/chu_diem_thien_dieu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3490,
     "base_power": 3926,
     "hax_config": {
@@ -1182,7 +1182,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hoang_ngoc_ky_lan.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4150,
     "base_power": 3875,
     "hax_config": {
@@ -1207,7 +1207,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/son_nhac_thach_hung.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4140,
     "base_power": 3866,
     "hax_config": {
@@ -1232,7 +1232,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/kim_sa_dia_long.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 4165,
     "base_power": 3866,
     "hax_config": {
@@ -1257,7 +1257,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thanh_loi_linh_bao.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3375,
     "base_power": 3945,
     "hax_config": {
@@ -1283,7 +1283,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tu_dien_cuu_ung.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3365,
     "base_power": 3976,
     "hax_config": {
@@ -1312,7 +1312,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/loi_van_thien_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3390,
     "base_power": 3936,
     "hax_config": {
@@ -1341,7 +1341,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/cuong_loi_chi_lang.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3375,
     "base_power": 3965,
     "hax_config": {
@@ -1366,7 +1366,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thien_quang_bach_hac.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3765,
     "base_power": 3896,
     "hax_config": {
@@ -1391,7 +1391,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/kim_quang_linh_tho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3790,
     "base_power": 3896,
     "hax_config": {
@@ -1418,7 +1418,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/thanh_huy_thien_su.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3775,
     "base_power": 3885,
     "hax_config": {
@@ -1443,7 +1443,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/da_anh_linh_mieu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3415,
     "base_power": 3986,
     "hax_config": {
@@ -1469,7 +1469,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/huyet_nguyet_u_lang.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3440,
     "base_power": 3946,
     "hax_config": {
@@ -1494,7 +1494,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/minh_diep_huyen_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3425,
     "base_power": 3975,
     "hax_config": {
@@ -1520,7 +1520,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/tinh_linh_nguyet_mieu.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3640,
     "base_power": 3946,
     "hax_config": {
@@ -1546,7 +1546,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/hu_vo_ngan_xa.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3665,
     "base_power": 3946,
     "hax_config": {
@@ -1571,7 +1571,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/ngan_ha_linh_yen.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3650,
     "base_power": 3935,
     "hax_config": {
@@ -1596,7 +1596,7 @@ export const V17_NEW_PETS = [
     "image_file": "pets/khong_gian_thien_ho.webp",
     "is_starter": false,
     "is_exclusive_fuyumi": false,
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "base_hp": 3640,
     "base_power": 3966,
     "hax_config": {
@@ -2874,7 +2874,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 19,
     "hax_skill": "Thái Sơ Phá Vạn Thuẫn",
     "hax_description": "Xuyên 70% Khiên, 56% DEF & +14% ST Bạo Kích chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_11.webp"
   },
@@ -2892,7 +2892,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 18,
     "hax_skill": "Chu Tước Phần Thần Diệm",
     "hax_description": "Xuyên 58% DEF & thiêu đốt 10.5% HP tối đa địch bỏ qua Khiên.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_12.webp"
   },
@@ -2910,7 +2910,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 19,
     "hax_skill": "Tinh Không Đế Nhận",
     "hax_description": "35% tung thêm đòn 70% ATK xuyên 60% Khiên & cướp 25% SPD.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_13.webp"
   },
@@ -2928,7 +2928,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 18,
     "hax_skill": "Huyết Nguyệt Đoạn Hồi",
     "hax_description": "Hút 28% ST, giảm 55% Hồi Máu & kết liễu địch <22% HP (38%).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_14.webp"
   },
@@ -2946,7 +2946,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 19,
     "hax_skill": "Thái Sơ Phá Vạn Thuẫn",
     "hax_description": "Xuyên 70% Khiên, 56% DEF & +14% ST Bạo Kích chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_15.webp"
   },
@@ -2964,7 +2964,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 18,
     "hax_skill": "Chu Tước Phần Thần Diệm",
     "hax_description": "Xuyên 58% DEF & thiêu đốt 10.5% HP tối đa địch bỏ qua Khiên.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_16.webp"
   },
@@ -2982,7 +2982,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 19,
     "hax_skill": "Tinh Không Đế Nhận",
     "hax_description": "35% tung thêm đòn 70% ATK xuyên 60% Khiên & cướp 25% SPD.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/weapon_unique_17.webp"
   },
@@ -3000,7 +3000,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Kiếm Khí Xuyên Giáp",
     "hax_description": "Xuyên 52% DEF & +12% ST lên Khiên địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_23.webp"
   },
@@ -3018,7 +3018,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Liệt Diệm Phá Thuẫn",
     "hax_description": "Xuyên 55% Khiên & thiêu đốt 8% HP tối đa địch/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_24.webp"
   },
@@ -3036,7 +3036,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Liên Hoàn Thần Kích",
     "hax_description": "28% tung liên kích phụ 65% ATK xuyên 45% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_25.webp"
   },
@@ -3054,7 +3054,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Phệ Linh Tịch Diệt",
     "hax_description": "Hút 24% ST thành HP & Giảm 42% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_26.webp"
   },
@@ -3072,7 +3072,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Thanh Quang Đoạn Buff",
     "hax_description": "Xóa 1 buff địch mỗi 2 hiệp & +16% ST chuẩn phụ.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_27.webp"
   },
@@ -3090,7 +3090,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Băng Lôi Chấn Nhiếp",
     "hax_description": "26% gây Choáng 1 hiệp & giảm 18% SPD địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_28.webp"
   },
@@ -3108,7 +3108,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Kiếm Khí Xuyên Giáp",
     "hax_description": "Xuyên 52% DEF & +12% ST lên Khiên địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_29.webp"
   },
@@ -3126,7 +3126,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Liệt Diệm Phá Thuẫn",
     "hax_description": "Xuyên 55% Khiên & thiêu đốt 8% HP tối đa địch/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_30.webp"
   },
@@ -3144,7 +3144,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Liên Hoàn Thần Kích",
     "hax_description": "28% tung liên kích phụ 65% ATK xuyên 45% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_31.webp"
   },
@@ -3162,7 +3162,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Phệ Linh Tịch Diệt",
     "hax_description": "Hút 24% ST thành HP & Giảm 42% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_32.webp"
   },
@@ -3180,7 +3180,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Thanh Quang Đoạn Buff",
     "hax_description": "Xóa 1 buff địch mỗi 2 hiệp & +16% ST chuẩn phụ.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_33.webp"
   },
@@ -3198,7 +3198,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Băng Lôi Chấn Nhiếp",
     "hax_description": "26% gây Choáng 1 hiệp & giảm 18% SPD địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_34.webp"
   },
@@ -3216,7 +3216,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Kiếm Khí Xuyên Giáp",
     "hax_description": "Xuyên 52% DEF & +12% ST lên Khiên địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_35.webp"
   },
@@ -3234,7 +3234,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Liệt Diệm Phá Thuẫn",
     "hax_description": "Xuyên 55% Khiên & thiêu đốt 8% HP tối đa địch/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_36.webp"
   },
@@ -3252,7 +3252,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Liên Hoàn Thần Kích",
     "hax_description": "28% tung liên kích phụ 65% ATK xuyên 45% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_37.webp"
   },
@@ -3270,7 +3270,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Phệ Linh Tịch Diệt",
     "hax_description": "Hút 24% ST thành HP & Giảm 42% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_38.webp"
   },
@@ -3288,7 +3288,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Thanh Quang Đoạn Buff",
     "hax_description": "Xóa 1 buff địch mỗi 2 hiệp & +16% ST chuẩn phụ.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_39.webp"
   },
@@ -3306,7 +3306,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Băng Lôi Chấn Nhiếp",
     "hax_description": "26% gây Choáng 1 hiệp & giảm 18% SPD địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_40.webp"
   },
@@ -3324,7 +3324,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Kiếm Khí Xuyên Giáp",
     "hax_description": "Xuyên 52% DEF & +12% ST lên Khiên địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_41.webp"
   },
@@ -3342,7 +3342,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Liệt Diệm Phá Thuẫn",
     "hax_description": "Xuyên 55% Khiên & thiêu đốt 8% HP tối đa địch/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_42.webp"
   },
@@ -3360,7 +3360,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Liên Hoàn Thần Kích",
     "hax_description": "28% tung liên kích phụ 65% ATK xuyên 45% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_43.webp"
   },
@@ -3378,7 +3378,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Phệ Linh Tịch Diệt",
     "hax_description": "Hút 24% ST thành HP & Giảm 42% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_44.webp"
   },
@@ -3396,7 +3396,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Thanh Quang Đoạn Buff",
     "hax_description": "Xóa 1 buff địch mỗi 2 hiệp & +16% ST chuẩn phụ.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_45.webp"
   },
@@ -3414,7 +3414,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Băng Lôi Chấn Nhiếp",
     "hax_description": "26% gây Choáng 1 hiệp & giảm 18% SPD địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_46.webp"
   },
@@ -3432,7 +3432,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Kiếm Khí Xuyên Giáp",
     "hax_description": "Xuyên 52% DEF & +12% ST lên Khiên địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_47.webp"
   },
@@ -3450,7 +3450,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Liệt Diệm Phá Thuẫn",
     "hax_description": "Xuyên 55% Khiên & thiêu đốt 8% HP tối đa địch/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/weapon_mythic_48.webp"
   },
@@ -3468,7 +3468,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Độn Bất Phá Châu",
     "hax_description": "Đầu trận Khiên 95% HP, giảm 28% ST chuẩn & hồi 8% HP/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_11.webp"
   },
@@ -3486,7 +3486,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Vạn Pháp Tịnh Thế Ấn",
     "hax_description": "Miễn nhiễm 85% Khống Chế, thanh tẩy 1 debuff/hiệp & miễn nhiễm Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_12.webp"
   },
@@ -3504,7 +3504,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Phản Kính Tuyệt Thế Châu",
     "hax_description": "Phản 72% ST nhận vào (bỏ qua khiên) & +20% Né Tránh.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_13.webp"
   },
@@ -3522,7 +3522,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Cửu U Bất Tử Hồn Ngọc",
     "hax_description": "Hồi sinh 58% HP kèm Khiên 38% HP (1 lần/trận) & đốt 7% HP địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_14.webp"
   },
@@ -3540,7 +3540,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Độn Bất Phá Châu",
     "hax_description": "Đầu trận Khiên 95% HP, giảm 28% ST chuẩn & hồi 8% HP/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_15.webp"
   },
@@ -3558,7 +3558,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Vạn Pháp Tịnh Thế Ấn",
     "hax_description": "Miễn nhiễm 85% Khống Chế, thanh tẩy 1 debuff/hiệp & miễn nhiễm Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_16.webp"
   },
@@ -3576,7 +3576,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Phản Kính Tuyệt Thế Châu",
     "hax_description": "Phản 72% ST nhận vào (bỏ qua khiên) & +20% Né Tránh.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/gem_unique_17.webp"
   },
@@ -3594,7 +3594,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Bất Hoại Thần Thuẫn",
     "hax_description": "Đầu trận tạo Khiên 82% HP & giảm 24% ST nhận vào.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_23.webp"
   },
@@ -3612,7 +3612,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Tịnh Tâm Đạo Ngọc",
     "hax_description": "Hồi 11% HP/hiệp & giảm 70% sát thương Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_24.webp"
   },
@@ -3630,7 +3630,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Nguyên Phản Chấn",
     "hax_description": "Phản 58% ST nhận vào (thẳng máu, bỏ qua khiên) & kháng 55% Khống Chế.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_25.webp"
   },
@@ -3648,7 +3648,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thanh Tẩy Lưu Ly",
     "hax_description": "Kháng 70% Khống Chế, tự hóa giải 1 debuff/hiệp & giảm 25% ST chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_26.webp"
   },
@@ -3666,7 +3666,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hư Không Ảnh Bích",
     "hax_description": "Tăng +22% Né Tránh & dựng Khiên 55% HP đầu trận.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_27.webp"
   },
@@ -3684,7 +3684,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thái Ất Bất Diệt Ngọc",
     "hax_description": "Chặn đòn chí tử tại 15% HP (1 lần/trận) & giảm 38% ST Bạo Kích.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_28.webp"
   },
@@ -3702,7 +3702,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Bất Hoại Thần Thuẫn",
     "hax_description": "Đầu trận tạo Khiên 82% HP & giảm 24% ST nhận vào.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_29.webp"
   },
@@ -3720,7 +3720,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Tịnh Tâm Đạo Ngọc",
     "hax_description": "Hồi 11% HP/hiệp & giảm 70% sát thương Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_30.webp"
   },
@@ -3738,7 +3738,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Nguyên Phản Chấn",
     "hax_description": "Phản 58% ST nhận vào (thẳng máu, bỏ qua khiên) & kháng 55% Khống Chế.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_31.webp"
   },
@@ -3756,7 +3756,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thanh Tẩy Lưu Ly",
     "hax_description": "Kháng 70% Khống Chế, tự hóa giải 1 debuff/hiệp & giảm 25% ST chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_32.webp"
   },
@@ -3774,7 +3774,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hư Không Ảnh Bích",
     "hax_description": "Tăng +22% Né Tránh & dựng Khiên 55% HP đầu trận.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_33.webp"
   },
@@ -3792,7 +3792,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thái Ất Bất Diệt Ngọc",
     "hax_description": "Chặn đòn chí tử tại 15% HP (1 lần/trận) & giảm 38% ST Bạo Kích.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_34.webp"
   },
@@ -3810,7 +3810,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Bất Hoại Thần Thuẫn",
     "hax_description": "Đầu trận tạo Khiên 82% HP & giảm 24% ST nhận vào.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_35.webp"
   },
@@ -3828,7 +3828,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Tịnh Tâm Đạo Ngọc",
     "hax_description": "Hồi 11% HP/hiệp & giảm 70% sát thương Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_36.webp"
   },
@@ -3846,7 +3846,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Nguyên Phản Chấn",
     "hax_description": "Phản 58% ST nhận vào (thẳng máu, bỏ qua khiên) & kháng 55% Khống Chế.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_37.webp"
   },
@@ -3864,7 +3864,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thanh Tẩy Lưu Ly",
     "hax_description": "Kháng 70% Khống Chế, tự hóa giải 1 debuff/hiệp & giảm 25% ST chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_38.webp"
   },
@@ -3882,7 +3882,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hư Không Ảnh Bích",
     "hax_description": "Tăng +22% Né Tránh & dựng Khiên 55% HP đầu trận.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_39.webp"
   },
@@ -3900,7 +3900,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thái Ất Bất Diệt Ngọc",
     "hax_description": "Chặn đòn chí tử tại 15% HP (1 lần/trận) & giảm 38% ST Bạo Kích.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_40.webp"
   },
@@ -3918,7 +3918,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Bất Hoại Thần Thuẫn",
     "hax_description": "Đầu trận tạo Khiên 82% HP & giảm 24% ST nhận vào.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_41.webp"
   },
@@ -3936,7 +3936,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Tịnh Tâm Đạo Ngọc",
     "hax_description": "Hồi 11% HP/hiệp & giảm 70% sát thương Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_42.webp"
   },
@@ -3954,7 +3954,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hỗn Nguyên Phản Chấn",
     "hax_description": "Phản 58% ST nhận vào (thẳng máu, bỏ qua khiên) & kháng 55% Khống Chế.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_43.webp"
   },
@@ -3972,7 +3972,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thanh Tẩy Lưu Ly",
     "hax_description": "Kháng 70% Khống Chế, tự hóa giải 1 debuff/hiệp & giảm 25% ST chuẩn.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_44.webp"
   },
@@ -3990,7 +3990,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Hư Không Ảnh Bích",
     "hax_description": "Tăng +22% Né Tránh & dựng Khiên 55% HP đầu trận.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_45.webp"
   },
@@ -4008,7 +4008,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Thái Ất Bất Diệt Ngọc",
     "hax_description": "Chặn đòn chí tử tại 15% HP (1 lần/trận) & giảm 38% ST Bạo Kích.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_46.webp"
   },
@@ -4026,7 +4026,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Bất Hoại Thần Thuẫn",
     "hax_description": "Đầu trận tạo Khiên 82% HP & giảm 24% ST nhận vào.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_47.webp"
   },
@@ -4044,7 +4044,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 0,
     "hax_skill": "Tịnh Tâm Đạo Ngọc",
     "hax_description": "Hồi 11% HP/hiệp & giảm 70% sát thương Độc/Đốt.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/gem_mythic_48.webp"
   },
@@ -4062,7 +4062,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Thần Hồn Khai Thiên",
     "hax_description": "Xuyên 54% DEF, tích +7% ATK/hiệp (5 tầng) & hồi 7% HP/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_11.webp"
   },
@@ -4080,7 +4080,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Bất Tử Đế Hồn",
     "hax_description": "Hồi sinh 58% HP + đốt 10% HP tối đa địch bỏ qua Khiên.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_12.webp"
   },
@@ -4098,7 +4098,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Cửu Thiên Kiếm Tôn Hồn",
     "hax_description": "Mỗi 2 hiệp giáng kiếm khí 85% ATK xuyên 65% DEF & 60% Khiên.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_13.webp"
   },
@@ -4116,7 +4116,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Vĩnh Dạ Tu La Đế Hồn",
     "hax_description": "Hút 32% ST, giảm 55% Hồi Máu & kết liễu <22% HP (36%).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_14.webp"
   },
@@ -4134,7 +4134,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 16,
     "hax_skill": "Thần Hồn Khai Thiên",
     "hax_description": "Xuyên 54% DEF, tích +7% ATK/hiệp (5 tầng) & hồi 7% HP/hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_15.webp"
   },
@@ -4152,7 +4152,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 17,
     "hax_skill": "Bất Tử Đế Hồn",
     "hax_description": "Hồi sinh 58% HP + đốt 10% HP tối đa địch bỏ qua Khiên.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": true,
     "file": "items/soul_unique_16.webp"
   },
@@ -4170,7 +4170,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Chiến Hồn Phá Quân",
     "hax_description": "Tích +6% ATK/hiệp (tối đa 5 tầng) & xuyên 48% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_22.webp"
   },
@@ -4188,7 +4188,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Thánh Hồn Trường Thanh",
     "hax_description": "Hồi 9% HP/hiệp & tự thanh tẩy 1 debuff mỗi 2 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_23.webp"
   },
@@ -4206,7 +4206,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 14,
     "hax_skill": "Ảo Ảnh Kiếm Hồn",
     "hax_description": "Tăng +26% Né Tránh & phản kích 75% ATK (xuyên 40% DEF) khi né.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_24.webp"
   },
@@ -4224,7 +4224,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Tu La Huyết Hồn",
     "hax_description": "Hút 26% ST thành HP & giảm 45% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_25.webp"
   },
@@ -4242,7 +4242,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Lôi Đế Chiến Ý",
     "hax_description": "Cướp 28% SPD đầu trận & 26% gây Choáng 1 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_26.webp"
   },
@@ -4260,7 +4260,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Huyền Giáp Bảo Hồn",
     "hax_description": "Giảm 26% ST nhận vào & phản 40% ST (bỏ qua khiên).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_27.webp"
   },
@@ -4278,7 +4278,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Chiến Hồn Phá Quân",
     "hax_description": "Tích +6% ATK/hiệp (tối đa 5 tầng) & xuyên 48% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_28.webp"
   },
@@ -4296,7 +4296,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Thánh Hồn Trường Thanh",
     "hax_description": "Hồi 9% HP/hiệp & tự thanh tẩy 1 debuff mỗi 2 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_29.webp"
   },
@@ -4314,7 +4314,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 14,
     "hax_skill": "Ảo Ảnh Kiếm Hồn",
     "hax_description": "Tăng +26% Né Tránh & phản kích 75% ATK (xuyên 40% DEF) khi né.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_30.webp"
   },
@@ -4332,7 +4332,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Tu La Huyết Hồn",
     "hax_description": "Hút 26% ST thành HP & giảm 45% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_31.webp"
   },
@@ -4350,7 +4350,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Lôi Đế Chiến Ý",
     "hax_description": "Cướp 28% SPD đầu trận & 26% gây Choáng 1 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_32.webp"
   },
@@ -4368,7 +4368,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Huyền Giáp Bảo Hồn",
     "hax_description": "Giảm 26% ST nhận vào & phản 40% ST (bỏ qua khiên).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_33.webp"
   },
@@ -4386,7 +4386,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Chiến Hồn Phá Quân",
     "hax_description": "Tích +6% ATK/hiệp (tối đa 5 tầng) & xuyên 48% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_34.webp"
   },
@@ -4404,7 +4404,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Thánh Hồn Trường Thanh",
     "hax_description": "Hồi 9% HP/hiệp & tự thanh tẩy 1 debuff mỗi 2 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_35.webp"
   },
@@ -4422,7 +4422,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 14,
     "hax_skill": "Ảo Ảnh Kiếm Hồn",
     "hax_description": "Tăng +26% Né Tránh & phản kích 75% ATK (xuyên 40% DEF) khi né.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_36.webp"
   },
@@ -4440,7 +4440,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Tu La Huyết Hồn",
     "hax_description": "Hút 26% ST thành HP & giảm 45% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_37.webp"
   },
@@ -4458,7 +4458,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Lôi Đế Chiến Ý",
     "hax_description": "Cướp 28% SPD đầu trận & 26% gây Choáng 1 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_38.webp"
   },
@@ -4476,7 +4476,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Huyền Giáp Bảo Hồn",
     "hax_description": "Giảm 26% ST nhận vào & phản 40% ST (bỏ qua khiên).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_39.webp"
   },
@@ -4494,7 +4494,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Chiến Hồn Phá Quân",
     "hax_description": "Tích +6% ATK/hiệp (tối đa 5 tầng) & xuyên 48% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_40.webp"
   },
@@ -4512,7 +4512,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Thánh Hồn Trường Thanh",
     "hax_description": "Hồi 9% HP/hiệp & tự thanh tẩy 1 debuff mỗi 2 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_41.webp"
   },
@@ -4530,7 +4530,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 14,
     "hax_skill": "Ảo Ảnh Kiếm Hồn",
     "hax_description": "Tăng +26% Né Tránh & phản kích 75% ATK (xuyên 40% DEF) khi né.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_42.webp"
   },
@@ -4548,7 +4548,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 15,
     "hax_skill": "Tu La Huyết Hồn",
     "hax_description": "Hút 26% ST thành HP & giảm 45% Hồi Máu địch.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_43.webp"
   },
@@ -4566,7 +4566,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Lôi Đế Chiến Ý",
     "hax_description": "Cướp 28% SPD đầu trận & 26% gây Choáng 1 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_44.webp"
   },
@@ -4584,7 +4584,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Huyền Giáp Bảo Hồn",
     "hax_description": "Giảm 26% ST nhận vào & phản 40% ST (bỏ qua khiên).",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_45.webp"
   },
@@ -4602,7 +4602,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 12,
     "hax_skill": "Chiến Hồn Phá Quân",
     "hax_description": "Tích +6% ATK/hiệp (tối đa 5 tầng) & xuyên 48% DEF.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_46.webp"
   },
@@ -4620,7 +4620,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 10,
     "hax_skill": "Thánh Hồn Trường Thanh",
     "hax_description": "Hồi 9% HP/hiệp & tự thanh tẩy 1 debuff mỗi 2 hiệp.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_47.webp"
   },
@@ -4638,7 +4638,7 @@ export const V17_NEW_EQUIPMENT = [
     "bonus_crit": 14,
     "hax_skill": "Ảo Ảnh Kiếm Hồn",
     "hax_description": "Tăng +26% Né Tránh & phản kích 75% ATK (xuyên 40% DEF) khi né.",
-    "drop_rate": 0.65,
+    "drop_rate": 0.6,
     "is_unique": false,
     "file": "items/soul_mythic_48.webp"
   }
@@ -7405,7 +7405,7 @@ export function buildV17SpecialConsumables() {
       weekly_limit: 1,
       max_stack: 20,
       icon: em('evo_crystal', em('dao_ap_crest')),
-      description: 'Vật phẩm tối quý để tiến hóa Pet Tối Thượng (Lv.40 & 8★) lên Tối Thượng Chân Thần (/tienhoa). Chỉ có từ chế tạo 3 Tinh Hoa Hỗn Độn hoặc Shop Đặc Biệt (120 TT, max 1/tuần).',
+      description: 'Vật phẩm tối quý để tiến hóa Pet Tối Thượng (Lv.40 & 8★ + 2 viên) lên Tối Thượng Chân Thần (/tienhoa). Chỉ có từ chế tạo 3 Tinh Hoa Hỗn Độn hoặc Shop Đặc Biệt (120 TT, max 1/tuần).',
     },
     {
       item_id: 'mythic_selector_card',

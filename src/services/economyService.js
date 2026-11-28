@@ -30,6 +30,8 @@ import {
 import {
   getEffectiveLuckAndFortune,
   consumeLuckCharges,
+  formatLuckSummaryLines,
+  computeDailyStreakLuckPct,
 } from './luckAndFortuneService.js';
 import {
   em,
@@ -202,8 +204,16 @@ export async function updateAutoSellConfig(userId, options = {}) {
   });
 }
 
-export const DAILY_BASE_MIN = 55;
-export const DAILY_BASE_MAX = 80;
+export const DAILY_BASE_MIN = 110;
+export const DAILY_BASE_MAX = 160;
+export const DAILY_STREAK_LT_STEP_DAYS = 10;
+export const DAILY_STREAK_LT_STEP_PCT = 5;
+export const DAILY_STREAK_LT_MAX_PCT = 200;
+
+export function computeDailyLongStreakLtPct(streak = 0) {
+  const s = Math.max(0, Number(streak) || 0);
+  return Math.min(DAILY_STREAK_LT_MAX_PCT, Math.floor(s / DAILY_STREAK_LT_STEP_DAYS) * DAILY_STREAK_LT_STEP_PCT);
+}
 export const DOIQUA_EXP_UNIT = 1000;
 export const DOIQUA_LINH_THACH_PER_UNIT = 10;
 export const ROLL_SINGLE_COST = 50;
@@ -316,20 +326,25 @@ export async function claimDaily(userId, options = {}) {
     const lastKey = user.last_daily ? getVnDateKey(new Date(user.last_daily)) : null;
 
     if (lastKey === todayKey) {
+      const luckNow = await getEffectiveLuckAndFortune(cleanId, now).catch(() => null);
+      const luckSummary = luckNow ? `\n${formatLuckSummaryLines(luckNow, { compact: true })}` : '';
       return {
         success: true,
         already_claimed: true,
         streak: user.streak || 1,
         reward: 0,
         linh_thach: Number(user.linh_thach || 0),
-        message: `${em('su_linhthach')} Hôm nay đạo hữu đã điểm danh rồi! Chuỗi hiện tại: **${user.streak || 1} ngày**.`,
+        luck_info: luckNow,
+        message: `${em('su_linhthach')} Hôm nay đạo hữu đã điểm danh rồi! Chuỗi hiện tại: **${user.streak || 1} ngày**.${luckSummary}`,
       };
     }
 
     const newStreak = lastKey === yesterdayKey ? (Number(user.streak || 0) + 1) : 1;
     const cycleDay = ((newStreak - 1) % 7) + 1;
     const baseReward = randomInt(DAILY_BASE_MIN, DAILY_BASE_MAX, rng);
-    const streakBonusPct = cycleDay === 7 ? 0.5 : (cycleDay - 1) * 0.05;
+    const cycleBonusPct = cycleDay === 7 ? 0.5 : (cycleDay - 1) * 0.05;
+    const longStreakLtPct = computeDailyLongStreakLtPct(newStreak);
+    const streakLuckPct = computeDailyStreakLuckPct({ streak: newStreak, last_daily: now.toISOString() }, now);
     let clanBonusPct = 0;
     if (user.clan_id) {
       const { data: clanRow } = await supabase.from('clans').select('clan_level').eq('clan_id', user.clan_id).maybeSingle();
@@ -341,37 +356,48 @@ export async function claimDaily(userId, options = {}) {
     const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
     const fortuneInfo = await getEffectiveLuckAndFortune(cleanId, now);
     const fortuneLtPct = Number(fortuneInfo?.fortuneLtPct || 0);
-    const totalMult = Math.max(0.5, 1 + streakBonusPct + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100 + fortuneLtPct / 100);
+    const totalMult = Math.max(
+      0.5,
+      1 + cycleBonusPct + longStreakLtPct / 100 + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100 + fortuneLtPct / 100,
+    );
     const reward = Math.round(baseReward * totalMult);
     const newBalance = Number(user.linh_thach || 0) + reward;
+    const nowIso = now.toISOString();
 
     const { error } = await supabase
       .from('users')
       .update({
         linh_thach: newBalance,
         streak: newStreak,
-        last_daily: now.toISOString(),
-        updated_at: now.toISOString(),
+        last_daily: nowIso,
+        updated_at: nowIso,
       })
       .eq('user_id', cleanId);
 
     if (error) throw new Error(`Daily update failed: ${error.message}`);
 
+    const updatedLuckInfo = await getEffectiveLuckAndFortune(cleanId, now).catch(() => fortuneInfo);
     const noteParts = [];
+    if (longStreakLtPct > 0) noteParts.push(`+${longStreakLtPct}% Chuỗi ${newStreak}d`);
+    if (streakLuckPct > 0) noteParts.push(`+${streakLuckPct}% Luck Chuỗi`);
     if (roleDailyLtPct > 0) noteParts.push(`+${roleDailyLtPct}% Buff Role`);
     if (cosmeticLtPct > 0) noteParts.push(`+${cosmeticLtPct}% Viền/Nền`);
     const roleNote = noteParts.length > 0 ? ` *(${noteParts.join(' • ')})*` : '';
+    const luckLine = updatedLuckInfo ? `\n${formatLuckSummaryLines(updatedLuckInfo, { compact: true })}` : '';
     return {
       success: true,
       already_claimed: false,
       streak: newStreak,
       cycle_day: cycleDay,
       base_reward: baseReward,
+      long_streak_lt_pct: longStreakLtPct,
+      streak_luck_pct: streakLuckPct,
       role_bonus_pct: roleDailyLtPct,
       cosmetic_bonus_pct: cosmeticLtPct,
       reward,
       linh_thach: newBalance,
-      message: `${em('su_sparkle')} Điểm danh ngày thứ **${newStreak}** (Chuỗi ${cycleDay}/7) thành công! Nhận **+${reward}** ${em('su_linhthach')} **Linh Thạch**${roleNote} (Số dư: **${newBalance.toLocaleString('vi-VN')}**).`,
+      luck_info: updatedLuckInfo,
+      message: `${em('su_sparkle')} Điểm danh ngày thứ **${newStreak}** (Chuỗi ${cycleDay}/7) thành công! Nhận **+${reward}** ${em('su_linhthach')} **Linh Thạch**${roleNote} (Số dư: **${newBalance.toLocaleString('vi-VN')}**).${luckLine}`,
     };
   });
 }
@@ -472,8 +498,8 @@ export async function convertExpToLinhThach(userId, amountExp, options = {}) {
   });
 }
 
-export const ROLL_FIXED_UNIQUE_PCT = 0.0325;
-export const ROLL_BASE_NON_UNIQUE_MYTHIC_PCT = 0.6175;
+export const ROLL_FIXED_UNIQUE_PCT = 0.03;
+export const ROLL_BASE_NON_UNIQUE_MYTHIC_PCT = 0.57;
 
 function rollRarityByRate(rng = Math.random, luckMult = 1) {
   return rollRarityWithUniqueSplit(rng, luckMult).rarityKey;
@@ -481,7 +507,7 @@ function rollRarityByRate(rng = Math.random, luckMult = 1) {
 
 export function rollRarityWithUniqueSplit(rng = Math.random, luckMult = 1) {
   const safeMult = Math.max(0.5, Number(luckMult) || 1);
-  // 0.0325% Tối Thượng Độc Nhất CỐ ĐỊNH 100%, MIỄN NHIỄM với Luck Potion & /gieoque
+  // 0.03% Tối Thượng Độc Nhất CỐ ĐỊNH 100%, MIỄN NHIỄM với mọi nguồn Luck
   const uniqueCut = ROLL_FIXED_UNIQUE_PCT;
   const mythicCut = uniqueCut + ROLL_BASE_NON_UNIQUE_MYTHIC_PCT * safeMult;
   const epicCut = mythicCut + 14.0 * Math.min(1.5, Math.max(0.85, safeMult));
@@ -677,7 +703,8 @@ export async function rollGacha(userId, options = {}) {
     const potionConsume = await consumeLuckCharges(cleanId, count);
 
     for (let i = 0; i < count; i += 1) {
-      const stepLuckPct = (i < Number(potionConsume.chargesUsed || 0) ? Number(potionConsume.luckPctApplied || 0) : 0) + Number(fortuneInfo?.fortuneLuckPct || 0);
+      const stepLuckPct = (i < Number(potionConsume.chargesUsed || 0) ? Number(potionConsume.luckPctApplied || 0) : 0)
+        + Number(fortuneInfo?.nonPotionLuckPct ?? fortuneInfo?.fortuneLuckPct ?? 0);
       const stepLuckMult = Math.max(0.5, 1 + stepLuckPct / 100);
       const naturalRoll = rollRarityWithUniqueSplit(rng, stepLuckMult);
       const pityStep = advanceMythicPityStep(pityState, pool, naturalRoll.rarityKey, rng);
@@ -1393,7 +1420,7 @@ export async function rollGacha(userId, options = {}) {
     const resultLines = results.map((r) => {
       if (r.kind === 'autosell_item' || r.kind === 'autosell_pet' || r.kind === 'autosell_domain' || r.kind === 'autosell_role') {
         const upgNote = r.grade_upgraded ? ` *(Kế thừa ${r.prev_grade} → ${r.enchant_grade}!)*` : '';
-        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${uiEm('ui_coin_gold')} **[AutoSell +${r.sell_lt} LT]**${upgNote}`;
+        return `• ${r.emoji || em('su_sparkle')}${r.grade_emoji ? ` ${r.grade_emoji}` : ''} **${r.name}** (${r.rarity}) — ${uiEm('ui_coin_gold')} **[+${r.sell_lt} LT]**${upgNote}`;
       }
       if (r.kind === 'duplicate_domain') {
         return `• ${r.emoji || em('su_realm_star')} **${r.name}** (${r.rarity}) — Trùng +1 (Kho: **×${r.quantity}**)`;
@@ -1436,10 +1463,12 @@ export async function rollGacha(userId, options = {}) {
     const autoSellHeaderLine = autoSellCount > 0
       ? `${uiEm('ui_coin_gold')} **AutoSell tự bán (\`/autosell\`)**: \`${autoSellCount}\` món → **+${autoSellLinhThach.toLocaleString('vi-VN')}** ${em('su_linhthach')} **Linh Thạch**`
       : null;
+    const luckLine = fortuneInfo ? formatLuckSummaryLines(fortuneInfo, { compact: true }) : null;
     const fullMessage = [
       `${em('su_gacha_dice')} **Bể quay**: \`${poolLabel}\` (\`${count}\` lượt • Chi phí ${costLabel})`,
       `${em('su_linhthach')} **Số dư còn lại**: \`${finalBalance.toLocaleString('vi-VN')}\` Linh Thạch`,
       pityLine,
+      luckLine,
       dupHeaderLine,
       autoSellHeaderLine,
       `${em('su_sparkle')} **Kết quả**:`,

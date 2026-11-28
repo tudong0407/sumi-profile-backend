@@ -39,7 +39,7 @@ import {
 } from '../data/catalog.js';
 import { em, itemEmoji, petEmoji, tierEmoji, roleTierEmoji, elementEmoji, gradeEmoji, ringEmoji, domainEmoji, senseEmoji, realmEmojiById, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { invalidateUniqueItemCard } from './staticAssetCacheService.js';
-import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
+import { getEffectiveLuckAndFortune, formatLuckSummaryLines } from './luckAndFortuneService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
 import { dismantleDomainEntity } from './domainService.js';
 import { trackQuestActivity } from './questService.js';
@@ -407,8 +407,8 @@ export async function getInventory(userId, options = {}) {
   }
   if (!user) return { success: false, status: 500, error: 'USER_INIT_FAILED', message: 'Không thể khởi tạo hồ sơ.' };
 
-  const activePotionLine = luckInfo?.potionCharges > 0
-    ? `${em(luckInfo.potionId || 'potion_luck_minor')} **Linh Lộ đang hiệu lực:** **${luckInfo.potionName}** (\`+${luckInfo.potionLuckPct}% Luck\` • còn **${luckInfo.potionCharges}** lượt)`
+  const activePotionLine = luckInfo && (luckInfo.totalLuckPct !== 0 || luckInfo.potionCharges > 0 || luckInfo.fortuneName)
+    ? formatLuckSummaryLines(luckInfo, { compact: true })
     : '';
 
   const equippedDomainsRaw = (domainsRes?.data || []).filter((d) => d && d.is_equipped !== false);
@@ -1199,72 +1199,73 @@ export async function equipTarget(userId, payload = {}) {
   }
 
   if (category === 'item') {
-    const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
-    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
-    if (loadoutLock.locked) {
-      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
-    }
+    const { withLoadoutLock, checkActiveLoadoutExplorerLock, syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    return withLoadoutLock(cleanId, async () => {
+      const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+      if (loadoutLock.locked) {
+        return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+      }
 
-    const itemMeta = EQUIPMENT_BY_ID[targetId];
-    if (!itemMeta) return { success: false, status: 404, error: 'ITEM_NOT_FOUND', message: `Không tìm thấy pháp bảo '${targetId}'.` };
+      const itemMeta = EQUIPMENT_BY_ID[targetId];
+      if (!itemMeta) return { success: false, status: 404, error: 'ITEM_NOT_FOUND', message: `Không tìm thấy pháp bảo '${targetId}'.` };
 
-    const { data: own } = await supabase
-      .from('user_pet_items')
-      .select('id, equipped_to_pet, slot, quantity')
-      .eq('user_id', cleanId)
-      .eq('item_id', targetId)
-      .maybeSingle();
+      const { data: own } = await supabase
+        .from('user_pet_items')
+        .select('id, equipped_to_pet, slot, quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', targetId)
+        .maybeSingle();
 
-    if (!own) return { success: false, status: 404, error: 'ITEM_NOT_OWNED', message: `Bạn chưa sở hữu **${itemMeta.item_name}**.` };
+      if (!own) return { success: false, status: 404, error: 'ITEM_NOT_OWNED', message: `Bạn chưa sở hữu **${itemMeta.item_name}**.` };
 
-    const busyExp = await getUserBusyExplorationAssets(cleanId);
-    if (busyExp?.isExploring && busyExp.busyEquipIds.has(targetId) && Number(own.quantity || 1) <= 1) {
+      const busyExp = await getUserBusyExplorationAssets(cleanId);
+      if (busyExp?.isExploring && busyExp.busyEquipIds.has(targetId) && Number(own.quantity || 1) <= 1) {
+        return {
+          success: false,
+          status: 400,
+          error: 'ITEM_BUSY_EXPLORING',
+          message: `${uiEm('ui_compass_dir')} Pháp bảo **${itemMeta.item_name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy gắn món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+        };
+      }
+
+      const { data: activePet } = await supabase
+        .from('user_pets')
+        .select('pet_type, pet_name')
+        .eq('user_id', cleanId)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      const targetPetType = activePet?.pet_type || 'hoa_thach_nham_nham';
+
+      // Tháo mọi món cùng slot (weapon/gem/soul) trước
+      const sameTypeIds = Object.values(EQUIPMENT_BY_ID)
+        .filter((x) => x.item_type === itemMeta.item_type)
+        .map((x) => x.item_id);
+
+      await supabase
+        .from('user_pet_items')
+        .update({ equipped_to_pet: null, slot: null })
+        .eq('user_id', cleanId)
+        .in('item_id', sameTypeIds);
+
+      await supabase
+        .from('user_pet_items')
+        .update({ equipped_to_pet: targetPetType, slot: itemMeta.item_type })
+        .eq('id', own.id);
+
+      await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      invalidateInventoryCache(cleanId);
+
       return {
-        success: false,
-        status: 400,
-        error: 'ITEM_BUSY_EXPLORING',
-        message: `${uiEm('ui_compass_dir')} Pháp bảo **${itemMeta.item_name}** hiện đang theo Linh Thú đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa! Hãy gắn món khác đang rảnh hoặc chờ chuyến khám phá hoàn tất.`,
+        success: true,
+        category: 'item',
+        equipped_id: targetId,
+        slot: itemMeta.item_type,
+        equipped_to_pet: targetPetType,
+        message: `${itemEmoji(targetId, em('su_crossed_swords'))} Đã trang bị **${itemMeta.item_name}** vào ô **${itemMeta.item_type.toUpperCase()}** cho **${activePet?.pet_name || targetPetType}**!`.trim(),
       };
-    }
-
-    const { data: activePet } = await supabase
-      .from('user_pets')
-      .select('pet_type, pet_name')
-      .eq('user_id', cleanId)
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
-
-    const targetPetType = activePet?.pet_type || 'hoa_thach_nham_nham';
-
-    // Tháo mọi món cùng slot (weapon/gem/soul) trước
-    const sameTypeIds = Object.values(EQUIPMENT_BY_ID)
-      .filter((x) => x.item_type === itemMeta.item_type)
-      .map((x) => x.item_id);
-
-    await supabase
-      .from('user_pet_items')
-      .update({ equipped_to_pet: null, slot: null })
-      .eq('user_id', cleanId)
-      .in('item_id', sameTypeIds);
-
-    await supabase
-      .from('user_pet_items')
-      .update({ equipped_to_pet: targetPetType, slot: itemMeta.item_type })
-      .eq('id', own.id);
-
-    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
-    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
-    invalidateInventoryCache(cleanId);
-
-    return {
-      success: true,
-      category: 'item',
-      equipped_id: targetId,
-      slot: itemMeta.item_type,
-      equipped_to_pet: targetPetType,
-      message: `${itemEmoji(targetId, em('su_crossed_swords'))} Đã trang bị **${itemMeta.item_name}** vào ô **${itemMeta.item_type.toUpperCase()}** cho **${activePet?.pet_name || targetPetType}**!`.trim(),
-    };
+    });
   }
 
   if (category === 'role') {
@@ -1475,38 +1476,39 @@ export async function unequipTarget(userId, payload = {}) {
   const targetId = category === 'item' ? normalizeEmojiAwareQuery(rawTargetId) : rawTargetId;
 
   if (category === 'item') {
-    const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
-    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
-    if (loadoutLock.locked) {
-      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
-    }
+    const { withLoadoutLock, checkActiveLoadoutExplorerLock, syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+    return withLoadoutLock(cleanId, async () => {
+      const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+      if (loadoutLock.locked) {
+        return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+      }
 
-    let itemMatchId = targetId;
-    if (!['weapon', 'gem', 'soul'].includes(targetId.toLowerCase()) && !EQUIPMENT_BY_ID[targetId]) {
-      const normIn = normalizeTargetText(targetId);
-      const byName = Object.values(EQUIPMENT_BY_ID).find((x) => x.item_id.toLowerCase() === normIn || normalizeTargetText(x.item_name) === normIn);
-      if (byName) itemMatchId = byName.item_id;
-    }
-    const query = supabase
-      .from('user_pet_items')
-      .update({ equipped_to_pet: null, slot: null })
-      .eq('user_id', cleanId);
+      let itemMatchId = targetId;
+      if (!['weapon', 'gem', 'soul'].includes(targetId.toLowerCase()) && !EQUIPMENT_BY_ID[targetId]) {
+        const normIn = normalizeTargetText(targetId);
+        const byName = Object.values(EQUIPMENT_BY_ID).find((x) => x.item_id.toLowerCase() === normIn || normalizeTargetText(x.item_name) === normIn);
+        if (byName) itemMatchId = byName.item_id;
+      }
+      const query = supabase
+        .from('user_pet_items')
+        .update({ equipped_to_pet: null, slot: null })
+        .eq('user_id', cleanId);
 
-    if (['weapon', 'gem', 'soul'].includes(itemMatchId.toLowerCase())) {
-      await query.eq('slot', itemMatchId.toLowerCase());
-    } else {
-      await query.eq('item_id', itemMatchId);
-    }
+      if (['weapon', 'gem', 'soul'].includes(itemMatchId.toLowerCase())) {
+        await query.eq('slot', itemMatchId.toLowerCase());
+      } else {
+        await query.eq('item_id', itemMatchId);
+      }
 
-    const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
-    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
-    invalidateInventoryCache(cleanId);
+      await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      invalidateInventoryCache(cleanId);
 
-    return {
-      success: true,
-      category: 'item',
-      message: `${em('su_crossed_swords')} Đã tháo pháp bảo **${targetId}** khỏi Linh Thú xuất trận.`,
-    };
+      return {
+        success: true,
+        category: 'item',
+        message: `${em('su_crossed_swords')} Đã tháo pháp bảo **${targetId}** khỏi Linh Thú xuất trận.`,
+      };
+    });
   }
 
   if (category === 'role') {
@@ -2279,52 +2281,53 @@ export async function setActivePet(userId, petIdentifier) {
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
-  await ensureUserInitialized(cleanId);
-  const { checkActiveLoadoutExplorerLock } = await import('./loadoutService.js');
-  const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
-  if (loadoutLock.locked) {
-    return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
-  }
+  const { withLoadoutLock, checkActiveLoadoutExplorerLock, syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+  return withLoadoutLock(cleanId, async () => {
+    await ensureUserInitialized(cleanId);
+    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
+    if (loadoutLock.locked) {
+      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
+    }
 
-  const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
+    const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
 
-  const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
-  const target = (pets || []).find((p) =>
-    String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle);
+    const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
+    const target = (pets || []).find((p) =>
+      String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle);
 
-  if (!target) {
-    return { success: false, status: 404, error: 'PET_NOT_FOUND', message: `Bạn không sở hữu Linh Thú '${petIdentifier}'.` };
-  }
-  if (target.status === 'exploring') {
+    if (!target) {
+      return { success: false, status: 404, error: 'PET_NOT_FOUND', message: `Bạn không sở hữu Linh Thú '${petIdentifier}'.` };
+    }
+    if (target.status === 'exploring') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_BUSY_EXPLORING',
+        message: `${uiEm('ui_compass_dir')} Linh Thú **${target.pet_name}** hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên chưa thể chọn làm Linh Thú xuất trận! Hãy chọn một Linh Thú khác đang rảnh.`,
+      };
+    }
+    if (target.status === 'injured') {
+      return {
+        success: false,
+        status: 400,
+        error: 'PET_INJURED',
+        message: `${uiEm('ui_heal_band')} Linh Thú Độc Nhất **${target.pet_name}** đang bị **Trọng Thương**! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` để hồi sinh trước khi xuất trận.`,
+      };
+    }
+
+    await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
+    await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', target.pet_id);
+
+    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    invalidateInventoryCache(cleanId);
+
+    const grade = normalizeEnchantGrade(target.enchant_grade || 'D');
     return {
-      success: false,
-      status: 400,
-      error: 'PET_BUSY_EXPLORING',
-      message: `${uiEm('ui_compass_dir')} Linh Thú **${target.pet_name}** hiện đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên chưa thể chọn làm Linh Thú xuất trận! Hãy chọn một Linh Thú khác đang rảnh.`,
+      success: true,
+      active_pet: { ...target, enchant_grade: grade, is_active: true },
+      message: `${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} ${gradeEmoji(grade)} Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star} ${em('su_realm_star')})!`,
     };
-  }
-  if (target.status === 'injured') {
-    return {
-      success: false,
-      status: 400,
-      error: 'PET_INJURED',
-      message: `${uiEm('ui_heal_band')} Linh Thú Độc Nhất **${target.pet_name}** đang bị **Trọng Thương**! Hãy dùng **Cửu Chuyển Hoàn Hồn Lộ** trong \`/explorer\` để hồi sinh trước khi xuất trận.`,
-    };
-  }
-
-  await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
-  await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', target.pet_id);
-
-  const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
-  await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
-  invalidateInventoryCache(cleanId);
-
-  const grade = normalizeEnchantGrade(target.enchant_grade || 'D');
-  return {
-    success: true,
-    active_pet: { ...target, enchant_grade: grade, is_active: true },
-    message: `${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} ${gradeEmoji(grade)} Đã xuất trận Linh Thú **${target.pet_name}** (Lv.${target.level} • ${target.star} ${em('su_realm_star')})!`,
-  };
+  });
 }
 
 export const PET_LEVEL_MAX_BONUS_PCT = 5.50; // Lv.1 -> Lv.100 = +550%

@@ -39,6 +39,7 @@ import { invalidateUniqueItemCard, invalidateUniquePetCard } from './staticAsset
 
 export const EVOLUTION_MIN_LEVEL = 40;
 export const EVOLUTION_MIN_STAR = 8;
+export const EVOLUTION_CRYSTAL_COST = 2;
 export const CRAFT_EVO_CRYSTAL_SHARDS = 3;
 export const CRAFT_EVO_CRYSTAL_LT = 2500;
 
@@ -288,7 +289,7 @@ export async function getEvolutionHub(userId, options = {}) {
     description: [
       `• ${em('su_linhthach')} **Linh Thạch:** **${bal.toLocaleString('vi-VN')} LT** • ${em('evo_crystal')} **Hồng Mông Tiến Hóa Tinh:** \`${crystals}\` • ${em('chaos_essence_shard')} **Mảnh Tinh Hoa Hỗn Độn:** \`${shards}\``,
       '',
-      `**Tab 1 — Tiến Hóa Linh Thú Độc Nhất (Cần \`Lv.40 & 8★\` + \`1 Hồng Mông Tiến Hóa Tinh\`):**`,
+      `**Tab 1 — Tiến Hóa Linh Thú Độc Nhất (Cần \`Lv.40 & 8★\` + \`${EVOLUTION_CRYSTAL_COST} Hồng Mông Tiến Hóa Tinh\`):**`,
       ...evoLines,
       '',
       `**Mức Phí Linh Thạch (Xịt CHỈ mất LT, GIỮ Hồng Mông):**`,
@@ -361,12 +362,12 @@ export async function evolveUniquePet(userId, options = {}) {
     }
 
     const crystalQty = Number(inv.evo_crystal || 0);
-    if (crystalQty < 1) {
+    if (crystalQty < EVOLUTION_CRYSTAL_COST) {
       return {
         success: false,
         status: 400,
         error: 'MISSING_EVO_CRYSTAL',
-        message: `Cần **1 ${em('evo_crystal')} Hồng Mông Tiến Hóa Tinh** để tiến hóa *(Hãy chế tạo ở Tab 2 hoặc mua ở \`/shop_dacbiet\`)*!`,
+        message: `Cần **${EVOLUTION_CRYSTAL_COST} ${em('evo_crystal')} Hồng Mông Tiến Hóa Tinh** để tiến hóa *(Hiện có: \`${crystalQty}\` — Hãy chế tạo ở Tab 2 hoặc mua ở \`/shop_dacbiet\`)*!`,
       };
     }
 
@@ -413,7 +414,7 @@ export async function evolveUniquePet(userId, options = {}) {
       base_spd: target.spd || 500,
     };
     const scaled = computeScaledPetBaseStats(baseMeta, lvl, star, true);
-    const nextCrystal = crystalQty - 1;
+    const nextCrystal = crystalQty - EVOLUTION_CRYSTAL_COST;
 
     if (supabase) {
       await Promise.all([

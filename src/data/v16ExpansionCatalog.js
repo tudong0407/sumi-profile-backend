@@ -21,7 +21,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_minor'),
     image_file: 'shop/potion_luck_minor.webp',
-    description: 'Tăng +20% Luck cho 40 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.741%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_minor để uống.',
+    description: 'Tăng +20% Luck cho 40 lượt /roll (nhóm Thần Thoại thường 0.57% -> 0.684%; Tối Thượng 0.03% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_minor để uống.',
   },
   {
     item_id: 'potion_luck_major',
@@ -34,7 +34,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_major'),
     image_file: 'shop/potion_luck_major.webp',
-    description: 'Tăng +40% Luck cho 60 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.8645%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_major để uống.',
+    description: 'Tăng +40% Luck cho 60 lượt /roll (nhóm Thần Thoại thường 0.57% -> 0.798%; Tối Thượng 0.03% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_major để uống.',
   },
   {
     item_id: 'potion_luck_supreme',
@@ -47,7 +47,7 @@ export const LUCK_POTIONS = [
     max_stack: 50,
     icon: em('potion_luck_supreme'),
     image_file: 'shop/potion_luck_supreme.webp',
-    description: 'Tăng +60% Luck cho 80 lượt /roll (nhóm Thần Thoại thường 0.6175% -> 0.988%; Tối Thượng 0.0325% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_supreme để uống.',
+    description: 'Tăng +60% Luck cho 80 lượt /roll (nhóm Thần Thoại thường 0.57% -> 0.912%; Tối Thượng 0.03% miễn nhiễm Luck) hoặc Đổ Thạch. Dùng /equip ma_id:potion_luck_supreme để uống.',
   },
 ];
 

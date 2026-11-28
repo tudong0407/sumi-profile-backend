@@ -67,7 +67,7 @@ test('Ver 1.7 Catalog counts, 7-tier rarity ladder, SetBonus & Economy config', 
   assert.equal(cat.AVATAR_FRAMES.length, 30); // default + 29 frames
   assert.equal(Object.keys(cat.V17_PET_EVOLUTIONS).length, 40);
 
-  assert.equal(LATEST_VERSION, '1.7');
+  assert.equal(LATEST_VERSION, '1.7.1');
   assert.equal(V17_CHANGELOG.ack_reward_lt, 3000);
 
   // Verify Ver 1.7 full gift bundle (3000 LT + 5 TT + 5 Tower Reset Cards [ignore_cap] + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối)
@@ -120,13 +120,13 @@ test('Ver 1.7 Catalog counts, 7-tier rarity ladder, SetBonus & Economy config', 
   assert.equal(cat.WEEKLY_CONTRACTS_CONFIG.bonus.rewardLt, 700);
 });
 
-test('Ver 1.7 Gacha 0.65% split & Stone Cutting -10pp empty + Quest/Tower milestones', async () => {
-  assert.equal(DAILY_BASE_MIN, 55);
-  assert.equal(DAILY_BASE_MAX, 80);
+test('Ver 1.7 -> 1.7.1 Gacha 0.60% split & Stone Cutting -10pp empty + Quest/Tower milestones', async () => {
+  assert.equal(DAILY_BASE_MIN, 110);
+  assert.equal(DAILY_BASE_MAX, 160);
   assert.equal(PITY_UNIQUE_CHANCE, 0.05);
 
-  // 0.0325% cố định Độc Nhất, miễn nhiễm hoàn toàn Luck Potion / gieoque
-  const uHitLowLuck = rollRarityWithUniqueSplit(() => 0.00032, 1.0);
+  // 0.03% cố định Độc Nhất, miễn nhiễm hoàn toàn Luck Potion / gieoque
+  const uHitLowLuck = rollRarityWithUniqueSplit(() => 0.00025, 1.0);
   assert.deepEqual(uHitLowLuck, { rarityKey: 'mythic', naturalWantUnique: true });
   const uMissHighLuck = rollRarityWithUniqueSplit(() => 0.00033, 5.0);
   assert.deepEqual(uMissHighLuck, { rarityKey: 'mythic', naturalWantUnique: false });
@@ -271,7 +271,7 @@ test('Ver 1.7 /tienhoa Tab 1 Evolve & Tab 2 Craft Hồng Mông (NO /hiente)', as
       linh_thach: 25000,
       inventory: {
         chaos_essence_shard: 3,
-        evo_crystal: 0,
+        evo_crystal: 1,
       },
       pets: [
         {
@@ -316,10 +316,10 @@ test('Ver 1.7 /tienhoa Tab 1 Evolve & Tab 2 Craft Hồng Mông (NO /hiente)', as
     assert.equal(preview.success, true);
     assert.equal(preview.requires_confirmation, true);
 
-    // Confirm Tab 2 Craft: 3 shards + 1 Normal Mythic + 2,500 LT -> +1 evo_crystal + cleans loadout
+    // Confirm Tab 2 Craft: 3 shards + 1 Normal Mythic + 2,500 LT -> +1 evo_crystal (now 2 total) + cleans loadout
     const crafted = await craftEvoCrystal(uid, { targetPetId: 'p_mythic_sac', confirmed: true });
     assert.equal(crafted.success, true);
-    assert.equal(crafted.evo_crystal, 1);
+    assert.equal(crafted.evo_crystal, 2);
     assert.equal(crafted.chaos_essence_shard, 0);
     const stAfterCraft = __getEvolutionTestState(uid);
     assert.equal(stAfterCraft.pets.length, 1);
@@ -329,7 +329,7 @@ test('Ver 1.7 /tienhoa Tab 1 Evolve & Tab 2 Craft Hồng Mông (NO /hiente)', as
     const failEvo = await evolveUniquePet(uid, { petType: 'hon_don_chi_to_long', ltTier: 1, forceFail: true });
     assert.equal(failEvo.success, true);
     assert.equal(failEvo.evolved, false);
-    assert.equal(failEvo.evo_crystal_remaining, 1);
+    assert.equal(failEvo.evo_crystal_remaining, 2);
     assert.equal(failEvo.lt_spent, 1000);
 
     // Tab 1 Evolve Success (9000 LT = 100%)

@@ -414,6 +414,8 @@ export function isControlImmune(combatant, kind = 'cc') {
     if (e.ccImmuneBasic && BASIC_CC_KINDS.has(kind)) return true;
     if (e.dotImmune && kind === 'dot') return true;
   }
+  if (combatant.bossConfig?.ccImmuneAll && kind !== 'dot' && kind !== 'debuff') return true;
+  if (combatant.bossConfig?.ccImmuneBasic && BASIC_CC_KINDS.has(kind)) return true;
   if ((combatant.state?.stunImmuneTurns || 0) > 0 && BASIC_CC_KINDS.has(kind)) {
     return true;
   }
@@ -1693,6 +1695,11 @@ export function triggerDamageReceived(target, incomingDamage, attacker, rng, dmg
   if (v13Reflect > 0) {
     reflectPctTotal += v13Reflect;
     if (reflectLabels) reflectLabels.push(`${Math.round(v13Reflect * 100)}%`);
+  }
+  if (Number(target.bossConfig?.reflectPct || 0) > 0) {
+    const bossRef = Number(target.bossConfig.reflectPct);
+    reflectPctTotal += bossRef;
+    if (reflectLabels) reflectLabels.push(`Hộ Thể ${Math.round(bossRef * 100)}%`);
   }
   if (reflectPctTotal > 0) {
     const cappedReflectPct = Math.min(0.85, reflectPctTotal);

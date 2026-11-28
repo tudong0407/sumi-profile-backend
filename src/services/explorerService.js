@@ -277,6 +277,41 @@ export function computeExplorerLoadoutPower(petRow, equipRows = [], domainRow = 
  * Helper tập trung kiểm tra toàn bộ tài sản đang bị khóa bởi chuyến khám phá đang chạy của user.
  * Được dùng bởi /battle, /nhiemvu tower, /linhmach, /equip, /unequip, /dismantle, /enchant, /tangqua, /linhthu!
  */
+export async function reconcileOrphanExploringPets(userId) {
+  const cleanId = sanitizeUserId(userId || '');
+  if (!cleanId || !supabase) return 0;
+
+  const { data: orphanPets } = await supabase
+    .from('user_pets')
+    .select('pet_id')
+    .eq('user_id', cleanId)
+    .eq('status', 'exploring');
+
+  if (!orphanPets?.length) return 0;
+
+  const { data: activeExps } = await supabase
+    .from('explorer_expeditions')
+    .select('pet_id')
+    .eq('user_id', cleanId)
+    .eq('status', 'active');
+
+  const activeSet = new Set((activeExps || []).map((e) => String(e.pet_id)));
+  const stuckIds = orphanPets.map((p) => p.pet_id).filter((id) => !activeSet.has(String(id)));
+  if (!stuckIds.length) return 0;
+
+  await supabase
+    .from('user_pets')
+    .update({ status: 'ready' })
+    .eq('user_id', cleanId)
+    .in('pet_id', stuckIds);
+
+  import('./inventoryService.js')
+    .then((m) => m.invalidateInventoryCache?.(cleanId))
+    .catch(() => {});
+
+  return stuckIds.length;
+}
+
 export async function getUserBusyExplorationAssets(userId) {
   const cleanId = sanitizeUserId(userId || '');
   const empty = {
@@ -296,7 +331,10 @@ export async function getUserBusyExplorationAssets(userId) {
     .eq('status', 'active')
     .maybeSingle();
 
-  if (!exp) return empty;
+  if (!exp) {
+    await reconcileOrphanExploringPets(cleanId).catch(() => {});
+    return empty;
+  }
   return {
     isExploring: true,
     expedition: exp,
@@ -455,6 +493,35 @@ async function resolveUserLoadoutDetails(userId) {
 /**
  * Trung Tâm Khám Phá (/explorer — 0 tham số slash).
  */
+export function buildExplorerProgressBar(expedition, now = new Date(), width = 10) {
+  const w = Math.max(5, Number(width) || 10);
+  if (!expedition?.ends_at) {
+    return {
+      pct: 0,
+      bar: '░'.repeat(w),
+      line: `• **Tiến Độ:** \`${'░'.repeat(w)}\` **0%** *(Chưa xuất phát)*`,
+    };
+  }
+  const endMs = new Date(expedition.ends_at).getTime();
+  const durationHours = Math.max(0.1, Number(expedition.duration_hours || 2));
+  const inferredStartMs = expedition.started_at
+    ? new Date(expedition.started_at).getTime()
+    : (expedition.created_at ? new Date(expedition.created_at).getTime() : (endMs - durationHours * 3600000));
+  const totalMs = Math.max(1000, endMs - inferredStartMs);
+  const elapsedMs = Math.max(0, now.getTime() - inferredStartMs);
+  const pct = now.getTime() >= endMs ? 100 : Math.min(99, Math.max(0, Math.round((elapsedMs / totalMs) * 100)));
+  const filled = Math.min(w, Math.max(0, Math.round((pct / 100) * w)));
+  const bar = `${'▓'.repeat(filled)}${'░'.repeat(w - filled)}`;
+  const statusHint = pct >= 100
+    ? 'Hoàn tất — bấm **[Nhận Thưởng]**!'
+    : `Còn lại: **${formatDurationLeft(expedition.ends_at, now)}**`;
+  return {
+    pct,
+    bar,
+    line: `• **Tiến Độ:** \`${bar}\` **${pct}%** *(${statusHint})*`,
+  };
+}
+
 export async function getExplorerHub(userId, opts = {}) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI KHÁM PHÁ`, 'ID không hợp lệ.');
@@ -481,17 +548,28 @@ export async function getExplorerHub(userId, opts = {}) {
   const injuredPets = details.allPets.filter((p) => p.status === 'injured');
 
   const petLine = details.chosenPet
-    ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}** *(Lv.${details.chosenPet.level} • ${details.chosenPet.star}★ • ${details.chosenPet.is_active ? 'Pet Chính' : 'Pet Phụ'})*`
+    ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}**\n  ◦ Cấp: \`Lv.${details.chosenPet.level}\` • \`${details.chosenPet.star}★\` • *${details.chosenPet.is_active ? 'Pet Chính' : 'Pet Phụ'}*`
     : '*Chưa chọn Linh Thú*';
-  const eqLine = [details.weapon, details.gem, details.soul]
-    .filter(Boolean)
-    .map((e) => `${itemEmoji(e.item_id)} ${EQUIPMENT_BY_ID[e.item_id]?.item_name || e.item_id} (${gradeEmoji(e.enchant_grade)}${e.enchant_grade})`)
-    .join(' • ') || '*Chưa gắn Pháp Bảo*';
+
+  const formatSlotGear = (label, eq) => eq
+    ? `  ◦ ${label}: ${itemEmoji(eq.item_id)} **${EQUIPMENT_BY_ID[eq.item_id]?.item_name || eq.item_id}** (${gradeEmoji(eq.enchant_grade)}${eq.enchant_grade})`
+    : `  ◦ ${label}: *Trống*`;
+  const eqBlock = [
+    formatSlotGear('Vũ Khí', details.weapon),
+    formatSlotGear('Bảo Ngọc', details.gem),
+    formatSlotGear('Chiến Hồn', details.soul),
+  ].join('\n');
+
   const domLine = details.domain
     ? `${domainEmoji(details.domain.entity_id)} **${DOMAIN_BY_ID[details.domain.entity_id]?.name || details.domain.entity_id}**`
     : '*Không dùng Linh Vực*';
 
-  let activeBlock = '• **Trạng Thái:** Sẵn sàng xuất hành! Bấm **[Xuất Phát Khám Phá]** hoặc đổi **Bộ 1 / Bộ 2 / Bộ 3** bên dưới.';
+  const progress = buildExplorerProgressBar(busy.isExploring ? busy.expedition : null, now);
+
+  let activeBlock = [
+    '• **Trạng Thái:** Sẵn sàng xuất hành! Chọn **Bộ 1 / Bộ 2 / Bộ 3** bên dưới hoặc bấm **[Xuất Phát Khám Phá]**.',
+    progress.line,
+  ].join('\n');
   let canClaim = false;
   if (busy.isExploring && busy.expedition) {
     const exp = busy.expedition;
@@ -502,7 +580,7 @@ export async function getExplorerHub(userId, opts = {}) {
     activeBlock = [
       `${uiEm('ui_compass_dir')} **ĐANG KHÁM PHÁ:** **${mapDef?.name || exp.map_id}** *(${mapDef?.difficulty || ''} • Mốc ${exp.duration_hours} giờ)*`,
       `• **Linh Thú Xuất Hành:** ${petEmoji(exp.pet_type)} **${exp.pet_name}** (${isStillMain ? `${uiEm('ui_warn')} Pet Chính đang khóa chiến đấu` : 'Pet Phụ • Đang khám phá'})`,
-      `• **Thời Gian Còn Lại:** **${formatDurationLeft(exp.ends_at, now)}**`,
+      progress.line,
     ].join('\n');
   }
 
@@ -520,15 +598,23 @@ export async function getExplorerHub(userId, opts = {}) {
     ? `• ${em('abs_enchant_charm')} **Bùa Đá Tuyệt Ấn Đang Bật:** \`25%\` rơi Đá Tuyệt Ấn *(còn **${absCharmRuns}** chuyến)*`
     : '';
 
+  const foodBlock = [
+    `• **Lương Thảo & Dược Phẩm:**`,
+    `  ◦ ${em('food_survival_pill')} Đan Hộ Mệnh: \`×${foodCounts.food_survival_pill || 0}\``,
+    `  ◦ ${em('food_yield_tea')} Trà Bội Thu: \`×${foodCounts.food_yield_tea || 0}\``,
+    `  ◦ ${em('food_speed_fruit')} Quả Tốc Hành: \`×${foodCounts.food_speed_fruit || 0}\``,
+    `  ◦ ${em('explorer_revive_elixir')} Cửu Chuyển Hoàn Hồn Lộ: \`×${foodCounts.explorer_revive_elixir || 0}\``,
+  ].join('\n');
+
   const desc = [
     activeBlock,
     '',
     `**${uiEm('ui_backpack_inv')} Đội Hình Khám Phá Hiện Tại (Bộ ${details.activeSlot} — Đồng bộ \`/inv\`):**`,
     `• **Linh Thú:** ${petLine}`,
-    `• **Pháp Bảo (3 ô):** ${eqLine}`,
+    `• **Pháp Bảo (3 ô):**\n${eqBlock}`,
     `• **Linh Vực:** ${domLine}`,
     `• **Tổng Lực Chiến Đội Hình:** **${details.power.toLocaleString('vi-VN')} Lực**`,
-    `• **Lương Thảo & Dược Phẩm:** ${em('food_survival_pill')}×${foodCounts.food_survival_pill || 0} | ${em('food_yield_tea')}×${foodCounts.food_yield_tea || 0} | ${em('food_speed_fruit')}×${foodCounts.food_speed_fruit || 0} | ${em('explorer_revive_elixir')}×${foodCounts.explorer_revive_elixir || 0}`,
+    foodBlock,
     charmLine,
     injuredBlock,
   ].filter(Boolean).join('\n');
@@ -537,6 +623,8 @@ export async function getExplorerHub(userId, opts = {}) {
     success: true,
     is_exploring: busy.isExploring,
     can_claim: canClaim,
+    progress_pct: progress.pct,
+    progress_bar: progress.bar,
     ui_variant: uiVariant,
     active_loadout_slot: details.activeSlot,
     abs_enchant_charm_runs: absCharmRuns,
@@ -642,7 +730,8 @@ export async function saveExplorerLoadout(userId, patch = {}) {
   if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI LOADOUT`, 'ID không hợp lệ.');
   if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
-  return withExplorerLock(cleanId, async () => {
+  const { withLoadoutLock } = await import('./loadoutService.js');
+  return withLoadoutLock(cleanId, () => withExplorerLock(cleanId, async () => {
     const busy = await getUserBusyExplorationAssets(cleanId);
     if (busy.isExploring) {
       return explorerError(
@@ -719,11 +808,14 @@ export async function saveExplorerLoadout(userId, patch = {}) {
     }
 
     const activeSlot = [1, 2, 3].includes(Number(details.activeSlot)) ? Number(details.activeSlot) : 1;
+    const pickedPetObj = details.allPets.find((p) => String(p.pet_id) === String(nextPetId)) || null;
+    const nowIso = new Date().toISOString();
+
     await supabase.from('user_loadouts').upsert({
       user_id: cleanId,
       slot_index: activeSlot,
       pet_id: nextPetId,
-      pet_type: details.allPets.find((p) => String(p.pet_id) === String(nextPetId))?.pet_type || null,
+      pet_type: pickedPetObj?.pet_type || null,
       weapon_id: nextWeapon,
       gem_id: nextGem,
       soul_id: nextSoul,
@@ -731,12 +823,45 @@ export async function saveExplorerLoadout(userId, patch = {}) {
       sense_id: details.sense?.entity_id || null,
       realm_id: details.realm?.entity_id || null,
       is_initialized: true,
-      updated_at: new Date().toISOString(),
+      updated_at: nowIso,
     }, { onConflict: 'user_id,slot_index' });
+
+    // Đồng bộ trực tiếp vào trang bị hiện tại của Bộ đang active để tránh ghi đè ngược khi /inv hoặc /equip lưu bộ
+    if (pickedPetObj) {
+      await supabase.from('user_pets').update({ is_active: false }).eq('user_id', cleanId);
+      await supabase.from('user_pets').update({ is_active: true }).eq('pet_id', pickedPetObj.pet_id);
+    }
+    const targetPetType = pickedPetObj?.pet_type || details.chosenPet?.pet_type || 'hoa_thach_nham_nham';
+    await supabase.from('user_pet_items').update({ equipped_to_pet: null, slot: null }).eq('user_id', cleanId);
+    for (const [slotName, eqId] of [['weapon', nextWeapon], ['gem', nextGem], ['soul', nextSoul]]) {
+      if (!eqId) continue;
+      await supabase
+        .from('user_pet_items')
+        .update({ equipped_to_pet: targetPetType, slot: slotName })
+        .eq('user_id', cleanId)
+        .eq('item_id', eqId);
+    }
+    await supabase
+      .from('user_domains')
+      .update({ is_equipped: false, updated_at: nowIso })
+      .eq('user_id', cleanId)
+      .eq('entity_kind', 'domain')
+      .eq('is_equipped', true);
+    if (nextDomain) {
+      await supabase
+        .from('user_domains')
+        .update({ is_equipped: true, updated_at: nowIso })
+        .eq('user_id', cleanId)
+        .eq('entity_kind', 'domain')
+        .eq('entity_id', nextDomain);
+    }
+    import('./inventoryService.js')
+      .then((m) => m.invalidateInventoryCache?.(cleanId))
+      .catch(() => {});
 
     const hub = await getExplorerHub(cleanId);
     const updatedMsg = [
-      `${uiEm('ui_check')} **Đã cập nhật Loadout Khám Phá thành công!**`,
+      `${uiEm('ui_check')} **Đã cập nhật Loadout Khám Phá (Bộ ${activeSlot}) thành công!**`,
       `-> *Dùng các nút **[Bộ 1] [Bộ 2] [Bộ 3]** ở bảng chính (đã đồng bộ với \`/inv\`) hoặc bấm **[Xuất Phát Khám Phá]** để lên đường!*`,
       '',
       hub.description,
@@ -749,7 +874,7 @@ export async function saveExplorerLoadout(userId, patch = {}) {
       description: updatedMsg,
       message: updatedMsg,
     };
-  });
+  }));
 }
 
 async function getFoodShopPrice(userId, foodId) {
@@ -1109,6 +1234,10 @@ export async function startExpedition(userId, opts = {}) {
     const { invalidateInventoryCache } = await import('./inventoryService.js');
     invalidateInventoryCache(cleanId);
 
+    // Nếu người chơi đang giữ Linh Mạch khi xuất phát /explorer -> hủy trấn giữ mỏ nhưng VẪN giữ nguyên Mệt Mỏi
+    const { forfeitUserSpiritVeinsForExplorer } = await import('./spiritVeinService.js');
+    const cancelledVeins = await forfeitUserSpiritVeinsForExplorer(cleanId, now).catch(() => []);
+
     const { data: exp, error: expErr } = await supabase
       .from('explorer_expeditions')
       .insert({
@@ -1143,6 +1272,9 @@ export async function startExpedition(userId, opts = {}) {
     const mainPetNotice = pet.is_active
       ? `\n${uiEm('ui_warn')} *Bạn đang dùng **Pet Chính** để khám phá — Pet này tạm khóa khỏi PvP/PvE/Tháp/Địa Mạch (bạn có thể dùng \`/linhthu\` đổi sang Pet phụ khác để vẫn chiến đấu bình thường!).*`
       : '';
+    const veinForfeitNotice = cancelledVeins.length > 0
+      ? `\n${uiEm('ui_warn')} *Đã hủy trấn giữ **${cancelledVeins.map((v) => `Mỏ Hạng ${v.tier_code}`).join(', ')}** bên \`/linhmach\` do xuất phát Khám Phá (giữ nguyên độ Mệt Mỏi hiện có).*`
+      : '';
 
     const startDesc = [
       `• **Linh Thú:** ${petEmoji(pet.pet_type)} **${pet.pet_name}** (${details.power.toLocaleString('vi-VN')} Lực)`,
@@ -1151,6 +1283,7 @@ export async function startExpedition(userId, opts = {}) {
       `• **Thời Gian:** **${(effectiveSeconds / 3600).toFixed(2)} giờ** *(Mốc ${durationHours}h${foodId ? ` • Đã dùng ${em(foodId)}` : ''})*`,
       `• **Tỉ Lệ Sống Sót:** **${surv.survivalPct}%**${formatSurvivalSuffix(surv)}`,
       mainPetNotice,
+      veinForfeitNotice,
     ].filter(Boolean).join('\n');
 
     await trackQuestActivity(cleanId, { explorerDelta: 1, now });
@@ -1158,6 +1291,7 @@ export async function startExpedition(userId, opts = {}) {
     return {
       success: true,
       expedition: exp,
+      cancelled_spirit_veins: cancelledVeins,
       survival_pct: surv.survivalPct,
       effective_seconds: effectiveSeconds,
       ends_at: endsAtIso,

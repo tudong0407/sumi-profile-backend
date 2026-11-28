@@ -117,7 +117,8 @@ export function computeTowerFloorRewardLt(floor) {
   const f = Math.max(1, Number(floor) || 1);
   const isBoss = f % 5 === 0;
   const baseLt = (20 + Math.floor(f * 2)) * (isBoss ? 2 : 1) + TOWER_WIN_BONUS_LT;
-  return Math.round(baseLt * 1.15);
+  const bossDecadeMult = f % 10 === 0 ? 1.10 : 1;
+  return Math.round(baseLt * 1.15 * bossDecadeMult);
 }
 
 export const TOWER_MILESTONE_BONUSES = {

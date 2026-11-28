@@ -44,6 +44,7 @@ import {
 import {
   getEffectiveLuckAndFortune,
   consumeLuckCharges,
+  formatLuckSummaryLines,
 } from './luckAndFortuneService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
 
@@ -221,16 +222,7 @@ async function saveStoneRewardsRow(userId, patch) {
 }
 
 function formatLuckLine(luck) {
-  const parts = [];
-  if (luck.potionName && luck.potionCharges > 0) {
-    parts.push(`**${luck.potionName}** (+${luck.potionLuckPct}%, còn **${luck.potionCharges}** lượt)`);
-  }
-  if (luck.fortuneName) {
-    parts.push(`Quẻ **${luck.fortuneName}** (${luck.fortuneLuckPct >= 0 ? '+' : ''}${luck.fortuneLuckPct}% Luck)`);
-  }
-  return parts.length > 0
-    ? `${em('su_sparkle')} **Luck Hiện Tại:** \`${luck.totalLuckPct >= 0 ? '+' : ''}${luck.totalLuckPct}%\` (${parts.join(' • ')})`
-    : `${em('su_sparkle')} **Luck Hiện Tại:** \`+0%\` *(Uống Linh Lộ hoặc \`/gieoque\` để tăng tỉ lệ!)*`;
+  return formatLuckSummaryLines(luck, { compact: true });
 }
 
 export async function getStoneStall(userId, rawTier = 'common', options = {}) {
@@ -536,9 +528,9 @@ export async function cutStallStone(userId, rawTier = 'common', slotIndex = 1, o
     }
 
     const luckNote = chargeRes.chargesUsed > 0
-      ? `\n• ${em('su_sparkle')} Đã dùng 1 lượt **${chargeRes.potionName}** *(còn **${chargeRes.remainingCharges}** lượt • Tổng Luck: **+${luckInfo.totalLuckPct}%**)*`
-      : luckInfo.fortuneName
-        ? `\n• ${em('su_sparkle')} Quẻ **${luckInfo.fortuneName}** (*${luckInfo.fortuneLuckPct >= 0 ? '+' : ''}${luckInfo.fortuneLuckPct}% Luck*)`
+      ? `\n• ${em('su_sparkle')} Đã dùng 1 lượt **${chargeRes.potionName}** *(còn **${chargeRes.remainingCharges}** lượt • Tổng Luck: **${luckInfo.totalLuckPct >= 0 ? '+' : ''}${luckInfo.totalLuckPct}%**)*`
+      : Number(luckInfo.totalLuckPct || 0) !== 0
+        ? `\n• ${formatLuckSummaryLines(luckInfo, { compact: true })}`
         : '';
 
     const cutState = mapOutcomeToCutState(outcome);

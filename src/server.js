@@ -52,7 +52,12 @@ import {
   activateLuckPotion,
   drawDailyFortune,
   rerollDailyFortune,
+  lightSpiritIncense,
 } from './services/luckAndFortuneService.js';
+import {
+  brewTea,
+  joinTeaPot,
+} from './services/teaHouseService.js';
 import {
   getStoneStall,
   previewStallStone,
@@ -2620,6 +2625,51 @@ app.get('/api/luck/status/:userId', async (req, res) => {
   } catch (err) {
     console.error('[Server] /api/luck/status error:', err);
     return res.status(500).json({ success: false, error: 'LUCK_STATUS_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/luck/incense', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await lightSpiritIncense(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/luck/incense error:', err);
+    return res.status(500).json({ success: false, error: 'LUCK_INCENSE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/tea/brew', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await brewTea(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/tea/brew error:', err);
+    return res.status(500).json({ success: false, error: 'TEA_BREW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/tea/join', requireBackendApiKey, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await joinTeaPot(body.sessionId || body.sessionKey, body.userId || body.guestUserId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+  } catch (err) {
+    console.error('[Server] /api/tea/join error:', err);
+    return res.status(500).json({ success: false, error: 'TEA_JOIN_FAILED', message: err.message });
   }
 });
 

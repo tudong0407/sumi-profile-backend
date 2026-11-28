@@ -14,18 +14,19 @@ import { getInventory, invalidateInventoryCache } from './inventoryService.js';
 
 const loadoutLocks = new Map();
 
-async function withLoadoutLock(userId, fn) {
-  const prev = loadoutLocks.get(userId) || Promise.resolve();
+export async function withLoadoutLock(userId, fn) {
+  const key = String(userId || '');
+  const prev = loadoutLocks.get(key) || Promise.resolve();
   let release;
   const cur = new Promise((r) => { release = r; });
   const queued = prev.then(() => cur);
-  loadoutLocks.set(userId, queued);
+  loadoutLocks.set(key, queued);
   await prev;
   try {
     return await fn();
   } finally {
     release();
-    if (loadoutLocks.get(userId) === queued) loadoutLocks.delete(userId);
+    if (loadoutLocks.get(key) === queued) loadoutLocks.delete(key);
   }
 }
 
@@ -88,7 +89,7 @@ export async function checkActiveLoadoutExplorerLock(userId) {
   });
 }
 
-export async function syncActiveLoadoutFromCurrentGear(userId) {
+export async function syncActiveLoadoutFromCurrentGear(userId, explicitSlotIndex = null) {
   const cleanId = sanitizeUserId(userId);
   if (!cleanId || !supabase) return null;
 
@@ -99,9 +100,12 @@ export async function syncActiveLoadoutFromCurrentGear(userId) {
     supabase.from('user_domains').select('entity_kind, entity_id').eq('user_id', cleanId).eq('is_equipped', true),
   ]);
 
-  const slotIndex = [1, 2, 3].includes(Number(user?.active_loadout_slot))
-    ? Number(user.active_loadout_slot)
-    : 1;
+  const parsedExplicit = Number(explicitSlotIndex);
+  const slotIndex = [1, 2, 3].includes(parsedExplicit)
+    ? parsedExplicit
+    : [1, 2, 3].includes(Number(user?.active_loadout_slot))
+      ? Number(user.active_loadout_slot)
+      : 1;
 
   let weaponId = null;
   let gemId = null;
@@ -172,7 +176,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
       : 1;
 
     if (currentSlot === targetSlot) {
-      await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      await syncActiveLoadoutFromCurrentGear(cleanId, targetSlot).catch(() => {});
       invalidateInventoryCache(cleanId);
       return getInventory(cleanId, {
         ...opts,
@@ -221,7 +225,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
     }
 
     // 1. Lưu trạng thái bộ cũ trước khi chuyển
-    await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    await syncActiveLoadoutFromCurrentGear(cleanId, currentSlot).catch(() => {});
 
     const nowIso = new Date().toISOString();
     // 2. Chuyển active_loadout_slot sang targetSlot
@@ -262,7 +266,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
         }
       }
 
-      await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+      await syncActiveLoadoutFromCurrentGear(cleanId, targetSlot).catch(() => {});
       bannerText = `Đã mở mới **Bộ ${targetSlot}** — ${petNote}, tháo Pháp Bảo & Lãnh Địa để bạn tự phối bộ!`;
     } else if (targetRow) {
       const notes = [];
@@ -343,7 +347,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
 
       await Promise.all([...equipItemPromises, ...equipDomPromises]);
       if (notes.length === 0) {
-        await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+        await syncActiveLoadoutFromCurrentGear(cleanId, targetSlot).catch(() => {});
       }
       bannerText = notes.length > 0
         ? `Đã chuyển sang **Bộ ${targetSlot}** *(bỏ qua món đang bận/đã phân rã: ${notes.slice(0, 3).join(', ')})*.`

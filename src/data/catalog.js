@@ -36,11 +36,11 @@ export const NHIEM_NHIEM_BOT_ID = '916469360401453067';
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || 'https://sumi-profile-backend.onrender.com').replace(/\/$/, '');
 
 export const RARITY_TIERS = {
-  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.35, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
+  common: { key: 'common', label: 'Phàm Phẩm', dbKey: 'Pham Pham', dropRate: 60.4, color: '#94a3b8', colorDec: 9741496, emoji: tierEmoji('common'), emoji_key: tierEmojiKey('common') },
   rare: { key: 'rare', label: 'Linh Phẩm', dbKey: 'Linh Pham', dropRate: 25.0, color: '#3b82f6', colorDec: 3900150, emoji: tierEmoji('rare'), emoji_key: tierEmojiKey('rare') },
   epic: { key: 'epic', label: 'Tiên Phẩm', dbKey: 'Tien Pham', dropRate: 14.0, color: '#a855f7', colorDec: 11032055, emoji: tierEmoji('epic'), emoji_key: tierEmojiKey('epic') },
-  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 0.65, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
-  unique_supreme: { key: 'unique_supreme', label: 'Tối Thượng', dbKey: 'Tối Thượng', dropRate: 0.0325, color: '#f43f5e', colorDec: 16007006, emoji: tierEmoji('unique_supreme'), emoji_key: tierEmojiKey('unique_supreme') },
+  mythic: { key: 'mythic', label: 'Thần Thoại', dbKey: 'Than Thoai', dropRate: 0.6, color: '#f59e0b', colorDec: 16096779, emoji: tierEmoji('mythic'), emoji_key: tierEmojiKey('mythic') },
+  unique_supreme: { key: 'unique_supreme', label: 'Tối Thượng', dbKey: 'Tối Thượng', dropRate: 0.03, color: '#f43f5e', colorDec: 16007006, emoji: tierEmoji('unique_supreme'), emoji_key: tierEmojiKey('unique_supreme') },
   evolved_supreme: { key: 'evolved_supreme', label: 'Tối Thượng Chân Thần', dbKey: 'Tối Thượng Chân Thần', dropRate: 0.0, color: '#fb7185', colorDec: 16478597, emoji: tierEmoji('evolved_supreme'), emoji_key: tierEmojiKey('evolved_supreme') },
   supreme: { key: 'supreme', label: 'Tối Thượng Thần Thoại', dbKey: 'Tối Thượng Thần Thoại', dropRate: 0.0, color: '#ec4899', colorDec: 15485081, emoji: tierEmoji('supreme'), emoji_key: tierEmojiKey('supreme') },
 };
@@ -273,7 +273,7 @@ export const PET_CATALOG = [
   ...p,
   is_unique: Boolean(p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)),
   display_rarity_key: p.is_exclusive_fuyumi ? 'supreme' : (p.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(p.pet_type)) ? 'unique_supreme' : p.rarity_key,
-  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.65 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.35,
+  drop_rate: p.is_exclusive_fuyumi ? 0 : p.rarity_key === 'mythic' ? 0.6 : p.rarity_key === 'epic' ? 14.0 : p.rarity_key === 'rare' ? 25.0 : 60.4,
   icon: petEmoji(p.pet_type, em('cuu_vi_hong_ho')),
   emoji_key: petEmojiKey(p.pet_type),
   element_icon: elementEmoji(p.element),

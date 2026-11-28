@@ -3,7 +3,7 @@
  * Động cơ Chiến Đấu Tổ Đội (1–3 người vs BOSS hoặc 3v3) cho Chiếm Đoạt Linh Mạch:
  * - Thứ tự đánh mỗi hiệp: toàn bộ đấu thủ còn sống cả 2 phe xếp theo SPD cao nhất đánh trước (ưu tiên Lôi Quang Tốc).
  * - Linh Vực: chỉ dùng DUY NHẤT Linh Vực + Thần Thức + Thần Cảnh của Đội Trưởng mỗi phe (áp dụng cho cả 3 người trong đội, hỗ trợ đầy đủ « Đạo Áp »!).
- * - Mệt Mỏi (Fatigue): giảm 25% chỉ số chiến đấu mỗi stack đi chiếm mỏ liên tiếp (trần -75%).
+ * - Mệt Mỏi (Fatigue): giảm 25% chỉ số chiến đấu mỗi mỏ chiếm thành công liên tiếp (trần -90%).
  */
 
 import crypto from 'crypto';
@@ -142,13 +142,13 @@ export function applyFatigueToCombatant(combatant, fatigueInput = 0) {
     rawPct = Number(fatigueInput.fatiguePct ?? fatigueInput.fatigue_pct ?? 0);
   } else {
     const num = Math.max(0, Number(fatigueInput) || 0);
-    // Tương thích ngược: <= 3 là số stack cũ (25%/stack), > 3 là % mệt mỏi trực tiếp (0..75)
-    rawPct = num <= 3 ? num * 25 : num;
+    // Tương thích ngược: <= 4 là số stack (25%/stack, trần 90%), > 4 là % mệt mỏi trực tiếp (0..90)
+    rawPct = num <= 4 ? Math.min(90, num * 25) : num;
   }
-  const penaltyPctInt = Math.min(75, Math.max(0, Math.round(rawPct)));
+  const penaltyPctInt = Math.min(90, Math.max(0, Math.round(rawPct)));
   const penaltyPct = penaltyPctInt / 100;
-  const stacks = penaltyPctInt > 0 ? Math.min(3, Math.ceil(penaltyPctInt / 25)) : 0;
-  const mult = Math.max(0.25, 1 - penaltyPct);
+  const stacks = penaltyPctInt > 0 ? Math.min(4, Math.ceil(penaltyPctInt / 25)) : 0;
+  const mult = Math.max(0.10, 1 - penaltyPct);
 
   const atk = Math.max(10, Math.round(Number(baseUnit.atk || 100) * mult));
   const def = Math.max(10, Math.round(Number(baseUnit.def || 100) * mult));
@@ -214,7 +214,11 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         gem: u.equipment?.gem?.hax_skill || u.equipment?.gem?.hax_description || null,
         soul: u.equipment?.soul?.hax_skill || u.equipment?.soul?.hax_description || null,
       },
-      state: u.state || createInitialCombatState(),
+      state: {
+        ...createInitialCombatState(),
+        ...(u.state || {}),
+        ...(u.statePatch || {}),
+      },
     };
   });
 
@@ -241,7 +245,11 @@ export function simulateTeamBattle(sideARaw, sideBRaw, opts = {}) {
         gem: u.equipment?.gem?.hax_skill || u.equipment?.gem?.hax_description || null,
         soul: u.equipment?.soul?.hax_skill || u.equipment?.soul?.hax_description || null,
       },
-      state: u.state || createInitialCombatState(),
+      state: {
+        ...createInitialCombatState(),
+        ...(u.state || {}),
+        ...(u.statePatch || {}),
+      },
     };
   });
 

@@ -228,7 +228,7 @@ export const WIKI_CATEGORIES = {
           '• **1v1 (`/battle [@user]`):** PvP `15 trận/ngày`, PvE Tự Do `25 trận/ngày` (`+10 / -5 LT`) • Max **30 hiệp**, cooldown `15s`.',
           '• **Sát Thương Trừ Thẳng Máu (Bỏ Qua Khiên):** **Phản Đòn** *(reflect, tổng tối đa `85%`)*, **Nổ Hộ Thuẫn**, **Độc / Thiêu Đốt (DoT 28%)**, **Hút Sinh Lực Định Kỳ** và **Mị Hoặc Phản Phệ** trừ **thẳng HP, bỏ qua Khiên & DEF**. Riêng **Sát Thương Thường / Kỹ Năng / Phản Công khi né** đều vào Khiên trước.',
           '• **Discord & Web Logs (48h):** Discord hiện mốc **Hiệp `1/5/10/15/20` & Kết**; bấm **Xem Nhật Ký Trận Đấu** để tua lại đủ từng hiệp & HP trên web *(lưu 48h)*.',
-          `• ${em('vein_mine_sp')} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **3 mỏ/đợt** (**F→S+: \`8k → 135k\` Lực**, \`6–56 LT/phút\` +15% Kho Clan); Boss Hạng **A / S / S+** tung **Dư Chấn AoE 35%** quét cả hậu phương (nên đi Tổ Đội 3 người); thắng cộng \`+25%\` Mệt Mỏi (tối đa \`75%\`, giảm \`-10%/giờ\`).`,
+          `• ${em('vein_mine_sssp', em('vein_mine_sp'))} **Linh Mạch (\`/party\`, \`/linhmach\`):** Mở lúc \`08/12/18/20/21/22h\`, spawn **4 mỏ/đợt** (**F→SSS+: \`8.4k → 850k\` Lực**, \`6–125 LT/phút\` +15% Kho Clan, tỉ lệ \`SSS+ 1%\`); Boss Hạng **A → SSS+** tung **Dư Chấn AoE 35%–55%** *(SS..SSS+ kèm Khiên/Giảm ST/Phản Đòn)*; thắng cộng \`+25%\` Mệt Mỏi (trần \`90%\`, giảm \`-10%/giờ\`, bị cướp mỏ hồi \`-15%\` còn \`10%\`, đi \`/explorer\` sẽ hủy mỏ nhưng giữ Mệt Mỏi).`,
         ].join('\n'),
         inline: false,
       },
@@ -240,7 +240,7 @@ export const WIKI_CATEGORIES = {
     id: 'equipment',
     title: `${em('su_crossed_swords')} Trang Bị Loadout (264 Pháp Bảo)`,
     icon: em('su_crossed_swords'),
-    description: '90 Vũ Khí • 87 Bảo Ngọc • 87 Chiến Hồn, tỉ lệ rớt 0.65%, 59 Độc Nhất & Khắc Ấn D→S.',
+    description: '90 Vũ Khí • 87 Bảo Ngọc • 87 Chiến Hồn, tỉ lệ rớt 0.60%, 59 Độc Nhất & Khắc Ấn D→S.',
     image_url: '',
     sections: [
       {
@@ -248,8 +248,8 @@ export const WIKI_CATEGORIES = {
         content: '• Vũ Khí (90): ATK, SPD, CRIT & HAX công • Bảo Ngọc (87): DEF, HP, Khiên & kháng • Chiến Hồn (87): Chỉ số tổng & HAX đa tầng.',
       },
       {
-        heading: '2. Tỉ Lệ Rớt (v1.7) & Quy Tắc Sở Hữu',
-        content: '• Phàm 60.35% • Linh 25% • Tiên 14% • Thần Thoại+ 0.65% (tách cố định 0.0325% Độc Nhất miễn nhiễm Luck + 0.6175% × Luck Thần Thoại thường; 59 Độc Nhất toàn server).\n• Quay trùng cộng dồn & giữ tư chất Khắc Ấn cao nhất; hỗ trợ tự bán qua /autosell, xem kho /phapbao, tháo /unequip & nâng D→S qua /enchant.',
+        heading: '2. Tỉ Lệ Rớt (v1.7.1) & Quy Tắc Sở Hữu',
+        content: '• Phàm 60.40% • Linh 25% • Tiên 14% • Thần Thoại+ 0.60% (tách cố định 0.03% Độc Nhất miễn nhiễm Luck + 0.57% × Luck Thần Thoại thường; 59 Độc Nhất toàn server).\n• Quay trùng cộng dồn & giữ tư chất Khắc Ấn cao nhất; hỗ trợ tự bán qua /autosell, xem kho /phapbao, tháo /unequip & nâng D→S qua /enchant.',
       },
     ],
     fields: [
@@ -259,8 +259,8 @@ export const WIKI_CATEGORIES = {
         inline: true,
       },
       {
-        name: `${em('su_gacha_dice')} Tỉ Lệ Rớt (v1.7)`,
-        value: `• ${tierEmoji('common')} Phàm: **60.35%**\n• ${tierEmoji('rare')} Linh: **25%**\n• ${tierEmoji('epic')} Tiên: **14%**\n• ${tierEmoji('mythic')} Thần Thoại+: **0.65%** *(59 Độc Nhất + 135 Tự Do)*`,
+        name: `${em('su_gacha_dice')} Tỉ Lệ Rớt (v1.7.1)`,
+        value: `• ${tierEmoji('common')} Phàm: **60.40%**\n• ${tierEmoji('rare')} Linh: **25%**\n• ${tierEmoji('epic')} Tiên: **14%**\n• ${tierEmoji('mythic')} Thần Thoại+: **0.60%** *(59 Độc Nhất + 135 Tự Do)*`,
         inline: true,
       },
       {
@@ -269,7 +269,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: '264 Pháp Bảo chia 3 Slot (90 Vũ Khí / 87 Bảo Ngọc / 87 Chiến Hồn), Gacha 0.65%, hỗ trợ /phapbao, /equip, /unequip, /enchant & /autosell.',
+    content: '264 Pháp Bảo chia 3 Slot (90 Vũ Khí / 87 Bảo Ngọc / 87 Chiến Hồn), Gacha 0.60%, hỗ trợ /phapbao, /equip, /unequip, /enchant & /autosell.',
   },
 
   pets: {
@@ -281,20 +281,20 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Tổng Quan Linh Thú & Tiến Hóa Chân Thần (/tienhoa)',
-        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Tiến Hóa Chân Thần (/tienhoa): Toàn bộ 40 Pet Tối Thượng Độc Nhất đạt Lv.40 & 8★ + 1 Hồng Mông Tiến Hóa Tinh (chế từ 3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường: Pet / Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh + 2.500 LT) có thể tiến hóa tăng chỉ số, đổi ảnh & mở khóa 40 Skill Ultimate tái kích hoạt!\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.',
+        content: '• Xuất trận /battle với Hệ Ngũ Hành, HAX & Khắc Ấn D→S riêng. Tân thủ nhận sẵn Hóa Thạch Nham Nham Thú.\n• Tiến Hóa Chân Thần (/tienhoa): Toàn bộ 40 Pet Tối Thượng Độc Nhất đạt Lv.40 & 8★ + 2 Hồng Mông Tiến Hóa Tinh (chế từ 3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường: Pet / Pháp Bảo / Linh Vực / Thần Thức / Thần Cảnh + 2.500 LT) có thể tiến hóa tăng chỉ số, đổi ảnh & mở khóa 40 Skill Ultimate tái kích hoạt!\n• Công thức Chiến Lực: (ATK × 3) + (DEF × 2) + (SPD × 2) + (Lv × 50) + Trang Bị.',
       },
     ],
     fields: [
       {
         name: `${em('su_wiki_scroll')} Công Thức, Tiến Hóa (/tienhoa) & 40 Ultimate`,
-        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Tiến Hóa Chân Thần (`/tienhoa`):** 40 Pet Độc Nhất (`Lv.40 & 8★` + `1 Hồng Mông Tiến Hóa Tinh`, trượt không mất Hồng Mông) mở khóa **Skill Ultimate tái kích hoạt** • Chế Hồng Mông (Tab 2): `3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Pháp Bảo / Vực / Thức / Cảnh) + 2.500 LT`.',
+        value: '• **Pet khởi đầu:** `Hóa Thạch Nham Nham Thú` *(Phàm • 120 ATK / 180 DEF / 100 SPD)*.\n• **Tăng trưởng Lv/Sao:** `Lv.1→100` tăng **`+550%`**, `1★→10★` tăng **`+135%`** *(tổng **`7.85×`** chỉ số gốc)*.\n• **Tiến Hóa Chân Thần (`/tienhoa`):** 40 Pet Độc Nhất (`Lv.40 & 8★` + `2 Hồng Mông Tiến Hóa Tinh`, trượt không mất Hồng Mông) mở khóa **Skill Ultimate tái kích hoạt** • Chế Hồng Mông (Tab 2): `3 Mảnh Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Pháp Bảo / Vực / Thức / Cảnh) + 2.500 LT`.',
         inline: false,
       },
       {
         name: `${em('su_gacha_dice')} Phân Bậc Phẩm Cấp (150 Linh Thú Công Khai)`,
         value: [
-          `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.35%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
-          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(70 loài)* & ${tierEmoji('unique_supreme')} **Tối Thượng Độc Nhất** *(40 loài)*: **0.65%** *(\`/roll\`)*`,
+          `• ${tierEmoji('common')} **Phàm** *(13 loài)*: **60.40%** *(300 LT trong \`/shop\`)* • ${tierEmoji('rare')} **Linh** *(13 loài)*: **25%** *(900 LT trong \`/shop\`)*`,
+          `• ${tierEmoji('epic')} **Tiên** *(14 loài)*: **14%** *(\`/roll\`)* • ${tierEmoji('mythic')} **Thần Thoại** *(70 loài)* & ${tierEmoji('unique_supreme')} **Tối Thượng Độc Nhất** *(40 loài)*: **0.60%** *(\`/roll\`)*`,
         ].join('\n'),
         inline: false,
       },
@@ -306,7 +306,7 @@ export const WIKI_CATEGORIES = {
     id: 'domains',
     title: `${em('su_realm_star')} Linh Vực • Thần Thức • Thần Cảnh (161 Món Công Khai)`,
     icon: em('su_realm_star'),
-    description: '65 Linh Vực • 48 Thần Thức • 48 Thần Cảnh công khai, cơ chế Linh Mạch, Khắc Vực & Gacha 0.65% /roll loai:domain.',
+    description: '65 Linh Vực • 48 Thần Thức • 48 Thần Cảnh công khai, cơ chế Linh Mạch, Khắc Vực & Gacha 0.60% /roll loai:domain.',
     image_url: '',
     sections: [
       {
@@ -492,35 +492,36 @@ export const WIKI_CATEGORIES = {
 
   economy: {
     id: 'economy',
-    title: `${em('su_linhthach')} Kinh Tế, Shop Đặc Biệt, Tháp 500 & Nông Trại (v1.7)`,
+    title: `${em('su_linhthach')} Kinh Tế, Trà Đạo Quán, Luck & Tháp 500 (v1.7.1)`,
     icon: em('su_linhthach'),
-    description: '/daily (55–80 LT), /job (+30%), /roll (0.65%), /shop_dacbiet Chủ Nhật, /nhiemvu (+30% & Tháp Mảnh Hỗn Độn), /farm (-30p), /luyendan & Minigame.',
+    description: '/daily (110–160 LT + Chuỗi Luck), /thuongtra, /thaplinhhuong, Giờ Hoàng Đạo (+10% Luck), /roll (0.60%), Tháp +15% & Boss T10 (+10%).',
     image_url: '',
     sections: [
       {
-        heading: '1. Kiếm LT, Gacha 0.65%, Đổ Thạch & Shop Đặc Biệt',
-        content: '• /daily (55–80 LT + Streak 7d) • /job (+30%, 6 nghề, 8 ca/ngày) • /doiqua (1.000 EXP → 10 LT) • Lên cấp +50..+400 LT.\n• /roll (50 LT/lượt, 450/10, 0.65% Thần Thoại+, Pity 350 với 5% Độc Nhất) hỗ trợ /autosell.\n• /shop_dacbiet (Chủ Nhật 08:00–24:00 UTC+7): Đổi 750 LT = 1 Xích Kim Tinh Thạch (TT, min 5 TT, max 200 TT/tuần) để mua Hồng Mông Tiến Hóa Tinh, Thẻ Chọn Thần Thoại (7 nhóm), Mảnh Hỗn Độn, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.\n• /dothach (40 Nguyên Thạch, 300 manh mối, giảm -10% xịt): Săn Linh Thạch, Đá Khắc Ấn, Tinh Thạch & Hộp Thần Thoại Cực Phẩm.\n• /gieoque (1 lần/ngày UTC+7): 6 bậc Khí Vận + Cầu An Giải Hạn 250 LT • /shop (7 quầy, phân trang 30 Khung Avatar + 3 Lọ Luck Potion).',
+        heading: '1. Kiếm LT, Trà Đạo Quán, Gacha 0.60% & Khí Vận 5 Nguồn',
+        content: '• /daily (110–160 LT gốc + +5% LT/10 ngày max 200% + +2% Luck/7 ngày max 40%) • /thuongtra (3 ấm/ngày 200–300 LT + mời 1–2 khách Ké Chén nhận thêm 200–300 LT + %Luck×5 LT).\n• /thaplinhhuong (600–800 LT theo Luck → +5..15% Luck/ngày) & Giờ Hoàng Đạo (11h / 17h / 21h UTC+7 → +10% Luck toàn server) • Tổng Luck 5 nguồn đồng bộ /inv, /roll, /dothach, /daily, /thuongtra.\n• /roll (50 LT/lượt, 450/10, 0.60% Thần Thoại+, Pity 350) • /shop_dacbiet Chủ Nhật • /dothach (-10% xịt) • /gieoque.',
       },
       {
         heading: '2. Nhiệm Vụ (+30%), Tháp 500 Tầng, Nông Trại (-30p) & Lò Luyện Đan',
-        content: '• /nhiemvu (+30%): Ngày 5/5 (+170 LT), Hợp Đồng Tuần (450/550/500/700 LT), Tháp 500 tầng mốc T100/200/300/400/500 tặng thêm +1 Mảnh Hỗn Độn.\n• /farm 8 ô (4 Linh Điền + 4 Linh Các): Tưới/cho ăn rút ngắn -30 phút chín; có Thẻ Tự Động Chăm Farm 24h, Bùa Bảo Vệ +2h, Thuốc Tốc Độ (-25%) & Bột Sản Lượng (+30%).\n• /luyendan: 6 mẻ/ngày trên 2 Lò song song (Lv.1–5), hỗ trợ Bùa Bảo Vệ Lò (+2h) & DM nhắc tự động • /inv 3 Loadout (Bộ 1/2/3) đồng bộ với /explorer.',
+        content: '• /nhiemvu (+30%): Ngày 5/5 (+170 LT), Hợp Đồng Tuần (450/550/500/700 LT), Tháp 500 tầng (+15% LT/tầng, Boss tầng chia hết 10 thêm +10%, mốc T100..500 +1 Mảnh Hỗn Độn).\n• /farm 8 ô (4 Linh Điền + 4 Linh Các): Tưới/cho ăn -30 phút • /luyendan: 6 mẻ/ngày trên 2 Lò • /inv 3 Loadout (Bộ 1/2/3) đồng bộ với /explorer.',
       },
     ],
     fields: [
       {
-        name: `${em('su_linhthach')} Linh Thạch, /job, Gacha 0.65% & Shop Đặc Biệt`,
+        name: `${em('su_linhthach')} Kinh Tế, /thuongtra, Gacha 0.60% & Tổng Luck 5 Nguồn`,
         value: [
-          '• `/daily` *(55–80 LT)* • `/job` *(+30%, 6 nghề, 8 ca/ngày)* • `/doiqua` (`1.000 EXP → 10 LT`) • Đọc xác nhận `/updates` v1.7 nhận **+3.000 LT + 5 TT + 5 Thẻ Reset Tháp + 300 Linh Quả + 1 Ấn Khắc Tuyệt Đối**.',
-          '• `/roll` (`50 LT/lượt`, `450/10`, **0.65% Thần Thoại+**, Pity **350**) • **`/dothach`** *(40 Nguyên Thạch, giảm `-10%` xịt, săn Hộp Thần Thoại Cực Phẩm)* • **`/gieoque`** *(6 bậc Khí Vận/ngày)*.',
-          '• **`/shop_dacbiet` (Chủ Nhật `08:00–24:00`):** Đổi `750 LT = 1 TT` *(tối thiểu 5 TT, trần `200 TT/tuần`)* mua Hồng Mông, Thẻ Chọn Thần Thoại, Bùa Tuyệt Ấn, Thẻ Auto Farm & 5 Khung Đặc Biệt.',
+          '• **`/daily` (`110–160 LT` gốc):** Cộng `+5% LT` mỗi `10 ngày` chuỗi *(tối đa `+200%`)* & `+2% Luck` mỗi `7 ngày` *(tối đa `+40%`, đứt chuỗi về `0%`)*.',
+          '• **`/thuongtra` (3 ấm/ngày):** Pha ngay `200–300 LT`; trong `2 phút` tối đa `2 khách` bấm **Ké Chén** *(3 lần ké/ngày)* giúp cả 2 nhận thêm `200–300 LT + (%Luck × 5 LT)`.',
+          '• **Luck 5 Nguồn Đồng Bộ:** `Linh Lộ` + `/gieoque` + `Chuỗi /daily` + **Giờ Hoàng Đạo (`11h • 17h • 21h` +10%)** + **`/thaplinhhuong`** *(`600–800 LT` → `+5..+15% Luck`)*.',
+          '• `/roll` (`50 LT/lượt`, `450/10`, **0.60% Thần Thoại+**, Pity **350**) • `/dothach` • `/shop_dacbiet` Chủ Nhật (`750 LT = 1 TT`).',
         ].join('\n'),
         inline: false,
       },
       {
-        name: `${em('su_tower_boss')} Nhiệm Vụ (+30%), Tháp 500 Tầng & Top Ngày`,
+        name: `${em('su_tower_boss')} Nhiệm Vụ (+30%), Tháp 500 Tầng (+15% & T10 +10%) & Top Ngày`,
         value: [
           '• **5 Nhiệm Vụ Ngày (`/nhiemvu`):** Tăng **`+30%`** *(5/5: **+170 LT** + quà)* & 4 Hợp Đồng Tuần *(450 / 550 / 500 / 700 LT)*.',
-          '• **Tháp 500 Tầng (`1k → ~205k` Lực):** Mốc **T100 / T200 / T300 / T400 / T500** thưởng thêm **`+1 Mảnh Tinh Hoa Hỗn Độn`**; Hộ Tháp dùng **Linh Vực (F45+)**, **Thần Thức (F90+)**, **Thần Cảnh (F160+)** & **Chân Thần + Ultimate** *(thử lửa T150, đại trà T200+, 100% Boss từ T400+)*.',
+          '• **Tháp 500 Tầng (`1k → ~205k` Lực):** Thưởng LT tăng **`+15%`**, các **Boss T10/T20/…/T500** nhận thêm **`+10% LT`** & mốc **T100..T500** tặng **`+1 Mảnh Hỗn Độn`**.',
           '• **Top Chat & Voice Ngày (`00:00`):** `/top loai:chat` & `/top loai:voice` thưởng **500 / 400 / 300 LT** mỗi ngày.',
         ].join('\n'),
         inline: false,

@@ -11,7 +11,7 @@
 import crypto from 'crypto';
 import { supabase } from '../config/supabase.js';
 import { V14_SPIRIT_VEIN_TIERS } from '../data/v14ExpansionCatalog.js';
-import { DOMAIN_BY_ID } from '../data/catalog.js';
+import { DOMAIN_BY_ID, DIVINE_SENSE_BY_ID, DIVINE_REALM_BY_ID } from '../data/catalog.js';
 import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
 import { getUserPartyRecord } from './partyService.js';
@@ -19,9 +19,10 @@ import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { applyFatigueToCombatant, simulateTeamBattle } from './battleEngine/teamBattleService.js';
 
 export const GOLDEN_HOURS_VN = [8, 12, 18, 20, 21, 22];
-export const VEIN_SLOTS_PER_HOUR = 3;
+export const VEIN_SLOTS_PER_HOUR = 4;
 export const FATIGUE_GAIN_PER_CAPTURE = 25;
-export const FATIGUE_MAX_PCT = 75;
+export const FATIGUE_PVP_ROBBED_HEAL = 15;
+export const FATIGUE_MAX_PCT = 90;
 export const FATIGUE_DECAY_PER_HOUR = 10;
 
 const veinLocks = new Map();
@@ -130,6 +131,16 @@ export function computeCurrentFatigueInfo(fatRow, now = new Date()) {
 
 function buildBossCombatant(tier) {
   const bossDomain = tier.domain_id ? DOMAIN_BY_ID[tier.domain_id] : null;
+  const bossSense = tier.sense_id ? DIVINE_SENSE_BY_ID[tier.sense_id] : null;
+  const bossRealm = tier.realm_id ? DIVINE_REALM_BY_ID[tier.realm_id] : null;
+  const startShield = Math.round(Number(tier.stats.hp || 0) * Number(tier.start_shield_pct || 0));
+  const dmgRedPct = Number(tier.damage_reduction_pct || 0);
+  const initialState = {};
+  if (dmgRedPct > 0) {
+    initialState.damageReductionPct = dmgRedPct;
+    initialState.damageReductionTurns = 99;
+  }
+
   return {
     id: `boss_${tier.boss_id}`,
     name: `[BOSS ${tier.tier_code}] ${tier.boss_name}`,
@@ -145,16 +156,24 @@ function buildBossCombatant(tier) {
       star: tier.tier_group === 'high' ? 10 : 5,
     },
     equipment: {},
-    domainLoadout: bossDomain ? { domain: bossDomain, sense: null, realm: null } : {},
+    domainLoadout: (bossDomain || bossSense || bossRealm)
+      ? { domain: bossDomain || null, sense: bossSense || null, realm: bossRealm || null }
+      : {},
+    bossConfig: {
+      reflectPct: Number(tier.reflect_pct || 0),
+      ccImmuneBasic: Boolean(tier.cc_immune_basic),
+      ccImmuneAll: Boolean(tier.cc_immune_all),
+    },
     atk: tier.stats.atk,
     def: tier.stats.def,
     spd: tier.stats.spd,
     maxHp: tier.stats.hp,
     currentHp: tier.stats.hp,
-    shield: 0,
+    shield: startShield,
     critRate: tier.tier_group === 'high' ? 0.22 : 0.12,
     aoeSplashPct: Number(tier.aoe_splash_pct || 0),
     powerScore: tier.boss_power,
+    ...(Object.keys(initialState).length > 0 ? { statePatch: initialState } : {}),
   };
 }
 
@@ -250,6 +269,71 @@ export async function settleExpiredSpiritVeins(now = new Date()) {
 }
 
 /**
+ * Khi người chơi xuất phát /explorer trong lúc đang giữ Linh Mạch:
+ * Tự động hủy trấn giữ mỏ Linh Mạch (tất toán phần phút đã giữ trước đó nếu có) NHƯNG GIỮ NGUYÊN độ Mệt Mỏi (+25%/mỏ đã cộng, không heal)!
+ */
+export async function forfeitUserSpiritVeinsForExplorer(userId, now = new Date()) {
+  const cleanId = sanitizeUserId(userId || '');
+  if (!cleanId || !supabase) return [];
+
+  const { data: activeRows } = await supabase
+    .from('spirit_vein_sessions')
+    .select('*')
+    .eq('status', 'active');
+
+  const heldRows = (activeRows || []).filter((r) => {
+    const members = Array.isArray(r.holder_member_ids) ? r.holder_member_ids.map(String) : [];
+    return r.holder_leader_id === cleanId || members.includes(cleanId);
+  });
+
+  const cancelled = [];
+  const nowIso = now.toISOString();
+  for (const vein of heldRows) {
+    await settleVeinIncomeSegment(vein, now, false).catch(() => {});
+    const oldMembers = Array.isArray(vein.holder_member_ids) ? vein.holder_member_ids.filter(Boolean) : [];
+    const remainingMembers = oldMembers.filter((uid) => String(uid) !== cleanId);
+    const shouldClearWholeMine = vein.holder_leader_id === cleanId || remainingMembers.length === 0;
+
+    if (shouldClearWholeMine) {
+      await supabase
+        .from('spirit_vein_sessions')
+        .update({
+          holder_party_id: null,
+          holder_leader_id: null,
+          holder_clan_id: null,
+          holder_member_ids: [],
+          holder_snapshot: [],
+          captured_at: null,
+          last_settled_at: null,
+          updated_at: nowIso,
+        })
+        .eq('session_id', vein.session_id);
+    } else {
+      const nextSnapshot = (Array.isArray(vein.holder_snapshot) ? vein.holder_snapshot : [])
+        .filter((u) => String(u?.id) !== cleanId);
+      await supabase
+        .from('spirit_vein_sessions')
+        .update({
+          holder_member_ids: remainingMembers,
+          holder_snapshot: nextSnapshot,
+          updated_at: nowIso,
+        })
+        .eq('session_id', vein.session_id);
+    }
+
+    cancelled.push({
+      session_id: vein.session_id,
+      slot_key: vein.slot_key,
+      tier_code: vein.tier_code,
+      boss_name: vein.boss_name,
+      cleared_mine: shouldClearWholeMine,
+    });
+  }
+
+  return cancelled;
+}
+
+/**
  * Lấy trạng thái 3 Linh Mạch hiện tại (tự mở nếu đang trong 6 Khung Giờ Vàng hoặc forceOpen).
  */
 export async function getSpiritVeinsOverview(userId = null, opts = {}) {
@@ -277,8 +361,9 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
           { slotIndex: 1, slotKey: legacyLow ? `${info.hourKey}_low` : `${info.hourKey}_slot_1`, existing: legacyLow || bySlotKey.get(`${info.hourKey}_slot_1`) },
           { slotIndex: 2, slotKey: legacyHigh ? `${info.hourKey}_high` : `${info.hourKey}_slot_2`, existing: legacyHigh || bySlotKey.get(`${info.hourKey}_slot_2`) },
           { slotIndex: 3, slotKey: `${info.hourKey}_slot_3`, existing: bySlotKey.get(`${info.hourKey}_slot_3`) },
+          { slotIndex: 4, slotKey: `${info.hourKey}_slot_4`, existing: bySlotKey.get(`${info.hourKey}_slot_4`) },
         ]
-      : [1, 2, 3].map((idx) => ({
+      : [1, 2, 3, 4].map((idx) => ({
           slotIndex: idx,
           slotKey: `${info.hourKey}_slot_${idx}`,
           existing: bySlotKey.get(`${info.hourKey}_slot_${idx}`) || null,
@@ -327,7 +412,7 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
     userFatigueInfo = computeCurrentFatigueInfo(fat, now);
   }
   const userFatiguePct = userFatigueInfo.fatiguePct;
-  const userFatigueStacks = userFatiguePct > 0 ? Math.min(3, Math.ceil(userFatiguePct / FATIGUE_GAIN_PER_CAPTURE)) : 0;
+  const userFatigueStacks = userFatiguePct > 0 ? Math.min(4, Math.ceil(userFatiguePct / FATIGUE_GAIN_PER_CAPTURE)) : 0;
 
   const lt = em('su_linhthach');
   if (!canOpen) {
@@ -341,14 +426,14 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
       user_fatigue_info: userFatigueInfo,
       user_fatigue_stacks: userFatigueStacks,
       veins: [],
-      title: `${em('vein_mine_sp')} CHIẾM ĐOẠT LINH MẠCH — NGOÀI KHUNG GIỜ VÀNG`,
+      title: `${em('vein_mine_sssp', em('vein_mine_sp'))} CHIẾM ĐOẠT LINH MẠCH — NGOÀI KHUNG GIỜ VÀNG`,
       description: [
         `• Hiện tại đang ngoài khung giờ mở Linh Mạch.`,
-        `• **6 Khung Giờ Vàng mỗi ngày (UTC+7):** \`08:00\`, \`12:00\`, \`18:00\`, \`20:00\`, \`21:00\`, \`22:00\` *(mỗi đợt mở 60 phút gồm **3 Mỏ** xuất hiện theo tỉ lệ Hạng F → S+)*.`,
+        `• **6 Khung Giờ Vàng mỗi ngày (UTC+7):** \`08:00\`, \`12:00\`, \`18:00\`, \`20:00\`, \`21:00\`, \`22:00\` *(mỗi đợt mở 60 phút gồm **4 Mỏ** xuất hiện theo tỉ lệ Hạng F → SSS+)*.`,
         `• **Đợt tiếp theo:** **${info.nextGoldenHourLabel}**`,
-        `• **Tỉ lệ ra mỏ:** F \`20%\` • E \`19%\` • D \`17%\` • C \`14%\` • B \`11%\` • A \`8%\` • S \`6%\` • S+ \`5%\``,
+        `• **Tỉ lệ ra mỏ:** F \`17%\` • E \`16%\` • D \`15%\` • C \`13%\` • B \`10%\` • A \`8%\` • S \`6%\` • S+ \`5%\` • SS \`4%\` • SS+ \`3%\` • SSS \`2%\` • SSS+ \`1%\``,
         userFatiguePct > 0
-          ? `• ${uiEm('ui_warn')} **Mệt mỏi hiện tại:** **-${userFatiguePct}%** *(giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*.`
+          ? `• ${uiEm('ui_warn')} **Mệt mỏi hiện tại:** **-${userFatiguePct}%** *(tối đa **90%**, giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*.`
           : `• Hãy tranh thủ lập Tổ Đội 3 người bằng \`/party\` trước giờ mở mỏ nhé!`,
       ].join('\n'),
     };
@@ -380,7 +465,7 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
   });
 
   const mineBlocks = enrichedVeins.map((v) => {
-    const icon = em(v.boss_id || 'vein_mine_f', em('vein_mine_f'));
+    const icon = em(v.boss_id || 'vein_mine_f', em('vein_mine_sp', em('vein_mine_f')));
     const memberCount = (v.holder_member_ids || []).length;
     const holderTxt = v.holder_leader_id
       ? `${uiEm('ui_flag_capture')} Đang chiếm bởi đội <@${v.holder_leader_id}> (${memberCount} người${v.holder_clan_id ? ` • ${em('su_clan_castle')} Gia Tộc \`${v.holder_clan_id}\`` : ''})`
@@ -398,17 +483,17 @@ export async function getSpiritVeinsOverview(userId = null, opts = {}) {
   });
 
   const fatigueLine = userFatiguePct > 0
-    ? `${uiEm('ui_warn')} **Mệt Mỏi Hiện Tại:** **-${userFatiguePct}% Chiến Lực** *(Còn **${userFatigueInfo.remainingPowerPct}%** sức mạnh • Tự giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*`
-    : `${em('su_sparkle')} **Trạng Thái Chiến Đấu:** Sung mãn (**100% Chiến Lực**, 0% Mệt Mỏi • chiếm thành công +25%, giảm **-10%/giờ**).`;
+    ? `${uiEm('ui_warn')} **Mệt Mỏi Hiện Tại:** **-${userFatiguePct}% Chiến Lực** *(Còn **${userFatigueInfo.remainingPowerPct}%** sức mạnh • Trần **90%**, tự giảm **-10%/giờ**, giảm tiếp sau **${userFatigueInfo.nextDecayMinutes} phút**, hồi sạch sau ~**${userFatigueInfo.hoursToFullClear} giờ**)*`
+    : `${em('su_sparkle')} **Trạng Thái Chiến Đấu:** Sung mãn (**100% Chiến Lực**, 0% Mệt Mỏi • mỗi mỏ thắng **+25%**, trần **90%**, giảm **-10%/giờ**).`;
 
   const description = [
-    `${uiEm('ui_clock_timer')} **Khung Giờ Vàng:** \`${String(info.hour).padStart(2, '0')}:00 – ${String((info.hour + 1) % 24).padStart(2, '0')}:00\` *(Còn **${info.remainingMinutes} phút** • Tỉ lệ S+ **5%**)*`,
+    `${uiEm('ui_clock_timer')} **Khung Giờ Vàng:** \`${String(info.hour).padStart(2, '0')}:00 – ${String((info.hour + 1) % 24).padStart(2, '0')}:00\` *(Còn **${info.remainingMinutes} phút** • 4 Mỏ/đợt • Tỉ lệ SSS+ **1%**)*`,
     '',
     mineBlocks.join('\n\n───────────────────\n\n'),
     '',
     fatigueLine,
     '',
-    `*Bấm **[${em('su_crossed_swords')} Chiếm Mỏ #1]**, **[${em('su_crossed_swords')} Chiếm Mỏ #2]** hoặc **[${em('su_el_hoa')} Chiếm Mỏ #3]** bên dưới (hỗ trợ cả đi lẻ hoặc Tổ Đội 3 người \`/party\`)!*`,
+    `*Bấm **[${em('su_crossed_swords')} Chiếm Mỏ #1..#4]** bên dưới (hỗ trợ cả đi lẻ hoặc Tổ Đội 3 người \`/party\`)!*`,
   ].join('\n');
 
   return {
@@ -476,7 +561,7 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
   const targetStr = String(rawSlotOrGroup ?? '1').trim().toLowerCase();
-  const slotMatch = targetStr.match(/^(?:slot_)?([1-3])$/);
+  const slotMatch = targetStr.match(/^(?:slot_)?([1-4])$/);
   const requestedSlot = slotMatch ? Number(slotMatch[1]) : null;
   const legacyGroup = targetStr === 'high' ? 'high' : (targetStr === 'low' ? 'low' : null);
   const lockKey = requestedSlot ? `vein:slot_${requestedSlot}` : `vein:${legacyGroup || 'slot_1'}`;
@@ -576,11 +661,40 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
 
     const won = battle.winnerSide === 'A';
     let oldHolderSettlement = null;
+    let robbedFatigueHealApplied = false;
 
     if (won) {
-      // Nếu cướp từ đội khác -> tất toán phần LT đội cũ đã tích lũy trước lúc bị cướp
+      // Nếu cướp từ đội khác -> tất toán phần LT đội cũ đã tích lũy & hồi -15% Mệt Mỏi (25% -> còn 10%) cho đội bị cướp
       if (vein.holder_leader_id) {
         oldHolderSettlement = await settleVeinIncomeSegment(vein, now, false);
+        const oldMemberIds = Array.isArray(vein.holder_member_ids) && vein.holder_member_ids.length > 0
+          ? vein.holder_member_ids.filter(Boolean)
+          : [vein.holder_leader_id];
+        const robbedIds = oldMemberIds.filter((oid) => !memberIds.includes(oid));
+        if (robbedIds.length > 0) {
+          const { data: oldFatRows } = await supabase
+            .from('spirit_vein_fatigue')
+            .select('user_id, consecutive_wins, fatigue_pct, fatigue_updated_at, last_hour_key, last_slot_hour, updated_at')
+            .in('user_id', robbedIds);
+          const oldFatMap = new Map((oldFatRows || []).map((r) => [r.user_id, r]));
+          const healNowIso = now.toISOString();
+          for (const oid of robbedIds) {
+            const oRow = oldFatMap.get(oid);
+            const oInfo = computeCurrentFatigueInfo(oRow, now);
+            if (oInfo.fatiguePct <= 0) continue;
+            const healedPct = Math.max(0, oInfo.fatiguePct - FATIGUE_PVP_ROBBED_HEAL);
+            await supabase.from('spirit_vein_fatigue').upsert({
+              user_id: oid,
+              fatigue_pct: healedPct,
+              fatigue_updated_at: healNowIso,
+              consecutive_wins: healedPct > 0 ? Math.min(4, Math.ceil(healedPct / FATIGUE_GAIN_PER_CAPTURE)) : 0,
+              last_slot_hour: oRow?.last_slot_hour || info.hourKey,
+              last_hour_key: oRow?.last_hour_key || info.hourKey,
+              updated_at: healNowIso,
+            }, { onConflict: 'user_id' });
+            robbedFatigueHealApplied = true;
+          }
+        }
       }
 
       const nowIso = now.toISOString();
@@ -615,18 +729,16 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
         })
         .eq('session_id', vein.session_id);
 
-      // Cộng +25% Mệt Mỏi (trần 75%) mỗi khung giờ mới chiếm thành công, tự giảm -10%/giờ
+      // Cộng +25% Mệt Mỏi (trần 90%) cho MỌI MỎ chiếm thành công (kể cả chiếm nhiều mỏ trong cùng 1 giờ), tự giảm -10%/giờ
       for (const uid of memberIds) {
         const fRow = fatMap.get(uid);
-        const lastHk = fRow?.last_hour_key || fRow?.last_slot_hour || null;
-        if (lastHk === info.hourKey) continue; // Đã ghi nhận trong khung giờ này
         const curInfo = computeCurrentFatigueInfo(fRow, now);
         const nextPct = Math.min(FATIGUE_MAX_PCT, curInfo.fatiguePct + FATIGUE_GAIN_PER_CAPTURE);
         await supabase.from('spirit_vein_fatigue').upsert({
           user_id: uid,
           fatigue_pct: nextPct,
           fatigue_updated_at: nowIso,
-          consecutive_wins: nextPct > 0 ? Math.min(3, Math.ceil(nextPct / FATIGUE_GAIN_PER_CAPTURE)) : 0,
+          consecutive_wins: nextPct > 0 ? Math.min(4, Math.ceil(nextPct / FATIGUE_GAIN_PER_CAPTURE)) : 0,
           last_slot_hour: info.hourKey,
           last_hour_key: info.hourKey,
           updated_at: nowIso,
@@ -643,6 +755,9 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
         : `${uiEm('ui_heart_broken')} **KHIÊU CHIẾN THẤT BẠI!** ${isPvpTakeover ? `Đội của <@${vein.holder_leader_id}> vẫn giữ vững Linh Mạch Hạng ${vein.tier_code}!` : `BOSS **${vein.boss_name}** quá hùng mạnh — hãy rủ đủ Tổ Đội 3 người bằng \`/party\` nhé!`}`,
       oldHolderSettlement?.paidTotal > 0
         ? `• *(Đội cũ đã được tất toán **${oldHolderSettlement.paidTotal.toLocaleString('vi-VN')}** ${lt} cho **${oldHolderSettlement.minutes} phút** giữ mỏ trước đó)*`
+        : '',
+      robbedFatigueHealApplied
+        ? `• *(Đội bị cướp mỏ được hồi **-${FATIGUE_PVP_ROBBED_HEAL}% Mệt Mỏi** — chỉ còn giữ **10%** mệt mỏi cho mỏ vừa mất)*`
         : '',
       battle.highlights.length > 0 ? `\n**Diễn Biến Tiêu Biểu:**\n${battle.highlights.slice(0, 4).map((h) => `• ${h}`).join('\n')}` : '',
       battle.webLogUrl ? `• ${em('su_wiki_scroll')} [Xem Full Nhật Ký Chiến Báo Trên Web](${battle.webLogUrl})` : '',

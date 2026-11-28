@@ -5,9 +5,56 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.7';
+export const LATEST_VERSION = '1.7.1';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 3000;
+
+/**
+ * Bản cập nhật Mini v1.7.1 (+800 LT):
+ * - Giữ nguyên tăng sức mạnh Tháp (+15% LT/tầng) + thưởng thêm +10% LT tại các tầng Boss chia hết cho 10
+ * - Gacha Thần Thoại+ về 0.60% (0.03% Độc Nhất + 0.57% × Luck) & làm gọn kết quả AutoSell [+x LT]
+ * - /explorer đại tu giao diện dọc, nút Bộ 1/2/3 (vá đồng bộ bộ trang bị), thanh tiến độ & vá kẹt Pet
+ * - /linhmach tăng 4 mỏ/đợt, +5% sức mạnh F→S+, mở SS | SS+ | SSS | SSS+, vá cộng dồn Mệt Mỏi trần 90%
+ * - /daily x2 LT gốc (110–160 LT) + chuỗi 10 ngày (+5% LT, max 200%) & 7 ngày (+2% Luck, max 40%)
+ * - Mới: /thuongtra (3 ấm/ngày + Ké Chén nhận LT theo %Luck) & Giờ Hoàng Đạo (+10% Luck server) & /thaplinhhuong (600–800 LT → +5..15% Luck) + Sync Tổng Luck 5 nguồn
+ */
+export const V171_CHANGELOG = {
+  version: '1.7.1',
+  title: 'CẬP NHẬT MINI v1.7.1 — TRÀ ĐẠO QUÁN, GIỜ HOÀNG ĐẠO, LINH MẠCH SS–SSS+ & ĐẠI TU KHÁM PHÁ',
+  released_at: '2026-11-28',
+  color: '#f59e0b',
+  is_big_update: false,
+  ack_reward_lt: 800,
+  ack_reward_summary: '+800 LT',
+  summary: 'Cập nhật v1.7.1 (+800 LT): Tháp +15% LT & Boss tầng 10 (+10%), Gacha 0.60%, /explorer UI dọc + Bộ 1/2/3 + thanh tiến độ, /linhmach 4 mỏ + SS..SSS+ (Mệt Mỏi 90%), /daily x2, /thuongtra, Giờ Hoàng Đạo & /thaplinhhuong!',
+  sections: [
+    {
+      heading: `${em('su_crossed_swords')} 1. Tháp Tu Luyện, Gacha 0.60% & /explorer Mới`,
+      bullets: [
+        '**Tháp Tu Luyện (`/nhiemvu`):** Tăng thêm **`+15% LT/tầng`** đồng bộ đợt cân bằng quái Tháp mới, đồng thời các **tầng Boss chia hết cho 10 (`T10, T20, ..., T500`)** nhận thêm **`+10% LT`**!',
+        '**Gacha `/roll` & Hiển Thị Gọn:** Tỉ lệ **Thần Thoại+** điều chỉnh về **`0.60%`** *(`0.03%` Độc Nhất cố định + `0.57% × Luck` Thần Thoại thường)*; bỏ chữ `AutoSell` ở dòng kết quả thành **`[+x LT]`**.',
+        '**`/explorer` Trực Quan Hơn:** Pháp Bảo & Lương Thảo hiển thị xuống dòng rõ ràng, bổ sung **thanh tiến độ tô đậm `▓▓▓░░░ %`**, nút đổi nhanh **Bộ 1 / Bộ 2 / Bộ 3** *(vá lỗi đồng bộ giữa 3 bộ)* & tự sửa kẹt trạng thái *Đang Khám Phá*.',
+        '**Tiến Hóa Chân Thần (`/tienhoa`):** Giảm số lượng yêu cầu tiến hóa từ **`3`** xuống còn **`2 Hồng Mông Tiến Hóa Tinh`**!',
+      ],
+    },
+    {
+      heading: `${em('vein_mine_sssp', em('vein_mine_sp'))} 2. Linh Mạch 4 Mỏ/Giờ & Cấp SS | SS+ | SSS | SSS+`,
+      bullets: [
+        '**Nâng Sức Mạnh & 4 Mỏ/Đợt:** Tăng **`+5%`** sức mạnh toàn bộ Boss **`F → S+`**, mỗi Khung Giờ Vàng nay xuất hiện **4 Mỏ Linh Mạch**.',
+        '**Mở Khóa 4 Cấp Mới:** **`SS`** *(`240k Lực` • `68 LT/p`)*, **`SS+`** *(`380k Lực` • `82 LT/p`)*, **`SSS`** *(`560k Lực` • `100 LT/p`)* và **`SSS+`** *(`850k Lực` • `125 LT/p`, tỉ lệ xuất hiện `1%`)* kèm Linh Vực / Thần Thức / Thần Cảnh hộ thể riêng!',
+        '**Sửa Lỗi Độ Mệt Mỏi & Cướp Mỏ:** Chiếm mỗi mỏ cộng chuẩn **`+25%` Mệt Mỏi** *(trần **`90%`**)*; khi **bị cướp mất mỏ**, đội cũ được hồi **`-15%` Mệt Mỏi** *(còn `10%`)*; vào **`/explorer`** trong lúc giữ mỏ sẽ hủy giữ mỏ nhưng vẫn giữ nguyên Mệt Mỏi.',
+      ],
+    },
+    {
+      heading: `${em('tea_ceremony_pot', em('su_linhthach'))} 3. /daily x2, Trà Đạo Quán (/thuongtra), Giờ Hoàng Đạo & /thaplinhhuong`,
+      bullets: [
+        '**`/daily` Gấp Đôi & Thưởng Chuỗi:** LT gốc tăng lên **`110–160 LT/ngày`**; cứ **10 ngày chuỗi cộng `+5% LT`** *(tối đa `+200%`)*; cứ **7 ngày chuỗi cộng `+2% Luck`** *(tối đa `+40%`, đứt chuỗi về `0%`)*.',
+        '**Trà Đạo Quán (`/thuongtra`):** Pha trà miễn phí **3 ấm/ngày** nhận ngay **`200–300 LT`**; mời **1–2 khách bấm `[Ké Chén]`** trong **2 phút** để cả chủ ấm lẫn khách nhận thêm **`200–300 LT + (%Luck × 5 LT)`** *(tối đa 3 lần ké/ngày)*.',
+        '**Giờ Hoàng Đạo & `/thaplinhhuong`:** Vào **`11h • 17h • 21h`** *(UTC+7, 60p/khung)* toàn server nhận **`+10% Luck`**; dùng **`/thaplinhhuong`** *(`600–800 LT` theo Luck)* để thắp hương cộng **`+5% → +15% Luck`** trong ngày & đồng bộ **Tổng Luck 5 nguồn** trên toàn bộ lệnh!\n> *Xác nhận bản cập nhật `v1.7.1` để nhận ngay **`+800 LT`** vào ví!*',
+      ],
+    },
+  ],
+};
 
 /**
  * Bản cập nhật LỚN v1.7 — Quà Mở Bản:
@@ -288,6 +335,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V171_CHANGELOG,
   V17_CHANGELOG,
   V161_CHANGELOG,
   V16_CHANGELOG,

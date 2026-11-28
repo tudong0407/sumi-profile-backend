@@ -27,7 +27,7 @@ import {
 } from '../config/emojiHelper.js';
 import { ensureUserInitialized } from './profileService.js';
 import { normalizeEmojiAwareQuery, paginateFormattedLines, invalidateInventoryCache } from './inventoryService.js';
-import { syncActiveLoadoutFromCurrentGear, checkActiveLoadoutExplorerLock } from './loadoutService.js';
+import { syncActiveLoadoutFromCurrentGear, checkActiveLoadoutExplorerLock, withLoadoutLock } from './loadoutService.js';
 import { computeEffectiveDomainEnergy } from './battleEngine/domainEngine.js';
 import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
 import { trackQuestActivity } from './questService.js';
@@ -298,7 +298,7 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
     };
   }
 
-  return withDomainLock(cleanId, async () => {
+  return withLoadoutLock(cleanId, () => withDomainLock(cleanId, async () => {
     await ensureUserInitialized(cleanId, { username: options.username });
     const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
     if (loadoutLock.locked) {
@@ -369,7 +369,7 @@ export async function equipDomainEntity(userId, rawTarget, options = {}) {
       entity_name: resolved.meta.name,
       message: `${icon} Đã trang bị thành công **${resolved.meta.name}** (${resolved.meta.rarity})!\n${descDetail}`,
     };
-  });
+  }));
 }
 
 export async function unequipDomainEntity(userId, rawSlot = 'all') {
@@ -378,7 +378,7 @@ export async function unequipDomainEntity(userId, rawSlot = 'all') {
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' };
 
   const slot = String(rawSlot || 'all').trim().toLowerCase();
-  return withDomainLock(cleanId, async () => {
+  return withLoadoutLock(cleanId, () => withDomainLock(cleanId, async () => {
     const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
     if (loadoutLock.locked) {
       return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
@@ -401,7 +401,7 @@ export async function unequipDomainEntity(userId, rawSlot = 'all') {
       slot,
       message: `${em('su_realm_star')} Đã thu hồi **${labelMap[slot] || labelMap.all}** về kho dự trữ.`,
     };
-  });
+  }));
 }
 
 export async function dismantleDomainEntity(userId, rawTarget) {
