@@ -946,7 +946,9 @@ async function main() {
       let patchedCount = 0;
       for (const el of tree) {
         if (el.type === 'action' && el.data?.data?.type === 'api_action' && typeof el.data?.data?.request_options?.rawBody === 'string') {
-          const bodyObj = JSON.parse(el.data.data.request_options.rawBody);
+          const raw = el.data.data.request_options.rawBody;
+          if (!/KIẾN THỨC CHÍNH THỨC/.test(raw)) continue;
+          const bodyObj = JSON.parse(raw);
           if (bodyObj?.systemInstruction?.parts?.[0]?.text) {
             bodyObj.systemInstruction.parts[0].text = updateAiPromptV18A(bodyObj.systemInstruction.parts[0].text);
             el.data.data.request_options.rawBody = JSON.stringify(bodyObj);
