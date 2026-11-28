@@ -1231,10 +1231,10 @@ export async function startExpedition(userId, opts = {}) {
     const lockedDomainIds = [details.domain?.entity_id, details.sense?.entity_id, details.realm?.entity_id].filter(Boolean);
     const isUniquePet = Boolean(pet.is_unique || MYTHIC_UNIQUE_PET_TYPES.has(pet.pet_type) || pet.pet_type === 'cuu_vi_hong_ho');
 
-    // Khóa Pet sang trạng thái 'exploring' & lưu snapshot Loadout hiện tại trước khi xuất phát
-    await supabase.from('user_pets').update({ status: 'exploring' }).eq('pet_id', pet.pet_id);
+    // Lưu snapshot Loadout hiện tại trước khi khóa Pet sang trạng thái 'exploring'
     const { syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
     await syncActiveLoadoutFromCurrentGear(cleanId).catch(() => {});
+    await supabase.from('user_pets').update({ status: 'exploring' }).eq('pet_id', pet.pet_id);
     const { invalidateInventoryCache } = await import('./inventoryService.js');
     invalidateInventoryCache(cleanId);
 

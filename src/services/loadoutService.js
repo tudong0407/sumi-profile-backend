@@ -124,6 +124,17 @@ export async function syncActiveLoadoutFromCurrentGear(userId, explicitSlotIndex
     else if (d.entity_kind === 'realm' && !realmId) realmId = d.entity_id;
   }
 
+  // Không ghi đè snapshot của Bộ đang có Linh Thú đi /explorer nếu người chơi tạm đổi pet bằng /linhthu
+  if (
+    busyExp?.isExploring
+    && existingRow?.pet_id
+    && String(existingRow.pet_id) === String(busyExp.busyPetId)
+    && activePet?.pet_id
+    && String(activePet.pet_id) !== String(busyExp.busyPetId)
+  ) {
+    return existingRow;
+  }
+
   // Bảo toàn snapshot nếu món cũ trong Bộ này tạm trống chỉ vì đang bận /explorer
   if (busyExp?.isExploring && existingRow) {
     if (!weaponId && existingRow.weapon_id && busyExp.busyEquipIds?.has(existingRow.weapon_id)) weaponId = existingRow.weapon_id;
