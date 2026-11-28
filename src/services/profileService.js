@@ -696,6 +696,8 @@ export async function getProfileData(userId, overrides = {}) {
           };
         }
 
+        const couplePowerPct = marriedData?.power_bonus_pct || 0;
+        let rawTotalPower = 0;
         let petData = null;
         if (pet) {
           const catalogPet = PET_BY_TYPE[pet.pet_type] || null;
@@ -716,8 +718,7 @@ export async function getProfileData(userId, overrides = {}) {
             ? Math.round(Number(pet.power_score) * petMult)
             : computedBasePower;
           const bonusPower = (bonusAtk * 3) + (bonusDef * 2) + (bonusSpd * 2) + Math.floor(bonusHp * 0.5);
-          const rawTotalPower = basePower + bonusPower;
-          const couplePowerPct = marriedData?.power_bonus_pct || 0;
+          rawTotalPower = basePower + bonusPower;
           const couplePowerBonus = couplePowerPct > 0 ? Math.round(rawTotalPower * (couplePowerPct / 100)) : 0;
 
           const petIsEvolved = Boolean(pet.is_evolved);
@@ -766,6 +767,7 @@ export async function getProfileData(userId, overrides = {}) {
           // Mọi tu sĩ chưa có pet active đều mặc định xuất trận với Pet Phàm Phẩm khởi đầu
           petData = createStarterPetObject();
           petData.equipment = equipment;
+          rawTotalPower = Number(petData.power) || 0;
         }
 
         // Lọc bỏ role thuê tạm đã hết hạn
