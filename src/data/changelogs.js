@@ -5,9 +5,68 @@
 
 import { em, gradeEmoji } from '../config/emojiHelper.js';
 
-export const LATEST_VERSION = '1.7.1';
+export const LATEST_VERSION = '1.8';
 export const DEFAULT_UPDATE_ACK_REWARD_LT = 800;
 export const BIG_UPDATE_ACK_REWARD_LT = 3000;
+
+/**
+ * Đại Cập Nhật v1.8 — Thiện Cảm Linh Thú (/pet), AI Tâm Tình, 41 Viền Chân Thần, Thanh EXP & /upgrade:
+ */
+export const V18_CHANGELOG = {
+  version: '1.8',
+  title: 'ĐẠI CẬP NHẬT v1.8 — THIỆN CẢM /PET, AI TÂM TÌNH, 41 VIỀN CHÂN THẦN & /UPGRADE',
+  released_at: '2026-11-28',
+  color: '#ec4899',
+  is_big_update: true,
+  ack_reward_lt: 1500,
+  ack_reward_bundle: {
+    linh_thach: 1500,
+    red_gold_crystals: 0,
+    farm_essence: 200,
+    items: [
+      { item_id: 'pill_ess_1', item_category: 'consumable', quantity: 3, ignore_cap: true, label: 'Linh Quả Thanh Tâm Đan' },
+      { item_id: 'pill_ess_2', item_category: 'consumable', quantity: 1, ignore_cap: true, label: 'Hồng Mông Tạo Hóa Đan' },
+    ],
+  },
+  ack_reward_summary: '+1.500 LT • +200 Linh Quả • +3 Thanh Tâm Đan • +1 Tạo Hóa Đan',
+  summary: 'Ra mắt Thiện Cảm & Tâm Tình AI (/pet), Tự Thu Hoạch Farm, 41 Khung Avatar Chân Thần, Thanh EXP & /upgrade 4 phương án, Modal nhập số lượng Shop và đồng bộ 2 chiều Loadout ↔ /explorer!',
+  pages: [
+    {
+      page: 1,
+      subtitle: 'Trang 1/2 — Hệ Thống Thiện Cảm /pet, AI Tâm Tình, Tự Thu Hoạch Farm & 41 Viền Chân Thần',
+      sections: [
+        {
+          heading: `${em('pet_act_hug', em('su_pet_paw'))} 1. Thiện Cảm & Tâm Tình AI (/pet) • Role Pet (/pet_role)`,
+          bullets: [
+            '**Hub `/pet` Mới (lệnh chọn role Pet đổi thành `/pet_role`):** Gồm **6 nút chăm sóc** *(Xoa Đầu, Ôm Ấp, Cho Ăn, Chải Lông, Chơi Đùa, Ngủ Cùng — `+15đ/lần`, tối đa `6 lần/ngày`, hồi `30s`)*, nút **Tặng Quà** *(Linh Quả, 2 Đan Tinh Hoa, TT, Mảnh Hỗn Độn, Hồng Mông)* & **Trò Chuyện** *(kho `>2.800` câu theo `10` loài + AI Chat cho Thần Thoại `5/ngày` & Độc Nhất/Chân Thần `10/ngày`)*!',
+            '**5 Thang Bậc & 5 Buff Tuyến Tính:** `Phàm 3` • `Linh 5` • `Tiên 7` • `Thần Thoại 8` • `Độc Nhất/Chân Thần 10` *(Tiến Hóa `/tienhoa` cộng thẳng `+1.800đ`)*. Mỗi bậc cộng **`+4%` Lực Pet** *(max `+40%`)*, **`+3%` EXP `/upgrade`** *(max `+30%`)*, **`+1.5%` Sống `/explorer`** *(max `+15%`)*, **`+5%` EXP Tu Sĩ** *(max `+50%`)* & **`+1.5%` LT** *(max `+15%`)*!',
+            '**Quà Đồng Hành, Tự Thu Hoạch Farm & 41 Viền Chân Thần:** Bậc `4+` lượt chăm sóc đầu ngày rơi **Quà Đồng Hành** *(LT, TT, Mảnh Hỗn Độn, Đá Tuyệt Ấn)*; Bậc `5–9` tự thu hoạch `/farm` **`25%→75%`** và **Chân Thần `10/10` thu hoạch `100%`**! Tiến Hóa Chân Thần & chạm **Bậc `10/10`** mở khóa vĩnh viễn **Khung Avatar Chân Thần riêng**!',
+          ],
+        },
+      ],
+    },
+    {
+      page: 2,
+      subtitle: 'Trang 2/2 — Thanh EXP Linh Thú, /upgrade, Modal Shop & Đồng Bộ /explorer',
+      sections: [
+        {
+          heading: `${em('upgrade_exp_orb', em('su_level_up'))} 2. Thanh EXP Linh Thú, Lệnh /upgrade & 2 Đan Tinh Hoa`,
+          bullets: [
+            '**Thanh EXP `Lv.1 → Lv.100` & `/upgrade`:** Tách nâng Cấp/Sao khỏi `/linhthu` sang **`/upgrade`** với **4 phương án**: `Linh Thạch` *(giảm giá theo `% EXP` sẵn có)*, `Linh Quả` (`8 EXP/quả`), **`Thanh Tâm Đan`** (`+1.200 EXP`) & **`Hồng Mông Tạo Hóa Đan`** (`+3.000 EXP`) — thu khi luyện đan `/luyendan`!',
+          ],
+        },
+        {
+          heading: `${em('su_sparkle')} 3. QoL Modal Số Lượng Shop, Đồng Bộ /explorer & Quà Mở Bản v1.8`,
+          bullets: [
+            '**Modal Nhập Số Lượng & An Toàn Kho:** `/shop`, `/shop_dacbiet`, `/exchange` hỗ trợ nhập số lượng trực tiếp *(tới `50×/lần`)*; `/dismantle all dup` khóa bảo vệ **Pet Thần Thoại trở lên**!',
+            '**Đồng Bộ 2 Chiều `Bộ 1/2/3` ↔ `/explorer`:** Cho phép chuyển Bộ & đổi Pet `/linhthu` mượt mà khi đang thám hiểm, bảo toàn trọn vẹn snapshot Bộ đang `/explorer`.',
+            '**Quà Xác Nhận v1.8:** Nhận ngay **`+1.500 LT` • `+200 Linh Quả` • `+3 Thanh Tâm Đan` • `+1 Tạo Hóa Đan`** để trải nghiệm `/upgrade` & `/pet`!',
+          ],
+        },
+      ],
+    },
+  ],
+};
 
 /**
  * Bản cập nhật Mini v1.7.1 (+800 LT):
@@ -335,6 +394,7 @@ export const V15_DRAFT_CHANGELOG = {
 };
 
 export const CHANGELOGS = [
+  V18_CHANGELOG,
   V171_CHANGELOG,
   V17_CHANGELOG,
   V161_CHANGELOG,
