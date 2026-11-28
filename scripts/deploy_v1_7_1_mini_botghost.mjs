@@ -785,14 +785,14 @@ function patchTienHoaTreeV171(oldTree) {
 function buildV171KnowledgeBlock(includeFuyumiSecret) {
   const lines = [
     'KIẾN THỨC CHÍNH THỨC TOÀN BỘ HỆ THỐNG BOT NHIỄM NHIỄM (SUMI FAMILY TỪ v1.1 ĐẾN v1.7.1):',
-    '• [CẢNH GIỚI, LEVEL ROLES & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút; công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT. Top Chat/Voice Ngày trao 500/400/300 LT lúc 00:00 (UTC+7); 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
-    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa): Áp dụng cho toàn bộ 40 Pet Độc Nhất (Lv.40 & 8★). Cần 2 Hồng Mông Tiến Hóa Tinh + phí LT (1.000 LT = 60% .. 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần & mở Skill Ultimate tái kích hoạt. Tab 2 Chế Hồng Mông: 3 Mảnh Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường + 2.500 LT.',
-    '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHÁM PHÁ /explorer]: /inv và /explorer dùng chung 3 bộ Bộ 1 / Bộ 2 / Bộ 3 độc lập hoàn toàn. /explorer hiển thị dọc Pháp Bảo & Lương Thảo kèm thanh tiến độ %, tự vá kẹt trạng thái Đang Khám Phá; lưu ý vào /explorer khi đang giữ Linh Mạch sẽ hủy giữ mỏ nhưng vẫn giữ nguyên độ Mệt Mỏi.',
+    '• [CẢNH GIỚI, LEVEL ROLES & EXP] (/profile, /rank, /exp, /doiqua, /top): 7 Đại Cảnh Giới từ Lv.1→Lv.100 mở dần 1→5 Slot Role. Chat nhận 23–35 EXP/45s, Voice nhận 85–135 EXP/5 phút; công thức lên cấp 78*(Lv^1.45) (max 500.000 EXP), lên cấp mới thưởng +50..+400 LT. Quyền 8 mốc Level Roles: Lv.5 Gửi Ảnh/File, Lv.10 Stream, Lv.20 Emoji Nitro & Lập Gia Tộc, Lv.35 Embed Links, Lv.45 Sticker Ngoại (+ mở Lò #2), Lv.60 Voice Message, Lv.80 Soundboard, Lv.100 External Sounds. /doiqua đổi 1.000 EXP lấy 10 LT. Top Chat/Voice Ngày trao 500/400/300 LT lúc 00:00 (UTC+7); 19:00 Chủ Nhật tổng kết Top Tuần Lực Chiến.',
+    '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa): Áp dụng cho toàn bộ 40 Pet Độc Nhất (Lv.40 & 8★). Cần 2 Hồng Mông Tiến Hóa Tinh (điều chỉnh từ 3 xuống 2) + phí LT (1.000 LT = 60% .. 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần & mở Skill Ultimate tái kích hoạt. Tab 2 Chế Hồng Mông: 3 Mảnh Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Pháp Bảo / Vực / Thức / Cảnh — KHÔNG Độc Nhất) + 2.500 LT (KHÔNG có /hiente).',
+    '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHÁM PHÁ /explorer] (/inv, /linhthu, /equip, /unequip, /enchant, /explorer): /inv và /explorer dùng chung 3 bộ Bộ 1 / Bộ 2 / Bộ 3 độc lập hoàn toàn (khóa chống ghi đè chéo). /explorer 12 Địa Danh hiển thị dọc Pháp Bảo & Lương Thảo kèm thanh tiến độ %, tự vá kẹt trạng thái Đang Khám Phá; lưu ý vào /explorer khi đang giữ Linh Mạch sẽ hủy giữ mỏ nhưng vẫn giữ nguyên độ Mệt Mỏi.',
     '• [ĐẤU TRƯỜNG 1V1, THÁP 500 & LINH MẠCH SS–SSS+] (/battle, /party, /linhmach, /nhiemvu): Tháp 500 tầng (+15% LT/tầng, Boss chia hết cho 10 thưởng thêm +10% LT, mốc T100..500 +1 Mảnh Hỗn Độn). /linhmach mở 6 Giờ Vàng (08/12/18/20/21/22h) với 4 Mỏ/đợt (F→SSS+, Boss 8.4k→850k Lực, 6–125 LT/phút, tỉ lệ SSS+ 1%). Chiếm mỗi mỏ cộng +25% Mệt Mỏi (trần 90%, hồi -10%/giờ); bị người khác cướp mỏ hồi -15% Mệt Mỏi (từ 25% còn 10%).',
-    '• [KINH TẾ v1.7.1, TRÀ ĐẠO QUÁN & LUCK 5 NGUỒN] (/daily, /thuongtra, /thaplinhhuong, /gieoque, /roll, /dothach, /shop_dacbiet): /daily gốc 110–160 LT + +5% LT mỗi 10 ngày chuỗi (max +200%) + +2% Luck mỗi 7 ngày chuỗi (max +40%, đứt chuỗi về 0%). /thuongtra pha 3 ấm/ngày (200–300 LT) & mời 1–2 khách Ké Chén trong 2 phút nhận thêm 200–300 LT + (%Luck×5 LT). Giờ Hoàng Đạo (11h/17h/21h UTC+7) +10% Luck toàn server; /thaplinhhuong (600–800 LT) +5..+15% Luck; Gacha Thần Thoại+ 0.60% (0.03% Độc Nhất + 0.57%×Luck).',
+    '• [KINH TẾ v1.7.1, TRÀ ĐẠO QUÁN, LUCK 5 NGUỒN & SHOP ĐẶC BIỆT] (/daily, /thuongtra, /thaplinhhuong, /gieoque, /roll, /dothach, /shop_dacbiet, /updates): /daily gốc 110–160 LT + +5% LT mỗi 10 ngày chuỗi (max +200%) + +2% Luck mỗi 7 ngày chuỗi (max +40%, đứt chuỗi về 0%). /thuongtra pha 3 ấm/ngày (200–300 LT) & mời 1–2 khách Ké Chén trong 2 phút nhận thêm 200–300 LT + (%Luck×5 LT). Giờ Hoàng Đạo (11h/17h/21h UTC+7) +10% Luck toàn server; /thaplinhhuong (600–800 LT) +5..+15% Luck; Gacha Thần Thoại+ 0.60% (0.03% Độc Nhất + 0.57%×Luck); /updates v1.7.1 tặng +800 LT.',
   ];
   if (includeFuyumiSecret) {
-    lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
+    lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho — Hồng Mông Đế Nữ), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');
   }
   return lines.join('\n');
 }
@@ -863,7 +863,7 @@ async function fetchAllLiveReduxState() {
         .map(c => ({ name: c.name, enabled: c.enabled !== false, groupId: c.groupId || '', compressed_tree: c.compressed_tree })),
       events: Object.values(rawEvents)
         .filter(e => e && e.name && e.compressed_tree)
-        .map(e => ({ id: e.id || e.int_id, int_id: e.int_id || e.id, name: e.name, enabled: e.enabled !== false, compressed_tree: e.compressed_tree })),
+        .map(e => ({ id: e.id || e.int_id, int_id: e.int_id || e.id, name: e.name, enabled: e.enabled !== false, groupId: e.groupId || '', compressed_tree: e.compressed_tree })),
     });
   })()`, 30000);
   return JSON.parse(raw);
@@ -926,13 +926,31 @@ async function main() {
     const aiEv = liveState.events.find((e) => e.id === AI_MENTION_INT_ID || e.int_id === AI_MENTION_INT_ID || /mention|nhi[eễ]m/i.test(e.name));
     if (aiEv) {
       const tree = JSON.parse(LZString.decompressFromBase64(aiEv.compressed_tree));
+      let updatedAiNodes = 0;
       for (const el of tree) {
         if (el.type === 'action' && el.data?.data?.type === 'ai_prompt') {
           el.data.data.prompt = updateAiPromptTextV171(el.data.data.prompt, String(el.id).includes('fuyumi'));
+          updatedAiNodes++;
+        } else if (el.type === 'action' && el.data?.data?.type === 'api_action' && typeof el.data?.data?.request_options?.rawBody === 'string') {
+          const raw = el.data.data.request_options.rawBody;
+          if (/KIẾN THỨC CHÍNH THỨC/.test(raw)) {
+            const bodyObj = JSON.parse(raw);
+            if (bodyObj?.systemInstruction?.parts?.[0]?.text) {
+              bodyObj.systemInstruction.parts[0].text = updateAiPromptTextV171(
+                bodyObj.systemInstruction.parts[0].text,
+                String(el.id).includes('fuyumi')
+              );
+              el.data.data.request_options.rawBody = JSON.stringify(bodyObj);
+              updatedAiNodes++;
+            }
+          }
         }
       }
+      if (updatedAiNodes === 0) {
+        throw new Error(`No AI knowledge nodes updated inside ${aiEv.name}`);
+      }
       validateTreeStrict(tree, aiEv.name);
-      specs.push({ name: aiEv.name, kind: 'event', intId: aiEv.int_id || aiEv.id, elements: tree });
+      specs.push({ name: aiEv.name, kind: 'event', groupId: aiEv.groupId || PROFILE_GROUP_ID, enabled: aiEv.enabled, intId: aiEv.int_id || aiEv.id, elements: tree });
     }
   }
 
@@ -944,7 +962,7 @@ async function main() {
       const newTree = sweepTreeV171(JSON.parse(JSON.stringify(oldTree)));
       if (JSON.stringify(newTree) !== JSON.stringify(oldTree)) {
         validateTreeStrict(newTree, `sweep:${c.name}`);
-        specs.push({ name: c.name, kind: 'slash', groupId: c.groupId || PROFILE_GROUP_ID, elements: newTree });
+        specs.push({ name: c.name, kind: 'slash', groupId: c.groupId || PROFILE_GROUP_ID, enabled: c.enabled, elements: newTree });
       }
     }
   }
@@ -955,7 +973,22 @@ async function main() {
   }
 
   console.log(`Deploying ${specs.length} BotGhost command/event updates via Edge CDP...`);
-  await deployViaCDP(specs, { pauseMs: 800 });
+  for (let i = 0; i < specs.length; i++) {
+    const sp = specs[i];
+    console.log(`[${i + 1}/${specs.length}] Deploying ${sp.kind} "${sp.name}" (${sp.elements.length} els)...`);
+    const res = await deployViaCDP({
+      groupId: sp.groupId || PROFILE_GROUP_ID,
+      mode: sp.kind,
+      name: sp.name,
+      elements: sp.elements,
+      enabled: sp.enabled ?? true,
+    });
+    if (!res?.ok) {
+      throw new Error(`Deploy failed for ${sp.kind}:${sp.name} -> ${JSON.stringify(res)}`);
+    }
+    console.log(`  [OK] ${sp.kind}:${sp.name} | prob=${res.probText} | canSave=${res.canSave} | builderSaveRequired=${res.builderSaveRequired} | nodes=${res.savedSummary?.decompressedCount}`);
+    if (i + 1 < specs.length) await new Promise((r) => setTimeout(r, 800));
+  }
   console.log('\n[DONE] Ver 1.7.1 Mini BotGhost deployed & verified cleanly!');
 }
 
