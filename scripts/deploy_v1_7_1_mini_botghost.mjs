@@ -782,6 +782,49 @@ function patchTienHoaTreeV171(oldTree) {
   return JSON.parse(s);
 }
 
+function patchShopTreeV171(oldTree) {
+  let tree = sweepTreeV171(JSON.parse(JSON.stringify(oldTree)));
+  const protectLines = [
+    `• ${uidEm('farm_protect_card', 'su_shield_def')} **Thẻ Bảo Vệ Cây & Trứng** — **600** ${uidEm('su_linhthach')}\n  *Tự động kích hoạt khi ô /farm sắp héo: tiêu thụ 1 thẻ để gia hạn thêm +2 giờ (tối đa 16 thẻ).*`,
+    `• ${uidEm('alchemy_protect_card', 'su_shield_def')} **Thẻ Bảo Vệ Đan** — **400** ${uidEm('su_linhthach')}\n  *Tự động kích hoạt khi Lò Luyện Đan sắp cháy/nổ: tiêu thụ 1 thẻ để gia hạn thêm +2 giờ ân hạn (tối đa 8 thẻ).*`,
+  ].join('\n');
+
+  for (const el of tree) {
+    if (el.data?.data?.type === 'advanced_message' && Array.isArray(el.data.data.message?.embeds)) {
+      for (const em0 of el.data.data.message.embeds) {
+        if (typeof em0.title === 'string' && /VẬT PHẨM TIÊU HAO/i.test(em0.title)) {
+          em0.title = em0.title.replace(/14 MÓN/g, '16 MÓN');
+        }
+        if (typeof em0.description === 'string') {
+          if (em0.description.includes('Vật Phẩm Tiêu Hao & Luck Potion (14 món)')) {
+            em0.description = em0.description
+              .replace(/Vật Phẩm Tiêu Hao & Luck Potion \(14 món\)/g, 'Vật Phẩm Tiêu Hao, Bảo Vệ & Luck (16 món)')
+              .replace(/Đan Dược\./g, 'Đan Dược, **Thẻ Bảo Vệ Cây & Đan**.');
+          }
+          if (el.id === 'msg_shop_cons' || el.id === 'msg_shop_cons_2') {
+            em0.description = em0.description
+              .replace(/0\.65% -> 1\.04%/g, '0.60% -> 0.94%');
+            if (!em0.description.includes('Thẻ Bảo Vệ Cây & Trứng')) {
+              em0.description = `${em0.description}\n${protectLines}`;
+            }
+          }
+        }
+      }
+    } else if (el.type === 'advMessageSelectMenu' && Array.isArray(el.data?.data?.basic_options)) {
+      for (const opt of el.data.data.basic_options) {
+        if (opt.value === 'consumables') {
+          opt.label = 'Vật Phẩm Tiêu Hao, Bảo Vệ & Luck (16 món)';
+          opt.description = 'Vé Gacha, 3 Lọ Luck (+20/40/60%), Đá Sao, Khắc Ấn, Thẻ Bảo Vệ Cây/Đan';
+        }
+        if (typeof opt.description === 'string') {
+          opt.description = opt.description.replace(/0\.65% -> 1\.04%/g, '0.60% -> 0.94%');
+        }
+      }
+    }
+  }
+  return tree;
+}
+
 function patchWikiTreeV171(oldTree) {
   let tree = sweepTreeV171(JSON.parse(JSON.stringify(oldTree)));
   for (const el of tree) {
@@ -964,6 +1007,13 @@ async function main() {
     const newTree = patchWikiTreeV171(oldTree);
     validateTreeStrict(newTree, 'wiki');
     specs.push({ name: 'wiki', kind: 'slash', groupId: cmdMap.get('wiki').groupId || PROFILE_GROUP_ID, enabled: cmdMap.get('wiki').enabled, elements: newTree });
+  }
+
+  if (shouldRun('shop') && cmdMap.has('shop')) {
+    const oldTree = JSON.parse(LZString.decompressFromBase64(cmdMap.get('shop').compressed_tree));
+    const newTree = patchShopTreeV171(oldTree);
+    validateTreeStrict(newTree, 'shop');
+    specs.push({ name: 'shop', kind: 'slash', groupId: cmdMap.get('shop').groupId || PROFILE_GROUP_ID, enabled: cmdMap.get('shop').enabled, elements: newTree });
   }
 
   if (shouldRun('ai')) {
