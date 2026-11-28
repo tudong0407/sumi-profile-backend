@@ -124,7 +124,8 @@ function resolvePetAsset(petType, isEvolved = false) {
 }
 
 function resolvePetMiniIconAsset(petType) {
-  if (!petType || petType === 'cuu_vi_hong_ho') return 'badges/su_fox_mascot.png';
+  if (!petType) return 'badges/su_fox_mascot.png';
+  if (petType === 'cuu_vi_hong_ho') return resolvePetSplashAsset('cuu_vi_hong_ho', true, 'badges/su_fox_mascot.png');
   const candidate = `pets/icons/${petType}.png`;
   return resolveAssetPath(candidate) ? candidate : 'badges/su_fox_mascot.png';
 }

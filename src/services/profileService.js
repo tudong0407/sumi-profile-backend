@@ -226,7 +226,7 @@ export function getFuyumiProfileMock() {
       def: 101049,
       spd: 100949,
       power: 10009709,
-      icon: `${em('cuu_vi_hong_ho')}`,
+      icon: `${petEmoji('cuu_vi_hong_ho', em('cuu_vi_hong_ho'), true)}`,
       equipment: {
         weapon: {
           item_id: 'weapon_mythic_1',
@@ -759,7 +759,7 @@ export async function getProfileData(userId, overrides = {}) {
             bonus_spd: bonusSpd,
             bonus_hp: bonusHp,
             equipment,
-            icon: catalogPet?.icon || pet.icon || (pet.pet_type === 'cuu_vi_hong_ho' ? `${em('cuu_vi_hong_ho')}` : `${em('su_pet_paw')}`),
+            icon: petEmoji(pet.pet_type, catalogPet?.icon || pet.icon || em('su_pet_paw'), petIsEvolved),
           };
         } else if (cleanId !== FUYUMI_USER_ID) {
           // Mọi tu sĩ chưa có pet active đều mặc định xuất trận với Pet Phàm Phẩm khởi đầu

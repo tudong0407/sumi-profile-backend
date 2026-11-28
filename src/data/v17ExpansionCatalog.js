@@ -7463,7 +7463,7 @@ export const FUYUMI_SUPREME_EVOLUTION = {
   evolved_name: 'Hồng Mông Đế Nữ',
   element: 'Hỗn Độn',
   evo_image_file: 'pets/cuu_vi_hong_ho_evo.webp',
-  evo_emoji_key: 'cuu_vi_hong_ho',
+  evo_emoji_key: 'cuu_vi_hong_ho_evo',
   is_exclusive_fuyumi: true,
   stat_mult: { atk: 1.38, def: 1.38, spd: 1.36, hp: 1.4 },
   ultimate: FUYUMI_SUPREME_ULTIMATE,

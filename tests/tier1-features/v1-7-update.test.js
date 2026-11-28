@@ -714,9 +714,9 @@ test('Ver 1.7 Fuyumi Supreme Ultimate: 100% Nullify & Steal Compatibility Across
   const tHtml = await renderTeamBattleLogHtml(teamRes.battleId);
   assert.equal(tHtml.found, true);
 
-  // 4. Emoji Hồng Hồ separation vs Splash Art Thú Nhân resolution
-  assert.equal(petEmojiKey('cuu_vi_hong_ho', false), 'cuu_vi_hong_ho');
-  assert.equal(petEmojiKey('cuu_vi_hong_ho', true), 'cuu_vi_hong_ho');
+  // 4. Emoji Thú Nhân Hồng Mông Đế Nữ & Splash Art Thú Nhân resolution
+  assert.equal(petEmojiKey('cuu_vi_hong_ho', false), 'cuu_vi_hong_ho_evo');
+  assert.equal(petEmojiKey('cuu_vi_hong_ho', true), 'cuu_vi_hong_ho_evo');
   const foxSplash = resolvePetSplashAsset('cuu_vi_hong_ho', true);
   assert.ok(
     foxSplash === 'pets/cuu_vi_hong_ho_evo.webp'

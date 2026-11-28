@@ -6141,5 +6141,11 @@
     "name": "auspicious_hour_bell",
     "animated": false,
     "tag": "<:auspicious_hour_bell:1576134361105833984>"
+  },
+  "cuu_vi_hong_ho_evo": {
+    "id": "1576136764744278106",
+    "name": "cuu_vi_hong_ho_evo",
+    "animated": false,
+    "tag": "<:cuu_vi_hong_ho_evo:1576136764744278106>"
   }
 }

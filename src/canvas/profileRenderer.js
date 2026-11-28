@@ -195,9 +195,9 @@ export async function renderProfileCard(data, options = {}) {
   const senseAsset = dl.sense?.sense_id ? `domains/${dl.sense.sense_id}.png` : null;
   const realmAsset = dl.realm?.realm_id ? `domains/${dl.realm.realm_id}.png` : null;
 
-  const petIconRel = petType && petType !== 'cuu_vi_hong_ho'
-    ? (resolveAssetPath(`pets/icons/${petType}.png`) ? `pets/icons/${petType}.png` : 'badges/su_fox_mascot.png')
-    : 'badges/su_fox_mascot.png';
+  const petIconRel = petType === 'cuu_vi_hong_ho'
+    ? resolvePetSplashAsset('cuu_vi_hong_ho', true, 'badges/su_fox_mascot.png')
+    : (petType && resolveAssetPath(`pets/icons/${petType}.png`) ? `pets/icons/${petType}.png` : 'badges/su_fox_mascot.png');
 
   const ringFile = (() => {
     const rId = String(data.marry_ring_id || data.married?.ring_id || '').toLowerCase();
