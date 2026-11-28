@@ -463,6 +463,7 @@ export function buildThuongTraCmd() {
   embedMsg(gb, 'tt_msg_0', {
     title: '{tt_res.response.title}',
     description: '{tt_res.response.description}',
+    imageUrl: '{tt_res.response.image_url}',
     color: '#f59e0b',
     footer: '',
     target: { reply: true },
@@ -497,10 +498,11 @@ export function buildThuongTraCmd() {
     }, { x: x + 320, y: y + 520 });
     gb.link(cJoinOk.no, `${pfx}_err`);
 
-    // Reply ephemeral/public receipt to guest
+    // Reply receipt to guest with large crisp Ké Chén image (0% Render load!)
     embedMsg(gb, `${pfx}_receipt`, {
       title: `${uidEm('tea_cup_cheers', 'su_sparkle')} KÉ CHÉN THÀNH CÔNG!`,
       description: `{${rVar}.response.guest_reply_message}`,
+      imageUrl: `{${rVar}.response.guest_image_url}`,
       color: '#10b981',
       footer: '',
       target: { reply: true },
@@ -513,6 +515,7 @@ export function buildThuongTraCmd() {
       embedMsg(gb, nextPotMsg, {
         title: `{${rVar}.response.title}`,
         description: `{${rVar}.response.description}`,
+        imageUrl: `{${rVar}.response.image_url}`,
         color: '#f59e0b',
         footer: '',
         target: { editId: 'tt_msg_0' },
@@ -525,6 +528,7 @@ export function buildThuongTraCmd() {
       embedMsg(gb, `${pfx}_pot_full`, {
         title: `{${rVar}.response.title}`,
         description: `{${rVar}.response.description}`,
+        imageUrl: `{${rVar}.response.image_url}`,
         color: '#22c55e',
         footer: '',
         target: { editId: 'tt_msg_0' },
@@ -557,6 +561,7 @@ export function buildThapLinhHuongCmd() {
   embedMsg(gb, 'tlh_msg', {
     title: '{tlh_res.response.title}',
     description: '{tlh_res.response.description}',
+    imageUrl: '{tlh_res.response.image_url}',
     color: '#ec4899',
     footer: '',
     target: { reply: true },

@@ -24,6 +24,8 @@ export const TEA_BASE_LT_MIN = 200;
 export const TEA_BASE_LT_MAX = 300;
 export const TEA_LUCK_LT_MULT = 5;
 export const TEA_SESSION_TTL_MS = 2 * 60 * 1000;
+export const TEA_POT_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_ceremony_pot.webp';
+export const TEA_CHEERS_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_cup_cheers.webp';
 
 const teaLocks = new Map();
 const memTeaStore = {
@@ -163,6 +165,7 @@ function buildTeaSessionEmbedPayload(session, dailyRow, luckInfo, now = new Date
     title: `${potEm} TRÀ ĐẠO QUÁN — ĐỐI ẨM THƯỞNG TRÀ (/thuongtra)`,
     description: lines.join('\n'),
     message: lines.join('\n'),
+    image_url: guests.length > 0 ? TEA_CHEERS_IMAGE_URL : TEA_POT_IMAGE_URL,
     color: isFull ? '#22c55e' : isExpired ? '#64748b' : '#f59e0b',
     can_join: !isFull && !isExpired,
     should_disable_button: isFull || isExpired,
@@ -440,6 +443,7 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
         linh_thach: hostBalRes.balance,
       },
       guest_reply_message: guestReplyMsg,
+      guest_image_url: TEA_CHEERS_IMAGE_URL,
       updated_embed: embed,
       ...embed,
     };

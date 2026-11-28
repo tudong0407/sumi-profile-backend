@@ -6093,5 +6093,53 @@
     "name": "realm_mythic_32",
     "animated": false,
     "tag": "<:realm_mythic_32:1575806304369512538>"
+  },
+  "vein_mine_ss": {
+    "id": "1576116187912208516",
+    "name": "vein_mine_ss",
+    "animated": false,
+    "tag": "<:vein_mine_ss:1576116187912208516>"
+  },
+  "vein_mine_ssp": {
+    "id": "1576116200843247751",
+    "name": "vein_mine_ssp",
+    "animated": false,
+    "tag": "<:vein_mine_ssp:1576116200843247751>"
+  },
+  "vein_mine_sss": {
+    "id": "1576116212423852134",
+    "name": "vein_mine_sss",
+    "animated": false,
+    "tag": "<:vein_mine_sss:1576116212423852134>"
+  },
+  "vein_mine_sssp": {
+    "id": "1576116224344072253",
+    "name": "vein_mine_sssp",
+    "animated": false,
+    "tag": "<:vein_mine_sssp:1576116224344072253>"
+  },
+  "tea_ceremony_pot": {
+    "id": "1576116233454096474",
+    "name": "tea_ceremony_pot",
+    "animated": false,
+    "tag": "<:tea_ceremony_pot:1576116233454096474>"
+  },
+  "tea_cup_cheers": {
+    "id": "1576116245747736767",
+    "name": "tea_cup_cheers",
+    "animated": false,
+    "tag": "<:tea_cup_cheers:1576116245747736767>"
+  },
+  "spirit_incense_burner": {
+    "id": "1576116259651592202",
+    "name": "spirit_incense_burner",
+    "animated": false,
+    "tag": "<:spirit_incense_burner:1576116259651592202>"
+  },
+  "auspicious_hour_bell": {
+    "id": "1576116269827096666",
+    "name": "auspicious_hour_bell",
+    "animated": false,
+    "tag": "<:auspicious_hour_bell:1576116269827096666>"
   }
 }
