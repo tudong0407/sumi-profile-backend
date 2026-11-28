@@ -1659,6 +1659,19 @@ export async function dismantleTarget(userId, payload = {}) {
     const batchRarityMap = { all_common: 'common', all_rare: 'rare', all_epic: 'epic' };
     const isAllDup = normTarget === 'all_dup' || normTarget === 'all_duplicates';
     const isBatchMode = isAllDup || rawTarget.includes(',') || Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget);
+    const isProtectedHighTier = (meta, rowRarity = '') => {
+      const rk = String(meta?.rarity_key || rowRarity || 'common').toLowerCase();
+      return Boolean(
+        meta?.is_unique
+        || meta?.is_exclusive_fuyumi
+        || rk === 'mythic'
+        || rk === 'supreme'
+        || rk === 'unique_mythic'
+        || rk === 'unique_supreme'
+        || rk === 'evolved_supreme'
+        || /thần thoại|tối thượng/i.test(String(meta?.rarity || rowRarity || '')),
+      );
+    };
 
     // Chặn phá nhầm Level Role (cần dùng /doiqua để tụt cấp)
     if ((category === '' || category === 'role') && !isAllDup) {
@@ -1871,7 +1884,9 @@ export async function dismantleTarget(userId, payload = {}) {
       if (isBatchEquip && (category === 'item' || category === '')) {
         let matchedRows = [];
         if (isAllDup) {
-          matchedRows = allUserItems.filter((row) => (Number(row.quantity) || 1) > 1);
+          matchedRows = allUserItems.filter((row) =>
+            (Number(row.quantity) || 1) > 1
+            && !isProtectedHighTier(EQUIPMENT_BY_ID[row.item_id] || SHOP_EQUIP_BY_ID[row.item_id]));
         } else if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
           const rkTarget = batchRarityMap[normTarget];
           matchedRows = allUserItems.filter((row) => (EQUIPMENT_BY_ID[row.item_id]?.rarity_key || 'common') === rkTarget);
@@ -1897,7 +1912,7 @@ export async function dismantleTarget(userId, payload = {}) {
             remove_role_id: '',
             remove_role_csv: '',
             message: isAllDup
-              ? 'Hiện không có Pháp Bảo nào có bản trùng (`> 1`) trong túi đồ `/phapbao` để phân rã.'
+              ? 'Hiện không có Pháp Bảo bậc Phàm/Linh/Tiên nào có bản trùng (`> 1`) trong túi đồ `/phapbao` để phân rã *(bậc Thần Thoại trở lên được giữ lại)*.'
               : `Không tìm thấy Pháp Bảo nào khớp \`${rawTarget}\` trong túi đồ \`/phapbao\` để phân rã.`,
           };
         }
@@ -2071,7 +2086,9 @@ export async function dismantleTarget(userId, payload = {}) {
       if (isBatchMode) {
         let matchedPets = [];
         if (isAllDup) {
-          matchedPets = allUserPets.filter((p) => (Number(p.quantity) || 1) > 1);
+          matchedPets = allUserPets.filter((p) =>
+            (Number(p.quantity) || 1) > 1
+            && !isProtectedHighTier(PET_BY_TYPE[p.pet_type] || SHOP_PET_BY_ID[p.pet_type], p.pet_rarity));
         } else if (Object.prototype.hasOwnProperty.call(batchRarityMap, normTarget)) {
           const rkTarget = batchRarityMap[normTarget];
           matchedPets = allUserPets.filter((p) => (PET_BY_TYPE[p.pet_type]?.rarity_key || 'common') === rkTarget);
@@ -2097,7 +2114,7 @@ export async function dismantleTarget(userId, payload = {}) {
             remove_role_id: '',
             remove_role_csv: '',
             message: isAllDup
-              ? 'Hiện không có Linh Thú hay Pháp Bảo nào có bản trùng (`> 1`) trong kho để phân rã.'
+              ? 'Hiện không có Linh Thú hay Pháp Bảo bậc Phàm/Linh/Tiên nào có bản trùng (`> 1`) trong kho để phân rã *(bậc Thần Thoại trở lên được tự động giữ lại)*.'
               : `Không tìm thấy Linh Thú nào khớp \`${rawTarget}\` trong kho \`/linhthu\` để phân rã.`,
           };
         }

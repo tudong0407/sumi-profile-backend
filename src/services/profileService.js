@@ -24,7 +24,7 @@ import {
 import { LATEST_VERSION } from '../data/changelogs.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
-import { em, uiEm } from '../config/emojiHelper.js';
+import { em, uiEm, petEmoji } from '../config/emojiHelper.js';
 
 export const ROLE_PERKS_MAP = {
   ...Object.fromEntries(GACHA_ROLE_CATALOG.map((r) => [r.role_id, r.perk])),
