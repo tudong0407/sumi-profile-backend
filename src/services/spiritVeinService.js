@@ -17,6 +17,7 @@ import { sanitizeUserId, ensureUserInitialized } from './profileService.js';
 import { getUserPartyRecord } from './partyService.js';
 import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { applyFatigueToCombatant, simulateTeamBattle } from './battleEngine/teamBattleService.js';
+import { grantCombatBondPoints } from './petBondService.js';
 
 export const GOLDEN_HOURS_VN = [8, 12, 18, 20, 21, 22];
 export const VEIN_SLOTS_PER_HOUR = 4;
@@ -747,6 +748,9 @@ export async function challengeSpiritVein(userId, rawSlotOrGroup = 1, opts = {})
     }
 
     const lt = em('su_linhthach');
+    for (const uid of memberIds) {
+      await grantCombatBondPoints(uid, 'tower_vein', 3, { now }).catch(() => null);
+    }
     const perMinEach = Math.floor(Number(vein.lt_per_min) / memberIds.length);
     const outcomeMsg = [
       battle.summaryLine,

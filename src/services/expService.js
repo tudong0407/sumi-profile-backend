@@ -20,6 +20,7 @@ import { computeMarriageBuffs } from './marryService.js';
 import { recordClanWarScore } from './clanService.js';
 import { trackQuestActivity } from './questService.js';
 import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
+import { getActivePetBondBuffs } from './petBondService.js';
 import {
   sanitizeUserId,
   getRealmByLevel,
@@ -290,6 +291,10 @@ async function computeExpMultiplier(userId, roleIdSet, userRow = null, now = new
   // Khí Vận /gieoque đầu ngày (-5%..+15%)
   const fortuneInfo = await getEffectiveLuckAndFortune(userId, now);
   bonus += Number(fortuneInfo?.fortuneExpPct || 0) / 100;
+
+  // Thiện Cảm Linh Thú Chính (+5%/Bậc, tối đa +50% EXP Tu Sĩ Chat/Voice/Nghề)
+  const bondInfo = await getActivePetBondBuffs(userId).catch(() => null);
+  bonus += Number(bondInfo?.buffs?.userExpPct || 0) / 100;
 
   return Number(Math.max(0.5, 1 + bonus).toFixed(2));
 }
@@ -816,14 +821,16 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
   const currentExp = Math.max(0, Number(user.exp || 0));
   const displayName = pickCleanDisplayValue(user.username, fallbackName) || `Tu Sĩ #${cleanId.slice(-4)}`;
 
-  const [rolesRes, clanRes] = await Promise.all([
+  const [rolesRes, clanRes, bondInfo] = await Promise.all([
     supabase
       ? supabase.from('user_roles').select('role_id, role_name, is_permanent, expires_at').eq('user_id', cleanId).eq('is_equipped', true)
       : Promise.resolve({ data: [] }),
     supabase && user.clan_id
       ? supabase.from('clans').select('clan_id, clan_name, clan_tag, clan_level').eq('clan_id', user.clan_id).maybeSingle()
       : Promise.resolve({ data: null }),
+    getActivePetBondBuffs(cleanId).catch(() => null),
   ]);
+  const bondExpPct = Number(bondInfo?.buffs?.userExpPct || 0);
 
   const levelBuff = LEVEL_ROLE_BUFF_CONFIG.find((c) => level >= c.level) || null;
   const nextLevelBuff = [...LEVEL_ROLE_BUFF_CONFIG].reverse().find((c) => c.level > level) || null;
@@ -874,7 +881,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     ? `${fortuneInfo.fortuneName} (${fortuneExpPct >= 0 ? '+' : ''}${fortuneExpPct}% EXP • ${fortuneLtPct >= 0 ? '+' : ''}${fortuneLtPct}% LT • ${fortuneLuckPct >= 0 ? '+' : ''}${fortuneLuckPct}% Luck)`
     : 'Chưa gieo quẻ hôm nay (dùng `/gieoque`)';
 
-  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct + cosmeticExpPct + fortuneExpPct;
+  const totalChatBoostPct = levelExpPct + equippedRolesExpPct + marriageExpPct + clanExpPct + cosmeticExpPct + fortuneExpPct + bondExpPct;
   const totalVoiceBoostPct = totalChatBoostPct;
   const chatMultiplier = Number((1 + totalChatBoostPct / 100).toFixed(2));
   const voiceMultiplier = Number((1 + totalVoiceBoostPct / 100).toFixed(2));
@@ -914,6 +921,7 @@ export async function getUserExpBoostSummary(rawUserId, opts = {}) {
     `• **Tiên Lữ Song Tu:** **+${marriageExpPct}%** *(${marriageDetail})*`,
     `• **Gia Tộc:** **+${clanExpPct}%** *(${clanDetail})*`,
     `• **Viền & Ảnh Nền:** **+${cosmeticExpPct}% EXP • +${cosmeticLtPct}% LT** *(Viền: ${cosmeticBuffs.frameName} +${cosmeticBuffs.frameExpPct}% • Nền: ${cosmeticBuffs.bgName} +${cosmeticBuffs.bgExpPct}%)*`,
+    `• **Thiện Cảm Linh Thú (/pet):** ${bondInfo?.hasPet ? `**+${bondExpPct}% EXP** *(Bậc ${bondInfo.tier}/${bondInfo.maxTier} — ${bondInfo.tierLabel})*` : '**+0%** *(Chưa có Linh Thú)*'}`,
     `• **Khí Vận (/gieoque):** ${fortuneLabel}`,
     '',
     level >= 100

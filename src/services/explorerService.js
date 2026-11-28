@@ -47,6 +47,8 @@ import { computeMarriageBuffs } from './marryService.js';
 import { trackQuestActivity } from './questService.js';
 import { getEffectiveLuckAndFortune, getAbsEnchantCharmRuns, consumeAbsEnchantCharmRun } from './luckAndFortuneService.js';
 import { evaluateSetBonus, DOMAIN_TO_PET_ELEMENTS } from './battleEngine/setBonusEngine.js';
+import { computeBondTierState, computeBondBuffsForTier } from '../data/v18PetBondCatalog.js';
+import { getActivePetBondBuffs, applyAllSourceLtBonus, grantCombatBondPoints } from './petBondService.js';
 
 export const VALID_EXPLORER_DURATIONS = [2, 3, 6, 12];
 export const EXPLORER_FOOD_EFFECTS = {
@@ -130,17 +132,18 @@ async function withExplorerLock(userId, fn) {
  * - 50% < Lực/Map < 100%: Giảm tuyến tính mượt từ 80% xuống >0% (+8% từ Hộ Mệnh Linh Đan, cap 88%).
  * - Lực <= 50% Map (thua >= 2x lực chiến): Chắc chắn 0% sống sót (100% tử vong), Hộ Mệnh Linh Đan không thể cứu.
  */
-export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null, terrainBonus = 0) {
+export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null, terrainBonus = 0, bondBonus = 0) {
   const petPower = Math.max(0, Number(petPowerRaw) || 0);
   const mapPower = Math.max(1, Number(mapPowerRaw) || 10000);
   const foodCfg = foodId ? EXPLORER_FOOD_EFFECTS[foodId] : null;
   const foodBonus = Number(foodCfg?.survivalBonus || 0);
   const tBonus = Math.max(0, Number(terrainBonus) || 0);
+  const bBonus = Math.max(0, Number(bondBonus) || 0);
 
   if (petPower >= mapPower) {
     const diffRatio = (petPower - mapPower) / mapPower;
     const diffSteps = Math.floor(diffRatio / 0.10 + 1e-9);
-    const survivalRate = Math.min(1.0, Math.max(0.05, 0.90 + diffSteps * 0.05 + foodBonus + tBonus));
+    const survivalRate = Math.min(1.0, Math.max(0.05, 0.90 + diffSteps * 0.05 + foodBonus + tBonus + bBonus));
     return {
       survivalRate: Number(survivalRate.toFixed(4)),
       deathRate: Number((1 - survivalRate).toFixed(4)),
@@ -169,8 +172,8 @@ export function computeExplorerSurvival(petPowerRaw, mapPowerRaw, foodId = null,
   }
 
   const baseSurvival = Math.max(0.01, 0.80 * ((ratio - 0.50) / 0.50));
-  const maxCap = Math.min(0.94, 0.88 + tBonus);
-  const survivalRate = Math.min(maxCap, Math.max(0.01, baseSurvival + foodBonus + tBonus));
+  const maxCap = Math.min(0.98, 0.88 + tBonus + bBonus);
+  const survivalRate = Math.min(maxCap, Math.max(0.01, baseSurvival + foodBonus + tBonus + bBonus));
   const deathRate = Math.max(0.0, 1.0 - survivalRate);
   return {
     survivalRate: Number(survivalRate.toFixed(4)),
@@ -247,13 +250,16 @@ export function computeExplorerLoadoutPower(petRow, equipRows = [], domainRow = 
   const rawTotalPower = basePower + bonusPower;
 
   const couplePowerPct = Number(buffContext?.couplePowerPct || 0);
-  const couplePowerBonus = couplePowerPct > 0 ? Math.round(rawTotalPower * (couplePowerPct / 100)) : 0;
-  let finalPower = rawTotalPower + couplePowerBonus;
-
   const rolePetPowerPct = Number(buffContext?.rolePetPowerPct || 0);
-  if (rolePetPowerPct > 0) {
-    finalPower = Math.round(finalPower * (1 + rolePetPowerPct / 100));
-  }
+  const bondPetPowerPct = Number(
+    buffContext?.bondPetPowerPct
+    ?? computeBondBuffsForTier(computeBondTierState(petRow).tier, petRow).petPowerPct
+    ?? 0,
+  );
+  const combinedPct = couplePowerPct + rolePetPowerPct + bondPetPowerPct;
+  let finalPower = combinedPct > 0
+    ? Math.round(rawTotalPower * (1 + combinedPct / 100))
+    : rawTotalPower;
 
   const petCatalog = PET_BY_TYPE[petRow.pet_type || petRow.type] || null;
   const domId = domainRow?.entity_id || domainRow?.domain_id || null;
@@ -408,9 +414,12 @@ async function resolveUserLoadoutDetails(userId) {
     couplePowerPct = Number(mBuffs?.total_power_bonus_pct || 0);
   }
   const roleBuffs = await computeRoleBuffTotals(userId, userLevel);
+  const activeBond = await getActivePetBondBuffs(userId).catch(() => null);
   const buffContext = {
     couplePowerPct,
     rolePetPowerPct: Number(roleBuffs?.petPowerBonusPct || 0),
+    bondPetPowerPct: Number(activeBond?.buffs?.petPowerPct || 0),
+    bondSurvivePct: Number(activeBond?.buffs?.explorerSurvivePct || 0),
   };
 
   const allPets = pets || [];
@@ -437,24 +446,24 @@ async function resolveUserLoadoutDetails(userId) {
     chosenPet = allPets.find((p) => (
       (loadoutRow.pet_id && String(p.pet_id) === String(loadoutRow.pet_id)) || p.pet_type === loadoutRow.pet_type
     )) || null;
-    if (!chosenPet) {
+    if (!chosenPet && !loadoutRow.pet_id && !loadoutRow.pet_type) {
       chosenPet = allPets.find((p) => p.is_active && p.status === 'ready')
         || allPets.find((p) => p.status === 'ready')
         || allPets[0]
         || null;
     }
-    weapon = findEqById(loadoutRow?.weapon_id, 'weapon') || findEquippedSlot('weapon');
-    gem = findEqById(loadoutRow?.gem_id, 'gem') || findEquippedSlot('gem');
-    soul = findEqById(loadoutRow?.soul_id, 'soul') || findEquippedSlot('soul');
+    weapon = findEqById(loadoutRow?.weapon_id, 'weapon');
+    gem = findEqById(loadoutRow?.gem_id, 'gem');
+    soul = findEqById(loadoutRow?.soul_id, 'soul');
     domain = loadoutRow?.domain_id
       ? allDomains.find((d) => d.entity_kind === 'domain' && d.entity_id === loadoutRow.domain_id) || null
-      : (allDomains.find((d) => d.entity_kind === 'domain' && d.is_equipped) || null);
+      : null;
     sense = loadoutRow?.sense_id
       ? allDomains.find((d) => d.entity_kind === 'sense' && d.entity_id === loadoutRow.sense_id) || null
-      : (allDomains.find((d) => d.entity_kind === 'sense' && d.is_equipped) || null);
+      : null;
     realm = loadoutRow?.realm_id
       ? allDomains.find((d) => d.entity_kind === 'realm' && d.entity_id === loadoutRow.realm_id) || null
-      : (allDomains.find((d) => d.entity_kind === 'realm' && d.is_equipped) || null);
+      : null;
   } else {
     // Mặc định dùng Pet Chính đang xuất trận + 3 Pháp Bảo đang mặc + Linh Vực / Thần Thức / Thần Cảnh đang trang bị
     chosenPet = allPets.find((p) => p.is_active && p.status === 'ready')
@@ -643,19 +652,13 @@ export async function switchExplorerLoadoutSlot(userId, rawSlot, opts = {}) {
   if (!cleanId) return explorerError(400, 'INVALID_USER_ID', `${uiEm('ui_warn')} LỖI LOADOUT`, 'ID không hợp lệ.');
   if (!supabase) return explorerError(503, 'DB_UNAVAILABLE', `${uiEm('ui_warn')} LỖI HỆ THỐNG`, 'Supabase chưa sẵn sàng.');
 
-  const busy = await getUserBusyExplorationAssets(cleanId);
-  if (busy.isExploring) {
-    return explorerError(
-      400,
-      'EXPEDITION_IN_PROGRESS',
-      `${uiEm('ui_clock_timer')} KHÔNG THỂ ĐỔI BỘ LÚC NÀY`,
-      'Đang có chuyến khám phá đang diễn ra! Hãy chờ hoàn thành và nhận quà hoặc đổi Bộ từ `/inv`.',
-    );
-  }
-
   const { switchLoadout } = await import('./loadoutService.js');
-  await switchLoadout(cleanId, Number(rawSlot) || 1, opts);
-  return getExplorerHub(cleanId, opts);
+  const sw = await switchLoadout(cleanId, Number(rawSlot) || 1, opts);
+  const hub = await getExplorerHub(cleanId, opts);
+  if (hub && sw?.bannerText) {
+    hub.bannerText = sw.bannerText;
+  }
+  return hub;
 }
 
 /**
@@ -922,7 +925,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
 
     const mapLines = V14_EXPLORER_MAPS.map((m) => {
       const terrain = evaluateExplorerTerrainBonus(m, details.chosenPet, details.domain);
-      const surv = computeExplorerSurvival(details.power, m.recommended_power, null, terrain.survivalBonus);
+      const surv = computeExplorerSurvival(details.power, m.recommended_power, null, terrain.survivalBonus, (details.buffContext?.bondSurvivePct || 0) / 100);
       const dropCnt = (availDrops || []).filter((d) => d.map_id === m.map_id && Number(d.min_duration_hours) <= validHrs).length;
       const dropHint = dropCnt > 0 ? ` • ${uiEm('ui_gift_box')} **${dropCnt} đồ rơi!**` : '';
       const terrainHint = terrain.active ? ` • ${em('su_sparkle')} **Thuận Hệ (${terrain.matchedElements.join('/')}: +6% sống/+10% LT)**` : '';
@@ -961,8 +964,9 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     const fc = Object.fromEntries((invFoods || []).map((r) => [r.item_id, Number(r.quantity || 0)]));
     const hrs = Number(ui.selected_duration || 2);
     const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
-    const survBase = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus);
-    const survFoodA = computeExplorerSurvival(details.power, mapDef.recommended_power, 'food_survival_pill', terrain.survivalBonus);
+    const bondSurv = (details.buffContext?.bondSurvivePct || 0) / 100;
+    const survBase = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus, bondSurv);
+    const survFoodA = computeExplorerSurvival(details.power, mapDef.recommended_power, 'food_survival_pill', terrain.survivalBonus, bondSurv);
     const terrainLine = terrain.active
       ? `• **Thuận Hệ Địa Hình:** ${em('su_sparkle')} **Đang Kích Hoạt (${terrain.matchedElements.join(', ')})** — Cộng **+6% Sống Sót & +10% Linh Thạch**!`
       : `• **Hệ Địa Hình Thuận Lợi:** \`${(mapDef.favored_elements || []).join(' • ')}\` *(khớp Hệ Pet/Linh Vực để nhận +6% Sống & +10% LT)*`;
@@ -1031,7 +1035,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
     const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
     const hrs = Number(ui.selected_duration || 2);
     const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus, (details.buffContext?.bondSurvivePct || 0) / 100);
     const effHours = foodId === 'food_speed_fruit' ? +(hrs * 0.75).toFixed(2) : hrs;
 
     return {
@@ -1060,7 +1064,7 @@ export async function selectExplorerPlanStep(userId, step, rawValue) {
   const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
   const hrs = Number(ui.selected_duration || 2);
   const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
-  const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus);
+  const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, null, terrain.survivalBonus, (details.buffContext?.bondSurvivePct || 0) / 100);
 
   return {
     success: true,
@@ -1121,7 +1125,7 @@ export async function buyAndSelectExplorerFood(userId, rawFoodId) {
     const mapDef = V14_EXPLORER_MAP_BY_ID[ui.selected_map_id] || V14_EXPLORER_MAPS[0];
     const hrs = Number(ui.selected_duration || 2);
     const terrain = evaluateExplorerTerrainBonus(mapDef, details.chosenPet, details.domain);
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus, (details.buffContext?.bondSurvivePct || 0) / 100);
     const effHours = foodId === 'food_speed_fruit' ? +(hrs * 0.75).toFixed(2) : hrs;
 
     const desc = [
@@ -1268,7 +1272,7 @@ export async function startExpedition(userId, opts = {}) {
     }
 
     const terrain = evaluateExplorerTerrainBonus(mapDef, pet, details.domain);
-    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus);
+    const surv = computeExplorerSurvival(details.power, mapDef.recommended_power, foodId, terrain.survivalBonus, (details.buffContext?.bondSurvivePct || 0) / 100);
     const mainPetNotice = pet.is_active
       ? `\n${uiEm('ui_warn')} *Bạn đang dùng **Pet Chính** để khám phá — Pet này tạm khóa khỏi PvP/PvE/Tháp/Địa Mạch (bạn có thể dùng \`/linhthu\` đổi sang Pet phụ khác để vẫn chiến đấu bình thường!).*`
       : '';
@@ -1398,7 +1402,9 @@ export async function claimExpedition(userId, opts = {}) {
     }
     const lockedDomainIds = Array.isArray(exp.locked_domain_ids) ? exp.locked_domain_ids : [];
     const terrain = evaluateExplorerTerrainBonus(mapDef, { pet_type: exp.pet_type }, lockedDomainIds);
-    const surv = computeExplorerSurvival(exp.pet_power, exp.map_power, exp.food_item_id, terrain.survivalBonus);
+    const activeBond = await getActivePetBondBuffs(cleanId).catch(() => null);
+    const bondSurv = Number(activeBond?.buffs?.explorerSurvivePct || 0) / 100;
+    const surv = computeExplorerSurvival(exp.pet_power, exp.map_power, exp.food_item_id, terrain.survivalBonus, bondSurv);
     const ovMode = opts.forceOutcome || adminOv?.mode || null;
     const survivalRoll = rng();
     const survived = ovMode === 'survive' ? true : ovMode === 'die' ? false : (survivalRoll < surv.survivalRate);
@@ -1416,7 +1422,8 @@ export async function claimExpedition(userId, opts = {}) {
       const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
       const foodYieldBonus = exp.food_item_id ? Number(EXPLORER_FOOD_EFFECTS[exp.food_item_id]?.yieldBonus || 0) : 0;
       const basePerHour = (200 + rng() * 100) * 1.05;
-      const naturalEarnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * Math.max(0.5, 1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100 + Number(fortuneInfo?.fortuneLtPct || 0) / 100));
+      const bondLtPct = Number(activeBond?.buffs?.allSourceLtPct || 0);
+      const naturalEarnedLt = Math.round(exp.duration_hours * basePerHour * mapDef.reward_multiplier * Math.max(0.5, 1 + foodYieldBonus + terrain.yieldBonus + (cosmeticBuffs.ltPct || 0) / 100 + Number(fortuneInfo?.fortuneLtPct || 0) / 100 + bondLtPct / 100));
       const hasCustomLt = adminOv?.custom_lt !== undefined && adminOv?.custom_lt !== null && adminOv?.custom_lt !== '' && Number.isFinite(Number(adminOv.custom_lt));
       const hasBonusLt = adminOv?.bonus_lt !== undefined && adminOv?.bonus_lt !== null && adminOv?.bonus_lt !== '' && Number.isFinite(Number(adminOv.bonus_lt));
       const earnedLt = hasCustomLt
@@ -1628,6 +1635,8 @@ export async function claimExpedition(userId, opts = {}) {
       ].filter(Boolean);
 
       await trackQuestActivity(cleanId, { explorerDelta: 1 });
+      const expBondPts = Number(exp.duration_hours) >= 12 ? 25 : Number(exp.duration_hours) >= 6 ? 18 : Number(exp.duration_hours) >= 3 ? 14 : 10;
+      await grantCombatBondPoints(cleanId, 'explorer', expBondPts, { now }).catch(() => null);
 
       return {
         success: true,

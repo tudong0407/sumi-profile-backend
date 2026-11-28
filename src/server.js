@@ -91,6 +91,15 @@ import {
 } from './services/inventoryService.js';
 import { switchLoadout } from './services/loadoutService.js';
 import { getJobStatus, doJob } from './services/jobService.js';
+import {
+  getPetBondHub,
+  interactWithPet,
+  giftToPet,
+} from './services/petBondService.js';
+import {
+  preparePetAiChat,
+  savePetAiChatReply,
+} from './services/petChatService.js';
 import { checkUpdateGate, acknowledgeUpdate } from './services/updateGateService.js';
 import { lookupInfo } from './services/infoService.js';
 import { getChangelogPayload, LATEST_VERSION } from './data/changelogs.js';
@@ -3056,6 +3065,86 @@ app.post('/api/farm/use-item', requireBackendApiKey, requireUpdateAck, async (re
   } catch (err) {
     console.error('[Server] /api/farm/use-item error:', err);
     return res.status(500).json({ success: false, error: 'FARM_USE_ITEM_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/hub', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await getPetBondHub(body.userId, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/hub error:', err);
+    return res.status(500).json({ success: false, error: 'PET_HUB_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/interact', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await interactWithPet(body.userId, body.action || 'pat', {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/interact error:', err);
+    return res.status(500).json({ success: false, error: 'PET_INTERACT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/gift', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await giftToPet(body.userId, body.itemId || body.giftId, body.quantity ?? 1, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/gift error:', err);
+    return res.status(500).json({ success: false, error: 'PET_GIFT_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/chat/prepare', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await preparePetAiChat(body.userId, body.message || body.userMessage || '', {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/chat/prepare error:', err);
+    return res.status(500).json({ success: false, error: 'PET_CHAT_PREPARE_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/chat/save', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await savePetAiChatReply(body.userId, {
+      userMessage: body.userMessage || body.user_message || '',
+      petReply: body.petReply || body.pet_reply || '',
+      usedAi: body.usedAi ?? body.used_ai,
+      petId: body.petId || body.pet_id,
+    }, {
+      username: getCleanParam(body.username),
+      fallbackUsername: getCleanParam(body.fallbackUsername),
+      avatarUrl: getCleanParam(body.avatarUrl),
+    });
+    return res.status(result.status || 200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/chat/save error:', err);
+    return res.status(500).json({ success: false, error: 'PET_CHAT_SAVE_FAILED', message: err.message });
   }
 });
 

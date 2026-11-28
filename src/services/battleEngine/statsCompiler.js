@@ -17,6 +17,7 @@ import { em, petEmoji } from '../../config/emojiHelper.js';
 import { V13_PET_HAX, V13_EQUIP_HAX } from './v13HaxRegistry.js';
 import { evaluateSetBonus } from './setBonusEngine.js';
 import { createUltimateState } from './ultimateEngine.js';
+import { computeBondTierState, computeBondBuffsForTier } from '../../data/v18PetBondCatalog.js';
 
 function resolveDomainLoadout(profile) {
   const raw = profile?.domain_loadout || profile?.domainLoadout || {};
@@ -181,19 +182,20 @@ export async function compileCombatant(userOrId, role = 'attacker') {
   let finalSpd = Math.round(rawBaseSpd * petMult) + bonusSpd;
 
   const couplePowerPct = Number(profile?.married?.power_bonus_pct) || 0;
-  if (couplePowerPct > 0) {
-    const coupleMult = 1 + (couplePowerPct / 100);
-    finalAtk = Math.round(finalAtk * coupleMult);
-    finalDef = Math.round(finalDef * coupleMult);
-    finalSpd = Math.round(finalSpd * coupleMult);
-  }
-
   const rolePetPowerPct = Number(profile?.role_pet_power_bonus_pct) || 0;
-  if (rolePetPowerPct > 0) {
-    const roleMult = 1 + (rolePetPowerPct / 100);
-    finalAtk = Math.round(finalAtk * roleMult);
-    finalDef = Math.round(finalDef * roleMult);
-    finalSpd = Math.round(finalSpd * roleMult);
+  const bondPetPowerPct = Number(
+    profile?.pet_bond_power_bonus_pct
+    ?? pet.bond_power_bonus_pct
+    ?? (pet.affection_points !== undefined || pet.affection_tier !== undefined
+      ? computeBondBuffsForTier(computeBondTierState(pet).tier, pet).petPowerPct
+      : 0),
+  ) || 0;
+  const combinedPetPowerPct = couplePowerPct + rolePetPowerPct + bondPetPowerPct;
+  if (combinedPetPowerPct > 0) {
+    const mult = 1 + (combinedPetPowerPct / 100);
+    finalAtk = Math.round(finalAtk * mult);
+    finalDef = Math.round(finalDef * mult);
+    finalSpd = Math.round(finalSpd * mult);
   }
 
   const maxHp = Math.max(500, (level * 1000) + (finalDef * 5) + bonusHp);

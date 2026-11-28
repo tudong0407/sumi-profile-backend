@@ -19,6 +19,7 @@ import { getCombatantV13HaxList, V13_PET_HAX } from './v13HaxRegistry.js';
 import { supabase } from '../../config/supabase.js';
 import { recordClanWarScore } from '../clanService.js';
 import { trackQuestActivity } from '../questService.js';
+import { applyAllSourceLtBonus, grantCombatBondPoints } from '../petBondService.js';
 import {
   BATTLE_LOG_TTL_MS,
   getCachedTurnBuffer,
@@ -1017,7 +1018,7 @@ export async function applyBattleLinhThachReward({
       updated_at: now.toISOString(),
     }, { onConflict: 'user_id' });
 
-    const rawDelta = attackerWon ? BATTLE_WIN_LT : -BATTLE_LOSS_LT;
+    const rawDelta = attackerWon ? (await applyAllSourceLtBonus(attackerId, BATTLE_WIN_LT)).finalLt : -BATTLE_LOSS_LT;
     const bal = await adjustUserLinhThach(attackerId, rawDelta);
     const actualDelta = bal ? bal.delta : rawDelta;
     const signStr = actualDelta >= 0 ? `+${actualDelta}` : `${actualDelta}`;
@@ -1051,8 +1052,10 @@ export async function applyBattleLinhThachReward({
       updated_at: now.toISOString(),
     }, { onConflict: 'user_id' });
 
-    const atkDeltaRaw = attackerWon ? BATTLE_WIN_LT : -BATTLE_LOSS_LT;
-    const defDeltaRaw = attackerWon ? -BATTLE_LOSS_LT : BATTLE_WIN_LT;
+    const atkDeltaRaw = attackerWon ? (await applyAllSourceLtBonus(attackerId, BATTLE_WIN_LT)).finalLt : -BATTLE_LOSS_LT;
+    const defDeltaRaw = attackerWon
+      ? -BATTLE_LOSS_LT
+      : (/^[0-9]{17,20}$/.test(String(defenderId || '')) ? (await applyAllSourceLtBonus(defenderId, BATTLE_WIN_LT)).finalLt : BATTLE_WIN_LT);
 
     const atkBal = await adjustUserLinhThach(attackerId, atkDeltaRaw);
     const defBal = /^[0-9]{17,20}$/.test(String(defenderId || '')) && defenderId !== attackerId
@@ -1684,6 +1687,9 @@ export async function simulateBattle(attackerUserOrId, defenderUserOrId, options
       isMirror: attacker.id === defender.id,
       now: new Date(),
     });
+    if (/^[0-9]{17,20}$/.test(String(attacker.id || '')) && (mode === 'pvp' || mode === 'pve_free')) {
+      await grantCombatBondPoints(attacker.id, 'battle', 2).catch(() => null);
+    }
   }
 
   const winnerPetEmoji = winnerCombatant.petIcon || petEmoji(winnerCombatant.petType, em('su_pet_paw'));

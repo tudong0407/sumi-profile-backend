@@ -24,6 +24,7 @@ import { compileCombatant } from './battleEngine/statsCompiler.js';
 import { simulateBattle } from './battleEngine/battleService.js';
 import { doesDomainMatchElement } from './battleEngine/setBonusEngine.js';
 import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
+import { getActivePetBondBuffs, applyAllSourceLtBonus, grantCombatBondPoints } from './petBondService.js';
 
 export const DAILY_QUEST_EXP_TARGET = 150;
 export const DAILY_QUEST_WINS_TARGET = 3;
@@ -698,6 +699,7 @@ export async function claimDailyQuests(userId, options = {}) {
     }
 
     const nowIso = now.toISOString();
+    rewardLt = (await applyAllSourceLtBonus(cleanId, rewardLt)).finalLt;
     const newBal = Number(user.linh_thach || 0) + rewardLt;
     const dbTasks = [
       supabase.from('users').update({ linh_thach: newBal, updated_at: nowIso }).eq('user_id', cleanId),
@@ -716,6 +718,7 @@ export async function claimDailyQuests(userId, options = {}) {
       dbTasks.push(addInventoryItem(cleanId, 'enchant_stone', 'consumable', 1));
     }
     await Promise.all(dbTasks);
+    await grantCombatBondPoints(cleanId, 'tower_vein', 3, { now }).catch(() => null);
 
     const summaryLines = [
       claimedBonus
@@ -1071,6 +1074,9 @@ export async function challengeTower(userId, options = {}) {
       skipQuestTracking: true,
       seed: options.seed,
     });
+    if (battleRes && battleRes.success === false) {
+      return battleRes;
+    }
 
     const won = battleRes.winner?.id === cleanId || battleRes.winnerRole === 'attacker';
     const nextFloor = won ? targetFloor : state.tower_floor;
@@ -1093,8 +1099,10 @@ export async function challengeTower(userId, options = {}) {
     if (won) {
       const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
       const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
+      const bondInfo = await getActivePetBondBuffs(cleanId).catch(() => null);
+      const bondLtPct = Number(bondInfo?.buffs?.allSourceLtPct || 0);
       const baseFloorLt = computeTowerFloorRewardLt(targetFloor);
-      rewardLt = Math.round(baseFloorLt * Math.max(0.5, 1 + (Number(cosmeticBuffs.ltPct || 0) + Number(fortuneInfo?.fortuneLtPct || 0)) / 100));
+      rewardLt = Math.round(baseFloorLt * Math.max(0.5, 1 + (Number(cosmeticBuffs.ltPct || 0) + Number(fortuneInfo?.fortuneLtPct || 0) + bondLtPct) / 100));
       if (isBoss) {
         rewardStarStones += 1;
         rewardEnchantStones += 1;
@@ -1147,6 +1155,7 @@ export async function challengeTower(userId, options = {}) {
       dbTasks.push(addInventoryItem(cleanId, 'chaos_essence_shard', 'consumable', rewardChaosShards));
     }
     await Promise.all(dbTasks);
+    await grantCombatBondPoints(cleanId, 'tower_vein', 3, { now }).catch(() => null);
 
     const rewardSummary = [
       rewardLt > 0 ? `+${rewardLt.toLocaleString('vi-VN')} ${em('su_linhthach')} *(gồm +${TOWER_WIN_BONUS_LT} LT thắng trận)*` : '',
@@ -1261,6 +1270,7 @@ export async function claimWeeklyQuests(userId, options = {}) {
     }
 
     const nowIso = now.toISOString();
+    totalLt = (await applyAllSourceLtBonus(cleanId, totalLt)).finalLt;
     const newBal = Number(user.linh_thach || 0) + totalLt;
 
     const tasks = [

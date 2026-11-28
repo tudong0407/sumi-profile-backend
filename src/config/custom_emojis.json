@@ -6147,5 +6147,101 @@
     "name": "cuu_vi_hong_ho_evo",
     "animated": false,
     "tag": "<:cuu_vi_hong_ho_evo:1576136764744278106>"
+  },
+  "pet_act_brush": {
+    "id": "1576226697819197591",
+    "name": "pet_act_brush",
+    "animated": false,
+    "tag": "<:pet_act_brush:1576226697819197591>"
+  },
+  "pet_act_chat": {
+    "id": "1576226707642519602",
+    "name": "pet_act_chat",
+    "animated": false,
+    "tag": "<:pet_act_chat:1576226707642519602>"
+  },
+  "pet_act_gift": {
+    "id": "1576226719504011447",
+    "name": "pet_act_gift",
+    "animated": false,
+    "tag": "<:pet_act_gift:1576226719504011447>"
+  },
+  "pet_act_hug": {
+    "id": "1576226731503788173",
+    "name": "pet_act_hug",
+    "animated": false,
+    "tag": "<:pet_act_hug:1576226731503788173>"
+  },
+  "pet_act_pat": {
+    "id": "1576226742144729270",
+    "name": "pet_act_pat",
+    "animated": false,
+    "tag": "<:pet_act_pat:1576226742144729270>"
+  },
+  "pet_act_play": {
+    "id": "1576226754660540586",
+    "name": "pet_act_play",
+    "animated": false,
+    "tag": "<:pet_act_play:1576226754660540586>"
+  },
+  "pet_act_sleep": {
+    "id": "1576226765821714432",
+    "name": "pet_act_sleep",
+    "animated": false,
+    "tag": "<:pet_act_sleep:1576226765821714432>"
+  },
+  "pet_act_snack": {
+    "id": "1576226777490264204",
+    "name": "pet_act_snack",
+    "animated": false,
+    "tag": "<:pet_act_snack:1576226777490264204>"
+  },
+  "bond_auto_farm": {
+    "id": "1576226787589881967",
+    "name": "bond_auto_farm",
+    "animated": false,
+    "tag": "<:bond_auto_farm:1576226787589881967>"
+  },
+  "bond_gift_box": {
+    "id": "1576226797186457661",
+    "name": "bond_gift_box",
+    "animated": false,
+    "tag": "<:bond_gift_box:1576226797186457661>"
+  },
+  "bond_tier_high": {
+    "id": "1576226806984343786",
+    "name": "bond_tier_high",
+    "animated": false,
+    "tag": "<:bond_tier_high:1576226806984343786>"
+  },
+  "bond_tier_low": {
+    "id": "1576226816144707794",
+    "name": "bond_tier_low",
+    "animated": false,
+    "tag": "<:bond_tier_low:1576226816144707794>"
+  },
+  "bond_tier_max": {
+    "id": "1576226826794049617",
+    "name": "bond_tier_max",
+    "animated": false,
+    "tag": "<:bond_tier_max:1576226826794049617>"
+  },
+  "bond_tier_mid": {
+    "id": "1576226841289564172",
+    "name": "bond_tier_mid",
+    "animated": false,
+    "tag": "<:bond_tier_mid:1576226841289564172>"
+  },
+  "upgrade_exp_orb": {
+    "id": "1576226853918609499",
+    "name": "upgrade_exp_orb",
+    "animated": false,
+    "tag": "<:upgrade_exp_orb:1576226853918609499>"
+  },
+  "upgrade_star_burst": {
+    "id": "1576226867848159375",
+    "name": "upgrade_star_burst",
+    "animated": false,
+    "tag": "<:upgrade_star_burst:1576226867848159375>"
   }
 }

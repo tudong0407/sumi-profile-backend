@@ -227,7 +227,8 @@ test('4. A3 & PDF Prompt Integrity: Zero Emoji Collisions, Exchange/Wiki/Special
     `frame_bond_${FUYUMI_SUPREME_EVOLUTION.base_pet_type}`,
   ];
   assert.equal(frameIds.length, 41);
-  assert.deepEqual([...iconIds, ...frameIds].filter((k) => Object.hasOwn(emojis, k)), []);
+  assert.equal(iconIds.every((k) => Object.hasOwn(emojis, k)), true);
+  assert.deepEqual(frameIds.filter((k) => Object.hasOwn(emojis, k)), []);
 
   // Special shop clean error payloads & 100% offline-safe checks
   __resetSpecialShopTestStore({

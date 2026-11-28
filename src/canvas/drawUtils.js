@@ -9,6 +9,15 @@ const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '../../');
 const ASSETS_DIR = path.join(PROJECT_ROOT, 'assets');
 const FONTS_DIR = path.join(ASSETS_DIR, 'fonts');
+let V18_BOND_FRAME_METRICS = {};
+try {
+  const mPath = path.join(PROJECT_ROOT, 'src/data/v18BondFrameMetrics.json');
+  if (fs.existsSync(mPath)) {
+    V18_BOND_FRAME_METRICS = JSON.parse(fs.readFileSync(mPath, 'utf8')) || {};
+  }
+} catch {
+  V18_BOND_FRAME_METRICS = {};
+}
 
 export const FONT_FAMILY = '"Be Vietnam Pro", "DejaVu Sans", "Segoe UI", "Segoe UI Symbol", "Noto Color Emoji", "Segoe UI Emoji", Arial, sans-serif';
 
@@ -814,6 +823,7 @@ export const AVATAR_FRAME_METRICS = {
   frame_v17_07_jade_leaf: { cx: 257, cy: 260, rTuck: 168, rUnder: 186 },
   frame_v17_08_frost_vine: { cx: 255, cy: 259, rTuck: 169, rUnder: 182 },
   frame_v17_09_sapphire_butterfly: { cx: 254, cy: 252, rTuck: 162, rUnder: 180 },
+  ...V18_BOND_FRAME_METRICS,
 };
 
 /**

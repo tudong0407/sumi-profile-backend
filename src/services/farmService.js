@@ -15,6 +15,18 @@ import { ensureUserInitialized } from './profileService.js';
 import { addInventoryItem, trackQuestActivity } from './questService.js';
 import { claimNextAlchemyDmNotification, runAlchemyAutoProtect } from './alchemyService.js';
 import { invalidateInventoryCache } from './inventoryService.js';
+import { computeBondBuffsForTier } from '../data/v18PetBondCatalog.js';
+import { getActivePetBondBuffs, applyAllSourceLtBonus, rollPetCompanionReward } from './petBondService.js';
+
+export function evaluatePetFarmAutoHarvestCycle({ tier = 0, isEvolved = false, petType = null, rolledAlready = false, rng = Math.random } = {}) {
+  const buffs = computeBondBuffsForTier(tier, petType, isEvolved);
+  const chancePct = Number(buffs.autoFarmChancePct || 0);
+  if (rolledAlready || chancePct <= 0) {
+    return { rolled: !rolledAlready, success: false, chancePct };
+  }
+  const hit = chancePct >= 100 || (rng() * 100 < chancePct);
+  return { rolled: true, success: hit, chancePct };
+}
 
 const MAX_FARM_SLOTS = 8;
 const DEFAULT_FARM_SLOTS = 4;
@@ -120,6 +132,7 @@ export function computePlotSnapshot(row, now) {
 
   const nowMs = now.getTime();
   const { matureMs, wiltDeadlineMs, careDueMs } = computePlotTimings(row, seed, now);
+  const matureIso = new Date(matureMs).toISOString();
 
   if (row.status === 'ready' || (nowMs >= matureMs && matureMs <= wiltDeadlineMs)) {
     return {
@@ -127,6 +140,7 @@ export function computePlotSnapshot(row, now) {
       seed,
       plot_label: plotLabel,
       computed_status: 'ready',
+      mature_at_iso: matureIso,
       needs_care: false,
       summary: `Ô #${row.slot_index}: ${seed.icon} **${seed.name}** — **CHÍN MUỒI** *(Thu +${seed.reward_lt} LT & +${seed.reward_essence} ${farmEmoji('farm_essence')})*`,
     };
@@ -498,6 +512,7 @@ export async function harvestAllPlots(userId, options = {}) {
       gainLt = Math.round(gainLt * (1 + FARM_YIELD_STARCH_BONUS_RATE));
       gainEssence = Math.round(gainEssence * (1 + FARM_YIELD_STARCH_BONUS_RATE));
     }
+    gainLt = (await applyAllSourceLtBonus(cleanId, gainLt)).finalLt;
 
     const nextBal = Number(user.linh_thach || 0) + gainLt;
     const nextEssence = Number(user.farm_essence || 0) + gainEssence;
@@ -520,23 +535,33 @@ export async function harvestAllPlots(userId, options = {}) {
           dm_care_notified: false,
           dm_wilt_stage: 0,
           protected_this_cycle: false,
+          pet_auto_rolled_cycle: null,
           updated_at: nowIso,
         }).eq('id', p.id),
       ),
       trackQuestActivity(cleanId, { farmDelta: 1, now }),
     ]);
 
+    const bondInfo = await getActivePetBondBuffs(cleanId).catch(() => null);
+    const companionGift = bondInfo?.petRow
+      ? await rollPetCompanionReward({ userId: cleanId, pet: bondInfo.petRow, context: 'farm_harvest' }).catch(() => null)
+      : null;
+
     const essIcon = farmEmoji('farm_essence');
     const starchNote = yieldStarchActive ? ` *(Đã kích hoạt ${em('farm_yield_starch')} Bột Tăng Sản Lượng +30%!)*` : '';
+    const giftNote = companionGift
+      ? `\n• ${em('bond_gift_box', em('su_gift'))} **Quà Đồng Hành (${bondInfo.petName}):** Nhặt thêm ${companionGift.summaryText}!`
+      : '';
     return {
       success: true,
       harvested_count: readyPlots.length,
       yield_starch_applied: yieldStarchActive,
       reward_linh_thach: gainLt,
       reward_essence: gainEssence,
-      linh_thach: nextBal,
+      companion_gift: companionGift,
+      linh_thach: companionGift ? nextBal + Number(companionGift.ltGained || 0) : nextBal,
       farm_essence: nextEssence,
-      message: `${essIcon} **THU HOẠCH NÔNG TRẠI THÀNH CÔNG (${readyPlots.length} Ô)!**${starchNote}\n• Thu về: **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEssence.toLocaleString('vi-VN')}** ${essIcon} **Linh Quả Tiên Giới**\n• Kho hiện tại: **${nextBal.toLocaleString('vi-VN')} LT** • **${nextEssence.toLocaleString('vi-VN')} Linh Quả** *(Dùng tại \`/exchange\` & \`/luyendan\`)*`,
+      message: `${essIcon} **THU HOẠCH NÔNG TRẠI THÀNH CÔNG (${readyPlots.length} Ô)!**${starchNote}\n• Thu về: **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEssence.toLocaleString('vi-VN')}** ${essIcon} **Linh Quả Tiên Giới**\n• Kho hiện tại: **${(companionGift ? nextBal + Number(companionGift.ltGained || 0) : nextBal).toLocaleString('vi-VN')} LT** • **${nextEssence.toLocaleString('vi-VN')} Linh Quả** *(Dùng tại \`/exchange\` & \`/luyendan\`)*${giftNote}`,
     };
   });
 }
@@ -1168,6 +1193,7 @@ async function runFarmAutoProtectAndAutomation({ now = new Date(), userIds = nul
           gainLt = Math.round(gainLt * (1 + FARM_YIELD_STARCH_BONUS_RATE));
           gainEss = Math.round(gainEss * (1 + FARM_YIELD_STARCH_BONUS_RATE));
         }
+        gainLt = (await applyAllSourceLtBonus(au.user_id, gainLt)).finalLt;
         await Promise.all([
           supabase.from('users').update({
             linh_thach: Number(au.linh_thach || 0) + gainLt,
@@ -1184,6 +1210,7 @@ async function runFarmAutoProtectAndAutomation({ now = new Date(), userIds = nul
             dm_care_notified: false,
             dm_wilt_stage: 0,
             protected_this_cycle: false,
+            pet_auto_rolled_cycle: null,
             updated_at: nowIso,
           }).eq('id', p.id)),
         ]);
@@ -1209,6 +1236,120 @@ async function runFarmAutoProtectAndAutomation({ now = new Date(), userIds = nul
       };
     });
     if (autoDm) return autoDm;
+  }
+
+  // 4. Linh Thú Tự Thu Hoạch theo Thiện Cảm (Tier 5..9: 25/35/45/60/75%, Chân Thần 10/10: 100%) khi user KHÔNG dùng Thẻ Tự Động
+  let petPlotQ = supabase
+    .from('user_farm_plots')
+    .select('*')
+    .in('status', ['growing', 'ready'])
+    .order('user_id', { ascending: true })
+    .order('slot_index', { ascending: true });
+  if (scopedSet) petPlotQ = petPlotQ.in('user_id', [...scopedSet]);
+  const { data: candPlotRows } = await petPlotQ;
+
+  const autoCardSet = new Set((autoUsers || []).map((x) => x.user_id));
+  const readyUnrolledByUser = new Map();
+  for (const row of candPlotRows || []) {
+    if (!row?.user_id || autoCardSet.has(row.user_id)) continue;
+    const snap = computePlotSnapshot(row, now);
+    if (snap.computed_status !== 'ready' || !snap.mature_at_iso) continue;
+    if (row.pet_auto_rolled_cycle === snap.mature_at_iso) continue;
+    if (!readyUnrolledByUser.has(row.user_id)) readyUnrolledByUser.set(row.user_id, []);
+    readyUnrolledByUser.get(row.user_id).push(snap);
+  }
+
+  for (const [uid] of readyUnrolledByUser.entries()) {
+    const petDm = await withFarmLock(uid, async () => {
+      const { data: uRow } = await supabase
+        .from('users')
+        .select('user_id, linh_thach, farm_essence, farm_slots_unlocked, farm_auto_until, farm_yield_starch_active')
+        .eq('user_id', uid)
+        .maybeSingle();
+      if (!uRow || (uRow.farm_auto_until && uRow.farm_auto_until > nowIso)) return null;
+
+      const bondInfo = await getActivePetBondBuffs(uid).catch(() => null);
+      if (!bondInfo?.hasPet || Number(bondInfo?.buffs?.autoFarmChancePct || 0) <= 0) return null;
+
+      const { plots } = await loadAndSyncPlots(uid, uRow.farm_slots_unlocked, now);
+      const readyUnrolled = plots.filter((p) => p.computed_status === 'ready' && p.seed && p.mature_at_iso && p.pet_auto_rolled_cycle !== p.mature_at_iso);
+      if (readyUnrolled.length === 0) return null;
+
+      const cycleRoll = evaluatePetFarmAutoHarvestCycle({
+        tier: bondInfo.tier,
+        isEvolved: bondInfo.isEvolved,
+        petType: bondInfo.petType,
+        rolledAlready: false,
+      });
+
+      if (!cycleRoll.success) {
+        await Promise.all(readyUnrolled.map((p) =>
+          supabase.from('user_farm_plots').update({
+            pet_auto_rolled_cycle: p.mature_at_iso,
+            updated_at: nowIso,
+          }).eq('id', p.id),
+        ));
+        return null;
+      }
+
+      let gainLt = 0;
+      let gainEss = 0;
+      for (const p of readyUnrolled) {
+        gainLt += Number(p.seed.reward_lt) || 0;
+        gainEss += Number(p.seed.reward_essence) || 0;
+      }
+      const starchActive = Boolean(uRow.farm_yield_starch_active);
+      if (starchActive) {
+        gainLt = Math.round(gainLt * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+        gainEss = Math.round(gainEss * (1 + FARM_YIELD_STARCH_BONUS_RATE));
+      }
+      gainLt = (await applyAllSourceLtBonus(uid, gainLt)).finalLt;
+
+      await Promise.all([
+        supabase.from('users').update({
+          linh_thach: Number(uRow.linh_thach || 0) + gainLt,
+          farm_essence: Number(uRow.farm_essence || 0) + gainEss,
+          ...(starchActive ? { farm_yield_starch_active: false } : {}),
+          updated_at: nowIso,
+        }).eq('user_id', uid),
+        ...readyUnrolled.map((p) => supabase.from('user_farm_plots').update({
+          seed_id: null,
+          status: 'empty',
+          planted_at: null,
+          last_cared_at: null,
+          care_count: 0,
+          dm_care_notified: false,
+          dm_wilt_stage: 0,
+          protected_this_cycle: false,
+          pet_auto_rolled_cycle: null,
+          updated_at: nowIso,
+        }).eq('id', p.id)),
+        trackQuestActivity(uid, { farmDelta: 1, now }),
+      ]);
+
+      const companionGift = bondInfo.petRow
+        ? await rollPetCompanionReward({ userId: uid, pet: bondInfo.petRow, context: 'farm_harvest' }).catch(() => null)
+        : null;
+
+      const lines = [
+        `• **Linh Thú Đồng Hành (${bondInfo.petName} — Bậc ${bondInfo.tier}/${bondInfo.maxTier}):** Đã tự thu hoạch **${readyUnrolled.length} ô** chín *(tỉ lệ \`${cycleRoll.chancePct}%\`)*!`,
+        `• ${farmEmoji('farm_essence')} **Thu Về:** **+${gainLt.toLocaleString('vi-VN')}** ${em('su_linhthach')} • **+${gainEss.toLocaleString('vi-VN')}** Linh Quả`,
+        companionGift ? `• ${em('bond_gift_box', em('su_gift'))} **Quà Đồng Hành Kèm Theo:** ${companionGift.summaryText}!` : '',
+        `• *Vào \`/farm\` để gieo vụ mới nhé!*`,
+      ].filter(Boolean);
+
+      return {
+        success: true,
+        has_notification: true,
+        source: 'pet_bond_auto_farm',
+        user_id: uid,
+        dm_title: `${em('bond_auto_farm', em('farm_harvest'))} LINH THÚ ĐÃ TỰ THU HOẠCH NÔNG TRẠI!`,
+        dm_description: lines.join('\n'),
+        dm_color: '#ec4899',
+        remaining_users: 0,
+      };
+    });
+    if (petDm) return petDm;
   }
 
   return null;

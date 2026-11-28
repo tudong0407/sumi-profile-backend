@@ -1,0 +1,248 @@
+{
+  "frame_bond_bac_hai_huyen_vu_de": {
+    "cx": 258,
+    "cy": 263,
+    "rTuck": 187,
+    "rUnder": 203
+  },
+  "frame_bond_bach_de_kiem_ho_quan": {
+    "cx": 257,
+    "cy": 268,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_bach_de_tru_tien_ung": {
+    "cx": 257,
+    "cy": 259,
+    "rTuck": 178,
+    "rUnder": 194
+  },
+  "frame_bond_cuu_thien_loi_de_ho": {
+    "cx": 257,
+    "cy": 259,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_cuu_tieu_thanh_loan": {
+    "cx": 256,
+    "cy": 263,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_cuu_u_do_than_diem_lang": {
+    "cx": 257,
+    "cy": 257,
+    "rTuck": 178,
+    "rUnder": 194
+  },
+  "frame_bond_cuu_vi_hong_ho": {
+    "cx": 257,
+    "cy": 244,
+    "rTuck": 182,
+    "rUnder": 198
+  },
+  "frame_bond_hau_tho_tran_nhac_quy": {
+    "cx": 257,
+    "cy": 265,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_hoang_thien_ban_co_lan": {
+    "cx": 256,
+    "cy": 262,
+    "rTuck": 187,
+    "rUnder": 203
+  },
+  "frame_bond_hoang_thien_ky_lan_quan": {
+    "cx": 256,
+    "cy": 258,
+    "rTuck": 171,
+    "rUnder": 187
+  },
+  "frame_bond_hon_don_chi_to_long": {
+    "cx": 257,
+    "cy": 249,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_hong_mong_cuu_vy_tien": {
+    "cx": 252,
+    "cy": 250,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_hong_mong_nguyen_phuong": {
+    "cx": 259,
+    "cy": 251,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_huyen_hoang_thach_su": {
+    "cx": 257,
+    "cy": 256,
+    "rTuck": 183,
+    "rUnder": 199
+  },
+  "frame_bond_huyen_minh_co_long_vuong": {
+    "cx": 256,
+    "cy": 261,
+    "rTuck": 178,
+    "rUnder": 194
+  },
+  "frame_bond_huyet_nguyet_thien_lang_nu": {
+    "cx": 256,
+    "cy": 251,
+    "rTuck": 185,
+    "rUnder": 201
+  },
+  "frame_bond_loi_hoang_kim_dieu": {
+    "cx": 257,
+    "cy": 278,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_nhat_nguyet_thien_ma_de": {
+    "cx": 256,
+    "cy": 273,
+    "rTuck": 191,
+    "rUnder": 207
+  },
+  "frame_bond_phan_thien_kim_o_de": {
+    "cx": 256,
+    "cy": 255,
+    "rTuck": 169,
+    "rUnder": 185
+  },
+  "frame_bond_thai_am_ngoc_tho_tien": {
+    "cx": 257,
+    "cy": 256,
+    "rTuck": 182,
+    "rUnder": 198
+  },
+  "frame_bond_thai_at_co_moc_phuong": {
+    "cx": 256,
+    "cy": 260,
+    "rTuck": 187,
+    "rUnder": 203
+  },
+  "frame_bond_thai_bach_thien_kiem_lan": {
+    "cx": 257,
+    "cy": 267,
+    "rTuck": 187,
+    "rUnder": 203
+  },
+  "frame_bond_thai_cuc_thanh_quang_thu": {
+    "cx": 258,
+    "cy": 252,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_thai_so_cuu_phuong_hoang": {
+    "cx": 260,
+    "cy": 251,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_thai_so_van_tuong_ho": {
+    "cx": 256,
+    "cy": 254,
+    "rTuck": 178,
+    "rUnder": 194
+  },
+  "frame_bond_thanh_de_van_co_long": {
+    "cx": 256,
+    "cy": 258,
+    "rTuck": 179,
+    "rUnder": 195
+  },
+  "frame_bond_thoi_khong_than_tinh_ho": {
+    "cx": 256,
+    "cy": 262,
+    "rTuck": 175,
+    "rUnder": 191
+  },
+  "frame_bond_thuong_hai_bang_phuong": {
+    "cx": 257,
+    "cy": 264,
+    "rTuck": 185,
+    "rUnder": 201
+  },
+  "frame_bond_thuong_hai_long_nu": {
+    "cx": 256,
+    "cy": 251,
+    "rTuck": 183,
+    "rUnder": 199
+  },
+  "frame_bond_tinh_ha_hu_khong_long": {
+    "cx": 266,
+    "cy": 248,
+    "rTuck": 180,
+    "rUnder": 196
+  },
+  "frame_bond_tinh_ha_nguyet_mieu_co": {
+    "cx": 256,
+    "cy": 236,
+    "rTuck": 181,
+    "rUnder": 197
+  },
+  "frame_bond_tu_tieu_loi_ho_quan": {
+    "cx": 256,
+    "cy": 252,
+    "rTuck": 185,
+    "rUnder": 201
+  },
+  "frame_bond_tu_tieu_thien_loi_long": {
+    "cx": 274,
+    "cy": 256,
+    "rTuck": 176,
+    "rUnder": 192
+  },
+  "frame_bond_u_minh_man_chau_ho": {
+    "cx": 255,
+    "cy": 254,
+    "rTuck": 181,
+    "rUnder": 197
+  },
+  "frame_bond_van_hoa_linh_loc_co": {
+    "cx": 258,
+    "cy": 252,
+    "rTuck": 177,
+    "rUnder": 193
+  },
+  "frame_bond_van_hoa_linh_loc_vuong": {
+    "cx": 257,
+    "cy": 252,
+    "rTuck": 183,
+    "rUnder": 199
+  },
+  "frame_bond_van_kiem_de_ton_ho": {
+    "cx": 258,
+    "cy": 280,
+    "rTuck": 178,
+    "rUnder": 194
+  },
+  "frame_bond_vinh_da_huyet_nha_hoang": {
+    "cx": 256,
+    "cy": 258,
+    "rTuck": 181,
+    "rUnder": 197
+  },
+  "frame_bond_vo_cuc_nguyet_anh_diep": {
+    "cx": 256,
+    "cy": 247,
+    "rTuck": 193,
+    "rUnder": 209
+  },
+  "frame_bond_xich_diem_chuc_long_vuong": {
+    "cx": 256,
+    "cy": 262,
+    "rTuck": 186,
+    "rUnder": 202
+  },
+  "frame_bond_xich_diem_phuong_hoang_co": {
+    "cx": 256,
+    "cy": 261,
+    "rTuck": 180,
+    "rUnder": 196
+  }
+}

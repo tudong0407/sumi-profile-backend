@@ -6,6 +6,7 @@
 
 import { em, tierEmoji, tierEmojiKey, roleTierEmoji, roleTierEmojiKey, itemEmoji, itemEmojiKey, petEmoji, petEmojiKey, ringEmoji, elementEmoji, gradeEmoji, gradeEmojiKey, domainEmoji, domainEmojiKey, senseEmoji, senseEmojiKey, realmEmojiById, realmEmojiKeyById, farmEmoji, uiEm } from '../config/emojiHelper.js';
 import { V15_AVATAR_FRAME_SPECS } from './v15AssetsCatalog.js';
+import { buildV18BondAvatarFrames } from './v18BondFrameCatalog.js';
 import {
   V13_DOMAIN_ELEMENTS,
   V13_DOMAINS,
@@ -394,6 +395,8 @@ export const ALL_CONSUMABLE_BY_ID = Object.fromEntries(ALL_CONSUMABLES.map((c) =
 /**
  * Danh mục 29 Khung Viền Avatar (/shop Quầy Viền Avatar + Shop Đặc Biệt + /equip)
  */
+export const V18_BOND_AVATAR_FRAMES = buildV18BondAvatarFrames(PET_BY_TYPE);
+
 export const AVATAR_FRAMES = [
   { frame_id: 'default', name: 'Khung Mặc Định (Theo Cảnh Giới)', rarity: 'Mặc Định', rarity_key: 'common', price: 0, token_required: false, description: 'Tự động nâng cấp khung theo cảnh giới tu luyện (hoặc Hồ Hoàng Kim cho Tiểu thư).' },
   ...V15_AVATAR_FRAME_SPECS.map((f) => ({
@@ -404,6 +407,7 @@ export const AVATAR_FRAMES = [
     ...f,
     token_required: true,
   })),
+  ...V18_BOND_AVATAR_FRAMES,
 ];
 
 export const AVATAR_FRAME_BY_ID = Object.fromEntries(AVATAR_FRAMES.map((f) => [f.frame_id, f]));
@@ -704,6 +708,7 @@ export function computeCosmeticBuffTotals(avatarFrame = 'default', backgroundUrl
   const fId = String(avatarFrame || 'default').trim();
   let frameExpPct = 0;
   let frameLtPct = 0;
+  let bondFrameDailyJobLtPct = 0;
   let frameName = 'Khung Mặc Định';
   let frameRarity = 'Mặc Định';
 
@@ -714,7 +719,13 @@ export function computeCosmeticBuffTotals(avatarFrame = 'default', backgroundUrl
     frameRarity = 'Thần Thoại';
   } else if (fId && fId !== 'default') {
     const fMeta = AVATAR_FRAME_BY_ID[fId];
-    if (fMeta && Number(fMeta.price || 0) > 0) {
+    if (fMeta?.is_bond_exclusive) {
+      frameExpPct = 50;
+      bondFrameDailyJobLtPct = 50;
+      frameLtPct = 0;
+      frameName = fMeta.name;
+      frameRarity = fMeta.rarity || 'Chân Thần';
+    } else if (fMeta && Number(fMeta.price || 0) > 0) {
       const b = getCosmeticBuffByRarity(fMeta.rarity_key, true);
       frameExpPct = b.expPct;
       frameLtPct = b.ltPct;
@@ -754,6 +765,7 @@ export function computeCosmeticBuffTotals(avatarFrame = 'default', backgroundUrl
     frameRarity,
     frameExpPct,
     frameLtPct,
+    bondFrameDailyJobLtPct,
     bgId: rawBg || 'default_background.png',
     bgName,
     bgRarity,
@@ -761,6 +773,7 @@ export function computeCosmeticBuffTotals(avatarFrame = 'default', backgroundUrl
     bgLtPct,
     expPct: frameExpPct + bgExpPct,
     ltPct: frameLtPct + bgLtPct,
+    dailyJobLtPct: frameLtPct + bgLtPct + bondFrameDailyJobLtPct,
   };
 }
 

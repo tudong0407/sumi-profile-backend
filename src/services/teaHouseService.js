@@ -16,6 +16,7 @@ let supabase = _supabase;
 import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { getVnDateKey, getEffectiveLuckAndFortune, formatLuckSummaryLines } from './luckAndFortuneService.js';
+import { applyAllSourceLtBonus } from './petBondService.js';
 
 export const TEA_DAILY_POINTS_MAX = 3;
 export const TEA_MAX_BREWS_PER_DAY = TEA_DAILY_POINTS_MAX;
@@ -214,7 +215,8 @@ export async function brewTea(userId, opts = {}) {
       avatarUrl: pickCleanDisplayValue(opts.avatarUrl),
     };
     const luckInfo = await getEffectiveLuckAndFortune(cleanId, now);
-    const hostBrewLt = randomInt(TEA_BASE_LT_MIN, TEA_BASE_LT_MAX, rng);
+    const rawHostBrewLt = randomInt(TEA_BASE_LT_MIN, TEA_BASE_LT_MAX, rng);
+    const hostBrewLt = (await applyAllSourceLtBonus(cleanId, rawHostBrewLt)).finalLt;
     const creditRes = await creditUserLt(cleanId, hostBrewLt, nowIso, displayOpts);
 
     const nextDaily = {
@@ -373,11 +375,11 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
 
     const guestBaseLt = randomInt(TEA_BASE_LT_MIN, TEA_BASE_LT_MAX, rng);
     const guestLuckBonusLt = Math.max(0, Math.round(guestLuckPct * TEA_LUCK_LT_MULT));
-    const guestTotalLt = guestBaseLt + guestLuckBonusLt;
+    const guestTotalLt = (await applyAllSourceLtBonus(cleanGuestId, guestBaseLt + guestLuckBonusLt)).finalLt;
 
     const hostBaseLt = randomInt(TEA_BASE_LT_MIN, TEA_BASE_LT_MAX, rng);
     const hostLuckBonusLt = Math.max(0, Math.round(hostLuckPct * TEA_LUCK_LT_MULT));
-    const hostTotalLt = hostBaseLt + hostLuckBonusLt;
+    const hostTotalLt = (await applyAllSourceLtBonus(session.host_user_id, hostBaseLt + hostLuckBonusLt)).finalLt;
 
     const displayOpts = {
       username: pickCleanDisplayValue(opts.username, opts.fallbackUsername),

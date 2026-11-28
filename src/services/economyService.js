@@ -33,6 +33,7 @@ import {
   formatLuckSummaryLines,
   computeDailyStreakLuckPct,
 } from './luckAndFortuneService.js';
+import { getActivePetBondBuffs } from './petBondService.js';
 import {
   em,
   uiEm,
@@ -353,12 +354,14 @@ export async function claimDaily(userId, options = {}) {
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level) || 1);
     const roleDailyLtPct = Number(roleBuffs?.dailyLtBonusPct || 0);
     const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
-    const cosmeticLtPct = Number(cosmeticBuffs.ltPct || 0);
+    const cosmeticLtPct = Number(cosmeticBuffs.dailyJobLtPct ?? cosmeticBuffs.ltPct ?? 0);
     const fortuneInfo = await getEffectiveLuckAndFortune(cleanId, now);
     const fortuneLtPct = Number(fortuneInfo?.fortuneLtPct || 0);
+    const bondInfo = await getActivePetBondBuffs(cleanId).catch(() => null);
+    const bondLtPct = Number(bondInfo?.buffs?.allSourceLtPct || 0);
     const totalMult = Math.max(
       0.5,
-      1 + cycleBonusPct + longStreakLtPct / 100 + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100 + fortuneLtPct / 100,
+      1 + cycleBonusPct + longStreakLtPct / 100 + clanBonusPct / 100 + roleDailyLtPct / 100 + cosmeticLtPct / 100 + fortuneLtPct / 100 + bondLtPct / 100,
     );
     const reward = Math.round(baseReward * totalMult);
     const newBalance = Number(user.linh_thach || 0) + reward;

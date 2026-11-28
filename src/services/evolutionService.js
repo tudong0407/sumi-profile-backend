@@ -36,6 +36,7 @@ import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './
 import { computeScaledPetBaseStats, invalidateInventoryCache, normalizeEmojiAwareQuery } from './inventoryService.js';
 import { getUserBusyExplorationAssets } from './explorerService.js';
 import { invalidateUniqueItemCard, invalidateUniquePetCard } from './staticAssetCacheService.js';
+import { PET_BOND_EVOLUTION_BONUS_POINTS, computeBondTierState, getBondFrameIdForPet, V18_BOND_FRAME_BY_PET } from '../data/v18PetBondCatalog.js';
 
 export const EVOLUTION_MIN_LEVEL = 40;
 export const EVOLUTION_MIN_STAR = 8;
@@ -406,7 +407,7 @@ export async function evolveUniquePet(userId, options = {}) {
       };
     }
 
-    // THÀNH CÔNG: Trừ LT + 1 evo_crystal, nâng cấp is_evolved = true, tăng stats (giữ Lv/Star/Enchant)
+    // THÀNH CÔNG: Trừ LT + 1 evo_crystal, nâng cấp is_evolved = true, tăng stats + +15% (+1800) Thiện Cảm & mở khóa Viền nếu đạt 10/10
     const baseMeta = PET_BY_TYPE[target.pet_type] || {
       pet_type: target.pet_type,
       base_atk: target.atk || 500,
@@ -415,9 +416,16 @@ export async function evolveUniquePet(userId, options = {}) {
     };
     const scaled = computeScaledPetBaseStats(baseMeta, lvl, star, true);
     const nextCrystal = crystalQty - EVOLUTION_CRYSTAL_COST;
+    const prevAffPts = Number(target.affection_points || 0);
+    const nextAffPts = Math.min(12000, prevAffPts + PET_BOND_EVOLUTION_BONUS_POINTS);
+    const nextBondState = computeBondTierState(target.pet_type, nextAffPts, true);
+    const bondPtsGained = Math.max(0, nextAffPts - prevAffPts);
+    const bondFrameId = nextBondState.tier >= 10 ? getBondFrameIdForPet(target.pet_type) : null;
+    const bondFrameMeta = bondFrameId ? V18_BOND_FRAME_BY_PET[target.pet_type] : null;
+    let unlockedBondFrameNow = false;
 
     if (supabase) {
-      await Promise.all([
+      const evoDbTasks = [
         supabase.from('users').update({ linh_thach: nextBal, updated_at: nowIso }).eq('user_id', cleanId),
         supabase.from('user_inventory').update({ quantity: nextCrystal, updated_at: nowIso }).eq('user_id', cleanId).eq('item_id', 'evo_crystal'),
         supabase.from('user_pets').update({
@@ -429,8 +437,21 @@ export async function evolveUniquePet(userId, options = {}) {
           def: scaled.def,
           spd: scaled.spd,
           power_score: scaled.power_score,
+          affection_points: nextAffPts,
+          affection_tier: nextBondState.tier,
+          ...(bondFrameId ? { bond_frame_unlocked: true } : {}),
         }).eq('pet_id', target.pet_id),
-      ]);
+      ];
+      if (bondFrameId) {
+        unlockedBondFrameNow = true;
+        evoDbTasks.push(
+          supabase.from('user_frames').upsert(
+            { user_id: cleanId, frame_id: bondFrameId, purchased_at: nowIso },
+            { onConflict: 'user_id,frame_id' },
+          ),
+        );
+      }
+      await Promise.all(evoDbTasks);
       invalidateInventoryCache(cleanId);
       invalidateUniqueItemCard(target.pet_type);
       invalidateUniquePetCard(target.pet_type);
@@ -445,6 +466,14 @@ export async function evolveUniquePet(userId, options = {}) {
       target.def = scaled.def;
       target.spd = scaled.spd;
       target.power_score = scaled.power_score;
+      target.affection_points = nextAffPts;
+      target.affection_tier = nextBondState.tier;
+      if (bondFrameId) {
+        target.bond_frame_unlocked = true;
+        user.owned_frames = Array.isArray(user.owned_frames) ? user.owned_frames : [];
+        if (!user.owned_frames.includes(bondFrameId)) user.owned_frames.push(bondFrameId);
+        unlockedBondFrameNow = true;
+      }
     }
 
     return {
@@ -460,13 +489,21 @@ export async function evolveUniquePet(userId, options = {}) {
       lt_spent: ltTier.lt,
       linh_thach: nextBal,
       evo_crystal_remaining: nextCrystal,
+      bond_points_gained: bondPtsGained,
+      affection_points: nextAffPts,
+      affection_tier: nextBondState.tier,
+      bond_frame_unlocked: unlockedBondFrameNow ? bondFrameId : null,
       title: `${tierEmoji('evolved_supreme')} TIẾN HÓA CHÂN THẦN THÀNH CÔNG!!`,
       description: [
         `${petEmoji(target.pet_type, '', true)} **${evoDef.evolved_name}** chính thức bước vào cảnh giới **Tối Thượng Chân Thần**!`,
         `• **Giữ nguyên:** \`Lv.${lvl}\` • \`${star}★\` • Khắc Ấn \`${target.enchant_grade || 'D'}\``,
         `• **Chỉ số mới:** ATK **${scaled.atk.toLocaleString('vi-VN')}** • DEF **${scaled.def.toLocaleString('vi-VN')}** • SPD **${scaled.spd.toLocaleString('vi-VN')}** • Lực **${scaled.power_score.toLocaleString('vi-VN')}**`,
         `• **Mở khóa Skill Ultimate Tái Kích Hoạt:** **${evoDef.ultimate.name}** — *${evoDef.ultimate.desc}*`,
-      ].join('\n'),
+        `• ${em('bond_tier_high', em('su_sparkle'))} **Thiện Cảm Tiến Hóa:** **+${bondPtsGained.toLocaleString('vi-VN')} điểm** → **Bậc ${nextBondState.tier}/${nextBondState.maxTier} (${nextBondState.tierLabel})**`,
+        unlockedBondFrameNow && bondFrameMeta
+          ? `• ${em('bond_tier_max', em('su_sparkle'))} **Mở khóa Viền Độc Quyền:** **${bondFrameMeta.name}** *(+50% LT Điểm danh/Nghề & +50% EXP Chat/Voice)*!`
+          : '',
+      ].filter(Boolean).join('\n'),
       color: '#fb7185',
     };
   });

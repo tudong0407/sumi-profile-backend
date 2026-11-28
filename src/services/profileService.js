@@ -25,6 +25,7 @@ import { LATEST_VERSION } from '../data/changelogs.js';
 import { computeMarriageBuffs } from './marryService.js';
 import { evaluateSetBonus } from './battleEngine/setBonusEngine.js';
 import { em, uiEm, petEmoji } from '../config/emojiHelper.js';
+import { computeBondTierState, computeBondBuffsForTier } from '../data/v18PetBondCatalog.js';
 
 export const ROLE_PERKS_MAP = {
   ...Object.fromEntries(GACHA_ROLE_CATALOG.map((r) => [r.role_id, r.perk])),
@@ -783,9 +784,19 @@ export async function getProfileData(userId, overrides = {}) {
 
         const userLvlNum = Number(user.level) || 1;
         const roleBuffs = computeRoleBuffTotalsFromList(validRoles.map((r) => r.role_id), userLvlNum);
-        if (petData && roleBuffs.petPowerBonusPct > 0) {
-          petData.role_power_bonus_pct = roleBuffs.petPowerBonusPct;
-          petData.power = Math.round(petData.power * (1 + roleBuffs.petPowerBonusPct / 100));
+        const bondState = pet ? computeBondTierState(pet) : null;
+        const bondBuffs = pet ? computeBondBuffsForTier(bondState.tier, pet) : null;
+        const bondPowerPct = Number(bondBuffs?.petPowerPct || 0);
+        if (petData) {
+          petData.affection_points = bondState?.points || 0;
+          petData.affection_tier = bondState?.tier || 0;
+          petData.affection_max_tier = bondState?.maxTier || 3;
+          petData.affection_label = bondState?.tierLabel || 'Xa Lạ';
+          petData.bond_power_bonus_pct = bondPowerPct;
+          if (roleBuffs.petPowerBonusPct > 0 || bondPowerPct > 0) {
+            petData.role_power_bonus_pct = roleBuffs.petPowerBonusPct;
+            petData.power = Math.round(rawTotalPower * (1 + (couplePowerPct + roleBuffs.petPowerBonusPct + bondPowerPct) / 100));
+          }
         }
 
         const isBusyDomain = (row) => busyDomainIds.has(String(row?.entity_id)) && Number(row?.quantity || 1) <= 1;
@@ -830,6 +841,8 @@ export async function getProfileData(userId, overrides = {}) {
           pet: petData,
           equipped_roles: equippedRoles,
           role_pet_power_bonus_pct: roleBuffs.petPowerBonusPct,
+          pet_bond_power_bonus_pct: bondPowerPct,
+          pet_bond_buffs: bondBuffs,
           role_buffs: roleBuffs,
           domain_loadout: domainLoadout,
         };

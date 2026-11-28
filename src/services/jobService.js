@@ -27,6 +27,7 @@ import { computeTotalAccumulatedExp, decomposeTotalExp } from './economyService.
 import { computeLevelUpLinhThachReward } from './expService.js';
 import { getVnDateKey, trackQuestActivity } from './questService.js';
 import { getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
+import { getActivePetBondBuffs } from './petBondService.js';
 
 const jobLocks = new Map();
 
@@ -171,10 +172,13 @@ export async function doJob(userId, rawJobId = '', options = {}) {
     const roleBuffs = await computeRoleBuffTotals(cleanId, Number(user.level) || 1);
     const cosmeticBuffs = computeCosmeticBuffTotals(user.avatar_frame, user.background_url);
     const fortuneInfo = await getEffectiveLuckAndFortune(cleanId);
+    const bondInfo = await getActivePetBondBuffs(cleanId).catch(() => null);
+    const bondLtPct = Number(bondInfo?.buffs?.allSourceLtPct || 0);
+    const bondExpPct = Number(bondInfo?.buffs?.userExpPct || 0);
     const baseLt = job.ltMin + Math.floor(rng() * (job.ltMax - job.ltMin + 1));
-    const bonusLtPct = Math.min(100, Math.round(Number(roleBuffs?.dailyLtBonusPct || 0) * 0.25) + Number(cosmeticBuffs.ltPct || 0)) + Number(fortuneInfo?.fortuneLtPct || 0);
+    const bonusLtPct = Math.min(100, Math.round(Number(roleBuffs?.dailyLtBonusPct || 0) * 0.25) + Number(cosmeticBuffs.dailyJobLtPct ?? cosmeticBuffs.ltPct ?? 0)) + Number(fortuneInfo?.fortuneLtPct || 0) + bondLtPct;
     const rewardLt = Math.round(baseLt * Math.max(0.5, 1 + bonusLtPct / 100));
-    const rewardExp = Math.round(job.exp * Math.max(0.5, 1 + (Number(roleBuffs?.expBonusPct || 0) + Number(cosmeticBuffs.expPct || 0) + Number(fortuneInfo?.fortuneExpPct || 0)) / 100));
+    const rewardExp = Math.round(job.exp * Math.max(0.5, 1 + (Number(roleBuffs?.expBonusPct || 0) + Number(cosmeticBuffs.expPct || 0) + Number(fortuneInfo?.fortuneExpPct || 0) + bondExpPct) / 100));
 
     const prevBal = Number(user.linh_thach || 0);
     const nextBal = prevBal + rewardLt;

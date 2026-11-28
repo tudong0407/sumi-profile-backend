@@ -30,7 +30,7 @@ export async function withLoadoutLock(userId, fn) {
   }
 }
 
-export function evaluateLoadoutExplorerLock({ slotIndex = 1, pet = null, equippedItems = [], equippedDomains = [], busyExp = null } = {}) {
+export function evaluateLoadoutExplorerLock({ slotIndex = 1, pet = null, busyExp = null } = {}) {
   const slotNum = [1, 2, 3].includes(Number(slotIndex)) ? Number(slotIndex) : 1;
   if (!busyExp?.isExploring) {
     return { locked: false, activeSlot: slotNum };
@@ -42,14 +42,8 @@ export function evaluateLoadoutExplorerLock({ slotIndex = 1, pet = null, equippe
       || (busyExp.busyPetId && pet.pet_id && String(pet.pet_id) === String(busyExp.busyPetId))
     ),
   );
-  const equipLocked = (equippedItems || []).some((it) => (
-    it?.item_id && busyExp.busyEquipIds?.has(String(it.item_id)) && Number(it.quantity ?? 1) <= 1
-  ));
-  const domainLocked = (equippedDomains || []).some((d) => (
-    d?.entity_id && busyExp.busyDomainIds?.has(String(d.entity_id)) && Number(d.quantity ?? 1) <= 1
-  ));
 
-  if (!petLocked && !equipLocked && !domainLocked) {
+  if (!petLocked) {
     return { locked: false, activeSlot: slotNum };
   }
 
@@ -59,7 +53,7 @@ export function evaluateLoadoutExplorerLock({ slotIndex = 1, pet = null, equippe
     activeSlot: slotNum,
     error: 'LOADOUT_LOCKED_BY_EXPLORER',
     status: 400,
-    message: `${uiEm('ui_compass_dir')} **Bộ ${slotNum}** đang có Linh Thú / trang bị đi **Khám Phá Bản Đồ** (\`/explorer\`) nên đã được **khóa nguyên bộ** — không thể thay đổi lúc này!\n• Hãy mở \`/inv\` bấm chuyển sang ${otherSlots} để trang bị bộ khác mà không ảnh hưởng **Bộ ${slotNum}**.`,
+    message: `${uiEm('ui_compass_dir')} Linh Thú của **Bộ ${slotNum}** đang đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa thay trang bị lên Linh Thú này!\n• Hãy dùng \`/linhthu\` chuyển sang một **Linh Thú khác đang rảnh** hoặc bấm ${otherSlots} trong \`/inv\`.`,
   };
 }
 
@@ -70,21 +64,16 @@ export async function checkActiveLoadoutExplorerLock(userId) {
   const busyExp = await getUserBusyExplorationAssets(cleanId).catch(() => null);
   if (!busyExp?.isExploring) return { locked: false, activeSlot: 1 };
 
-  const [{ data: user }, { data: activePet }, { data: itemRows }, { data: equippedDomains }] = await Promise.all([
+  const [{ data: user }, { data: activePet }] = await Promise.all([
     supabase.from('users').select('active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
     supabase.from('user_pets').select('pet_id, pet_type, status').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
-    supabase.from('user_pet_items').select('item_id, slot, equipped_to_pet, quantity').eq('user_id', cleanId),
-    supabase.from('user_domains').select('entity_id, quantity').eq('user_id', cleanId).eq('is_equipped', true),
   ]);
 
   const activeSlot = [1, 2, 3].includes(Number(user?.active_loadout_slot)) ? Number(user.active_loadout_slot) : 1;
-  const equippedItems = (itemRows || []).filter((r) => r.equipped_to_pet || r.slot);
 
   return evaluateLoadoutExplorerLock({
     slotIndex: activeSlot,
     pet: activePet,
-    equippedItems,
-    equippedDomains: equippedDomains || [],
     busyExp,
   });
 }
@@ -93,11 +82,12 @@ export async function syncActiveLoadoutFromCurrentGear(userId, explicitSlotIndex
   const cleanId = sanitizeUserId(userId);
   if (!cleanId || !supabase) return null;
 
-  const [{ data: user }, { data: activePet }, { data: equippedItems }, { data: equippedDomains }] = await Promise.all([
+  const [{ data: user }, { data: activePet }, { data: equippedItems }, { data: equippedDomains }, busyExp] = await Promise.all([
     supabase.from('users').select('active_loadout_slot').eq('user_id', cleanId).maybeSingle(),
-    supabase.from('user_pets').select('pet_id, pet_type').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
-    supabase.from('user_pet_items').select('item_id, slot, equipped_to_pet').eq('user_id', cleanId),
-    supabase.from('user_domains').select('entity_kind, entity_id').eq('user_id', cleanId).eq('is_equipped', true),
+    supabase.from('user_pets').select('pet_id, pet_type, status').eq('user_id', cleanId).eq('is_active', true).limit(1).maybeSingle(),
+    supabase.from('user_pet_items').select('item_id, slot, equipped_to_pet, quantity').eq('user_id', cleanId),
+    supabase.from('user_domains').select('entity_kind, entity_id, quantity').eq('user_id', cleanId).eq('is_equipped', true),
+    getUserBusyExplorationAssets(cleanId).catch(() => null),
   ]);
 
   const parsedExplicit = Number(explicitSlotIndex);
@@ -106,6 +96,13 @@ export async function syncActiveLoadoutFromCurrentGear(userId, explicitSlotIndex
     : [1, 2, 3].includes(Number(user?.active_loadout_slot))
       ? Number(user.active_loadout_slot)
       : 1;
+
+  const { data: existingRow } = await supabase
+    .from('user_loadouts')
+    .select('*')
+    .eq('user_id', cleanId)
+    .eq('slot_index', slotIndex)
+    .maybeSingle();
 
   let weaponId = null;
   let gemId = null;
@@ -127,12 +124,22 @@ export async function syncActiveLoadoutFromCurrentGear(userId, explicitSlotIndex
     else if (d.entity_kind === 'realm' && !realmId) realmId = d.entity_id;
   }
 
+  // Bảo toàn snapshot nếu món cũ trong Bộ này tạm trống chỉ vì đang bận /explorer
+  if (busyExp?.isExploring && existingRow) {
+    if (!weaponId && existingRow.weapon_id && busyExp.busyEquipIds?.has(existingRow.weapon_id)) weaponId = existingRow.weapon_id;
+    if (!gemId && existingRow.gem_id && busyExp.busyEquipIds?.has(existingRow.gem_id)) gemId = existingRow.gem_id;
+    if (!soulId && existingRow.soul_id && busyExp.busyEquipIds?.has(existingRow.soul_id)) soulId = existingRow.soul_id;
+    if (!domainId && existingRow.domain_id && busyExp.busyDomainIds?.has(existingRow.domain_id)) domainId = existingRow.domain_id;
+    if (!senseId && existingRow.sense_id && busyExp.busyDomainIds?.has(existingRow.sense_id)) senseId = existingRow.sense_id;
+    if (!realmId && existingRow.realm_id && busyExp.busyDomainIds?.has(existingRow.realm_id)) realmId = existingRow.realm_id;
+  }
+
   const nowIso = new Date().toISOString();
   const payload = {
     user_id: cleanId,
     slot_index: slotIndex,
-    pet_id: activePet?.pet_id ? String(activePet.pet_id) : null,
-    pet_type: activePet?.pet_type || null,
+    pet_id: activePet?.pet_id ? String(activePet.pet_id) : (existingRow?.pet_id || null),
+    pet_type: activePet?.pet_type || (existingRow?.pet_type || null),
     weapon_id: weaponId,
     gem_id: gemId,
     soul_id: soulId,
@@ -197,34 +204,7 @@ export async function switchLoadout(userId, rawSlot, opts = {}) {
     const ownedItems = itemsRes.data || [];
     const ownedDomains = domainsRes.data || [];
 
-    // Chặn chuyển NGƯỢC lại Bộ đang bị khóa bởi chuyến Khám Phá (/explorer)
-    if (targetRow?.is_initialized && busyExp?.isExploring) {
-      const targetPetObj = pets.find((p) => (
-        (targetRow.pet_id && String(p.pet_id) === String(targetRow.pet_id)) || p.pet_type === targetRow.pet_type
-      )) || (targetRow.pet_id ? { pet_id: targetRow.pet_id, pet_type: targetRow.pet_type } : null);
-      const targetEquipObjs = [targetRow.weapon_id, targetRow.gem_id, targetRow.soul_id]
-        .filter(Boolean)
-        .map((id) => ({ item_id: id, quantity: ownedItems.find((it) => it.item_id === id)?.quantity ?? 1 }));
-      const targetDomObjs = [targetRow.domain_id, targetRow.sense_id, targetRow.realm_id]
-        .filter(Boolean)
-        .map((id) => ({ entity_id: id, quantity: ownedDomains.find((d) => d.entity_id === id)?.quantity ?? 1 }));
-
-      const targetLock = evaluateLoadoutExplorerLock({
-        slotIndex: targetSlot,
-        pet: targetPetObj,
-        equippedItems: targetEquipObjs,
-        equippedDomains: targetDomObjs,
-        busyExp,
-      });
-      if (targetLock.locked) {
-        return getInventory(cleanId, {
-          ...opts,
-          bannerText: `${uiEm('ui_compass_dir')} **Bộ ${targetSlot}** đang có Linh Thú / trang bị đi **Khám Phá Bản Đồ** (\`/explorer\`) nên tạm khóa — không thể chuyển về lúc này! Hãy chờ chuyến khám phá hoàn tất hoặc tiếp tục dùng **Bộ ${currentSlot}**.`,
-        });
-      }
-    }
-
-    // 1. Lưu trạng thái bộ cũ trước khi chuyển
+    // 1. Lưu trạng thái bộ cũ trước khi chuyển (bảo toàn món bận /explorer nếu bộ cũ đang dùng)
     await syncActiveLoadoutFromCurrentGear(cleanId, currentSlot).catch(() => {});
 
     const nowIso = new Date().toISOString();

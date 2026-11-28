@@ -21,6 +21,7 @@ import {
 import { getVnDateKey, getEffectiveLuckAndFortune } from './luckAndFortuneService.js';
 import { trackQuestActivity } from './questService.js';
 import { invalidateInventoryCache } from './inventoryService.js';
+import { applyAllSourceLtBonus } from './petBondService.js';
 import {
   ALCHEMY_DAILY_LIMIT,
   ALCHEMY_SLOT2_FREE_LEVEL,
@@ -811,6 +812,9 @@ export async function harvestBatch(userId, opts = {}) {
           const petExpUnit = Number(recipe.petExpPerPill || 0).toLocaleString('vi-VN');
           pillDropNote = ` + **${dropQty}× Đan EXP Pet** *(+${petExpUnit} EXP/viên vào \`/inv\`)*`;
         }
+
+        const ltBond = await applyAllSourceLtBonus(cleanId, ltEarned);
+        ltEarned = ltBond.finalLt;
 
         totalGainLt += ltEarned;
         totalGainExp += expEarned;

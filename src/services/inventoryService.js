@@ -45,6 +45,7 @@ import { getUserBusyExplorationAssets } from './explorerService.js';
 import { dismantleDomainEntity } from './domainService.js';
 import { trackQuestActivity } from './questService.js';
 import { computeRoleBuffTotalsFromList } from './profileService.js';
+import { computeBondTierState, computeBondBuffsForTier } from '../data/v18PetBondCatalog.js';
 
 const RARITY_RANK = { supreme: 5, mythic: 4, epic: 3, rare: 2, common: 1 };
 
@@ -1404,11 +1405,14 @@ export async function equipTarget(userId, payload = {}) {
 
       const hasAccess = Boolean(ownedFrame || legacyUnlock || (legacyToken && LEGACY_GRANTED_FRAMES.has(frameKey)));
       if (!hasAccess) {
+        const notOwnedMsg = frameMeta.is_bond_exclusive
+          ? `Bạn chưa mở khóa **${frameMeta.name}**! Hãy Tiến Hóa Chân Thần & đạt **Thiện Cảm Bậc 10/10** trong \`/pet\` để nhận vĩnh viễn khung này.`
+          : `Bạn chưa sở hữu Viền Avatar **${frameMeta.name}**! Hãy vào \`/shop\` → **Quầy Viền Avatar** để mua (${Number(frameMeta.price || 0).toLocaleString('vi-VN')} ${em('su_linhthach')}).`;
         return {
           success: false,
           status: 403,
           error: 'FRAME_NOT_OWNED',
-          message: `Bạn chưa sở hữu Viền Avatar **${frameMeta.name}**! Hãy vào \`/shop\` → **Quầy Viền Avatar** để mua (${Number(frameMeta.price || 0).toLocaleString('vi-VN')} ${em('su_linhthach')}).`,
+          message: notOwnedMsg,
         };
       }
       if (!ownedFrame) {
@@ -2311,13 +2315,9 @@ export async function setActivePet(userId, petIdentifier) {
   if (!cleanId) return { success: false, status: 400, error: 'INVALID_USER_ID', message: 'ID người dùng không hợp lệ.' };
   if (!supabase) return { success: false, status: 503, error: 'DB_UNAVAILABLE', message: 'Supabase chưa sẵn sàng.' };
 
-  const { withLoadoutLock, checkActiveLoadoutExplorerLock, syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
+  const { withLoadoutLock, syncActiveLoadoutFromCurrentGear } = await import('./loadoutService.js');
   return withLoadoutLock(cleanId, async () => {
     await ensureUserInitialized(cleanId);
-    const loadoutLock = await checkActiveLoadoutExplorerLock(cleanId);
-    if (loadoutLock.locked) {
-      return { success: false, status: 400, error: loadoutLock.error, message: loadoutLock.message };
-    }
 
     const { data: pets } = await supabase.from('user_pets').select('*').eq('user_id', cleanId);
 
@@ -2660,12 +2660,15 @@ async function loadUpgradeContext(cleanId, petIdentifier = '') {
     const pets = memPetUpgradeStore.pets.get(cleanId) || [];
     const bag = memPetUpgradeStore.inventory.get(cleanId) || {};
     const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
+    const activePet = pets.find((p) => p.is_active) || pets[0] || null;
+    const activeBondPct = activePet ? Number(computeBondBuffsForTier(computeBondTierState(activePet).tier, activePet).petExpPct || 0) : 0;
     const target = needle
       ? pets.find((p) => String(p.pet_id) === needle || String(p.pet_type || '').toLowerCase() === needle || String(p.pet_name || '').toLowerCase() === needle)
-      : (pets.find((p) => p.is_active) || pets[0]);
+      : activePet;
     return {
       user,
       target,
+      activeBondPct,
       ownedStones: Number(bag.pet_star_stone || 0),
       ownedPill1: Number(bag.pill_ess_1 || 0),
       ownedPill2: Number(bag.pill_ess_2 || 0),
@@ -2680,12 +2683,16 @@ async function loadUpgradeContext(cleanId, petIdentifier = '') {
   ]);
   const invMap = Object.fromEntries((invRows || []).map((r) => [r.item_id, Number(r.quantity || 0)]));
   const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
+  const petList = pets || [];
+  const activePet = petList.find((p) => p.is_active) || petList[0] || null;
+  const activeBondPct = activePet ? Number(computeBondBuffsForTier(computeBondTierState(activePet).tier, activePet).petExpPct || 0) : 0;
   const target = needle
-    ? (pets || []).find((p) => String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle)
-    : (pets || []).find((p) => p.is_active) || (pets || [])[0];
+    ? petList.find((p) => String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle)
+    : activePet;
   return {
     user,
     target,
+    activeBondPct,
     ownedStones: Number(invMap.pet_star_stone || 0),
     ownedPill1: Number(invMap.pill_ess_1 || 0),
     ownedPill2: Number(invMap.pill_ess_2 || 0),
@@ -2719,7 +2726,7 @@ export async function previewPetUpgrade(userId, opts = {}) {
 
   const ctx = await loadUpgradeContext(cleanId, petIdentifier);
   if (ctx.errorRes) return ctx.errorRes;
-  const { user, target, ownedStones, ownedPill1, ownedPill2 } = ctx;
+  const { user, target, activeBondPct = 0, ownedStones, ownedPill1, ownedPill2 } = ctx;
 
   if (!target) {
     return {
@@ -2838,10 +2845,14 @@ export async function previewPetUpgrade(userId, opts = {}) {
   const expBar = buildPetExpProgressBar(currentExp, needExp, 10);
   const neededExpTotal = computePetExpBetweenLevels(currentLvl, currentExp, nextLvl);
 
+  const expMult = 1 + (Number(activeBondPct || 0) / 100);
+  const effLqExp = Math.round(PET_EXP_PER_LQ * expMult);
+  const effPill1Exp = Math.round(PET_EXP_PER_PILL_ESS_1 * expMult);
+  const effPill2Exp = Math.round(PET_EXP_PER_PILL_ESS_2 * expMult);
   const ltCost = computePetLevelLtCost(currentLvl, currentExp, nextLvl);
-  const needLq = Math.ceil(neededExpTotal / PET_EXP_PER_LQ);
-  const needPill1 = Math.ceil(neededExpTotal / PET_EXP_PER_PILL_ESS_1);
-  const needPill2 = Math.ceil(neededExpTotal / PET_EXP_PER_PILL_ESS_2);
+  const needLq = Math.ceil(neededExpTotal / effLqExp);
+  const needPill1 = Math.ceil(neededExpTotal / effPill1Exp);
+  const needPill2 = Math.ceil(neededExpTotal / effPill2Exp);
 
   const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
   const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar, Boolean(target.is_evolved));
@@ -2869,25 +2880,26 @@ export async function previewPetUpgrade(userId, opts = {}) {
     exp_pct: expPct,
     target_goal: nextLvl,
     needed_exp_total: neededExpTotal,
+    bond_pet_exp_pct: activeBondPct,
     quotes: {
       lt: { cost: ltCost, owned: currentBal, enough: currentBal >= ltCost },
-      lq: { need: needLq, owned: currentLq, exp_per_unit: PET_EXP_PER_LQ },
-      pill_ess_1: { need: needPill1, owned: ownedPill1, exp_per_unit: PET_EXP_PER_PILL_ESS_1 },
-      pill_ess_2: { need: needPill2, owned: ownedPill2, exp_per_unit: PET_EXP_PER_PILL_ESS_2 },
+      lq: { need: needLq, owned: currentLq, exp_per_unit: effLqExp },
+      pill_ess_1: { need: needPill1, owned: ownedPill1, exp_per_unit: effPill1Exp },
+      pill_ess_2: { need: needPill2, owned: ownedPill2, exp_per_unit: effPill2Exp },
     },
     title: `${em('su_level_up')} NÂNG CẤP LINH THÚ — ${target.pet_name}`,
     description: [
-      `${pIcon} **${target.pet_name}** (\`${target.pet_type}\`) • **Lv.${currentLvl} → Lv.${nextLvl}** • **${currentStar}★**`,
+      `${pIcon} **${target.pet_name}** (\`${target.pet_type}\`) • **Lv.${currentLvl} → Lv.${nextLvl}** • **${currentStar}★**${activeBondPct > 0 ? ` • **+${activeBondPct}% EXP Thiện Cảm**` : ''}`,
       `• **Thanh EXP:** \`[${expBar}]\` \`${currentExp.toLocaleString('vi-VN')}/${needExp.toLocaleString('vi-VN')} EXP\` (**${expPct}%**) • Cần thêm **${neededExpTotal.toLocaleString('vi-VN')} EXP**`,
       `• **Chiến Lực dự kiến:** \`${oldPower.toLocaleString('vi-VN')}\` → **\`${newPower.toLocaleString('vi-VN')}\`** *(+${Math.max(0, newPower - oldPower).toLocaleString('vi-VN')})*`,
       '',
       '**4 Phương Án Nâng Cấp (Bấm nút chọn bên dưới):**',
       `• ${em('su_linhthach')} **Linh Thạch:** Cần **${ltCost.toLocaleString('vi-VN')} LT** *(Có: \`${currentBal.toLocaleString('vi-VN')}\`)* → Lên thẳng **Lv.${nextLvl}** *(đặt EXP về 0%)*`,
-      buildMethodLine(`Linh Quả (${PET_EXP_PER_LQ} EXP/quả)`, lqIcon, needLq, currentLq, 'LQ', PET_EXP_PER_LQ, currentLvl, currentExp),
-      buildMethodLine(`Thanh Tâm Đan (${PET_EXP_PER_PILL_ESS_1.toLocaleString('vi-VN')} EXP/viên)`, p1Icon, needPill1, ownedPill1, 'viên', PET_EXP_PER_PILL_ESS_1, currentLvl, currentExp),
-      buildMethodLine(`Tạo Hóa Đan (${PET_EXP_PER_PILL_ESS_2.toLocaleString('vi-VN')} EXP/viên)`, p2Icon, needPill2, ownedPill2, 'viên', PET_EXP_PER_PILL_ESS_2, currentLvl, currentExp),
+      buildMethodLine(`Linh Quả (${effLqExp} EXP/quả)`, lqIcon, needLq, currentLq, 'LQ', effLqExp, currentLvl, currentExp),
+      buildMethodLine(`Thanh Tâm Đan (${effPill1Exp.toLocaleString('vi-VN')} EXP/viên)`, p1Icon, needPill1, ownedPill1, 'viên', effPill1Exp, currentLvl, currentExp),
+      buildMethodLine(`Tạo Hóa Đan (${effPill2Exp.toLocaleString('vi-VN')} EXP/viên)`, p2Icon, needPill2, ownedPill2, 'viên', effPill2Exp, currentLvl, currentExp),
       '',
-      `*${uiEm('ui_bulb_tip')} EXP Linh Thú KHÔNG nhận buff EXP từ Role hay Cảnh Giới. Nếu LQ/Đan chưa đủ mục tiêu, bấm nút vẫn dùng hết số đang có để cộng EXP!*`,
+      `*${uiEm('ui_bulb_tip')} EXP Linh Thú KHÔNG nhận buff từ Role/Cảnh Giới (chỉ tăng theo **Thiện Cảm** \`/pet\`). Nếu LQ/Đan chưa đủ mục tiêu, bấm nút vẫn dùng hết số đang có để cộng EXP!*`,
     ].join('\n'),
     color: '#38bdf8',
   };
@@ -2909,7 +2921,7 @@ export async function executePetUpgrade(userId, opts = {}) {
 
   const ctx = await loadUpgradeContext(cleanId, petIdentifier);
   if (ctx.errorRes) return ctx.errorRes;
-  const { user, target, ownedStones, ownedPill1, ownedPill2, isMock } = ctx;
+  const { user, target, activeBondPct = 0, ownedStones, ownedPill1, ownedPill2, isMock } = ctx;
 
   if (!target) {
     return { success: false, status: 200, ui_variant: 'error', error: 'PET_NOT_FOUND', title: `${uiEm('ui_warn')} Không tìm thấy Linh Thú`, description: 'Không tìm thấy Linh Thú để nâng cấp.', color: '#ef4444' };
@@ -3055,11 +3067,12 @@ export async function executePetUpgrade(userId, opts = {}) {
     };
   }
 
-  // Method bằng EXP item: lq | pill_ess_1 | pill_ess_2
+  // Method bằng EXP item: lq | pill_ess_1 | pill_ess_2 (được hưởng +3%/Bậc EXP Pet từ Thiện Cảm Pet Chính!)
+  const expMult = 1 + (Number(activeBondPct || 0) / 100);
   const METHOD_CFG = {
-    lq: { label: 'Linh Quả Tiên Giới', unit: 'LQ', expPerUnit: PET_EXP_PER_LQ, icon: farmEmoji('farm_essence') || em('su_sprout'), owned: Number(user.farm_essence || 0), type: 'essence' },
-    pill_ess_1: { label: 'Linh Quả Thanh Tâm Đan', unit: 'viên', expPerUnit: PET_EXP_PER_PILL_ESS_1, icon: em('pill_ess_1', em('su_level_up')), owned: ownedPill1, type: 'inv', itemId: 'pill_ess_1' },
-    pill_ess_2: { label: 'Hồng Mông Tạo Hóa Đan', unit: 'viên', expPerUnit: PET_EXP_PER_PILL_ESS_2, icon: em('pill_ess_2', em('su_level_up')), owned: ownedPill2, type: 'inv', itemId: 'pill_ess_2' },
+    lq: { label: 'Linh Quả Tiên Giới', unit: 'LQ', expPerUnit: Math.round(PET_EXP_PER_LQ * expMult), icon: farmEmoji('farm_essence') || em('su_sprout'), owned: Number(user.farm_essence || 0), type: 'essence' },
+    pill_ess_1: { label: 'Linh Quả Thanh Tâm Đan', unit: 'viên', expPerUnit: Math.round(PET_EXP_PER_PILL_ESS_1 * expMult), icon: em('pill_ess_1', em('su_level_up')), owned: ownedPill1, type: 'inv', itemId: 'pill_ess_1' },
+    pill_ess_2: { label: 'Hồng Mông Tạo Hóa Đan', unit: 'viên', expPerUnit: Math.round(PET_EXP_PER_PILL_ESS_2 * expMult), icon: em('pill_ess_2', em('su_level_up')), owned: ownedPill2, type: 'inv', itemId: 'pill_ess_2' },
   };
   const cfg = METHOD_CFG[method];
   if (!cfg) {

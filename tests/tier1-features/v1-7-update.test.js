@@ -64,7 +64,8 @@ test('Ver 1.7 Catalog counts, 7-tier rarity ladder, SetBonus & Economy config', 
   assert.equal(cat.DOMAIN_CATALOG.length, 66);
   assert.equal(cat.DIVINE_SENSE_CATALOG.length, 49);
   assert.equal(cat.DIVINE_REALM_CATALOG.length, 49);
-  assert.equal(cat.AVATAR_FRAMES.length, 30); // default + 29 frames
+  assert.equal(cat.AVATAR_FRAMES.length, 71); // 30 base (default + 29 v15/v17) + 41 Ver 1.8B Bond frames
+  assert.equal(cat.AVATAR_FRAMES.filter((f) => !f.is_bond_exclusive).length, 30);
   assert.equal(Object.keys(cat.V17_PET_EVOLUTIONS).length, 40);
 
   assert.equal(LATEST_VERSION, '1.7.1');
