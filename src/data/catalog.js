@@ -381,6 +381,8 @@ export const SHOP_CONSUMABLES = [
 
 export const SPECIAL_CONSUMABLES = [
   { item_id: 'enchant_stone_absolute', name: 'Thiên Đạo Tuyệt Ấn Thạch', category: 'consumable', price: 0, price_tt: 40, max_stack: 50, icon: em('enchant_stone_absolute'), description: 'Đá Khắc Ấn Tuyệt Đối (rơi 5% từ /explorer, 25% khi bật Bùa Tuyệt Ấn, hoặc 40 TT Shop Đặc Biệt): Đảm bảo nâng bậc Khắc Ấn thành công 100% ở mọi bậc D→S.' },
+  { item_id: 'pill_ess_1', name: 'Linh Quả Thanh Tâm Đan', category: 'consumable', price: 0, max_stack: 999, icon: em('pill_ess_1', em('su_level_up')), is_pet_exp_pill: true, pet_exp: 1200, description: 'Đan dược luyện từ /luyendan (28 Linh Quả + 56 LT): Tăng +1.200 EXP trực tiếp cho Linh Thú trong /upgrade (không nhận buff EXP từ Role/Cảnh Giới).' },
+  { item_id: 'pill_ess_2', name: 'Hồng Mông Tạo Hóa Đan', category: 'consumable', price: 0, max_stack: 999, icon: em('pill_ess_2', em('su_level_up')), is_pet_exp_pill: true, pet_exp: 3000, description: 'Đan dược thượng cổ luyện từ /luyendan (56 Linh Quả + 84 LT): Tăng +3.000 EXP trực tiếp cho Linh Thú trong /upgrade (không nhận buff EXP từ Role/Cảnh Giới).' },
   { item_id: 'frame_unlock_token', name: 'Lệnh Bài Khung Viền Độc Bản (Cũ)', category: 'consumable', price: 0, max_stack: 10, icon: em('frame_unlock_token'), description: 'Đã nâng cấp thành Khung Viền Độc Bản Hoàng Kim trong Quầy Viền Avatar (/shop).' },
   ...buildV17SpecialConsumables(),
 ];

@@ -638,7 +638,7 @@ export async function buyShopItem(userId, payload = {}) {
 
     const it = resolved.item;
     const isStackable = resolved.category === 'rings' || resolved.category === 'consumables';
-    const quantity = isStackable ? Math.max(1, Math.min(20, Math.floor(Number(payload.quantity) || 1))) : 1;
+    const quantity = isStackable ? Math.max(1, Math.min(50, Math.floor(Number(payload.quantity) || 1))) : 1;
     const durationRaw = String(payload.duration || '7d').trim().toLowerCase();
     const duration = ['7d', '30d', 'permanent'].includes(durationRaw) ? durationRaw : '7d';
 
@@ -793,6 +793,23 @@ export async function buyShopItem(userId, payload = {}) {
           status: 400,
           error: 'DAILY_BUY_LIMIT',
           message: `Hôm nay chỉ được mua tối đa **${dailyLimit}** **${it.name}** mỗi ngày (đã mua \`${cappedBoughtToday}/${dailyLimit}\` — reset 00:00 UTC+7)!`,
+        };
+      }
+    } else if (resolved.category === 'consumables' && it.max_stack) {
+      const maxStack = Number(it.max_stack);
+      const { data: invRow } = await supabase
+        .from('user_inventory')
+        .select('quantity')
+        .eq('user_id', cleanId)
+        .eq('item_id', resolved.item_id)
+        .maybeSingle();
+      const ownedQty = Number(invRow?.quantity || 0);
+      if (ownedQty + quantity > maxStack) {
+        return {
+          success: false,
+          status: 400,
+          error: 'INVENTORY_STACK_LIMIT',
+          message: `Bạn chỉ có thể giữ tối đa **${maxStack}** **${it.name}** trong túi đồ (hiện có \`${ownedQty}/${maxStack}\`)!`,
         };
       }
     }

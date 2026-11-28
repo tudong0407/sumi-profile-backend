@@ -119,8 +119,8 @@ export const WIKI_CATEGORIES = {
         content: '• Mặc định Lv.1 • 0 EXP • 0 LT • 1 Slot Role • Pet Hóa Thạch Nham Nham Thú (120 ATK / 180 DEF / 100 SPD).\n• Tích EXP tự động qua Chat (23–35 EXP/45s) & Voice (85–135 EXP/5p).',
       },
       {
-        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.7.1)',
-        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu & Tiến Hóa: /battle, /tienhoa, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /shop_dacbiet, /dothach, /gieoque, /thaplinhhuong, /inv, /phapbao, /linhthu, /pet, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /thuongtra, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
+        heading: '2. Bộ Lệnh Tu Tiên & Tiện Ích Server (v1.8A)',
+        content: '• Hồ sơ: /profile, /rank, /exp, /doiqua.\n• Chiến đấu & Tiến Hóa: /battle, /tienhoa, /linhvuc, /party, /linhmach, /nhiemvu.\n• Gacha & Kho: /roll, /autosell, /shop, /shop_dacbiet, /dothach, /gieoque, /thaplinhhuong, /inv, /phapbao, /linhthu, /upgrade, /roles, /equip, /unequip, /enchant, /dismantle.\n• Kinh tế & Cộng đồng: /daily, /thuongtra, /job, /farm, /exchange, /luyendan, /explorer, /tangqua, /marry, /divorce, /giatoc, /top, /coinflip, /blackjack, /slots, /crash.\n• Tra cứu & Tiện ích: /wiki, /info, /updates • /play, /queue, /music, /sound • /giveaway_create, /giveaway_end, /giveaway_list, /giveaway_cancel, /giveaway_check • /sticky-set, /sticky-off.',
       },
     ],
     fields: [
@@ -130,11 +130,11 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
       {
-        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.7.1)`,
+        name: `${em('su_pin_sigil')} Lệnh Tu Tiên (v1.8A)`,
         value: [
           '• **Hồ sơ:** `/profile` • `/rank` • `/exp` *(xem Boost)* • `/doiqua` *(đổi EXP→LT)*',
           '• **Chiến đấu & Tiến Hóa:** `/battle` • `/tienhoa` *(Tiến Hóa Chân Thần)* • `/linhvuc` • `/party` • `/linhmach` *(4 Mỏ SS–SSS+)* • `/nhiemvu` *(Tháp 500 tầng)*',
-          '• **Kho, Gacha & Khí Vận:** `/roll` • `/dothach` • `/gieoque` • `/thaplinhhuong` • `/autosell` • `/shop` • `/shop_dacbiet` *(Chủ Nhật)* • `/inv` • `/phapbao` • `/linhthu` • `/pet` • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
+          '• **Kho, Gacha & Khí Vận:** `/roll` • `/dothach` • `/gieoque` • `/thaplinhhuong` • `/autosell` • `/shop` • `/shop_dacbiet` *(Chủ Nhật)* • `/inv` • `/phapbao` • `/linhthu` • `/upgrade` *(Nâng Cấp/Sao Pet)* • `/roles` • `/equip` • `/unequip` • `/enchant` • `/dismantle`',
           '• **Kinh tế & Xã hội:** `/daily` • `/thuongtra` • `/job` • `/farm` • `/exchange` • `/luyendan` • `/explorer` • `/tangqua` • `/marry` • `/divorce` • `/giatoc` • `/top`',
           '• **Giải trí & Cẩm nang:** `/coinflip` • `/blackjack` • `/slots` • `/crash` • `/wiki` • `/info` • `/updates`',
         ].join('\n'),
@@ -529,8 +529,9 @@ export const WIKI_CATEGORIES = {
       {
         name: `${em('su_sprout')} Nông Trại (-30p), Luyện Đan, Giải Trí & Gia Tộc`,
         value: [
-          '• **`/farm` & `/exchange`:** 8 ô (`4 Linh Điền + 4 Linh Các`), tưới/cho ăn giảm **`-30 phút`** chín; hỗ trợ **Thẻ Auto Farm 24h**, **Bùa Bảo Vệ +2h**, **Thuốc Tốc Độ (-25%)** & **Bột Sản Lượng (+30%)**.',
-          '• **`/luyendan` (Lò Luyện Đan):** `6 mẻ/ngày` trên `2 Lò` song song (`Lv.1–5`), hỗ trợ **Bùa Bảo Vệ Lò (+2h)** & DM nhắc chín/trước nổ 10p.',
+          '• **`/farm` & `/exchange`:** 8 ô (`4 Linh Điền + 4 Linh Các`), tưới/cho ăn giảm **`-30 phút`** chín; `/exchange` đổi nhiều tới **50×/lần** qua hộp thoại số lượng.',
+          '• **`/luyendan` & `/upgrade` (EXP Linh Thú):** Luyện `pill_ess_1` & `pill_ess_2` rơi Đan EXP Pet (`+1.200` / `+3.000 EXP/viên` + 50% LT/EXP); `/upgrade` nâng Cấp (`LT` / `Linh Quả = 8 EXP` / `2 Đan Tinh Hoa`, không nhận Role EXP buff) & Đột Phá Sao.',
+          '• **`/shop` & `/shop_dacbiet`:** Hỗ trợ **nhập số lượng trực tiếp qua Modal** khi mua Vật Phẩm / Đổi TT (`750 LT = 1 TT`).',
           '• **`/inv` (3 Loadout Tự Lưu):** Chuyển nhanh `Bộ 1 / Bộ 2 / Bộ 3` đồng bộ trực tiếp với `/explorer`.',
           '• **Minigame (`10–10.000 LT`):** `/coinflip` • `/blackjack` • `/slots` • `/crash` *(Ngự Kiếm)*.',
           `• ${em('ring_mythic')} **\`/marry\`** & ${em('su_clan_castle')} **\`/giatoc\`:** 4 cấp Nhẫn (+5%..+20% EXP & Lực + Streak) • Gia Tộc Lv.1–10 (+2%..+20% EXP & Daily LT, Clan Wars 24H).`,

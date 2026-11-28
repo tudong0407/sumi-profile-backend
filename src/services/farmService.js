@@ -624,7 +624,7 @@ export async function buyExchangeItem(userId, rawExchangeId, rawQty = 1, options
     };
   }
 
-  const qty = Math.max(1, Math.min(20, Math.floor(Number(rawQty) || 1)));
+  const qty = Math.max(1, Math.min(50, Math.floor(Number(rawQty) || 1)));
 
   return withFarmLock(cleanId, async () => {
     const now = options.now instanceof Date ? options.now : new Date();

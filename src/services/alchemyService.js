@@ -10,7 +10,8 @@
  * Tuyệt đối KHÔNG dùng emoji Unicode Windows.
  */
 
-import { supabase } from '../config/supabase.js';
+import { supabase as _supabase } from '../config/supabase.js';
+let supabase = _supabase;
 import { em, uiEm, farmEmoji } from '../config/emojiHelper.js';
 import {
   sanitizeUserId,
@@ -49,11 +50,14 @@ let dmAlchemyQueue = Promise.resolve();
 const memProfiles = new Map();
 const memFurnaces = new Map();
 const memUsers = new Map();
+const memInventory = new Map();
 
 export function __resetAlchemyTestStore(seedUsers = null) {
+  supabase = seedUsers !== null ? null : _supabase;
   memProfiles.clear();
   memFurnaces.clear();
   memUsers.clear();
+  memInventory.clear();
   if (seedUsers && typeof seedUsers === 'object') {
     for (const [uid, data] of Object.entries(seedUsers)) {
       memUsers.set(String(uid), {
@@ -72,6 +76,44 @@ export function __resetAlchemyTestStore(seedUsers = null) {
 
 export function __getAlchemyTestUser(userId) {
   return memUsers.get(String(userId)) || null;
+}
+
+export function __getAlchemyTestInventory(userId) {
+  return { ...(memInventory.get(String(userId)) || {}) };
+}
+
+async function grantInventoryItem(userId, itemId, qty, itemCategory = 'consumable', nowIso = new Date().toISOString()) {
+  const addQty = Math.max(0, Math.floor(Number(qty) || 0));
+  if (addQty <= 0 || !itemId) return 0;
+  if (!supabase) {
+    const bag = memInventory.get(userId) || {};
+    const nextQty = Number(bag[itemId] || 0) + addQty;
+    bag[itemId] = nextQty;
+    memInventory.set(userId, bag);
+    return nextQty;
+  }
+  const { data: ex } = await supabase
+    .from('user_inventory')
+    .select('quantity')
+    .eq('user_id', userId)
+    .eq('item_id', itemId)
+    .maybeSingle();
+  const nextQty = Number(ex?.quantity || 0) + addQty;
+  if (ex) {
+    await supabase
+      .from('user_inventory')
+      .update({ quantity: nextQty, item_category: itemCategory, updated_at: nowIso })
+      .eq('user_id', userId)
+      .eq('item_id', itemId);
+  } else {
+    await supabase.from('user_inventory').insert({
+      user_id: userId,
+      item_id: itemId,
+      item_category: itemCategory,
+      quantity: nextQty,
+    });
+  }
+  return nextQty;
 }
 
 async function withAlchemyLock(userId, fn) {
@@ -706,6 +748,7 @@ export async function harvestBatch(userId, opts = {}) {
     let burnedCount = 0;
     let lastPillImage = null;
     let anyExplodedNow = false;
+    const pillDrops = {};
     const resultLines = [];
     const nextSlots = [...slots];
 
@@ -754,8 +797,20 @@ export async function harvestBatch(userId, opts = {}) {
         const quality = rollQuality(tier, fortune, rng);
         const baseRoll = recipe.minLt + rng() * (recipe.maxLt - recipe.minLt);
         const furnaceMult = 1 + Number(tier.ltBonusPct || 0) / 100;
-        const ltEarned = Math.max(1, Math.round(baseRoll * furnaceMult * quality.multiplier));
-        const expEarned = Number(recipe.exp || 20);
+        let ltEarned = Math.max(1, Math.round(baseRoll * furnaceMult * quality.multiplier));
+        let expEarned = Number(recipe.exp || 20);
+        let pillDropNote = '';
+
+        if (recipe.isPetExpPill && recipe.dropItemId) {
+          const yieldMult = Number(recipe.yieldMult ?? 0.5);
+          ltEarned = Math.max(1, Math.round(ltEarned * yieldMult));
+          expEarned = Math.max(1, Math.round(expEarned * yieldMult));
+          const dropQty = quality.key === 'cloud' ? 3 : quality.key === 'superior' ? 2 : 1;
+          await grantInventoryItem(cleanId, recipe.dropItemId, dropQty, 'consumable', now.toISOString());
+          pillDrops[recipe.dropItemId] = Number(pillDrops[recipe.dropItemId] || 0) + dropQty;
+          const petExpUnit = Number(recipe.petExpPerPill || 0).toLocaleString('vi-VN');
+          pillDropNote = ` + **${dropQty}× Đan EXP Pet** *(+${petExpUnit} EXP/viên vào \`/inv\`)*`;
+        }
 
         totalGainLt += ltEarned;
         totalGainExp += expEarned;
@@ -774,7 +829,7 @@ export async function harvestBatch(userId, opts = {}) {
         const pos = nextSlots.findIndex((s) => Number(s.slot_index) === idx);
         if (pos >= 0) nextSlots[pos] = patched;
 
-        resultLines.push(`${alchemyIcon(recipe.iconKey || 'su_level_up')} **Lò #${idx} — ${recipe.name} [${quality.label} ×${quality.multiplier}]:** Thu **+${ltEarned.toLocaleString('vi-VN')} LT** & **+${expEarned} EXP**!`);
+        resultLines.push(`${alchemyIcon(recipe.iconKey || 'su_level_up')} **Lò #${idx} — ${recipe.name} [${quality.label} ×${quality.multiplier}]:** Thu **+${ltEarned.toLocaleString('vi-VN')} LT** & **+${expEarned} EXP**${pillDropNote}!`);
       }
     }
 
@@ -826,6 +881,7 @@ export async function harvestBatch(userId, opts = {}) {
         burned_count: burnedCount,
         total_gain_lt: totalGainLt,
         total_gain_exp: totalGainExp,
+        pills_dropped: pillDrops,
       },
     };
   });

@@ -84,6 +84,8 @@ import {
   dismantleTarget,
   setActivePet,
   upgradePet,
+  previewPetUpgrade,
+  executePetUpgrade,
   enchantTarget,
   invalidateInventoryCache,
 } from './services/inventoryService.js';
@@ -1509,6 +1511,37 @@ app.post('/api/pet/upgrade', requireBackendApiKey, requireUpdateAck, async (req,
   }
 });
 
+app.post('/api/pet/upgrade/preview', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await previewPetUpgrade(body.userId, {
+      mode: body.mode || body.loai || 'level',
+      targetGoal: body.targetGoal ?? body.muc_tieu ?? body.mucTieu ?? body.muc_dich ?? null,
+      petIdentifier: body.petId || body.petType || body.linh_thu || '',
+    });
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/upgrade/preview error:', err);
+    return res.status(500).json({ success: false, error: 'PET_UPGRADE_PREVIEW_FAILED', message: err.message });
+  }
+});
+
+app.post('/api/pet/upgrade/execute', requireBackendApiKey, requireUpdateAck, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const result = await executePetUpgrade(body.userId, {
+      mode: body.mode || body.loai || 'level',
+      method: body.method || 'lt',
+      targetGoal: body.targetGoal ?? body.muc_tieu ?? body.mucTieu ?? body.muc_dich ?? null,
+      petIdentifier: body.petId || body.petType || body.linh_thu || '',
+    });
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Server] /api/pet/upgrade/execute error:', err);
+    return res.status(500).json({ success: false, error: 'PET_UPGRADE_EXECUTE_FAILED', message: err.message });
+  }
+});
+
 app.post('/api/enchant', requireBackendApiKey, requireUpdateAck, async (req, res) => {
   try {
     const body = req.body || {};
@@ -1617,7 +1650,7 @@ app.post('/api/shop/buy', requireBackendApiKey, requireUpdateAck, async (req, re
       avatarUrl: getCleanParam(body.avatarUrl),
       messageId: getCleanParam(body.messageId),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/shop/buy error:', err);
     return res.status(500).json({ success: false, error: 'SHOP_BUY_FAILED', message: err.message });
@@ -2185,7 +2218,7 @@ app.post('/api/exchange/buy', requireBackendApiKey, requireUpdateAck, async (req
     const result = await buyExchangeItem(body.userId, getCleanParam(body.exchangeId, body.itemId), body.quantity ?? 1, {
       username: getCleanParam(body.username),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/exchange/buy error:', err);
     return res.status(500).json({ success: false, error: 'EXCHANGE_BUY_FAILED', message: err.message });
@@ -2968,7 +3001,7 @@ app.post('/api/special-shop/convert', requireBackendApiKey, requireUpdateAck, as
   try {
     const body = req.body || {};
     const result = await convertLtToCrystals(body.userId, body.ttAmount ?? body.amount);
-    return res.status(result.status || 200).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/special-shop/convert error:', err);
     return res.status(500).json({ success: false, error: 'SPECIAL_SHOP_CONVERT_FAILED', message: err.message });
@@ -2979,7 +3012,7 @@ app.post('/api/special-shop/buy', requireBackendApiKey, requireUpdateAck, async 
   try {
     const body = req.body || {};
     const result = await buySpecialShopItem(body.userId, getCleanParam(body.itemId), body.qty ?? 1);
-    return res.status(result.status || 200).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/special-shop/buy error:', err);
     return res.status(500).json({ success: false, error: 'SPECIAL_SHOP_BUY_FAILED', message: err.message });

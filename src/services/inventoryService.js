@@ -4,7 +4,8 @@
  * và Quản lý/Nâng Cấp Linh Thú (/pet).
  */
 
-import { supabase } from '../config/supabase.js';
+import { supabase as _supabase } from '../config/supabase.js';
+let supabase = _supabase;
 import {
   EQUIPMENT_BY_ID,
   PET_BY_TYPE,
@@ -737,7 +738,7 @@ export async function getUserPets(userId, options = {}) {
 
   const { data: petRows, error } = await supabase
     .from('user_pets')
-    .select('pet_id, pet_type, pet_name, pet_rarity, element, level, star, power_score, enchant_grade, is_active, status, quantity')
+    .select('pet_id, pet_type, pet_name, pet_rarity, element, level, exp, star, power_score, enchant_grade, is_active, status, quantity')
     .eq('user_id', cleanId)
     .order('is_active', { ascending: false })
     .order('power_score', { ascending: false });
@@ -749,8 +750,17 @@ export async function getUserPets(userId, options = {}) {
     const grade = normalizeEnchantGrade(p.enchant_grade || 'D');
     const elemName = p.element || petMeta.element || 'Thổ';
     const rarityLabel = formatRarityLabel(p.pet_rarity || petMeta.rarity || 'Phàm Phẩm');
+    const lvl = Math.min(100, Math.max(1, Number(p.level || 1)));
+    const curExp = Math.max(0, Number(p.exp || 0));
+    const needExp = lvl >= 100 ? 0 : lvl * 100;
+    const expPct = lvl >= 100 ? 100 : Math.min(99, Math.floor((curExp / Math.max(1, needExp)) * 100));
+    const expBar = buildPetExpProgressBar(curExp, needExp, 8);
     return {
       ...p,
+      exp: curExp,
+      need_exp: needExp,
+      exp_pct: expPct,
+      exp_bar: expBar,
       pet_name: p.pet_name || petMeta.name || p.pet_type,
       element: elemName,
       element_icon: elementEmoji(elemName),
@@ -769,7 +779,10 @@ export async function getUserPets(userId, options = {}) {
       : p.status === 'injured'
         ? ` *[${uiEm('ui_heal_band')} Trọng Thương]*`
         : '';
-    return `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${p.rarity_label} • ${p.element_icon} ${p.element} — Lv.${p.level} • **${p.star}★** • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
+    const expTag = Number(p.level || 1) >= 100
+      ? ' • `MAX Lv.100`'
+      : ` • \`[${p.exp_bar}] ${p.exp}/${p.need_exp} (${p.exp_pct}%)\``;
+    return `• ${p.icon} ${p.grade_icon} **${p.pet_name}**${qtyTag} (\`${p.pet_type}\`) • ${p.tier_icon} ${p.rarity_label} • ${p.element_icon} ${p.element} — Lv.${p.level} • **${p.star}★**${expTag} • Lực ${(Number(p.power_score) || 0).toLocaleString('vi-VN')}${p.is_active ? ' *(Đang xuất trận)*' : ''}${statusTag}`;
   };
 
   const petsPaged = paginateFormattedLines(mappedPets, formatPetDetailLine, {
@@ -2350,6 +2363,124 @@ export async function setActivePet(userId, petIdentifier) {
 export const PET_LEVEL_MAX_BONUS_PCT = 5.50; // Lv.1 -> Lv.100 = +550%
 export const PET_LEVEL_GROWTH_STEP = PET_LEVEL_MAX_BONUS_PCT / 99; // ~+5.5556%/cấp
 export const PET_STAR_GROWTH_STEP = 0.15; // 1★ -> 10★ = +135%
+export const PET_EXP_PER_LEVEL_MULT = 100; // NeedEXP(Lv) = Lv * 100 (Lv.1 -> 100)
+export const PET_EXP_PER_LQ = 8; // 1 Linh Qua = 8 EXP (Role/Realm EXP buffs NEVER apply)
+export const PET_EXP_PER_PILL_ESS_1 = 1200; // Linh Qua Thanh Tam Dan
+export const PET_EXP_PER_PILL_ESS_2 = 3000; // Hong Mong Tao Hoa Dan
+
+export function getPetExpRequiredForLevel(level) {
+  const lv = Math.min(100, Math.max(1, Math.floor(Number(level) || 1)));
+  return lv >= 100 ? 0 : lv * PET_EXP_PER_LEVEL_MULT;
+}
+
+export function buildPetExpProgressBar(curExp, needExp, width = 10) {
+  const w = Math.max(4, Math.min(20, Math.floor(Number(width) || 10)));
+  const need = Math.max(0, Number(needExp) || 0);
+  if (need <= 0) return '▓'.repeat(w);
+  const ratio = Math.min(1, Math.max(0, Number(curExp || 0) / need));
+  const filled = Math.min(w, Math.max(0, Math.round(ratio * w)));
+  return `${'▓'.repeat(filled)}${'░'.repeat(w - filled)}`;
+}
+
+export function computePetExpBetweenLevels(curLv, curExp, targetLv) {
+  const startLv = Math.min(100, Math.max(1, Math.floor(Number(curLv) || 1)));
+  const goalLv = Math.min(100, Math.max(startLv, Math.floor(Number(targetLv) || startLv)));
+  if (goalLv <= startLv || startLv >= 100) return 0;
+  const needFirst = getPetExpRequiredForLevel(startLv);
+  let total = Math.max(0, needFirst - Math.max(0, Number(curExp) || 0));
+  for (let l = startLv + 1; l < goalLv; l += 1) {
+    total += getPetExpRequiredForLevel(l);
+  }
+  return total;
+}
+
+export function computePetLevelLtCost(curLv, curExp, targetLv) {
+  const startLv = Math.min(100, Math.max(1, Math.floor(Number(curLv) || 1)));
+  const goalLv = Math.min(100, Math.max(startLv, Math.floor(Number(targetLv) || startLv)));
+  if (goalLv <= startLv || startLv >= 100) return 0;
+  const needFirst = Math.max(1, getPetExpRequiredForLevel(startLv));
+  const curFrac = Math.min(0.95, Math.max(0, Number(curExp || 0) / needFirst));
+  let ltCost = Math.max(1, Math.round((startLv * 50) * (1 - curFrac)));
+  for (let lvl = startLv + 1; lvl < goalLv; lvl += 1) {
+    ltCost += lvl * 50;
+  }
+  return ltCost;
+}
+
+export function simulatePetExpGain(curLv, curExp, addedExp) {
+  let lv = Math.min(100, Math.max(1, Math.floor(Number(curLv) || 1)));
+  let exp = Math.max(0, Math.floor(Number(curExp) || 0)) + Math.max(0, Math.floor(Number(addedExp) || 0));
+  const startLv = lv;
+  while (lv < 100) {
+    const need = getPetExpRequiredForLevel(lv);
+    if (exp < need) break;
+    exp -= need;
+    lv += 1;
+  }
+  let wastedExp = 0;
+  if (lv >= 100) {
+    wastedExp = exp;
+    exp = 0;
+  }
+  const needNext = getPetExpRequiredForLevel(lv);
+  const pct = lv >= 100 ? 100 : Math.min(99, Math.floor((exp / Math.max(1, needNext)) * 100));
+  return {
+    newLevel: lv,
+    newExp: exp,
+    needNext,
+    pct,
+    levelsGained: lv - startLv,
+    wastedExp,
+  };
+}
+
+// Offline mock store cho unit test Pet Upgrade (Ver 1.8A)
+const memPetUpgradeStore = {
+  users: new Map(),
+  pets: new Map(),
+  inventory: new Map(),
+};
+
+export function __resetPetUpgradeTestStore(seed = null) {
+  supabase = seed !== null ? null : _supabase;
+  memPetUpgradeStore.users.clear();
+  memPetUpgradeStore.pets.clear();
+  memPetUpgradeStore.inventory.clear();
+  if (seed && typeof seed === 'object') {
+    for (const [uid, data] of Object.entries(seed)) {
+      const id = String(uid);
+      memPetUpgradeStore.users.set(id, {
+        user_id: id,
+        username: data.username || `TuSi_${id}`,
+        linh_thach: Number(data.linh_thach ?? 0),
+        farm_essence: Number(data.farm_essence ?? 0),
+      });
+      memPetUpgradeStore.pets.set(id, (data.pets || []).map((p, idx) => ({
+        pet_id: p.pet_id || `${id}_pet_${idx + 1}`,
+        user_id: id,
+        level: 1,
+        exp: 0,
+        star: 1,
+        atk: 100,
+        def: 100,
+        spd: 100,
+        power_score: 750,
+        is_active: idx === 0,
+        ...p,
+      })));
+      memPetUpgradeStore.inventory.set(id, { ...(data.inventory || {}) });
+    }
+  }
+}
+
+export function __getPetUpgradeTestState(userId) {
+  const id = String(userId);
+  return {
+    user: memPetUpgradeStore.users.get(id) || null,
+    pets: (memPetUpgradeStore.pets.get(id) || []).map((p) => ({ ...p })),
+    inventory: { ...(memPetUpgradeStore.inventory.get(id) || {}) },
+  };
+}
 
 export function computeScaledPetBaseStats(baseMeta = {}, level = 1, star = 1, isEvolved = false) {
   const lvl = Math.min(100, Math.max(1, Number(level) || 1));
@@ -2465,6 +2596,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
 
   // mode === 'level'
   const currentLvl = Number(target.level || 1);
+  const currentExp = Math.max(0, Number(target.exp || 0));
   const currentStar = Number(target.star || 1);
   if (currentLvl >= 100) {
     return { success: false, status: 400, error: 'MAX_PET_LEVEL', message: `**${target.pet_name}** đã đạt cấp tối đa **Lv.100**!` };
@@ -2477,10 +2609,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
     return { success: false, status: 400, error: 'INVALID_TARGET_LEVEL', message: `Mục tiêu Cấp (\`${parsedGoal}\`) phải lớn hơn cấp hiện tại (**Lv.${currentLvl}**)!` };
   }
 
-  let ltCost = 0;
-  for (let lvl = currentLvl; lvl < nextLvl; lvl += 1) {
-    ltCost += lvl * 50;
-  }
+  const ltCost = computePetLevelLtCost(currentLvl, currentExp, nextLvl);
   const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
   const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar, Boolean(target.is_evolved));
   const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
@@ -2507,7 +2636,7 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
 
   await Promise.all([
     supabase.from('users').update({ linh_thach: currentBal - ltCost }).eq('user_id', cleanId),
-    supabase.from('user_pets').update({ level: nextLvl, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+    supabase.from('user_pets').update({ level: nextLvl, exp: 0, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
   ]);
 
   return {
@@ -2516,10 +2645,503 @@ export async function upgradePet(userId, petIdentifier, mode = 'level', targetGo
     pet_name: target.pet_name,
     old_level: currentLvl,
     new_level: nextLvl,
+    exp: 0,
     cost_lt: ltCost,
     linh_thach: currentBal - ltCost,
     power_score: newPower,
     message: `${em('su_level_up')} Thăng cấp thành công! ${petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved))} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) • Tổng chi phí: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**!`,
+  };
+}
+
+async function loadUpgradeContext(cleanId, petIdentifier = '') {
+  if (!supabase) {
+    const user = memPetUpgradeStore.users.get(cleanId);
+    if (!user) return { errorRes: { success: false, status: 200, ui_variant: 'error', error: 'USER_NOT_FOUND', title: `${uiEm('ui_warn')} Không tìm thấy hồ sơ`, description: 'Tu sĩ chưa khởi tạo hồ sơ.', color: '#ef4444' } };
+    const pets = memPetUpgradeStore.pets.get(cleanId) || [];
+    const bag = memPetUpgradeStore.inventory.get(cleanId) || {};
+    const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
+    const target = needle
+      ? pets.find((p) => String(p.pet_id) === needle || String(p.pet_type || '').toLowerCase() === needle || String(p.pet_name || '').toLowerCase() === needle)
+      : (pets.find((p) => p.is_active) || pets[0]);
+    return {
+      user,
+      target,
+      ownedStones: Number(bag.pet_star_stone || 0),
+      ownedPill1: Number(bag.pill_ess_1 || 0),
+      ownedPill2: Number(bag.pill_ess_2 || 0),
+      isMock: true,
+    };
+  }
+  const { user } = await ensureUserInitialized(cleanId);
+  if (!user) return { errorRes: { success: false, status: 200, ui_variant: 'error', error: 'USER_INIT_FAILED', title: `${uiEm('ui_warn')} Lỗi hồ sơ`, description: 'Không thể khởi tạo hồ sơ.', color: '#ef4444' } };
+  const [{ data: pets }, { data: invRows }] = await Promise.all([
+    supabase.from('user_pets').select('*').eq('user_id', cleanId),
+    supabase.from('user_inventory').select('item_id, quantity').eq('user_id', cleanId).in('item_id', ['pet_star_stone', 'pill_ess_1', 'pill_ess_2']),
+  ]);
+  const invMap = Object.fromEntries((invRows || []).map((r) => [r.item_id, Number(r.quantity || 0)]));
+  const needle = normalizeEmojiAwareQuery(String(petIdentifier || '').trim()).toLowerCase();
+  const target = needle
+    ? (pets || []).find((p) => String(p.pet_id) === needle || p.pet_type.toLowerCase() === needle || p.pet_name.toLowerCase() === needle)
+    : (pets || []).find((p) => p.is_active) || (pets || [])[0];
+  return {
+    user,
+    target,
+    ownedStones: Number(invMap.pet_star_stone || 0),
+    ownedPill1: Number(invMap.pill_ess_1 || 0),
+    ownedPill2: Number(invMap.pill_ess_2 || 0),
+    isMock: false,
+  };
+}
+
+function buildMethodLine(label, icon, needUnits, ownedUnits, unitLabel, expPerUnit, curLv, curExp) {
+  const usedUnits = Math.min(ownedUnits, needUnits);
+  const proj = usedUnits > 0 ? simulatePetExpGain(curLv, curExp, usedUnits * expPerUnit) : null;
+  const projNote = ownedUnits <= 0
+    ? '*(Chưa đủ nguyên liệu)*'
+    : ownedUnits >= needUnits
+      ? `→ Đủ lên **Lv.${proj.newLevel}** (${proj.pct}%)`
+      : `→ Dùng hết **${usedUnits.toLocaleString('vi-VN')}** ${unitLabel} *(**+${(usedUnits * expPerUnit).toLocaleString('vi-VN')} EXP**)* → **Lv.${proj.newLevel}** (${proj.pct}%)`;
+  return `• ${icon} **${label}:** Cần **${needUnits.toLocaleString('vi-VN')}** ${unitLabel} *(Có: \`${ownedUnits.toLocaleString('vi-VN')}\`)* ${projNote}`;
+}
+
+export async function previewPetUpgrade(userId, opts = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'INVALID_USER_ID', title: `${uiEm('ui_warn')} ID không hợp lệ`, description: 'Không xác định được tu sĩ.', color: '#ef4444' };
+  }
+  const modeRaw = String(opts.mode || opts.loai || 'level').trim().toLowerCase();
+  const mode = modeRaw === 'star' || modeRaw === 'sao' ? 'star' : 'level';
+  const petIdentifier = opts.petIdentifier ?? opts.petType ?? opts.petId ?? opts.linh_thu ?? '';
+  const rawGoal = opts.targetGoal ?? opts.muc_tieu ?? opts.mucTieu ?? opts.muc_dich ?? null;
+  const parsedGoal = rawGoal !== null && rawGoal !== undefined && String(rawGoal).trim() !== ''
+    ? Math.floor(Number(rawGoal))
+    : null;
+
+  const ctx = await loadUpgradeContext(cleanId, petIdentifier);
+  if (ctx.errorRes) return ctx.errorRes;
+  const { user, target, ownedStones, ownedPill1, ownedPill2 } = ctx;
+
+  if (!target) {
+    return {
+      success: false,
+      status: 200,
+      ui_variant: 'error',
+      error: 'PET_NOT_FOUND',
+      title: `${uiEm('ui_warn')} Không tìm thấy Linh Thú`,
+      description: 'Không tìm thấy Linh Thú để nâng cấp. Hãy dùng `/roll` hoặc chọn đúng tên/mã ID trong `/linhthu`.',
+      color: '#ef4444',
+    };
+  }
+
+  const baseMeta = PET_BY_TYPE[target.pet_type] || { base_atk: target.atk, base_def: target.def, base_spd: target.spd, pet_type: target.pet_type };
+  const pIcon = petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved));
+  const currentLvl = Math.min(100, Math.max(1, Number(target.level || 1)));
+  const currentExp = Math.max(0, Number(target.exp || 0));
+  const currentStar = Math.min(10, Math.max(1, Number(target.star || 1)));
+  const currentBal = Number(user.linh_thach || 0);
+  const currentLq = Number(user.farm_essence || 0);
+
+  if (mode === 'star') {
+    if (currentStar >= 10) {
+      return {
+        success: false,
+        status: 200,
+        ui_variant: 'error',
+        error: 'MAX_STAR',
+        title: `${em('su_realm_star')} ĐÃ ĐẠT TỐI ĐA 10 SAO`,
+        description: `${pIcon} **${target.pet_name}** đã đạt tối đa **10★** ${em('su_realm_star')}!`,
+        color: '#f59e0b',
+      };
+    }
+    if (parsedGoal !== null && (Number.isNaN(parsedGoal) || parsedGoal <= currentStar)) {
+      return {
+        success: false,
+        status: 200,
+        ui_variant: 'error',
+        error: 'INVALID_TARGET_STAR',
+        title: `${uiEm('ui_warn')} Mục tiêu Sao không hợp lệ`,
+        description: `Mục tiêu Sao (\`${rawGoal}\`) phải lớn hơn bậc sao hiện tại (**${currentStar}★**)!`,
+        color: '#ef4444',
+      };
+    }
+    const nextStar = parsedGoal !== null ? Math.min(10, Math.max(currentStar + 1, parsedGoal)) : currentStar + 1;
+    let stoneCost = 0;
+    let ltCost = 0;
+    for (let s = currentStar; s < nextStar; s += 1) {
+      stoneCost += s;
+      ltCost += s * 200;
+    }
+    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+    const nextScaled = computeScaledPetBaseStats(baseMeta, currentLvl, nextStar, Boolean(target.is_evolved));
+    const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+    const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+    const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
+    const oldPower = Number(target.power_score || 0);
+    const deltaPower = (newAtk - Number(target.atk || 0)) * 3 + (newDef - Number(target.def || 0)) * 2 + (newSpd - Number(target.spd || 0)) * 2;
+    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + currentLvl * 50;
+    const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
+
+    return {
+      success: true,
+      ui_variant: 'star',
+      mode: 'star',
+      pet_type: target.pet_type,
+      pet_name: target.pet_name,
+      current_star: currentStar,
+      target_goal: nextStar,
+      stone_cost: stoneCost,
+      lt_cost: ltCost,
+      owned_stones: ownedStones,
+      owned_lt: currentBal,
+      title: `${em('pet_star_stone')} ĐỘT PHÁ SAO LINH THÚ — ${target.pet_name}`,
+      description: [
+        `${pIcon} **${target.pet_name}** (\`${target.pet_type}\`) • **Lv.${currentLvl}** • **${currentStar}★ → ${nextStar}★** ${em('su_realm_star')}`,
+        `• **Chiến Lực:** \`${oldPower.toLocaleString('vi-VN')}\` → **\`${newPower.toLocaleString('vi-VN')}\`** *(+${Math.max(0, newPower - oldPower).toLocaleString('vi-VN')})*`,
+        '',
+        '**Nguyên liệu cần & Đang sở hữu:**',
+        `• ${em('pet_star_stone')} **Tinh Thạch Nâng Sao:** Cần **${stoneCost.toLocaleString('vi-VN')}** *(Đang có: \`${ownedStones.toLocaleString('vi-VN')}\`)*`,
+        `• ${em('su_linhthach')} **Linh Thạch:** Cần **${ltCost.toLocaleString('vi-VN')} LT** *(Đang có: \`${currentBal.toLocaleString('vi-VN')}\` LT)*`,
+        '',
+        '*Bấm nút **Đột Phá Sao** bên dưới để xác nhận.*',
+      ].join('\n'),
+      color: '#f59e0b',
+    };
+  }
+
+  // mode === 'level'
+  if (currentLvl >= 100) {
+    return {
+      success: false,
+      status: 200,
+      ui_variant: 'error',
+      error: 'MAX_PET_LEVEL',
+      title: `${em('su_level_up')} ĐÃ ĐẠT TỐI ĐA LV.100`,
+      description: `${pIcon} **${target.pet_name}** đã đạt cấp tối đa **Lv.100**!`,
+      color: '#10b981',
+    };
+  }
+  if (parsedGoal !== null && (Number.isNaN(parsedGoal) || parsedGoal <= currentLvl)) {
+    return {
+      success: false,
+      status: 200,
+      ui_variant: 'error',
+      error: 'INVALID_TARGET_LEVEL',
+      title: `${uiEm('ui_warn')} Mục tiêu Cấp không hợp lệ`,
+      description: `Mục tiêu Cấp (\`${rawGoal}\`) phải lớn hơn cấp hiện tại (**Lv.${currentLvl}**)!`,
+      color: '#ef4444',
+    };
+  }
+
+  const nextLvl = parsedGoal !== null ? Math.min(100, Math.max(currentLvl + 1, parsedGoal)) : currentLvl + 1;
+  const needExp = getPetExpRequiredForLevel(currentLvl);
+  const expPct = Math.min(99, Math.floor((currentExp / Math.max(1, needExp)) * 100));
+  const expBar = buildPetExpProgressBar(currentExp, needExp, 10);
+  const neededExpTotal = computePetExpBetweenLevels(currentLvl, currentExp, nextLvl);
+
+  const ltCost = computePetLevelLtCost(currentLvl, currentExp, nextLvl);
+  const needLq = Math.ceil(neededExpTotal / PET_EXP_PER_LQ);
+  const needPill1 = Math.ceil(neededExpTotal / PET_EXP_PER_PILL_ESS_1);
+  const needPill2 = Math.ceil(neededExpTotal / PET_EXP_PER_PILL_ESS_2);
+
+  const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+  const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar, Boolean(target.is_evolved));
+  const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+  const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+  const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
+  const oldPower = Number(target.power_score || 0);
+  const deltaPower = (newAtk - Number(target.atk || 0)) * 3 + (newDef - Number(target.def || 0)) * 2 + (newSpd - Number(target.spd || 0)) * 2 + (nextLvl - currentLvl) * 50;
+  const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + nextLvl * 50;
+  const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
+
+  const lqIcon = farmEmoji('farm_essence') || em('su_sprout');
+  const p1Icon = em('pill_ess_1', em('su_level_up'));
+  const p2Icon = em('pill_ess_2', em('su_level_up'));
+
+  return {
+    success: true,
+    ui_variant: 'level',
+    mode: 'level',
+    pet_type: target.pet_type,
+    pet_name: target.pet_name,
+    current_level: currentLvl,
+    current_exp: currentExp,
+    need_exp_current: needExp,
+    exp_pct: expPct,
+    target_goal: nextLvl,
+    needed_exp_total: neededExpTotal,
+    quotes: {
+      lt: { cost: ltCost, owned: currentBal, enough: currentBal >= ltCost },
+      lq: { need: needLq, owned: currentLq, exp_per_unit: PET_EXP_PER_LQ },
+      pill_ess_1: { need: needPill1, owned: ownedPill1, exp_per_unit: PET_EXP_PER_PILL_ESS_1 },
+      pill_ess_2: { need: needPill2, owned: ownedPill2, exp_per_unit: PET_EXP_PER_PILL_ESS_2 },
+    },
+    title: `${em('su_level_up')} NÂNG CẤP LINH THÚ — ${target.pet_name}`,
+    description: [
+      `${pIcon} **${target.pet_name}** (\`${target.pet_type}\`) • **Lv.${currentLvl} → Lv.${nextLvl}** • **${currentStar}★**`,
+      `• **Thanh EXP:** \`[${expBar}]\` \`${currentExp.toLocaleString('vi-VN')}/${needExp.toLocaleString('vi-VN')} EXP\` (**${expPct}%**) • Cần thêm **${neededExpTotal.toLocaleString('vi-VN')} EXP**`,
+      `• **Chiến Lực dự kiến:** \`${oldPower.toLocaleString('vi-VN')}\` → **\`${newPower.toLocaleString('vi-VN')}\`** *(+${Math.max(0, newPower - oldPower).toLocaleString('vi-VN')})*`,
+      '',
+      '**4 Phương Án Nâng Cấp (Bấm nút chọn bên dưới):**',
+      `• ${em('su_linhthach')} **Linh Thạch:** Cần **${ltCost.toLocaleString('vi-VN')} LT** *(Có: \`${currentBal.toLocaleString('vi-VN')}\`)* → Lên thẳng **Lv.${nextLvl}** *(đặt EXP về 0%)*`,
+      buildMethodLine(`Linh Quả (${PET_EXP_PER_LQ} EXP/quả)`, lqIcon, needLq, currentLq, 'LQ', PET_EXP_PER_LQ, currentLvl, currentExp),
+      buildMethodLine(`Thanh Tâm Đan (${PET_EXP_PER_PILL_ESS_1.toLocaleString('vi-VN')} EXP/viên)`, p1Icon, needPill1, ownedPill1, 'viên', PET_EXP_PER_PILL_ESS_1, currentLvl, currentExp),
+      buildMethodLine(`Tạo Hóa Đan (${PET_EXP_PER_PILL_ESS_2.toLocaleString('vi-VN')} EXP/viên)`, p2Icon, needPill2, ownedPill2, 'viên', PET_EXP_PER_PILL_ESS_2, currentLvl, currentExp),
+      '',
+      `*${uiEm('ui_bulb_tip')} EXP Linh Thú KHÔNG nhận buff EXP từ Role hay Cảnh Giới. Nếu LQ/Đan chưa đủ mục tiêu, bấm nút vẫn dùng hết số đang có để cộng EXP!*`,
+    ].join('\n'),
+    color: '#38bdf8',
+  };
+}
+
+export async function executePetUpgrade(userId, opts = {}) {
+  const cleanId = sanitizeUserId(userId);
+  if (!cleanId) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'INVALID_USER_ID', title: `${uiEm('ui_warn')} ID không hợp lệ`, description: 'Không xác định được tu sĩ.', color: '#ef4444' };
+  }
+  const modeRaw = String(opts.mode || opts.loai || 'level').trim().toLowerCase();
+  const mode = modeRaw === 'star' || modeRaw === 'sao' ? 'star' : 'level';
+  const method = String(opts.method || 'lt').trim().toLowerCase();
+  const petIdentifier = opts.petIdentifier ?? opts.petType ?? opts.petId ?? opts.linh_thu ?? '';
+  const rawGoal = opts.targetGoal ?? opts.muc_tieu ?? opts.mucTieu ?? opts.muc_dich ?? null;
+  const parsedGoal = rawGoal !== null && rawGoal !== undefined && String(rawGoal).trim() !== ''
+    ? Math.floor(Number(rawGoal))
+    : null;
+
+  const ctx = await loadUpgradeContext(cleanId, petIdentifier);
+  if (ctx.errorRes) return ctx.errorRes;
+  const { user, target, ownedStones, ownedPill1, ownedPill2, isMock } = ctx;
+
+  if (!target) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'PET_NOT_FOUND', title: `${uiEm('ui_warn')} Không tìm thấy Linh Thú`, description: 'Không tìm thấy Linh Thú để nâng cấp.', color: '#ef4444' };
+  }
+
+  const baseMeta = PET_BY_TYPE[target.pet_type] || { base_atk: target.atk, base_def: target.def, base_spd: target.spd, pet_type: target.pet_type };
+  const pIcon = petEmoji(target.pet_type, em('su_pet_paw'), Boolean(target.is_evolved));
+  const currentLvl = Math.min(100, Math.max(1, Number(target.level || 1)));
+  const currentExp = Math.max(0, Number(target.exp || 0));
+  const currentStar = Math.min(10, Math.max(1, Number(target.star || 1)));
+  const nowIso = new Date().toISOString();
+
+  if (mode === 'star') {
+    if (currentStar >= 10) {
+      return { success: false, status: 200, ui_variant: 'error', error: 'MAX_STAR', title: `${em('su_realm_star')} ĐÃ TỐI ĐA`, description: `**${target.pet_name}** đã đạt **10★**!`, color: '#f59e0b' };
+    }
+    const nextStar = parsedGoal !== null ? Math.min(10, Math.max(currentStar + 1, parsedGoal)) : currentStar + 1;
+    if (parsedGoal !== null && parsedGoal <= currentStar) {
+      return { success: false, status: 200, ui_variant: 'error', error: 'INVALID_TARGET_STAR', title: `${uiEm('ui_warn')} Sao không hợp lệ`, description: `Mục tiêu Sao (\`${parsedGoal}\`) phải lớn hơn **${currentStar}★**!`, color: '#ef4444' };
+    }
+    let stoneCost = 0;
+    let ltCost = 0;
+    for (let s = currentStar; s < nextStar; s += 1) {
+      stoneCost += s;
+      ltCost += s * 200;
+    }
+    const currentBal = Number(user.linh_thach || 0);
+    if (ownedStones < stoneCost || currentBal < ltCost) {
+      return {
+        success: false,
+        status: 200,
+        ui_variant: 'error',
+        error: 'INSUFFICIENT_MATERIALS',
+        title: `${uiEm('ui_warn')} Chưa đủ nguyên liệu`,
+        description: `Cần **${stoneCost.toLocaleString('vi-VN')}** ${em('pet_star_stone')} **Tinh Thạch Nâng Sao** *(có ${ownedStones})* và **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} **LT** *(có ${currentBal.toLocaleString('vi-VN')})* để lên **${nextStar}★**!`,
+        color: '#ef4444',
+      };
+    }
+    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+    const nextScaled = computeScaledPetBaseStats(baseMeta, currentLvl, nextStar, Boolean(target.is_evolved));
+    const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+    const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+    const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
+    const oldPower = Number(target.power_score || 0);
+    const deltaPower = (newAtk - Number(target.atk || 0)) * 3 + (newDef - Number(target.def || 0)) * 2 + (newSpd - Number(target.spd || 0)) * 2;
+    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + currentLvl * 50;
+    const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
+
+    if (isMock) {
+      user.linh_thach = currentBal - ltCost;
+      const bag = memPetUpgradeStore.inventory.get(cleanId) || {};
+      bag.pet_star_stone = ownedStones - stoneCost;
+      Object.assign(target, { star: nextStar, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower });
+    } else {
+      await Promise.all([
+        supabase.from('user_inventory').update({ quantity: ownedStones - stoneCost, updated_at: nowIso }).eq('user_id', cleanId).eq('item_id', 'pet_star_stone'),
+        supabase.from('users').update({ linh_thach: currentBal - ltCost, updated_at: nowIso }).eq('user_id', cleanId),
+        supabase.from('user_pets').update({ star: nextStar, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+      ]);
+      invalidateInventoryCache(cleanId);
+    }
+
+    return {
+      success: true,
+      mode: 'star',
+      pet_type: target.pet_type,
+      pet_name: target.pet_name,
+      old_star: currentStar,
+      new_star: nextStar,
+      cost_lt: ltCost,
+      cost_stones: stoneCost,
+      linh_thach: currentBal - ltCost,
+      power_score: newPower,
+      title: `${em('pet_star_stone')} ĐỘT PHÁ SAO THÀNH CÔNG!`,
+      description: `${pIcon} **${target.pet_name}** (**${currentStar}★ → ${nextStar}★** ${em('su_realm_star')})\n• Tiêu hao: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} & **-${stoneCost}** ${em('pet_star_stone')}\n• Chiến Lực: **${newPower.toLocaleString('vi-VN')}** *(LT còn: \`${(currentBal - ltCost).toLocaleString('vi-VN')}\`)*`,
+      color: '#10b981',
+    };
+  }
+
+  // mode === 'level'
+  if (currentLvl >= 100) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'MAX_PET_LEVEL', title: `${em('su_level_up')} ĐÃ TỐI ĐA`, description: `**${target.pet_name}** đã đạt **Lv.100**!`, color: '#10b981' };
+  }
+  const nextLvl = parsedGoal !== null ? Math.min(100, Math.max(currentLvl + 1, parsedGoal)) : currentLvl + 1;
+  if (parsedGoal !== null && parsedGoal <= currentLvl) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'INVALID_TARGET_LEVEL', title: `${uiEm('ui_warn')} Cấp không hợp lệ`, description: `Mục tiêu Cấp (\`${parsedGoal}\`) phải lớn hơn **Lv.${currentLvl}**!`, color: '#ef4444' };
+  }
+
+  if (method === 'lt' || method === 'linh_thach') {
+    const ltCost = computePetLevelLtCost(currentLvl, currentExp, nextLvl);
+    const currentBal = Number(user.linh_thach || 0);
+    if (currentBal < ltCost) {
+      return {
+        success: false,
+        status: 200,
+        ui_variant: 'error',
+        error: 'INSUFFICIENT_LINH_THACH',
+        title: `${uiEm('ui_warn')} Không đủ Linh Thạch`,
+        description: `Cần **${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} **LT** để nâng **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**) *(đang có \`${currentBal.toLocaleString('vi-VN')} LT\`)*!`,
+        color: '#ef4444',
+      };
+    }
+    const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+    const nextScaled = computeScaledPetBaseStats(baseMeta, nextLvl, currentStar, Boolean(target.is_evolved));
+    const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+    const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+    const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
+    const oldPower = Number(target.power_score || 0);
+    const deltaPower = (newAtk - Number(target.atk || 0)) * 3 + (newDef - Number(target.def || 0)) * 2 + (newSpd - Number(target.spd || 0)) * 2 + (nextLvl - currentLvl) * 50;
+    const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + nextLvl * 50;
+    const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
+
+    if (isMock) {
+      user.linh_thach = currentBal - ltCost;
+      Object.assign(target, { level: nextLvl, exp: 0, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower });
+    } else {
+      await Promise.all([
+        supabase.from('users').update({ linh_thach: currentBal - ltCost, updated_at: nowIso }).eq('user_id', cleanId),
+        supabase.from('user_pets').update({ level: nextLvl, exp: 0, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+      ]);
+      invalidateInventoryCache(cleanId);
+    }
+
+    return {
+      success: true,
+      mode: 'level',
+      method: 'lt',
+      pet_type: target.pet_type,
+      pet_name: target.pet_name,
+      old_level: currentLvl,
+      new_level: nextLvl,
+      new_exp: 0,
+      cost_lt: ltCost,
+      linh_thach: currentBal - ltCost,
+      power_score: newPower,
+      title: `${em('su_level_up')} THĂNG CẤP LINH THÚ THÀNH CÔNG!`,
+      description: [
+        `${pIcon} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${nextLvl}**)`,
+        `• Tiêu hao: **-${ltCost.toLocaleString('vi-VN')}** ${em('su_linhthach')} *(LT còn: \`${(currentBal - ltCost).toLocaleString('vi-VN')}\`)*`,
+        `• Thanh EXP đặt lại: \`0%\` • Chiến Lực mới: **${newPower.toLocaleString('vi-VN')}**`,
+      ].join('\n'),
+      color: '#10b981',
+    };
+  }
+
+  // Method bằng EXP item: lq | pill_ess_1 | pill_ess_2
+  const METHOD_CFG = {
+    lq: { label: 'Linh Quả Tiên Giới', unit: 'LQ', expPerUnit: PET_EXP_PER_LQ, icon: farmEmoji('farm_essence') || em('su_sprout'), owned: Number(user.farm_essence || 0), type: 'essence' },
+    pill_ess_1: { label: 'Linh Quả Thanh Tâm Đan', unit: 'viên', expPerUnit: PET_EXP_PER_PILL_ESS_1, icon: em('pill_ess_1', em('su_level_up')), owned: ownedPill1, type: 'inv', itemId: 'pill_ess_1' },
+    pill_ess_2: { label: 'Hồng Mông Tạo Hóa Đan', unit: 'viên', expPerUnit: PET_EXP_PER_PILL_ESS_2, icon: em('pill_ess_2', em('su_level_up')), owned: ownedPill2, type: 'inv', itemId: 'pill_ess_2' },
+  };
+  const cfg = METHOD_CFG[method];
+  if (!cfg) {
+    return { success: false, status: 200, ui_variant: 'error', error: 'INVALID_METHOD', title: `${uiEm('ui_warn')} Phương thức không hợp lệ`, description: 'Hãy chọn 1 trong 4 phương án trên bảng `/upgrade`.', color: '#ef4444' };
+  }
+  if (cfg.owned <= 0) {
+    return {
+      success: false,
+      status: 200,
+      ui_variant: 'error',
+      error: 'INSUFFICIENT_MATERIALS',
+      title: `${uiEm('ui_warn')} Chưa có ${cfg.label}`,
+      description: `Bạn hiện có \`0\` ${cfg.label} ${cfg.icon}! Hãy thu hoạch tại \`/farm\` hoặc luyện tại \`/luyendan\`.`,
+      color: '#ef4444',
+    };
+  }
+
+  const neededExpTotal = computePetExpBetweenLevels(currentLvl, currentExp, nextLvl);
+  const needUnits = Math.ceil(neededExpTotal / cfg.expPerUnit);
+  const usedUnits = Math.max(1, Math.min(cfg.owned, needUnits));
+  const gainedExp = usedUnits * cfg.expPerUnit;
+  const sim = simulatePetExpGain(currentLvl, currentExp, gainedExp);
+
+  const curScaled = computeScaledPetBaseStats(baseMeta, currentLvl, currentStar, Boolean(target.is_evolved));
+  const nextScaled = computeScaledPetBaseStats(baseMeta, sim.newLevel, currentStar, Boolean(target.is_evolved));
+  const newAtk = Math.max(nextScaled.atk, Number(target.atk || 0) + Math.max(0, nextScaled.atk - curScaled.atk));
+  const newDef = Math.max(nextScaled.def, Number(target.def || 0) + Math.max(0, nextScaled.def - curScaled.def));
+  const newSpd = Math.max(nextScaled.spd, Number(target.spd || 0) + Math.max(0, nextScaled.spd - curScaled.spd));
+  const oldPower = Number(target.power_score || 0);
+  const deltaPower = (newAtk - Number(target.atk || 0)) * 3 + (newDef - Number(target.def || 0)) * 2 + (newSpd - Number(target.spd || 0)) * 2 + sim.levelsGained * 50;
+  const calcPower = newAtk * 3 + newDef * 2 + newSpd * 2 + sim.newLevel * 50;
+  const newPower = Math.max(calcPower, oldPower + Math.max(0, deltaPower));
+  const remOwned = cfg.owned - usedUnits;
+
+  if (isMock) {
+    if (cfg.type === 'essence') {
+      user.farm_essence = remOwned;
+    } else {
+      const bag = memPetUpgradeStore.inventory.get(cleanId) || {};
+      bag[cfg.itemId] = remOwned;
+    }
+    Object.assign(target, { level: sim.newLevel, exp: sim.newExp, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower });
+  } else {
+    const tasks = [
+      supabase.from('user_pets').update({ level: sim.newLevel, exp: sim.newExp, atk: newAtk, def: newDef, spd: newSpd, power_score: newPower }).eq('pet_id', target.pet_id),
+    ];
+    if (cfg.type === 'essence') {
+      tasks.push(supabase.from('users').update({ farm_essence: remOwned, updated_at: nowIso }).eq('user_id', cleanId));
+    } else {
+      tasks.push(supabase.from('user_inventory').update({ quantity: remOwned, updated_at: nowIso }).eq('user_id', cleanId).eq('item_id', cfg.itemId));
+    }
+    await Promise.all(tasks);
+    invalidateInventoryCache(cleanId);
+  }
+
+  const bar = buildPetExpProgressBar(sim.newExp, sim.needNext, 10);
+  const expText = sim.newLevel >= 100
+    ? '**MAX Lv.100**'
+    : `\`[${bar}]\` \`${sim.newExp.toLocaleString('vi-VN')}/${sim.needNext.toLocaleString('vi-VN')} EXP\` (**${sim.pct}%**)`;
+
+  return {
+    success: true,
+    mode: 'level',
+    method,
+    pet_type: target.pet_type,
+    pet_name: target.pet_name,
+    old_level: currentLvl,
+    new_level: sim.newLevel,
+    new_exp: sim.newExp,
+    exp_pct: sim.pct,
+    used_units: usedUnits,
+    remaining_units: remOwned,
+    gained_exp: gainedExp,
+    power_score: newPower,
+    title: `${em('su_level_up')} ${sim.levelsGained > 0 ? 'THĂNG CẤP LINH THÚ!' : 'ĐÃ NẠP EXP LINH THÚ!'}`,
+    description: [
+      `${pIcon} **${target.pet_name}** (**Lv.${currentLvl} → Lv.${sim.newLevel}**)`,
+      `• Tiêu hao: **-${usedUnits.toLocaleString('vi-VN')} ${cfg.unit}** ${cfg.icon} **${cfg.label}** *(Còn lại: \`${remOwned.toLocaleString('vi-VN')}\`)*`,
+      `• Cộng thẳng: **+${gainedExp.toLocaleString('vi-VN')} EXP** *(không áp dụng buff EXP Role/Cảnh Giới)*`,
+      `• Tiến độ EXP: ${expText} • Chiến Lực: **${newPower.toLocaleString('vi-VN')}**`,
+    ].join('\n'),
+    color: '#10b981',
   };
 }
 
