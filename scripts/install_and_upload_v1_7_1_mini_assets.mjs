@@ -37,7 +37,7 @@ const ASSETS = [
  * Edge flood-fill BFS removing pure/near-black exterior while preserving dark pixels inside subject,
  * plus 1px soft alpha feather on exterior boundary so glowing edges stay smooth.
  */
-async function removeBlackBgAndCropCanvas(srcPath, targetDim, paddingRatio = 0.04) {
+async function removeBlackBgAndCropCanvas(srcPath, targetDim, paddingRatio = 0.04, isIcon = false) {
   const img = await loadImage(fs.readFileSync(srcPath));
   const w = img.width;
   const h = img.height;
@@ -47,68 +47,167 @@ async function removeBlackBgAndCropCanvas(srcPath, targetDim, paddingRatio = 0.0
   const imgData = wCtx.getImageData(0, 0, w, h);
   const data = imgData.data;
 
-  // Detect if corners are already transparent
+  // Compute maxC & chroma once
+  const total = w * h;
+  const maxC = new Uint8Array(total);
+  const chroma = new Uint8Array(total);
+  for (let i = 0; i < total; i += 1) {
+    const p = i * 4;
+    const r = data[p];
+    const g = data[p + 1];
+    const b = data[p + 2];
+    const mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    const mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+    maxC[i] = mx;
+    chroma[i] = mx - mn;
+  }
+
   const cornerAlpha = data[3];
   if (cornerAlpha > 20) {
-    const visited = new Uint8Array(w * h);
-    const isBg = new Uint8Array(w * h);
-    const queue = new Int32Array(w * h);
+    const bgCut = isIcon ? 30 : 22;
+    const bgChroma = isIcon ? 20 : 16;
+    const visited = new Uint8Array(total);
+    const isBg = new Uint8Array(total);
+    const queue = new Int32Array(total);
     let qHead = 0;
     let qTail = 0;
 
-    const isNearBlack = (idx) => {
-      const p = idx * 4;
-      return data[p] <= 18 && data[p + 1] <= 18 && data[p + 2] <= 18;
-    };
-
-    const enqueue = (x, y) => {
+    const enqueueOuter = (x, y) => {
       if (x < 0 || y < 0 || x >= w || y >= h) return;
       const idx = y * w + x;
       if (visited[idx]) return;
       visited[idx] = 1;
-      if (isNearBlack(idx)) {
+      if (maxC[idx] <= bgCut && chroma[idx] <= bgChroma) {
         isBg[idx] = 1;
         queue[qTail++] = idx;
       }
     };
 
     for (let x = 0; x < w; x += 1) {
-      enqueue(x, 0);
-      enqueue(x, h - 1);
+      enqueueOuter(x, 0);
+      enqueueOuter(x, h - 1);
     }
     for (let y = 0; y < h; y += 1) {
-      enqueue(0, y);
-      enqueue(w - 1, y);
+      enqueueOuter(0, y);
+      enqueueOuter(w - 1, y);
     }
 
     while (qHead < qTail) {
       const idx = queue[qHead++];
       const x = idx % w;
       const y = (idx - x) / w;
-      if (x > 0) enqueue(x - 1, y);
-      if (x + 1 < w) enqueue(x + 1, y);
-      if (y > 0) enqueue(x, y - 1);
-      if (y + 1 < h) enqueue(x, y + 1);
+      if (x > 0) enqueueOuter(x - 1, y);
+      if (x + 1 < w) enqueueOuter(x + 1, y);
+      if (y > 0) enqueueOuter(x, y - 1);
+      if (y + 1 < h) enqueueOuter(x, y + 1);
     }
 
-    for (let i = 0; i < w * h; i += 1) {
-      if (isBg[i]) {
-        data[i * 4 + 3] = 0;
+    // Remove enclosed interior pure/near-black studio pockets (handles, swirl loops, sword gaps, dragon ears)
+    const minHolePx = isIcon ? 20 : 120;
+    const holeMaxC = isIcon ? 44 : 26;
+    const holeChroma = isIcon ? 24 : 12;
+    const pureCoreCut = isIcon ? 24 : 14;
+    const holeBuf = new Int32Array(total);
+
+    for (let i = 0; i < total; i += 1) {
+      if (visited[i] || maxC[i] > holeMaxC || chroma[i] > holeChroma) continue;
+      let hHead = 0;
+      let hTail = 0;
+      let hasPureCore = false;
+      let minHx = w;
+      let maxHx = 0;
+      let minHy = h;
+      let maxHy = 0;
+
+      visited[i] = 1;
+      holeBuf[hTail++] = i;
+      while (hHead < hTail) {
+        const idx = holeBuf[hHead++];
+        if (maxC[idx] <= pureCoreCut) hasPureCore = true;
+        const x = idx % w;
+        const y = (idx - x) / w;
+        if (x < minHx) minHx = x;
+        if (x > maxHx) maxHx = x;
+        if (y < minHy) minHy = y;
+        if (y > maxHy) maxHy = y;
+        const nb = [x > 0 ? idx - 1 : -1, x + 1 < w ? idx + 1 : -1, y > 0 ? idx - w : -1, y + 1 < h ? idx + w : -1];
+        for (const n of nb) {
+          if (n >= 0 && !visited[n] && maxC[n] <= holeMaxC && chroma[n] <= holeChroma) {
+            visited[n] = 1;
+            holeBuf[hTail++] = n;
+          }
+        }
+      }
+
+      if (hTail >= minHolePx && hasPureCore) {
+        if (!isIcon && hTail < 450 && minHx > 0.35 * w && maxHx < 0.65 * w && minHy > 0.14 * h && maxHy < 0.45 * h) {
+          continue;
+        }
+        for (let k = 0; k < hTail; k += 1) {
+          isBg[holeBuf[k]] = 1;
+        }
       }
     }
 
-    // Soften 1px-2px anti-aliased fringe pixels bordering transparent background
-    for (let y = 1; y < h - 1; y += 1) {
-      for (let x = 1; x < w - 1; x += 1) {
-        const idx = y * w + x;
-        if (isBg[idx]) continue;
-        const p = idx * 4;
-        const maxC = Math.max(data[p], data[p + 1], data[p + 2]);
-        if (maxC >= 46) continue;
-        const touchesBg = isBg[idx - 1] || isBg[idx + 1] || isBg[idx - w] || isBg[idx + w];
-        if (touchesBg) {
-          data[p + 3] = Math.round((maxC / 46) * 255);
-        }
+    // Distance field from isBg boundary up to MAX_DIST px via multi-source BFS
+    const maxDist = isIcon ? 8 : 4;
+    const dist = new Int16Array(total).fill(99);
+    let dHead = 0;
+    let dTail = 0;
+    for (let i = 0; i < total; i += 1) {
+      if (!isBg[i]) continue;
+      dist[i] = 0;
+      const x = i % w;
+      const y = (i - x) / w;
+      if ((x > 0 && !isBg[i - 1]) || (x + 1 < w && !isBg[i + 1]) || (y > 0 && !isBg[i - w]) || (y + 1 < h && !isBg[i + w])) {
+        queue[dTail++] = i;
+      }
+    }
+    while (dHead < dTail) {
+      const idx = queue[dHead++];
+      const cd = dist[idx];
+      if (cd >= maxDist) continue;
+      const nd = cd + 1;
+      const x = idx % w;
+      const y = (idx - x) / w;
+      if (x > 0 && dist[idx - 1] > nd) { dist[idx - 1] = nd; queue[dTail++] = idx - 1; }
+      if (x + 1 < w && dist[idx + 1] > nd) { dist[idx + 1] = nd; queue[dTail++] = idx + 1; }
+      if (y > 0 && dist[idx - w] > nd) { dist[idx - w] = nd; queue[dTail++] = idx - w; }
+      if (y + 1 < h && dist[idx + w] > nd) { dist[idx + w] = nd; queue[dTail++] = idx + w; }
+    }
+
+    // Soft black-matte keying + RGB un-premultiplication in boundary zone (eliminates black halo!)
+    const rampMax = isIcon ? 120.0 : 72.0;
+    const floorCut = isIcon ? 18.0 : 16.0;
+    const slopeDecay = isIcon ? 0.10 : 0.22;
+
+    for (let i = 0; i < total; i += 1) {
+      const p = i * 4;
+      if (isBg[i]) {
+        data[p] = 0;
+        data[p + 1] = 0;
+        data[p + 2] = 0;
+        data[p + 3] = 0;
+        continue;
+      }
+      const d = dist[i];
+      if (d < 1 || d > maxDist) continue;
+      const localCap = rampMax * (1.0 - (d - 1) * slopeDecay);
+      const mx = maxC[i];
+      if (mx >= localCap) continue;
+      let aEst = Math.max(0, Math.min(1, (mx - floorCut) / Math.max(localCap - floorCut, 1.0)));
+      aEst = aEst * aEst * (3.0 - 2.0 * aEst);
+      if (aEst <= 0.015) {
+        data[p] = 0;
+        data[p + 1] = 0;
+        data[p + 2] = 0;
+        data[p + 3] = 0;
+      } else if (aEst < 0.99) {
+        const safeA = Math.max(aEst, 0.14);
+        data[p] = Math.min(255, Math.round(data[p] / safeA));
+        data[p + 1] = Math.min(255, Math.round(data[p + 1] / safeA));
+        data[p + 2] = Math.min(255, Math.round(data[p + 2] / safeA));
+        data[p + 3] = Math.round(aEst * 255);
       }
     }
     wCtx.putImageData(imgData, 0, 0);
@@ -300,8 +399,9 @@ async function main() {
   const emojiBuffers = {};
 
   for (const asset of ASSETS) {
+    const isIcon = asset.kind === 'external_icon';
     // 1) Hi-res transparent WebP (512 for veins -> local assets/veins/; 768 for feature icons -> Supabase CDN!)
-    const webpCanvas = await removeBlackBgAndCropCanvas(asset.src, asset.webpDim, 0.03);
+    const webpCanvas = await removeBlackBgAndCropCanvas(asset.src, asset.webpDim, 0.03, isIcon);
     const webpBuf = webpCanvas.toBuffer('image/webp', asset.q);
 
     if (asset.kind === 'vein') {
@@ -320,7 +420,7 @@ async function main() {
     }
 
     // 2) 128x128 transparent PNG buffer for Discord Application Emoji
-    const emCanvas = await removeBlackBgAndCropCanvas(asset.src, 128, 0.04);
+    const emCanvas = await removeBlackBgAndCropCanvas(asset.src, 128, 0.04, isIcon);
     emojiBuffers[asset.name] = emCanvas.toBuffer('image/png');
   }
 

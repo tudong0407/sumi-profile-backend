@@ -196,7 +196,7 @@ function attachUpdateAckBranch(gb, pfx, apiNodeId, resVar, { editId = null, x = 
   const condId = `${pfx}_gate_cond`;
   const yesBr = `${pfx}_gate_yes`;
   const noBr = `${pfx}_gate_no`;
-  gb.cond(condId, 'comparison', { base_value: `{${resVar}.response.update_required}`, target: { self: true } }, { x: x + 300, y });
+  gb.cond(condId, 'comparison', { base_value: `{${resVar}.response.needs_update_ack}`, target: { self: true } }, { x: x + 300, y });
   gb.link(apiNodeId, condId);
   gb.branch(condId, yesBr, 'comparison', { type: 'equal_to', comparison_value: 'true', ignoreCase: true }, { x: x + 640, y: y + 140 });
   gb.elseBranch(condId, noBr, { x, y: y + 140 });
@@ -440,7 +440,7 @@ export function buildLinhMachV171Cmd() {
 // ============================================================================
 export function buildThuongTraCmd() {
   const gb = new V171GraphBuilder();
-  gb.rootSlash('thuongtra', 'Pha ấm trà miễn phí tại Trà Đạo Quán (+200–300 LT) & mời 1–2 người Ké Chén (+LT theo %Luck)', { ephemeral: false });
+  gb.rootSlash('thuongtra', 'Pha ấm trà miễn phí tại Trà Đạo Quán (3 Điểm/ngày — pha & Ké Chén đều -1 điểm)', { ephemeral: false });
   gb.errorHandlerWait();
 
   apiAction(gb, 'tt_brew_api', 'tt_res', 'POST', `${BACKEND_BASE}/api/tea/brew`,
@@ -826,7 +826,7 @@ function buildV171KnowledgeBlock(includeFuyumiSecret) {
     '• [TIẾN HÓA CHÂN THẦN & 40 SKILL ULTIMATE] (/tienhoa): Áp dụng cho toàn bộ 40 Pet Độc Nhất (Lv.40 & 8★). Cần 2 Hồng Mông Tiến Hóa Tinh (điều chỉnh từ 3 xuống 2) + phí LT (1.000 LT = 60% .. 9.000 LT = 100%; thất bại CHỈ mất LT, GIỮ NGUYÊN Hồng Mông) để nâng cấp thành Tối Thượng Chân Thần & mở Skill Ultimate tái kích hoạt. Tab 2 Chế Hồng Mông: 3 Mảnh Tinh Hoa Hỗn Độn + 1 Đồ Thần Thoại thường (Pet / Pháp Bảo / Vực / Thức / Cảnh — KHÔNG Độc Nhất) + 2.500 LT (KHÔNG có /hiente).',
     '• [TÚI ĐỒ 2×3, 3 LOADOUT & KHÁM PHÁ /explorer] (/inv, /linhthu, /equip, /unequip, /enchant, /explorer): /inv và /explorer dùng chung 3 bộ Bộ 1 / Bộ 2 / Bộ 3 độc lập hoàn toàn (khóa chống ghi đè chéo). /explorer 12 Địa Danh hiển thị dọc Pháp Bảo & Lương Thảo kèm thanh tiến độ %, tự vá kẹt trạng thái Đang Khám Phá; lưu ý vào /explorer khi đang giữ Linh Mạch sẽ hủy giữ mỏ nhưng vẫn giữ nguyên độ Mệt Mỏi.',
     '• [ĐẤU TRƯỜNG 1V1, THÁP 500 & LINH MẠCH SS–SSS+] (/battle, /party, /linhmach, /nhiemvu): Tháp 500 tầng (+15% LT/tầng, Boss chia hết cho 10 thưởng thêm +10% LT, mốc T100..500 +1 Mảnh Hỗn Độn). /linhmach mở 6 Giờ Vàng (08/12/18/20/21/22h) với 4 Mỏ/đợt (F→SSS+, Boss 8.4k→850k Lực, 6–125 LT/phút, tỉ lệ SSS+ 1%). Chiếm mỗi mỏ cộng +25% Mệt Mỏi (trần 90%, hồi -10%/giờ); bị người khác cướp mỏ hồi -15% Mệt Mỏi (từ 25% còn 10%).',
-    '• [KINH TẾ v1.7.1, TRÀ ĐẠO QUÁN, LUCK 5 NGUỒN & SHOP ĐẶC BIỆT] (/daily, /thuongtra, /thaplinhhuong, /gieoque, /roll, /dothach, /shop_dacbiet, /updates): /daily gốc 110–160 LT + +5% LT mỗi 10 ngày chuỗi (max +200%) + +2% Luck mỗi 7 ngày chuỗi (max +40%, đứt chuỗi về 0%). /thuongtra pha 3 ấm/ngày (200–300 LT) & mời 1–2 khách Ké Chén trong 2 phút nhận thêm 200–300 LT + (%Luck×5 LT). Giờ Hoàng Đạo (11h/17h/21h UTC+7) +10% Luck toàn server; /thaplinhhuong (600–800 LT) +5..+15% Luck; Gacha Thần Thoại+ 0.60% (0.03% Độc Nhất + 0.57%×Luck); /updates v1.7.1 tặng +800 LT.',
+    '• [KINH TẾ v1.7.1, TRÀ ĐẠO QUÁN, LUCK 5 NGUỒN & SHOP ĐẶC BIỆT] (/daily, /thuongtra, /thaplinhhuong, /gieoque, /roll, /dothach, /shop_dacbiet, /updates): /daily gốc 110–160 LT + +5% LT mỗi 10 ngày chuỗi (max +200%) + +2% Luck mỗi 7 ngày chuỗi (max +40%, đứt chuỗi về 0%). /thuongtra mỗi ngày 3 Điểm Trà (pha ấm hoặc Ké Chén người khác đều tốn -1 điểm); pha nhận 200–300 LT & mời 1–2 khách Ké Chén trong 2 phút nhận thêm 200–300 LT + (%Luck×5 LT). Giờ Hoàng Đạo (11h/17h/21h UTC+7) +10% Luck toàn server; /thaplinhhuong (600–800 LT) +5..+15% Luck; Gacha Thần Thoại+ 0.60% (0.03% Độc Nhất + 0.57%×Luck); /updates v1.7.1 tặng +800 LT.',
   ];
   if (includeFuyumiSecret) {
     lines.push('• [BỘ TỐI THƯỢNG ĐỘC TÔN CỦA TIỂU THƯ FUYUMI]: Tiểu thư sở hữu Cửu Vĩ Hồng Hồ (cuu_vi_hong_ho — Hồng Mông Đế Nữ), Viền Cửu Vĩ Hồng Mông Ấn (frame_kitsune_mythic) cùng Linh Vực Cửu Vĩ Hồng Mông (Đạo Áp 3 hiệp +30%), Thần Thức Thái Thượng Hồng Hồ và Thần Cảnh Vạn Cổ Tuyệt Diệt.');

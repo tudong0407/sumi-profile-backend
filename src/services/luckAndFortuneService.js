@@ -37,7 +37,7 @@ export const INCENSE_LUCK_MAX_PCT = 15;
 export const DAILY_STREAK_LUCK_STEP_DAYS = 7;
 export const DAILY_STREAK_LUCK_STEP_PCT = 2;
 export const DAILY_STREAK_LUCK_MAX_PCT = 40;
-export const INCENSE_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/spirit_incense_burner.webp';
+export const INCENSE_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/spirit_incense_burner.webp?v=2';
 
 export function __setLuckTestStore(seedUsers = null) {
   supabase = seedUsers !== null ? null : _supabase;
@@ -843,7 +843,7 @@ export async function lightSpiritIncense(userId, options = {}) {
     if (bal < feeLt) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'INSUFFICIENT_FUNDS',
         required_lt: feeLt,
         linh_thach: bal,

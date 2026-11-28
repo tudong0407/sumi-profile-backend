@@ -499,7 +499,7 @@ export const WIKI_CATEGORIES = {
     sections: [
       {
         heading: '1. Kiếm LT, Trà Đạo Quán, Gacha 0.60% & Khí Vận 5 Nguồn',
-        content: '• /daily (110–160 LT gốc + +5% LT/10 ngày max 200% + +2% Luck/7 ngày max 40%) • /thuongtra (3 ấm/ngày 200–300 LT + mời 1–2 khách Ké Chén nhận thêm 200–300 LT + %Luck×5 LT).\n• /thaplinhhuong (600–800 LT theo Luck → +5..15% Luck/ngày) & Giờ Hoàng Đạo (11h / 17h / 21h UTC+7 → +10% Luck toàn server) • Tổng Luck 5 nguồn đồng bộ /inv, /roll, /dothach, /daily, /thuongtra.\n• /roll (50 LT/lượt, 450/10, 0.60% Thần Thoại+, Pity 350) • /shop_dacbiet Chủ Nhật • /dothach (-10% xịt) • /gieoque.',
+        content: '• /daily (110–160 LT gốc + +5% LT/10 ngày max 200% + +2% Luck/7 ngày max 40%) • /thuongtra (3 điểm/ngày, pha ấm hoặc Ké Chén đều -1 điểm; 200–300 LT + mời 1–2 khách nhận thêm 200–300 LT + %Luck×5 LT).\n• /thaplinhhuong (600–800 LT theo Luck → +5..15% Luck/ngày) & Giờ Hoàng Đạo (11h / 17h / 21h UTC+7 → +10% Luck toàn server) • Tổng Luck 5 nguồn đồng bộ /inv, /roll, /dothach, /daily, /thuongtra.\n• /roll (50 LT/lượt, 450/10, 0.60% Thần Thoại+, Pity 350) • /shop_dacbiet Chủ Nhật • /dothach (-10% xịt) • /gieoque.',
       },
       {
         heading: '2. Nhiệm Vụ (+30%), Tháp 500 Tầng, Nông Trại (-30p) & Lò Luyện Đan',
@@ -511,7 +511,7 @@ export const WIKI_CATEGORIES = {
         name: `${em('su_linhthach')} Kinh Tế, /thuongtra, Gacha 0.60% & Tổng Luck 5 Nguồn`,
         value: [
           '• **`/daily` (`110–160 LT` gốc):** Cộng `+5% LT` mỗi `10 ngày` chuỗi *(tối đa `+200%`)* & `+2% Luck` mỗi `7 ngày` *(tối đa `+40%`, đứt chuỗi về `0%`)*.',
-          '• **`/thuongtra` (3 ấm/ngày):** Pha ngay `200–300 LT`; trong `2 phút` tối đa `2 khách` bấm **Ké Chén** *(3 lần ké/ngày)* giúp cả 2 nhận thêm `200–300 LT + (%Luck × 5 LT)`.',
+          '• **`/thuongtra` (3 Điểm Trà/ngày):** **Pha ấm** hay **Ké Chén** người khác đều tốn **-1 điểm** *(tổng tối đa `3/3`/ngày)*; pha nhận ngay `200–300 LT`, trong `2 phút` tối đa `2 khách` bấm **Ké Chén** giúp cả 2 nhận thêm `200–300 LT + (%Luck × 5 LT)`.',
           '• **Luck 5 Nguồn Đồng Bộ:** `Linh Lộ` + `/gieoque` + `Chuỗi /daily` + **Giờ Hoàng Đạo (`11h • 17h • 21h` +10%)** + **`/thaplinhhuong`** *(`600–800 LT` → `+5..+15% Luck`)*.',
           '• `/roll` (`50 LT/lượt`, `450/10`, **0.60% Thần Thoại+**, Pity **350**) • `/dothach` • `/shop_dacbiet` Chủ Nhật (`750 LT = 1 TT`).',
         ].join('\n'),
@@ -538,7 +538,7 @@ export const WIKI_CATEGORIES = {
         inline: false,
       },
     ],
-    content: 'Kinh tế v1.7.1: /daily 110–160 LT (+5% LT/10d max +200%, +2% Luck/7d max +40%), /thuongtra 3 ấm/ngày + Ké Chén (+%Luck×5 LT), Giờ Hoàng Đạo (11/17/21h +10% Luck), /thaplinhhuong (+5..+15% Luck), Tháp +15% LT & Boss T10 +10% LT, Gacha 0.60%, /shop_dacbiet Chủ Nhật & /updates v1.7.1 (+800 LT).',
+    content: 'Kinh tế v1.7.1: /daily 110–160 LT (+5% LT/10d max +200%, +2% Luck/7d max +40%), /thuongtra 3 điểm/ngày (Pha hoặc Ké Chén -1 điểm, +%Luck×5 LT), Giờ Hoàng Đạo (11/17/21h +10% Luck), /thaplinhhuong (+5..+15% Luck), Tháp +15% LT & Boss T10 +10% LT, Gacha 0.60%, /shop_dacbiet Chủ Nhật & /updates v1.7.1 (+800 LT).',
   },
 
   explorer: {

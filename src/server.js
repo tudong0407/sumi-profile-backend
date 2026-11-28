@@ -2636,10 +2636,16 @@ app.post('/api/luck/incense', requireBackendApiKey, requireUpdateAck, async (req
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/luck/incense error:', err);
-    return res.status(500).json({ success: false, error: 'LUCK_INCENSE_FAILED', message: err.message });
+    return res.status(200).json({
+      success: false,
+      error: 'LUCK_INCENSE_FAILED',
+      title: 'KHÔNG THỂ THẮP LINH HƯƠNG LÚC NÀY',
+      description: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+      message: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+    });
   }
 });
 
@@ -2651,10 +2657,16 @@ app.post('/api/tea/brew', requireBackendApiKey, requireUpdateAck, async (req, re
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/tea/brew error:', err);
-    return res.status(500).json({ success: false, error: 'TEA_BREW_FAILED', message: err.message });
+    return res.status(200).json({
+      success: false,
+      error: 'TEA_BREW_FAILED',
+      title: 'KHÔNG THỂ PHA TRÀ LÚC NÀY',
+      description: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+      message: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+    });
   }
 });
 
@@ -2666,10 +2678,16 @@ app.post('/api/tea/join', requireBackendApiKey, async (req, res) => {
       fallbackUsername: getCleanParam(body.fallbackUsername),
       avatarUrl: getCleanParam(body.avatarUrl),
     });
-    return res.status(result.status || (result.success ? 200 : 400)).json(result);
+    return res.status(200).json(result);
   } catch (err) {
     console.error('[Server] /api/tea/join error:', err);
-    return res.status(500).json({ success: false, error: 'TEA_JOIN_FAILED', message: err.message });
+    return res.status(200).json({
+      success: false,
+      error: 'TEA_JOIN_FAILED',
+      title: 'KHÔNG THỂ KÉ CHÉN LÚC NÀY',
+      description: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+      message: err.message || 'Máy chủ đang tạm bận, vui lòng thử lại sau!',
+    });
   }
 });
 

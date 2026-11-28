@@ -548,12 +548,12 @@ export async function getExplorerHub(userId, opts = {}) {
   const injuredPets = details.allPets.filter((p) => p.status === 'injured');
 
   const petLine = details.chosenPet
-    ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}**\n  ◦ Cấp: \`Lv.${details.chosenPet.level}\` • \`${details.chosenPet.star}★\` • *${details.chosenPet.is_active ? 'Pet Chính' : 'Pet Phụ'}*`
+    ? `${petEmoji(details.chosenPet.pet_type)} **${details.chosenPet.pet_name}**\n\u00A0\u00A0↳ **Cấp:** \`Lv.${details.chosenPet.level}\` • \`${details.chosenPet.star}★\` • *${details.chosenPet.is_active ? 'Pet Chính' : 'Pet Phụ'}*`
     : '*Chưa chọn Linh Thú*';
 
   const formatSlotGear = (label, eq) => eq
-    ? `  ◦ ${label}: ${itemEmoji(eq.item_id)} **${EQUIPMENT_BY_ID[eq.item_id]?.item_name || eq.item_id}** (${gradeEmoji(eq.enchant_grade)}${eq.enchant_grade})`
-    : `  ◦ ${label}: *Trống*`;
+    ? `\u00A0\u00A0↳ **${label}:** ${itemEmoji(eq.item_id)} **${EQUIPMENT_BY_ID[eq.item_id]?.item_name || eq.item_id}** (${gradeEmoji(eq.enchant_grade)}${eq.enchant_grade})`
+    : `\u00A0\u00A0↳ **${label}:** *Trống*`;
   const eqBlock = [
     formatSlotGear('Vũ Khí', details.weapon),
     formatSlotGear('Bảo Ngọc', details.gem),
@@ -600,10 +600,10 @@ export async function getExplorerHub(userId, opts = {}) {
 
   const foodBlock = [
     `• **Lương Thảo & Dược Phẩm:**`,
-    `  ◦ ${em('food_survival_pill')} Đan Hộ Mệnh: \`×${foodCounts.food_survival_pill || 0}\``,
-    `  ◦ ${em('food_yield_tea')} Trà Bội Thu: \`×${foodCounts.food_yield_tea || 0}\``,
-    `  ◦ ${em('food_speed_fruit')} Quả Tốc Hành: \`×${foodCounts.food_speed_fruit || 0}\``,
-    `  ◦ ${em('explorer_revive_elixir')} Cửu Chuyển Hoàn Hồn Lộ: \`×${foodCounts.explorer_revive_elixir || 0}\``,
+    `\u00A0\u00A0↳ ${em('food_survival_pill')} **Đan Hộ Mệnh:** \`×${foodCounts.food_survival_pill || 0}\``,
+    `\u00A0\u00A0↳ ${em('food_yield_tea')} **Trà Bội Thu:** \`×${foodCounts.food_yield_tea || 0}\``,
+    `\u00A0\u00A0↳ ${em('food_speed_fruit')} **Quả Tốc Hành:** \`×${foodCounts.food_speed_fruit || 0}\``,
+    `\u00A0\u00A0↳ ${em('explorer_revive_elixir')} **Cửu Chuyển Hoàn Hồn Lộ:** \`×${foodCounts.explorer_revive_elixir || 0}\``,
   ].join('\n');
 
   const desc = [

@@ -17,15 +17,20 @@ import { em, uiEm } from '../config/emojiHelper.js';
 import { sanitizeUserId, ensureUserInitialized, pickCleanDisplayValue } from './profileService.js';
 import { getVnDateKey, getEffectiveLuckAndFortune, formatLuckSummaryLines } from './luckAndFortuneService.js';
 
-export const TEA_MAX_BREWS_PER_DAY = 3;
-export const TEA_MAX_GUEST_JOINS_PER_DAY = 3;
+export const TEA_DAILY_POINTS_MAX = 3;
+export const TEA_MAX_BREWS_PER_DAY = TEA_DAILY_POINTS_MAX;
+export const TEA_MAX_GUEST_JOINS_PER_DAY = TEA_DAILY_POINTS_MAX;
 export const TEA_MAX_GUESTS_PER_POT = 2;
+
+export function getDailyTeaPointsUsed(dailyRow) {
+  return Number(dailyRow?.brew_count || 0) + Number(dailyRow?.guest_join_count || 0);
+}
 export const TEA_BASE_LT_MIN = 200;
 export const TEA_BASE_LT_MAX = 300;
 export const TEA_LUCK_LT_MULT = 5;
 export const TEA_SESSION_TTL_MS = 2 * 60 * 1000;
-export const TEA_POT_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_ceremony_pot.webp';
-export const TEA_CHEERS_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_cup_cheers.webp';
+export const TEA_POT_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_ceremony_pot.webp?v=2';
+export const TEA_CHEERS_IMAGE_URL = 'https://lfvtysacdoadtvskqgkt.supabase.co/storage/v1/object/public/sumi-static-assets/v1_7_1_mini/tea_cup_cheers.webp?v=2';
 
 const teaLocks = new Map();
 const memTeaStore = {
@@ -149,8 +154,11 @@ function buildTeaSessionEmbedPayload(session, dailyRow, luckInfo, now = new Date
 
   const hostTotalInPot = Number(session.host_brew_lt || 0) + guests.reduce((s, g) => s + Number(g.host_total_lt || 0), 0);
 
+  const hostPointsUsed = getDailyTeaPointsUsed(dailyRow);
+  const hostPointsRemaining = Math.max(0, TEA_DAILY_POINTS_MAX - hostPointsUsed);
+
   const lines = [
-    `${potEm} **Chủ Ấm:** <@${session.host_user_id}> *(Pha ấm **${dailyRow.brew_count}/${TEA_MAX_BREWS_PER_DAY}** hôm nay)*`,
+    `${potEm} **Chủ Ấm:** <@${session.host_user_id}> *(Điểm Trà hôm nay: đã dùng **${hostPointsUsed}/${TEA_DAILY_POINTS_MAX}**, còn **${hostPointsRemaining}** điểm • Pha & Ké đều -1 điểm)*`,
     `• **Thưởng Pha Ấm:** **+${Number(session.host_brew_lt).toLocaleString('vi-VN')}** ${lt} *(Tổng ấm hiện thu về: **${hostTotalInPot.toLocaleString('vi-VN')}** ${lt})*`,
     `• ${statusLine}`,
     '',
@@ -183,16 +191,21 @@ export async function brewTea(userId, opts = {}) {
 
   return withTeaLock(`user:${cleanId}`, async () => {
     const daily = await getDailyTeaRecord(cleanId, dateKey);
-    if (Number(daily.brew_count || 0) >= TEA_MAX_BREWS_PER_DAY) {
+    const pointsUsed = getDailyTeaPointsUsed(daily);
+    if (pointsUsed >= TEA_DAILY_POINTS_MAX) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'TEA_BREW_LIMIT_REACHED',
         brews_used: daily.brew_count,
+        guest_joins_used: daily.guest_join_count,
+        points_used: pointsUsed,
+        points_max: TEA_DAILY_POINTS_MAX,
+        points_remaining: 0,
         brews_remaining: 0,
-        title: `${em('tea_ceremony_pot', em('su_warn'))} ĐÃ HẾT LƯỢT PHA TRÀ HÔM NAY`,
-        description: `Hôm nay đạo hữu đã pha đủ **${TEA_MAX_BREWS_PER_DAY}/${TEA_MAX_BREWS_PER_DAY}** ấm trà miễn phí rồi! Hãy ghé ké chén ấm của người khác *(tối đa ${TEA_MAX_GUEST_JOINS_PER_DAY} lần/ngày)* hoặc chờ qua \`00:00\` UTC+7 nhé!`,
-        message: `Hôm nay đạo hữu đã pha đủ **${TEA_MAX_BREWS_PER_DAY}/${TEA_MAX_BREWS_PER_DAY}** ấm trà miễn phí rồi!`,
+        title: `${em('tea_ceremony_pot', em('su_warn'))} ĐÃ HẾT 3/3 ĐIỂM THƯỞNG TRÀ HÔM NAY`,
+        description: `Hôm nay đạo hữu đã dùng hết **${TEA_DAILY_POINTS_MAX}/${TEA_DAILY_POINTS_MAX} Điểm Thưởng Trà** *(Pha ấm \`${daily.brew_count}\` lần + Ké Chén \`${daily.guest_join_count}\` lần — mỗi lượt đều tốn \`-1 điểm\`)*. Hãy chờ qua \`00:00\` UTC+7 ngày mai nhé!`,
+        message: `Hôm nay đạo hữu đã dùng hết **${TEA_DAILY_POINTS_MAX}/${TEA_DAILY_POINTS_MAX} Điểm Thưởng Trà**!`,
       };
     }
 
@@ -210,6 +223,8 @@ export async function brewTea(userId, opts = {}) {
       total_lt_earned: Number(daily.total_lt_earned || 0) + hostBrewLt,
     };
     await upsertDailyTeaRecord(nextDaily, nowIso);
+    const nextPointsUsed = getDailyTeaPointsUsed(nextDaily);
+    const nextPointsRemaining = Math.max(0, TEA_DAILY_POINTS_MAX - nextPointsUsed);
 
     const sessionKey = `tea_${crypto.randomBytes(6).toString('hex')}`;
     const expiresAt = new Date(now.getTime() + TEA_SESSION_TTL_MS).toISOString();
@@ -249,7 +264,11 @@ export async function brewTea(userId, opts = {}) {
       host_luck_pct: sessionRow.host_luck_pct,
       linh_thach: creditRes.balance,
       brews_used: nextDaily.brew_count,
-      brews_remaining: Math.max(0, TEA_MAX_BREWS_PER_DAY - nextDaily.brew_count),
+      guest_joins_used: nextDaily.guest_join_count,
+      points_used: nextPointsUsed,
+      points_max: TEA_DAILY_POINTS_MAX,
+      points_remaining: nextPointsRemaining,
+      brews_remaining: nextPointsRemaining,
       expires_at: expiresAt,
       luck_info: luckInfo,
       ...embed,
@@ -283,13 +302,13 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
     }
 
     if (!session) {
-      return { success: false, status: 404, error: 'TEA_SESSION_NOT_FOUND', message: 'Không tìm thấy ấm trà này hoặc phiên đã đóng.' };
+      return { success: false, status: 200, error: 'TEA_SESSION_NOT_FOUND', message: 'Không tìm thấy ấm trà này hoặc phiên đã đóng.' };
     }
 
     if (String(session.host_user_id) === cleanGuestId) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'CANNOT_JOIN_OWN_TEA',
         message: `${em('tea_cup_cheers', em('su_warn'))} Đây là ấm trà của chính bạn! Hãy để **1–2 đạo hữu khác** bấm **Ké Chén** để cả hai cùng nhận thưởng nhé!`,
       };
@@ -299,7 +318,7 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
     if (guests.some((g) => String(g.user_id) === cleanGuestId)) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'ALREADY_JOINED_POT',
         message: `${em('tea_cup_cheers', em('su_warn'))} Bạn đã **Ké Chén** ấm trà này rồi!`,
       };
@@ -308,7 +327,7 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
     if (session.status === 'full' || guests.length >= Number(session.max_guests || TEA_MAX_GUESTS_PER_POT)) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'TEA_POT_FULL',
         should_disable_button: true,
         message: `${em('tea_ceremony_pot', em('su_warn'))} Ấm trà này đã đủ **2/2 khách** rồi!`,
@@ -323,7 +342,7 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
       }
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'TEA_SESSION_EXPIRED',
         should_disable_button: true,
         message: `${uiEm('ui_clock_timer')} Ấm trà đã hết hạn **2 phút** rồi — hẹn đạo hữu ở ấm sau nhé!`,
@@ -331,12 +350,16 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
     }
 
     const guestDaily = await getDailyTeaRecord(cleanGuestId, dateKey);
-    if (Number(guestDaily.guest_join_count || 0) >= TEA_MAX_GUEST_JOINS_PER_DAY) {
+    const guestPointsUsed = getDailyTeaPointsUsed(guestDaily);
+    if (guestPointsUsed >= TEA_DAILY_POINTS_MAX) {
       return {
         success: false,
-        status: 400,
+        status: 200,
         error: 'TEA_GUEST_LIMIT_REACHED',
-        message: `${em('tea_cup_cheers', em('su_warn'))} Hôm nay bạn đã **Ké Chén** đủ **${TEA_MAX_GUEST_JOINS_PER_DAY}/${TEA_MAX_GUEST_JOINS_PER_DAY} lần** rồi! Hãy pha ấm riêng hoặc chờ qua \`00:00\` UTC+7 nhé.`,
+        points_used: guestPointsUsed,
+        points_max: TEA_DAILY_POINTS_MAX,
+        points_remaining: 0,
+        message: `${em('tea_cup_cheers', em('su_warn'))} Hôm nay bạn đã dùng hết **${TEA_DAILY_POINTS_MAX}/${TEA_DAILY_POINTS_MAX} Điểm Thưởng Trà** *(Pha ấm \`${guestDaily.brew_count}\` + Ké Chén \`${guestDaily.guest_join_count}\` — mỗi lần đều tốn \`-1 điểm\`)*! Hẹn bạn ngày mai nhé.`,
       };
     }
 
@@ -410,9 +433,11 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
     const embed = buildTeaSessionEmbedPayload(session, nextHostDaily, hostLuck, now);
     const lt = em('su_linhthach');
     const cupEm = em('tea_cup_cheers', em('su_sparkle'));
+    const nextGuestPointsUsed = getDailyTeaPointsUsed(nextGuestDaily);
+    const nextGuestPointsRemaining = Math.max(0, TEA_DAILY_POINTS_MAX - nextGuestPointsUsed);
     const guestReplyMsg = [
-      `${cupEm} <@${cleanGuestId}> vừa **Ké Chén** ấm trà của <@${session.host_user_id}>!`,
-      `• **Bạn nhận:** **+${guestTotalLt.toLocaleString('vi-VN')}** ${lt} *(${guestBaseLt} gốc + ${guestLuckBonusLt} từ \`${guestLuckPct}% Luck\` • Còn **${TEA_MAX_GUEST_JOINS_PER_DAY - nextGuestDaily.guest_join_count}** lượt ké hôm nay)*`,
+      `${cupEm} <@${cleanGuestId}> vừa **Ké Chén** ấm trà của <@${session.host_user_id}>! *(-1 Điểm Trà)*`,
+      `• **Bạn nhận:** **+${guestTotalLt.toLocaleString('vi-VN')}** ${lt} *(${guestBaseLt} gốc + ${guestLuckBonusLt} từ \`${guestLuckPct}% Luck\` • Còn **${nextGuestPointsRemaining}/${TEA_DAILY_POINTS_MAX}** điểm hôm nay)*`,
       `• **Chủ ấm nhận thêm:** **+${hostTotalLt.toLocaleString('vi-VN')}** ${lt} *(${hostBaseLt} gốc + ${hostLuckBonusLt} từ \`${hostLuckPct}% Luck\`)*`,
     ].join('\n');
 
@@ -432,7 +457,9 @@ export async function joinTeaPot(sessionKeyOrId, guestUserId, opts = {}) {
         total_lt: guestTotalLt,
         linh_thach: guestBalRes.balance,
         guest_joins_used: nextGuestDaily.guest_join_count,
-        guest_joins_remaining: Math.max(0, TEA_MAX_GUEST_JOINS_PER_DAY - nextGuestDaily.guest_join_count),
+        points_used: nextGuestPointsUsed,
+        points_remaining: nextGuestPointsRemaining,
+        guest_joins_remaining: nextGuestPointsRemaining,
       },
       host_reward: {
         user_id: session.host_user_id,

@@ -49,7 +49,7 @@ export const V171_CHANGELOG = {
       heading: `${em('tea_ceremony_pot', em('su_linhthach'))} 3. /daily x2, Trà Đạo Quán (/thuongtra), Giờ Hoàng Đạo & /thaplinhhuong`,
       bullets: [
         '**`/daily` Gấp Đôi & Thưởng Chuỗi:** LT gốc tăng lên **`110–160 LT/ngày`**; cứ **10 ngày chuỗi cộng `+5% LT`** *(tối đa `+200%`)*; cứ **7 ngày chuỗi cộng `+2% Luck`** *(tối đa `+40%`, đứt chuỗi về `0%`)*.',
-        '**Trà Đạo Quán (`/thuongtra`):** Pha trà miễn phí **3 ấm/ngày** nhận ngay **`200–300 LT`**; mời **1–2 khách bấm `[Ké Chén]`** trong **2 phút** để cả chủ ấm lẫn khách nhận thêm **`200–300 LT + (%Luck × 5 LT)`** *(tối đa 3 lần ké/ngày)*.',
+        '**Trà Đạo Quán (`/thuongtra`):** Mỗi ngày có **3 Điểm Thưởng Trà** (*Pha ấm hoặc Ké Chén đều trừ `-1 điểm`*): pha nhận ngay **`200–300 LT`**; mời **1–2 khách bấm `[Ké Chén]`** trong **2 phút** để cả chủ ấm lẫn khách nhận thêm **`200–300 LT + (%Luck × 5 LT)`**.',
         '**Giờ Hoàng Đạo & `/thaplinhhuong`:** Vào **`11h • 17h • 21h`** *(UTC+7, 60p/khung)* toàn server nhận **`+10% Luck`**; dùng **`/thaplinhhuong`** *(`600–800 LT` theo Luck)* để thắp hương cộng **`+5% → +15% Luck`** trong ngày & đồng bộ **Tổng Luck 5 nguồn** trên toàn bộ lệnh!\n> *Xác nhận bản cập nhật `v1.7.1` để nhận ngay **`+800 LT`** vào ví!*',
       ],
     },

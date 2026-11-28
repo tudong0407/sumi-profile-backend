@@ -253,7 +253,7 @@ test('7. Giờ Hoàng Đạo (+10%), /thaplinhhuong (600-800 LT, +5..15% Luck) &
   __setLuckTestStore(null);
 });
 
-test('8. /thuongtra Tea House: 3 brews/day, max 2 distinct guests within 2m, %Luck*5 bonus for both', async () => {
+test('8. /thuongtra Tea House: shared 3 points/day (brew OR guest join -1 pt), max 2 distinct guests within 2m, %Luck*5 bonus for both', async () => {
   const now = new Date('2026-11-28T06:00:00Z'); // 13:00 UTC+7 (no auspicious hour)
   __setLuckTestStore({
     host1: { linh_thach: 0, streak: 35, last_daily: now.toISOString(), fortune: { fortune_date: '2026-11-28', tier_key: 'cat_loi', exp_pct: 10, lt_pct: 10, luck_pct: 10 }, incense_date: '2026-11-28', incense_luck_pct: 10 }, // 10+10+10 = 30% Luck
@@ -268,21 +268,25 @@ test('8. /thuongtra Tea House: 3 brews/day, max 2 distinct guests within 2m, %Lu
     guest3: { linh_thach: 0 },
   });
 
-  // Override RNG = 0 => 200 LT base
+  // Override RNG = 0 => 200 LT base; host1 uses 1/3 points
   const pot = await brewTea('host1', { now, rng: () => 0 });
   assert.equal(pot.success, true);
   assert.equal(pot.host_brew_lt, 200);
   assert.equal(pot.host_luck_pct, 30);
+  assert.equal(pot.points_used, 1);
+  assert.equal(pot.points_remaining, 2);
 
-  // Self-join blocked
+  // Self-join blocked (no point spent)
   const selfJoin = await joinTeaPot(pot.session_key, 'host1', { now });
   assert.equal(selfJoin.success, false);
   assert.equal(selfJoin.error, 'CANNOT_JOIN_OWN_TEA');
 
-  // Guest 1 joins: base 200 + 20%*5=100 => 300 LT; Host gets 200 + 30%*5=150 => 350 LT
+  // Guest 1 joins (-1 pt for guest1): base 200 + 20%*5=100 => 300 LT; Host gets 200 + 30%*5=150 => 350 LT
   const j1 = await joinTeaPot(pot.session_key, 'guest1', { now, rng: () => 0 });
   assert.equal(j1.success, true);
   assert.equal(j1.guest_reward.total_lt, 300);
+  assert.equal(j1.guest_reward.points_used, 1);
+  assert.equal(j1.guest_reward.points_remaining, 2);
   assert.equal(j1.host_reward.total_lt, 350);
   assert.equal(j1.should_disable_button, false);
 
@@ -304,14 +308,31 @@ test('8. /thuongtra Tea House: 3 brews/day, max 2 distinct guests within 2m, %Lu
   assert.equal(j3.success, false);
   assert.equal(j3.error, 'TEA_POT_FULL');
 
-  // Expired pot blocked (> 2 mins)
+  // Shared pool check: host1 brews pot2 (2/3) then joins guest1's pot (3/3) -> host1 can NO LONGER brew OR join!
   const pot2 = await brewTea('host1', { now, rng: () => 0 });
-  const pot3 = await brewTea('host1', { now, rng: () => 0 });
   assert.equal(pot2.success, true);
-  assert.equal(pot3.success, true);
-  const pot4 = await brewTea('host1', { now });
-  assert.equal(pot4.success, false);
-  assert.equal(pot4.error, 'TEA_BREW_LIMIT_REACHED');
+  assert.equal(pot2.points_used, 2);
+
+  const gPot = await brewTea('guest1', { now, rng: () => 0 }); // guest1 now 2/3 (1 join + 1 brew)
+  assert.equal(gPot.success, true);
+  assert.equal(gPot.points_used, 2);
+
+  const hostJoinsGuest = await joinTeaPot(gPot.session_key, 'host1', { now, rng: () => 0 }); // host1 now 3/3!
+  assert.equal(hostJoinsGuest.success, true);
+  assert.equal(hostJoinsGuest.guest_reward.points_used, 3);
+  assert.equal(hostJoinsGuest.guest_reward.points_remaining, 0);
+
+  const pot3Blocked = await brewTea('host1', { now });
+  assert.equal(pot3Blocked.success, false);
+  assert.equal(pot3Blocked.error, 'TEA_BREW_LIMIT_REACHED');
+  assert.equal(pot3Blocked.points_remaining, 0);
+
+  const hostJoinBlocked = await joinTeaPot(pot2.session_key, 'host2_unused', { now }).catch(() => null);
+  void hostJoinBlocked;
+  const potG2 = await brewTea('guest2', { now, rng: () => 0 });
+  const joinAfter3Pts = await joinTeaPot(potG2.session_key, 'host1', { now });
+  assert.equal(joinAfter3Pts.success, false);
+  assert.equal(joinAfter3Pts.error, 'TEA_GUEST_LIMIT_REACHED');
 
   const expiredJoin = await joinTeaPot(pot2.session_key, 'guest3', { now: new Date(now.getTime() + 125000) });
   assert.equal(expiredJoin.success, false);
